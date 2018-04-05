@@ -1,0 +1,16 @@
+[package]
+name = "libsovtoken"
+version = "0.1.0"
+authors = [
+  "Matt Raffel <matt.raffel@evernym.com",
+  "Stephen Felt <stephen.felt@evernym.com"
+  ]
+
+description = "Payment handler for Sovrin tokens in libindy"
+
+
+[dependencies]
+
+[lib]
+name = "sovtoken"
+path = "src/lib.rs"
