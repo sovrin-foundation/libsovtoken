@@ -15,7 +15,7 @@ pub extern "C" fn list_payment_addresses_handler() -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler() -> bool {
+pub extern "C" fn add_request_fees_handler() -> bool  {
     return false;
 }
 
