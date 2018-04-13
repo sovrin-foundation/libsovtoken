@@ -10,6 +10,9 @@ description = "Payment handler for Sovrin tokens in libindy"
 
 
 [dependencies]
+libc = "0.2.21"
+indy = { git = "https://github.com/hyperledger/indy-sdk.git" }
+
 
 [lib]
 name = "sovtoken"

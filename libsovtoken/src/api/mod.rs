@@ -3,20 +3,28 @@
 //
 //
 //
+use libc::c_char;
+
+use indy::api::ErrorCode;
+
 
 /// Description
 ///
 /// #Params
-/// param1: description.
+/// command_handle: description.
+/// config: description
+/// cb: description
 ///
 /// #Returns
-/// description. example if json, etc...
+/// ErrorCode: description. example if json, etc...
 ///
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn create_payment_address_handler() -> bool {
-    return false;
+pub extern "C" fn create_payment_address_handler(command_handle: i32,
+                                                 config: *const c_char,
+                                                 cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
+    return ErrorCode::Success;
 }
 
 /// Description
