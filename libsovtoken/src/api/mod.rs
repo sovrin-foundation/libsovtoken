@@ -9,6 +9,7 @@ use indy::api::ErrorCode;
 
 
 /// Description
+/// description
 ///
 /// #Params
 /// command_handle: description.
