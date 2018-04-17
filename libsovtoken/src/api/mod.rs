@@ -30,7 +30,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
 }
 
 /// Description
-/// ???? what is this ????
+/// call made to wallet to list payment addresses
+///    * missing from Slava
 ///
 /// #Params
 /// param1: description.
@@ -58,7 +59,8 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler(eq_json: *const c_char, inputs_json: *const c_char, outputs_json: *const c_char,
+pub extern "C" fn add_request_fees_handler(req_json: *const c_char, inputs_json: *const c_char,
+                                           outputs_json: *const c_char,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
                                                                req_with_fees_json: *const c_char)>) -> ErrorCode {
@@ -66,8 +68,9 @@ pub extern "C" fn add_request_fees_handler(eq_json: *const c_char, inputs_json: 
 }
 
 /// Description
-/// ???? what is this ????
 ///
+///
+/// from tokens-interface.md/build_payment_req
 /// #Params
 /// param1: description.
 ///
@@ -76,8 +79,10 @@ pub extern "C" fn add_request_fees_handler(eq_json: *const c_char, inputs_json: 
 ///
 /// #Errors
 /// description of errors
-#[no_mangle]
-pub extern "C" fn build_payment_txn_handler()-> ErrorCode {
+pub extern "C" fn build_payment_req_handler(req_json: *const c_char, inputs_json: *const c_char, outputs_json: *const c_char,
+                                            cb: Option<extern fn(command_handle_: i32,
+                                                                err: ErrorCode,
+                                                                payment_req_json: *const c_char)>) -> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -123,7 +128,7 @@ pub extern "C" fn parse_get_utxo_response_handler(resp_json: *const c_char,
 }
 
 /// Description
-/// ???? what is this ????
+///  * need definition from Slava
 ///
 /// #Params
 /// param1: description.
@@ -139,7 +144,7 @@ pub extern "C" fn build_fees_txn_handler()-> ErrorCode {
 }
 
 /// Description
-/// ???? what is this ????
+/// * need definitiion fron Slava
 ///
 /// #Params
 /// param1: description.
@@ -154,41 +159,6 @@ pub extern "C" fn build_get_fees_txn_handler()-> ErrorCode {
     return ErrorCode::Success;
 }
 
-/// Description
-/// ???? what is this ????
-///
-///
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
-#[no_mangle]
-pub extern "C" fn build_get_utxo_txn_handler()-> ErrorCode {
-    return ErrorCode::Success;
-}
-
-/// Description
-///
-///
-/// from tokens-interface.md/build_payment_req
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
-pub extern "C" fn build_payment_req_handler(req_json: *const c_char, inputs_json: *const c_char, outputs_json: *const c_char,
-                                            cb: Option<extern fn(command_handle_: i32,
-                                                                err: ErrorCode,
-                                                                payment_req_json: *const c_char)>) -> ErrorCode {
-    return ErrorCode::Success;
-}
 
 /// Description
 ///
