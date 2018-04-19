@@ -11,7 +11,7 @@ use indy::api::ErrorCode;
 /// Description
 ///
 ///
-/// from tokens-interface.md/create_payment_address
+/// from tokens-interface.md/CreatePaymentAddressCB
 /// #Params
 /// command_handle: description.
 /// config: description
@@ -49,7 +49,7 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 /// Description
 ///
 ///
-/// from tokens-interface.md/add_request_fees
+/// from tokens-interface.md/AddRequestFeesCB
 /// #Params
 /// param1: description.
 ///
@@ -59,7 +59,7 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler(req_json: *const c_char, inputs_json: *const c_char,
+pub extern "C" fn add_request_fees_handler(ommand_handle: i32, req_json: *const c_char, inputs_json: *const c_char,
                                            outputs_json: *const c_char,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
@@ -70,26 +70,7 @@ pub extern "C" fn add_request_fees_handler(req_json: *const c_char, inputs_json:
 /// Description
 ///
 ///
-/// from tokens-interface.md/build_payment_req
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
-pub extern "C" fn build_payment_req_handler(req_json: *const c_char, inputs_json: *const c_char, outputs_json: *const c_char,
-                                            cb: Option<extern fn(command_handle_: i32,
-                                                                err: ErrorCode,
-                                                                payment_req_json: *const c_char)>) -> ErrorCode {
-    return ErrorCode::Success;
-}
-
-/// Description
-///
-///
-/// from tokens-interface.md/build_get_utxo_request
+/// from tokens-interface.md/ParseResponseWithFeesCB
 /// #Params
 /// param1: description.
 ///
@@ -99,7 +80,72 @@ pub extern "C" fn build_payment_req_handler(req_json: *const c_char, inputs_json
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_get_utxo_request_handler(ayment_address: *const c_char,
+pub extern "C" fn parse_response_with_fees_handler(ommand_handle: i32,
+                                                   req_json: *const c_char,
+                                                   cb: Option<extern fn(command_handle_: i32,
+                                                               err: ErrorCode,
+                                                               utxo_json: *const c_char)>) -> ErrorCode {
+    return ErrorCode::Success;
+}
+
+
+/// Description
+///
+///
+/// from tokens-interface.md/BuildPaymentReqCB
+/// #Params
+/// param1: description.
+///
+/// #Returns
+/// description. example if json, etc...
+///
+/// #Errors
+/// description of errors
+pub extern "C" fn build_payment_req_handler(command_handle: i32,
+                                            inputs_json: *const c_char,
+                                            outputs_json: *const c_char,
+                                            cb: Option<extern fn(command_handle_: i32,
+                                                        err: ErrorCode,
+                                                        payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
+    return ErrorCode::Success;
+}
+
+/// Description
+///
+///
+/// from tokens-interface.md/ParsePaymentResponseCB
+/// #Params
+/// param1: description.
+///
+/// #Returns
+/// description. example if json, etc...
+///
+/// #Errors
+/// description of errors
+pub extern "C" fn parse_payment_response_handler(command_handle: i32,
+                                                 resp_json: *const c_char,
+                                                 cb: Option<extern fn(command_handle_: i32,
+                                                             err: ErrorCode,
+                                                             utxo_json: *const c_char) -> ErrorCode>) -> ErrorCode {
+    return ErrorCode::Success;
+}
+
+
+/// Description
+///
+///
+/// from tokens-interface.md/BuildGetUTXORequestCB
+/// #Params
+/// param1: description.
+///
+/// #Returns
+/// description. example if json, etc...
+///
+/// #Errors
+/// description of errors
+#[no_mangle]
+pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
+                                                 payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
                                                                       get_utxo_txn_json: *const c_char)>)-> ErrorCode {
@@ -110,7 +156,7 @@ pub extern "C" fn build_get_utxo_request_handler(ayment_address: *const c_char,
 ///
 ///
 ///
-/// from tokens-interface.md/parse_get_utxo_response
+/// from tokens-interface.md/ParseGetUTXOResponseCB
 /// #Params
 /// param1: description.
 ///
@@ -120,7 +166,8 @@ pub extern "C" fn build_get_utxo_request_handler(ayment_address: *const c_char,
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn parse_get_utxo_response_handler(resp_json: *const c_char,
+pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
+                                                  resp_json: *const c_char,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char)>)-> ErrorCode {
@@ -128,8 +175,9 @@ pub extern "C" fn parse_get_utxo_response_handler(resp_json: *const c_char,
 }
 
 /// Description
-///  * need definition from Slava
 ///
+///
+/// from tokens-interface.md/BuildSetTxnFeesReqCB
 /// #Params
 /// param1: description.
 ///
@@ -139,13 +187,18 @@ pub extern "C" fn parse_get_utxo_response_handler(resp_json: *const c_char,
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_fees_txn_handler()-> ErrorCode {
+pub extern "C" fn build_fees_txn_handler(command_handle: i32,
+                                         fees_json: *const c_char,
+                                         cb: Option<extern fn(command_handle_: i32,
+                                                           err: ErroCode,
+                                                           set_txn_fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
     return ErrorCode::Success;
 }
 
 /// Description
-/// * need definitiion fron Slava
 ///
+///
+/// from tokens-interface.md/BuildGetTxnFeesReqCB
 /// #Params
 /// param1: description.
 ///
@@ -155,14 +208,38 @@ pub extern "C" fn build_fees_txn_handler()-> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_get_fees_txn_handler()-> ErrorCode {
+pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
+                                             cb: Option<extern fn(command_handle_: i32,
+                                                           err: ErroCode,
+                                                           get_txn_fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+    return ErrorCode::Success;
+}
+
+// Description
+///
+///
+/// from tokens-interface.md/ParseGetTxnFeesResponseCB
+/// #Params
+/// param1: description.
+///
+/// #Returns
+/// description. example if json, etc...
+///
+/// #Errors
+/// description of errors
+#[no_mangle]
+pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
+                                                      resp_json: *const c_char,
+                                                      cb: Option<extern fn(command_handle_: i32,
+                                                                err: ErrorCode,
+                                                                fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
     return ErrorCode::Success;
 }
 
 
 /// Description
 ///
-/// from tokens-interface.md/build_mint_req
+/// from tokens-interface.md/BuildMintReqCB
 /// #Params
 /// param1: description.
 ///
@@ -172,7 +249,7 @@ pub extern "C" fn build_get_fees_txn_handler()-> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_mint_txn_handler(req_json: *const c_char, outputs_json: *const c_char,
+pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)>)-> ErrorCode {
     return ErrorCode::Success;
 }
