@@ -4,7 +4,6 @@
 //
 //
 use libc::c_char;
-use std::ptr;
 use indy::api::ErrorCode;
 
 
@@ -36,6 +35,7 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         true => return ErrorCode::CommonInvalidParam2,
         false => (),
     }
+
     
     return ErrorCode::Success;
 }
