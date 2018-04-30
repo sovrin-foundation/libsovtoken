@@ -26,6 +26,12 @@ use indy::api::ErrorCode;
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  config: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
+    
+    match cb {
+        None => return ErrorCode::CommonInvalidParam3,
+        Some(_)=> (), 
+    }
+    
     return ErrorCode::Success;
 }
 
