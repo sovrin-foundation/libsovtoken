@@ -9,16 +9,26 @@ use indy::api::ErrorCode;
 
 
 /// Description
+/// (from tokens-interface.md/CreatePaymentAddressCB)
+/// Create the payment address for this payment method.
 ///
+/// This method generates private part of payment address
+/// and stores it in a secure place. Ideally it should be
+/// secret in libindy wallet (see crypto module).
 ///
-/// from tokens-interface.md/CreatePaymentAddressCB
+/// Note that payment method should be able to resolve this
+/// secret by fully resolvable payment address format.
+///
 /// #Params
-/// command_handle: description.
-/// config: description
-/// cb: description
+/// command_handle: command handle to map callback to context
+/// config: payment address config as json:
+///   {
+///     seed: <str>, // allows deterministic creation of payment address
+///   }
 ///
 /// #Returns
-/// ErrorCode: description. example if json, etc...
+/// payment_address - public identifier of payment address in fully resolvable payment address format
+///     format is:  pay:sov:{public_address_key}{check_sum}
 ///
 /// #Errors
 /// description of errors
@@ -26,6 +36,12 @@ use indy::api::ErrorCode;
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  config: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
+
+
+    // TODO:  how do we know the wallet to save this information in?
+    //        looks like the wallet ID needs to passed in
+    //        for now, just implement enough to return pub key per format above
+
     return ErrorCode::Success;
 }
 
