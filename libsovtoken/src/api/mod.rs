@@ -59,7 +59,7 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler(ommand_handle: i32, req_json: *const c_char, inputs_json: *const c_char,
+pub extern "C" fn add_request_fees_handler(command_handle: i32, req_json: *const c_char, inputs_json: *const c_char,
                                            outputs_json: *const c_char,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
@@ -80,7 +80,7 @@ pub extern "C" fn add_request_fees_handler(ommand_handle: i32, req_json: *const 
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn parse_response_with_fees_handler(ommand_handle: i32,
+pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
                                                    req_json: *const c_char,
                                                    cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
@@ -127,6 +127,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                              err: ErrorCode,
                                                              utxo_json: *const c_char) -> ErrorCode>) -> ErrorCode {
+
     return ErrorCode::Success;
 }
 
@@ -190,7 +191,7 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 pub extern "C" fn build_fees_txn_handler(command_handle: i32,
                                          fees_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32,
-                                                           err: ErroCode,
+                                                           err: ErrorCode,
                                                            set_txn_fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
     return ErrorCode::Success;
 }
@@ -210,7 +211,7 @@ pub extern "C" fn build_fees_txn_handler(command_handle: i32,
 #[no_mangle]
 pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
                                              cb: Option<extern fn(command_handle_: i32,
-                                                           err: ErroCode,
+                                                           err: ErrorCode,
                                                            get_txn_fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
     return ErrorCode::Success;
 }
