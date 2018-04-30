@@ -17,4 +17,4 @@ indy = { git = "https://github.com/hyperledger/indy-sdk.git" }
 [lib]
 name = "sovtoken"
 path = "src/lib.rs"
-crate-type = ["dylib"]
+crate-type = ["rlib", "dylib"]
