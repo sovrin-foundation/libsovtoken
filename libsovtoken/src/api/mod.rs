@@ -7,6 +7,7 @@ use std::ffi::CStr;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
+use utils::ffi_support::str_from_char_ptr;
 use utils::json_conversion::JsonDeserialize;
 
 /// This method generates private part of payment address
@@ -27,7 +28,8 @@ use utils::json_conversion::JsonDeserialize;
 /// cb: description
 ///
 /// #Returns
-/// ErrorCode: description. example if json, etc...
+/// on Success:  payment_address will have the format:
+///              pay:sov:{32 byte public key}{4 digit check sum}
 ///
 /// #Errors
 /// description of errors
@@ -43,19 +45,18 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    if config_str.is_null() {
-        return ErrorCode::CommonInvalidParam2;
-    }
-
-    // TODO these next two lines could be converted to a macro
-    let c_str: &CStr = unsafe { CStr::from_ptr(config_str)};
-    let str_slice: &str = c_str.to_str().unwrap();
+    let str_slice: &str = match str_from_char_ptr(config_str) {
+        Some(s) => s,
+        None => return ErrorCode::CommonInvalidParam2,
+    };
 
     let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(str_slice) {
         Ok(c) => c,
         Err(_) => return ErrorCode::CommonInvalidStructure ,
     };
-    
+
+
+
     return ErrorCode::Success;
 }
 

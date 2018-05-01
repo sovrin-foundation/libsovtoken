@@ -50,7 +50,7 @@ fn errors_with_no_config() {
 // the create payment method requires a valid JSON format (format is described
 // in create_payment_address_handler description).  Expecting error when invalid json is inputted
 #[test]
-fn errors_with_invalid_json() {
+fn errors_with_invalid_config_json() {
 
     let config_str = CString::new(INVALID_CONFIG_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
@@ -60,3 +60,26 @@ fn errors_with_invalid_json() {
 
     assert!(return_error == ErrorCode::CommonInvalidStructure, "Expecting Valid JSON");
 }
+
+// TODO:  the private address needs to be saved in the wallet.  if the wallet id
+// is not valid, the private address cannot be saved.  this test passes an invalid
+// wallet id and gets an error
+#[test]
+fn error_when_wallet_cannot_be_accessed() {
+    unimplemented!();
+}
+
+// TODO: this test passes valid parameters.  the expectation is the callback is invoked
+#[test]
+fn success_callback_is_called() {
+    unimplemented!();
+}
+
+// TODO:  this test passes valid parameters.  The callback is invoked and a valid payment address
+// is returned in the call back.  The payment address format is described in
+// create_payment_address_handler
+#[test]
+fn successfully_creates_payment_address() {
+    unimplemented!();
+}
+
