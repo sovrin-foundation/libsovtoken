@@ -10,7 +10,7 @@ extern crate indy;                      // lib-sdk project
 
 
 
-
-// define our create, pull in modules in the project
+// define our crate by defining the modules in the project
 #[allow(unused_variables)]
 pub mod api;
+pub mod utils;
