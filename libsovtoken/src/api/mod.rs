@@ -3,17 +3,27 @@
 //
 //
 //
+use std::ffi::CStr;
 use libc::c_char;
 use indy::api::ErrorCode;
+use logic::payment_address_config::PaymentAddressConfig;
+use utils::json_conversion::JsonDeserialize;
 
-
-/// Description
+/// This method generates private part of payment address
+/// and stores it in a secure place. Ideally it should be
+/// secret in libindy wallet (see crypto module).
 ///
+/// Note that payment method should be able to resolve this
+/// secret by fully resolvable payment address format.
 ///
 /// from tokens-interface.md/CreatePaymentAddressCB
+///
 /// #Params
-/// command_handle: description.
-/// config: description
+/// command_handle: command handle to map callback to context
+/// config_str: payment address config as json:
+///   {
+///     seed: <str>, // allows deterministic creation of payment address
+///   }
 /// cb: description
 ///
 /// #Returns
@@ -23,22 +33,28 @@ use indy::api::ErrorCode;
 /// description of errors
 #[no_mangle]
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
-                                                 config: *const c_char,
+                                                 config_str: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
 
 
     // TODO:  missing wallet id
 
-    match cb {
-        None => return ErrorCode::CommonInvalidParam3,
-        Some(_)=> (), 
-    }
-    
-    match config.is_null() {
-        true => return ErrorCode::CommonInvalidParam2,
-        false => (),
+    if false == cb.is_some() {
+        return ErrorCode::CommonInvalidParam3;
     }
 
+    if config_str.is_null() {
+        return ErrorCode::CommonInvalidParam2;
+    }
+
+    // TODO these next two lines could be converted to a macro
+    let c_str: &CStr = unsafe { CStr::from_ptr(config_str)};
+    let str_slice: &str = c_str.to_str().unwrap();
+
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(str_slice) {
+        Ok(c) => c,
+        Err(_) => return ErrorCode::CommonInvalidStructure ,
+    };
     
     return ErrorCode::Success;
 }

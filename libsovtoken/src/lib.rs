@@ -6,6 +6,8 @@ extern crate libc;
 extern crate serde;
 extern crate serde_json;
 
+#[macro_use] extern crate serde_derive;
+
 extern crate indy;                      // lib-sdk project
 
 
@@ -14,3 +16,4 @@ extern crate indy;                      // lib-sdk project
 #[allow(unused_variables)]
 pub mod api;
 pub mod utils;
+pub mod logic;
