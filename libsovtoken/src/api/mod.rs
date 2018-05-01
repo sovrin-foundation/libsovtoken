@@ -4,7 +4,6 @@
 //
 //
 use libc::c_char;
-
 use indy::api::ErrorCode;
 
 
@@ -26,6 +25,18 @@ use indy::api::ErrorCode;
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  config: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
+    
+    match cb {
+        None => return ErrorCode::CommonInvalidParam3,
+        Some(_)=> (), 
+    }
+    
+    match config.is_null() {
+        true => return ErrorCode::CommonInvalidParam2,
+        false => (),
+    }
+
+    
     return ErrorCode::Success;
 }
 
