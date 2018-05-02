@@ -29,7 +29,7 @@ extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode
 //____________________UNIT TESTS____________________//
 
 // the create payment requires a callback and this test ensures we have 
-// recieve error when no callback is provided
+// receive error when no callback is provided
 #[test]
 fn errors_with_no_callback () {
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, ptr::null(), None);
