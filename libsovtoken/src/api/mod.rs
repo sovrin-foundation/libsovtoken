@@ -45,17 +45,12 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let str_slice: &str = match str_from_char_ptr(config_str) {
-        Some(s) => s,
-        None => return ErrorCode::CommonInvalidParam2,
-    };
+    let json_config_str: &str = unpack_c_string_or_error!(config_str, ErrorCode::CommonInvalidParam2);
 
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(str_slice) {
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(json_config_str) {
         Ok(c) => c,
         Err(_) => return ErrorCode::CommonInvalidStructure ,
     };
-
-
 
     return ErrorCode::Success;
 }
@@ -287,10 +282,7 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let outputs_json_str : &str = match str_from_char_ptr(outputs_json) {
-        Some(s) => s,
-        None => return ErrorCode::CommonInvalidParam2,
-    };
+    let outputs_json_str : &str = unpack_c_string_or_error!(outputs_json, ErrorCode::CommonInvalidParam2);
 
 
     return ErrorCode::Success;
