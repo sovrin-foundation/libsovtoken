@@ -247,7 +247,7 @@ pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
     return ErrorCode::Success;
 }
 
-// Description
+/// Description
 ///
 ///
 /// from tokens-interface.md/ParseGetTxnFeesResponseCB
