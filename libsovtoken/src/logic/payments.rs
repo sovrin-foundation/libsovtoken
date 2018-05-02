@@ -4,6 +4,7 @@ use std::str;
 
 use super::payment_address_config::PaymentAddressConfig;
 use libraries::sodium::{CryptoEngine, CryptoError};
+use libraries::rust_base58::Base58;
 
 // statics that make up parts of the payment address
 pub static PAY_INDICATOR: &'static str = "pay";
@@ -55,11 +56,8 @@ pub fn create_payment_address(config: PaymentAddressConfig) -> String {
     };
 
     println!("converting pub key {:?} length {}", pub_address, pub_address.len());
-    let pub_address_str = match str::from_utf8(&pub_address)
-    {
-        Ok(p) => p,
-        Err(e) => panic!("unexpected type conversion error: {:?}", e),
-    };
+
+    let pub_address_str = Base58::encode(&pub_address);
 
     println!("creating the public formatted address");
     return create_formatted_address_with_checksum(pub_address_str.to_string());

@@ -2,6 +2,8 @@
 //
 // Pull in all external dependencies
 //
+extern crate base64;
+extern crate rust_base58;
 extern crate libc;
 extern crate serde;
 extern crate serde_json;
