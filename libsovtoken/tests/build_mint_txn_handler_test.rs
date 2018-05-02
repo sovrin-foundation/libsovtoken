@@ -28,8 +28,10 @@ const cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_addres
      assert!(return_error == ErrorCode::CommonInvalidParam3, "Expecting Callback for 'create_payment_address_handler'"); 
 }
 
+// the build mint txn handler method requires an outputs_json parameter and this test ensures that 
+// a error is returned when no config is provided
 #[test]
-fn errors_with_no_config() {
+fn errors_with_no_outputs_json() {
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), cb);
-    assert!(return_error == ErrorCode::CommonInvalidParam2, "Expecting Config for 'create_payment_address_handler'");
+    assert!(return_error == ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'create_payment_address_handler'");
 }
