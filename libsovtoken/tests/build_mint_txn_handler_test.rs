@@ -22,10 +22,10 @@ const cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_addres
 
 // the build_mint_txn_handler requires a callback and this test ensures that we
 // receive an error when no callback is provided
- #[test]
- fn errors_with_no_call_back() {
-     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), None);
-     assert!(return_error == ErrorCode::CommonInvalidParam3, "Expecting Callback for 'create_payment_address_handler'"); 
+#[test]
+fn errors_with_no_call_back() {
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), None);
+    assert!(return_error == ErrorCode::CommonInvalidParam3, "Expecting Callback for 'create_payment_address_handler'"); 
 }
 
 // the build mint txn handler method requires an outputs_json parameter and this test ensures that 
