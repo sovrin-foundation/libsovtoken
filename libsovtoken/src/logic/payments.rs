@@ -1,6 +1,7 @@
 //! Payments module contains functions for working with payments.  :D
 
 use std::str;
+use log;
 
 use super::payment_address_config::PaymentAddressConfig;
 use libraries::sodium::{CryptoEngine, CryptoError};
@@ -45,6 +46,7 @@ fn create_formatted_address_with_checksum(address: String) -> String {
 //     pay:sov:{32 byte address}{4 byte checksum}
 pub fn create_payment_address(config: PaymentAddressConfig) -> String {
 
+    trace!("creating address for seed {}", config.seed);
 
     // TODO: how should we handle errors other than panic?
     let usable_seed = some_or_none_u8_option(config.seed.as_bytes());
