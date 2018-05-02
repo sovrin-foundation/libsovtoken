@@ -15,18 +15,14 @@ use std::ffi::CString;
 
 use indy::api::ErrorCode;
 
-//____________________HELPER TEST DATA____________________//
+// ***** HELPER TEST DATA  *****
 const COMMAND_HANDLE: i32 = 10;
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
 
+// ***** HELPER METHODS  *****
+extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) { }
 
-//____________________HELPER METHODS____________________//
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-
-}
-
-
-//____________________UNIT TESTS____________________//
+// ***** UNIT TESTS *****
 
 // the create payment requires a callback and this test ensures we have 
 // receive error when no callback is provided
@@ -57,7 +53,7 @@ fn errors_with_invalid_config_json() {
     let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_create_payment_callback);
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
 
-    assert!(return_error == ErrorCode::CommonInvalidStructure, "Expecting Valid JSON");
+    assert!(return_error == ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'create_payment_address_handler'");
 }
 
 // TODO:  the private address needs to be saved in the wallet.  if the wallet id

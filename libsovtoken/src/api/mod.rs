@@ -7,6 +7,7 @@ use std::ffi::CStr;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
+use logic::output_mint_config::OutputMintConfig;
 use utils::ffi_support::str_from_char_ptr;
 use utils::json_conversion::JsonDeserialize;
 
@@ -290,6 +291,11 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
     let outputs_json_str : &str = match str_from_char_ptr(outputs_json) {
         Some(s) => s,
         None => return ErrorCode::CommonInvalidParam2,
+    };
+
+    let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
+        Ok(c) => c,
+        Err(_) => return ErrorCode::CommonInvalidStructure ,
     };
 
 
