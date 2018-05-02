@@ -1,7 +1,7 @@
 //! Payments module contains functions for working with payments.  :D
 
 use super::payment_address_config::PaymentAddressConfig;
-
+use libraries::sodium::{CryptoEngine, CryptoError};
 
 // statics that make up parts of the payment address
 pub static PAY_INDICATOR: &'static str = "pay";
@@ -33,8 +33,8 @@ fn create_formatted_address_with_checksum(address: String) -> String {
 //     pay:sov:{32 byte address}{4 byte checksum}
 pub fn create_payment_address(config: PaymentAddressConfig) -> String {
 
-    // TODO:  generate this through libsoduim
-    let address = config.seed;
+    // let (pub_address, private_key) = CryptoEngine::create_key_pair_for_signature(Some(config.seed)).unwrap;
+    let pub_address = config.seed;
 
-    return create_formatted_address_with_checksum(address);
+    return create_formatted_address_with_checksum(pub_address);
 }

@@ -8,53 +8,72 @@ use libc::c_int;
 use sodiumoxide::crypto::box_;
 use sodiumoxide::crypto::sign;
 use sodiumoxide::randombytes;
-// use utils::byte_array::_clone_into_array;
 
+use indy::api::ErrorCode;
 
-pub struct CryptoBox {}
+// enumerations/data defining errors CryptoBox can throw
+#[derive(Debug)]
+pub enum CryptoError {
+    InvalidStructure(String),
+}
 
-impl CryptoBox {
-    /*
-    pub fn encrypt(private_key: &[u8], public_key: &[u8], doc: &[u8], nonce: &[u8]) -> Result<Vec<u8>, CommonError> {
+// helper method to help convert encryption data into an array
+pub fn clone_into_array<A, T>(slice: &[T]) -> A
+    where A: Sized + Default + AsMut<[T]>, T: Clone
+{
+    let mut a = Default::default();
+    <A as AsMut<[T]>>::as_mut(&mut a).clone_from_slice(slice);
+    a
+}
+
+// CryptoBox type, no members
+pub struct CryptoEngine {}
+
+// CryptoEngine provides further encapsulation of sodiumoxide encryption functions
+// Modified version of CryptoBox from Indy-SDK
+// copied/modeled from master/libindy/src/utils/crypto/box_/sodium.rs
+impl CryptoEngine {
+
+    pub fn encrypt(private_key: &[u8], public_key: &[u8], doc: &[u8], nonce: &[u8]) -> Result<Vec<u8>, CryptoError> {
         if nonce.len() != 24 {
-            return Err(CommonError::InvalidStructure(format!("Invalid nonce")))
+            return Err(CryptoError::InvalidStructure(format!("Invalid nonce")))
         }
 
         Ok(box_::seal(
             doc,
-            &box_::Nonce(_clone_into_array(nonce)),
-            &box_::PublicKey(_clone_into_array(public_key)),
-            &box_::SecretKey(_clone_into_array(private_key))
+            &box_::Nonce(clone_into_array(nonce)),
+            &box_::PublicKey(clone_into_array(public_key)),
+            &box_::SecretKey(clone_into_array(private_key))
         ))
     }
 
-    pub fn decrypt(private_key: &[u8], public_key: &[u8], doc: &[u8], nonce: &[u8]) -> Result<Vec<u8>, CommonError> {
+    pub fn decrypt(private_key: &[u8], public_key: &[u8], doc: &[u8], nonce: &[u8]) -> Result<Vec<u8>, CryptoError> {
         if nonce.len() != 24 {
-            return Err(CommonError::InvalidStructure(format!("Invalid nonce")))
+            return Err(CryptoError::InvalidStructure(format!("Invalid nonce")))
         }
 
         box_::open(
             doc,
-            &box_::Nonce(_clone_into_array(nonce)),
-            &box_::PublicKey(_clone_into_array(public_key)),
-            &box_::SecretKey(_clone_into_array(private_key))
+            &box_::Nonce(clone_into_array(nonce)),
+            &box_::PublicKey(clone_into_array(public_key)),
+            &box_::SecretKey(clone_into_array(private_key))
         )
-            .map_err(|err| CommonError::InvalidStructure(format!("Unable to decrypt data: {:?}", err)))
+            .map_err(|err| CryptoError::InvalidStructure(format!("Unable to decrypt data: {:?}", err)))
     }
 
     pub fn gen_nonce() -> Vec<u8> {
         box_::gen_nonce()[..].to_vec()
-    }*/
+    }
 
-    pub fn create_key_pair_for_signature(seed: Option<&[u8]>) -> Result<(Vec<u8>, Vec<u8>), CommonError> {
+    pub fn create_key_pair_for_signature(seed: Option<&[u8]>) -> Result<(Vec<u8>, Vec<u8>), CryptoError> {
         if seed.is_some() && seed.unwrap().len() != 32 {
-            return Err(CommonError::InvalidStructure(format!("Invalid seed")));
+            return Err(CryptoError::InvalidStructure(format!("Invalid seed")));
         }
 
         let (public_key, private_key) =
             sign::keypair_from_seed(
                 &sign::Seed(
-                    _clone_into_array(
+                    clone_into_array(
                         seed.unwrap_or(&randombytes::randombytes(32)[..])
                     )
                 )
@@ -63,10 +82,9 @@ impl CryptoBox {
         Ok((public_key[..].to_vec(), private_key[..].to_vec()))
     }
 
-
-    pub fn sign(private_key: &[u8], doc: &[u8]) -> Result<Vec<u8>, CommonError> {
+    pub fn sign(private_key: &[u8], doc: &[u8]) -> Result<Vec<u8>, CryptoError> {
         if private_key.len() != 64 {
-            return Err(CommonError::InvalidStructure(format!("Invalid sign key")));
+            return Err(CryptoError::InvalidStructure(format!("Invalid sign key")));
         }
 
         let mut pr_key: [u8; 64] = [0; 64];
@@ -78,14 +96,14 @@ impl CryptoBox {
         )[..].to_vec())
     }
 
-    /*
-    pub fn verify(public_key: &[u8], doc: &[u8], sign: &[u8]) -> Result<bool, CommonError> {
+
+    pub fn verify(public_key: &[u8], doc: &[u8], sign: &[u8]) -> Result<bool, CryptoError> {
         if sign.len() != 64 {
-            return Err(CommonError::InvalidStructure(format!("Invalid signature")));
+            return Err(CryptoError::InvalidStructure(format!("Invalid signature")));
         }
 
         if public_key.len() != 32 {
-            return Err(CommonError::InvalidStructure(format!("Invalid verkey")));
+            return Err(CryptoError::InvalidStructure(format!("Invalid verkey")));
         }
 
         let mut signature: [u8; 64] = [0; 64];
@@ -94,35 +112,7 @@ impl CryptoBox {
         Ok(sign::verify_detached(
             &sign::Signature(signature),
             doc,
-            &sign::PublicKey(_clone_into_array(public_key))
+            &sign::PublicKey(clone_into_array(public_key))
         ))
     }
-
-    pub fn sk_to_curve25519(sk: &[u8]) -> Result<Vec<u8>, CommonError> {
-        if sk.len() != 64 {
-            return Err(CommonError::InvalidStructure(format!("Invalid signkey")));
-        }
-
-        let mut from: [u8; 64] = [0; 64];
-        from.clone_from_slice(sk);
-        let mut to: [u8; 32] = [0; 32];
-        unsafe {
-            crypto_sign_ed25519_sk_to_curve25519(&mut to, &from);
-        }
-        Ok(to.iter().cloned().collect())
-    }
-
-    pub fn vk_to_curve25519(pk: &[u8]) -> Result<Vec<u8>, CommonError> {
-        if pk.len() != 32 {
-            return Err(CommonError::InvalidStructure(format!("Invalid verkey")));
-        }
-
-        let mut from: [u8; 32] = [0; 32];
-        from.clone_from_slice(pk);
-        let mut to: [u8; 32] = [0; 32];
-        unsafe {
-            crypto_sign_ed25519_pk_to_curve25519(&mut to, &from);
-        }
-        Ok(to.iter().cloned().collect())
-    }*/
 }
