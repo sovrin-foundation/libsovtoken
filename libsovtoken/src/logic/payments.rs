@@ -3,11 +3,10 @@
 use super::payment_address_config::PaymentAddressConfig;
 
 
+// statics that make up parts of the payment address
 pub static PAY_INDICATOR: &'static str = "pay";
 pub static SOVRIN_INDICATOR: &'static str = "sov";
 pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
-
-const ADDRESS_FORMAT_STR: &'static str = "{}:{}:{}";
 
 // computes a check some based on an address
 fn compute_address_checksum(address: String) -> String {
@@ -15,7 +14,7 @@ fn compute_address_checksum(address: String) -> String {
 }
 
 // creates the fully formatted payment address string
-fn create_formatted_address(address: String) -> String {
+fn create_formatted_address_with_checksum(address: String) -> String {
 
     let mut result: String = PAY_INDICATOR.to_owned();
 
@@ -37,5 +36,5 @@ pub fn create_payment_address(config: PaymentAddressConfig) -> String {
     // TODO:  generate this through libsoduim
     let address = config.seed;
 
-    return create_formatted_address(address);
+    return create_formatted_address_with_checksum(address);
 }
