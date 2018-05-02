@@ -47,7 +47,6 @@ pub fn create_payment_address(config: PaymentAddressConfig) -> String {
 
 
     // TODO: how should we handle errors other than panic?
-    println!("calling crypto");
     let usable_seed = some_or_none_u8_option(config.seed.as_bytes());
     let (pub_address, private_key) = match CryptoEngine::create_key_pair_for_signature(usable_seed)
     {
@@ -55,10 +54,7 @@ pub fn create_payment_address(config: PaymentAddressConfig) -> String {
         Err(e) => panic!("unhandled crypto error: {:?}", e),
     };
 
-    println!("converting pub key {:?} length {}", pub_address, pub_address.len());
-
     let pub_address_str = Base58::encode(&pub_address);
 
-    println!("creating the public formatted address");
     return create_formatted_address_with_checksum(pub_address_str.to_string());
 }
