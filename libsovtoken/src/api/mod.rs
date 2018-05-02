@@ -283,5 +283,15 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)>)-> ErrorCode {
+    if cb.is_some() == false {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    let outputs_json_str : &str = match str_from_char_ptr(outputs_json) {
+        Some(s) => s,
+        None => return ErrorCode::CommonInvalidParam2,
+    };
+
+
     return ErrorCode::Success;
 }
