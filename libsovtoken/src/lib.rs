@@ -3,12 +3,13 @@
 // Pull in all external dependencies
 //
 extern crate base64;
-extern crate rust_base58;
 extern crate libc;
+extern crate rust_base58;
 extern crate serde;
 extern crate serde_json;
 extern crate sodiumoxide;
 
+#[macro_use] extern crate log;
 #[macro_use] extern crate serde_derive;
 
 extern crate indy;                      // lib-sdk project
