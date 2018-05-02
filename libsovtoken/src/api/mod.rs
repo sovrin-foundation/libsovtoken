@@ -282,10 +282,7 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let outputs_json_str : &str = match str_from_char_ptr(outputs_json) {
-        Some(s) => s,
-        None => return ErrorCode::CommonInvalidParam2,
-    };
+    let outputs_json_str : &str = unpack_c_string_or_error!(outputs_json, ErrorCode::CommonInvalidParam2);
 
 
     return ErrorCode::Success;
