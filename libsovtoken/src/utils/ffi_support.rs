@@ -24,9 +24,9 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     Transforms a c_string into a &str or returns an error_code.
 
     ```
-        let c_string = std::ffi::CString::from("A C String no longer");
+        let c_string = std::ffi::CString::from("My test str");
         let my_str: &str = unpack_c_string_or_error!(c_string, ErrorCode::CommonInvalidParam2);
-        assert_eq!(my_str, "A C String no longer");
+        // assert_eq!(my_str, "My test str");
     ```
 */
 macro_rules! unpack_c_string_or_error {
@@ -39,7 +39,7 @@ macro_rules! unpack_c_string_or_error {
 }
 
 #[cfg(test)]
-mod ffi_suppor_tests {
+mod ffi_support_tests {
     use std::ptr;
     use std::ffi;
     use libc::c_char;

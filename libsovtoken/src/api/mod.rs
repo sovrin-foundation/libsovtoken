@@ -45,9 +45,9 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let str_slice: &str = unpack_c_string_or_error!(config_str, ErrorCode::CommonInvalidParam2);
+    let json_config_str: &str = unpack_c_string_or_error!(config_str, ErrorCode::CommonInvalidParam2);
 
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(str_slice) {
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(json_config_str) {
         Ok(c) => c,
         Err(_) => return ErrorCode::CommonInvalidStructure ,
     };
