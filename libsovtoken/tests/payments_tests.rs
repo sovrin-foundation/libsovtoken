@@ -61,3 +61,39 @@ fn success_create_payment_with_seed_returns_address() {
     assert_eq!(CHECKSUM_LEN, checksum.chars().count(), "checksum is not 4 bytes");
 
 }
+
+// This is the happy path test when seed provided is empty.  Expectation is a
+// a fully formatted address is returned.
+#[test]
+fn success_create_payment_with_no_seed_returns_address() {
+
+    let seed = String::new();
+    println!("using seed {} len {}", seed, seed.chars().count());
+
+    let config: PaymentAddressConfig = PaymentAddressConfig { seed };
+
+    let address = create_payment_address(config);
+
+    println!("got back address {} len {}", address, address.chars().count());
+
+    let pay_indicator = &address[0..3];
+    let first_separator = &address[3..4];
+    let sov_indicator = &address[4..7];
+    let second_indicator = &address[7..8];
+    let result_address = &address[8..40];
+    let checksum = &address[40..44];
+
+
+    println!("got pay indicator {} len {}", pay_indicator, pay_indicator.chars().count());
+    println!("got result address {} len {}", result_address, result_address.chars().count());
+    println!("got checksum {} len {}", checksum, checksum.chars().count());
+
+
+    assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
+    assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
+    assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
+    assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+    assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
+    assert_eq!(CHECKSUM_LEN, checksum.chars().count(), "checksum is not 4 bytes");
+
+}

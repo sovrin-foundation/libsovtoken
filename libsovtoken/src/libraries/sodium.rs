@@ -11,7 +11,7 @@ use sodiumoxide::randombytes;
 
 use indy::api::ErrorCode;
 
-// enumerations/data defining errors CryptoBox can throw
+// enumerations/data defining errors CryptoEngine can throw
 #[derive(Debug)]
 pub enum CryptoError {
     InvalidStructure(String),
@@ -26,12 +26,14 @@ pub fn clone_into_array<A, T>(slice: &[T]) -> A
     a
 }
 
-// CryptoBox type, no members
+// CryptoEngine type, no members
 pub struct CryptoEngine {}
 
-// CryptoEngine provides further encapsulation of sodiumoxide encryption functions
-// Modified version of CryptoBox from Indy-SDK
-// copied/modeled from master/libindy/src/utils/crypto/box_/sodium.rs
+/*
+   CryptoEngine provides further encapsulation of sodiumoxide encryption functions
+   Modified version of CryptoBox from Indy-SDK
+   copied/modeled from master/libindy/src/utils/crypto/box_/sodium.rs
+*/
 impl CryptoEngine {
 
     pub fn encrypt(private_key: &[u8], public_key: &[u8], doc: &[u8], nonce: &[u8]) -> Result<Vec<u8>, CryptoError> {
