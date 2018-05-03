@@ -3,6 +3,7 @@
 //
 //
 //
+
 use std::ffi::CStr;
 use libc::c_char;
 use indy::api::ErrorCode;
