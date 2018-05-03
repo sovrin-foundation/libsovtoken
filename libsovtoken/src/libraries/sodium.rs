@@ -4,12 +4,9 @@
 //!
 
 
-use libc::c_int;
 use sodiumoxide::crypto::box_;
 use sodiumoxide::crypto::sign;
 use sodiumoxide::randombytes;
-
-use indy::api::ErrorCode;
 
 // enumerations/data defining errors CryptoEngine can throw
 #[derive(Debug)]
