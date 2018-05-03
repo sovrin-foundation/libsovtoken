@@ -57,3 +57,4 @@ fn valid_output_json() {
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, outputs_str_ptr, cb);
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
 }
+
