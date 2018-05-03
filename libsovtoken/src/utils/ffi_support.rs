@@ -2,7 +2,7 @@
 // this module contains functions that assist with std::ffi related behaviors
 // such as: converting const char * to str
 //
-use std::ffi::CStr;
+use std::ffi::{CStr, CString, NulError};
 use std::str::Utf8Error;
 use libc::c_char;
 
@@ -18,6 +18,12 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     let c_str: &CStr = unsafe { CStr::from_ptr(str_ptr)};
     let str_slice: &str = c_str.to_str().unwrap();
     return Some(str_slice);
+}
+
+// TODO: Documentation and Unit tests
+pub fn char_ptr_from_str(string: &str) -> Result<*const c_char, NulError> {
+    let cstring_result = CString::new(string);
+    return cstring_result.map(|cstring| cstring.as_ptr());
 }
 
 /**
