@@ -3,6 +3,10 @@
 //
 //
 //
+#![allow(unused_variables)]
+#![allow(unused_imports)]
+#[warn(unused_imports)]
+
 use std::ffi::CStr;
 use libc::c_char;
 use indy::api::ErrorCode;

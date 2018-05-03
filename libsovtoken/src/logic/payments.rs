@@ -1,10 +1,13 @@
 //! Payments module contains functions for working with payments.  :D
+#![allow(unused_variables)]
+#![allow(unused_imports)]
+#[warn(unused_imports)]
 
 use std::str;
 use log;
 
 use super::payment_address_config::PaymentAddressConfig;
-use libraries::sodium::{CryptoEngine, CryptoError};
+use libraries::sodium::{CryptoEngine};
 use libraries::rust_base58::Base58;
 use utils::general::some_or_none_option_u8;
 
@@ -40,7 +43,7 @@ pub fn create_payment_address(config: PaymentAddressConfig) -> String {
 
     // TODO: how should we handle errors other than panic?
     let usable_seed = some_or_none_option_u8(config.seed.as_bytes());
-    let (pub_address, private_key) = match CryptoEngine::create_key_pair_for_signature(usable_seed)
+    let (pub_address, _) = match CryptoEngine::create_key_pair_for_signature(usable_seed)
     {
         Ok(r) => r,
         Err(e) =>  {
