@@ -1,6 +1,6 @@
 
-#[allow(unused_variables)]
-#[allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
 
 extern crate libc;
 extern crate rand;
@@ -8,12 +8,12 @@ extern crate rand;
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
 
-use rand::{Rng, random};
+use rand::Rng;
 use std::panic;
 
 use sovtoken::logic::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::payments::{create_payment_address, PAY_INDICATOR, SOVRIN_INDICATOR, PAYMENT_ADDRESS_FIELD_SEP};
-use sovtoken::utils::general::some_or_none_option_u8;
+use sovtoken::utils::general::StringUtils;
 
 static VALID_ADDRESS_LEN: usize = 32;
 static VALID_ENCODED_ADDRESS_LEN: usize = 44;
@@ -34,10 +34,7 @@ fn rand_string(length : usize) -> String {
 // returns the last 4 chars if input
 fn get_address_checksum(address: &str) -> String {
 
-    let address_len = address.len();
-    let checksum: String = address.chars().skip(address_len - CHECKSUM_LEN).take(CHECKSUM_LEN).collect();
-
-    return checksum.to_owned();
+    return address.from_right(CHECKSUM_LEN);
 }
 
 // This is the happy path test.  Config contains a seed and
