@@ -6,7 +6,7 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use std::ffi::CStr;
+use std::ffi::{CString, CStr};
 use std::str::Utf8Error;
 use libc::c_char;
 
@@ -22,6 +22,11 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     let c_str: &CStr = unsafe { CStr::from_ptr(str_ptr)};
     let str_slice: &str = c_str.to_str().unwrap();
     return Some(str_slice);
+}
+
+// utility method for converting string to const char *
+pub fn str_to_char_ptr(data: String ) -> *const c_char {
+    return CString::new(data).unwrap().as_ptr();
 }
 
 /**
