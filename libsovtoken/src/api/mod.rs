@@ -7,13 +7,14 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use std::ffi::CStr;
+use std::ffi::{CString, CStr};
+use std::ptr;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
 use logic::output_mint_config::OutputMintConfig;
-use utils::ffi_support::str_from_char_ptr;
+use utils::ffi_support::{str_from_char_ptr, str_to_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 
 /// This method generates private part of payment address
@@ -53,16 +54,19 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
 
     let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(json_config_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure ,
+        Err(_) => return ErrorCode::CommonInvalidStructure,
     };
 
     // TODO:  once we get wallet id in the input, we will want to update create_payment_address
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
     let payment_address = create_payment_address(config);
+    let payment_address_ptr =str_to_char_ptr(payment_address);
 
-    // TODO: convert payment_address to pointer
-    // and call cb(command_handle, ErrorCode::Success, None);
+    match cb {
+        Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+        None => panic!("cb was null even after check"),
+    };
 
     return ErrorCode::Success;
 }

@@ -1,15 +1,15 @@
 //! general helper methods.   Dont go nuts and add everything under the sun here.
-//! general rule if its multiple similar functions (or data) it should be in its own
-//! module.  keep these organized too please.
+//! As a general rule if you are adding multiple functions of similar behavior (or data)
+//! it should be in its own module.  keep these organized too please.
 
 
-/*
-    Given an u8 array of 0 to any length, convert it to an Option type where
-    a zero length array becomes Option<None>
-
-    inputs:  &[u8]
-    outputs: Option<&[u8]>
-*/
+///    Given an u8 array of 0 to any length, convert it to an Option type where
+///    a zero length array becomes Option<None>
+///
+///    # Parmeters
+///    inputs:  &[u8]
+///    # Return
+///    outputs: Option<&[u8]>
 pub fn some_or_none_option_u8(data : &[u8]) -> Option<&[u8]> {
     if 0 == data.len() {
         return None;
@@ -18,15 +18,14 @@ pub fn some_or_none_option_u8(data : &[u8]) -> Option<&[u8]> {
     return Some(data);
 }
 
-/*
-  for a str, this trait adds string manipulation functions
-  to ease the work of dealing with strings
-*/
+
+///  for a str, this trait adds string manipulation functions
+///  to ease the work of dealing with strings
 pub trait StringUtils {
     fn from_right(&self, count : usize) -> String;
 }
 
-// this impl adds StringUtils to any str
+/// this impl adds StringUtils to any str
 impl<'a> StringUtils for &'a str {
     fn from_right(&self, count : usize) -> String {
         let len = self.chars().count();
@@ -55,6 +54,25 @@ impl<'a> StringUtils for &'a str {
 mod general_tests {
 
     use utils::general::StringUtils;
+    use utils::general::some_or_none_option_u8;
+
+    #[test]
+    fn success_empty_u8_array_becomes_option_none() {
+        let data = String::new();
+
+        let results = some_or_none_option_u8(data.as_bytes());
+
+        assert_eq!(true, results.is_none(), "some_or_none_option_u8 failed to return None");
+    }
+
+    #[test]
+    fn success_u8_array_becomes_option_some() {
+        let data = "1234567890".to_string();
+
+        let results = some_or_none_option_u8(data.as_bytes());
+
+        assert_eq!(true, results.is_some(), "some_or_none_option_u8 failed to return Some");
+    }
 
     #[test]
     fn success_get_right_4_chars() {
