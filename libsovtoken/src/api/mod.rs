@@ -296,8 +296,9 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
 
     let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure ,
+        Err(_) =>  return ErrorCode::CommonInvalidStructure ,
     };
+    //OutputMintConfig::from_json(outputs_json_str).unwrap();
 
 
     return ErrorCode::Success;
