@@ -14,17 +14,18 @@ pub struct OutputMintConfig {
     pub outputs: Vec<Output>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct MintRequest<'a> {
-    ty: &'static str,
+    #[serde(rename = "type")]
+    txn_type: &'static str,
     outputs: &'a Vec<(String, u32)>,
     signatures: Vec<String>,
 }
-
+ 
 impl<'a> MintRequest<'a> {
     fn new(outputs: &'a Vec<Output>) -> Self {
         return MintRequest {
-            ty: "1001",
+            txn_type: "1001",
             outputs: &outputs,
             signatures: Vec::new(),
         };
@@ -56,7 +57,8 @@ mod output_mint_config_test {
 mod mint_request_test {
     use super::*;
     use std::ffi::CString;
-    use utils::ffi_support::{char_ptr_from_str};
+    use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
+    use utils::json_conversion::{JsonSerialize};
 
     #[test]
     fn invalid_outputs() {
@@ -74,13 +76,10 @@ mod mint_request_test {
         let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
         let mut mint = MintRequest::new(&outputs);
         mint.sign("my_totally_random_key");
-        let result = str_from_char_ptr(mint.serialize_to_c_char()).unwrap();
+        let cstring = mint.serialize_to_cstring();
+        let result = str_from_char_ptr(cstring.as_ptr()).unwrap();
 
-        let expected = r#"
-            "type": "101",
-            "outputs": [("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 10)],
-            "signatures": ["000my_totally_random_key"]
-        "#;
+        let expected = r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":["000my_totally_random_key"]}"#;
 
         assert_eq!(result, expected);
     }
