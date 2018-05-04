@@ -1,8 +1,7 @@
-//
-// defines structure and implementation for OutputMintConfig which is used
-// for minting tokens 
-// these are the structures for the outputs taken in by 'build_mint_txn_handler'
-// in the JSON format {'output': [['address', 10]]}
+/*!
+    Defines structure and implementation for OutputMintConfig and MintRequest
+    these are the structures for the 'build_mint_txn_handler'
+ */
 
 
 use logic::request::Request;
@@ -59,6 +58,7 @@ mod mint_request_test {
     use std::ffi::CString;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
     use utils::json_conversion::{JsonSerialize};
+
 
     #[test]
     fn invalid_outputs() {
