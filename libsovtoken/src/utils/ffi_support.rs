@@ -14,7 +14,6 @@ use libc::c_char;
 // utility method for converting const char * to a str.  Returns None
 // if the input is invalid
 pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
-
     if str_ptr.is_null() {
         return None;
     }
@@ -24,9 +23,8 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     return Some(str_slice);
 }
 
-// utility method for converting string to const char *
-pub fn str_to_char_ptr(data: String ) -> *const c_char {
-    return CString::new(data).unwrap().as_ptr();
+pub fn cstring_from_str(string: String) -> CString {
+    return CString::new(string).unwrap();
 }
 
 /**
