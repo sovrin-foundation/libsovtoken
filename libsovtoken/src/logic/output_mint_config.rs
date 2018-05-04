@@ -8,6 +8,10 @@ use logic::request::Request;
 
 type Output = (String, u32);
 
+
+#![warn(unused_imports)]
+#[allow(unused_imports)]
+
 #[derive(Serialize, Deserialize)]
 pub struct OutputMintConfig {
     pub outputs: Vec<Output>,

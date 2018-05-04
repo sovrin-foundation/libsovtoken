@@ -2,7 +2,11 @@
 // this module contains functions that assist with std::ffi related behaviors
 // such as: converting const char * to str
 //
-use std::ffi::{CStr, CString};
+#![allow(unused_variables)]
+#![allow(unused_imports)]
+#[warn(unused_imports)]
+
+use std::ffi::{CString, CStr};
 use std::str::Utf8Error;
 use libc::c_char;
 
