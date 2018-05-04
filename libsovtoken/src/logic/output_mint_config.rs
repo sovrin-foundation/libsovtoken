@@ -9,7 +9,7 @@ use logic::request::Request;
 type Output = (String, u32);
 
 
-#![warn(unused_imports)]
+#[warn(unused_imports)]
 #[allow(unused_imports)]
 
 #[derive(Serialize, Deserialize)]

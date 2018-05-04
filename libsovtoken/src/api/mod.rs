@@ -14,7 +14,7 @@ use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
 use logic::output_mint_config::OutputMintConfig;
-use utils::ffi_support::{str_from_char_ptr, str_to_char_ptr};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
 use utils::json_conversion::JsonDeserialize;
 
 /// This method generates private part of payment address
@@ -61,7 +61,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
     let payment_address = create_payment_address(config);
-    let payment_address_ptr =str_to_char_ptr(payment_address);
+    let payment_address_cstring = cstring_from_str(payment_address);
+    let payment_address_ptr = payment_address_cstring.as_ptr();
 
     match cb {
         Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
