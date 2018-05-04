@@ -17,6 +17,7 @@ use logic::output_mint_config::OutputMintConfig;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
 use utils::json_conversion::JsonDeserialize;
 
+/// # Description
 /// This method generates private part of payment address
 /// and stores it in a secure place. Ideally it should be
 /// secret in libindy wallet (see crypto module).
@@ -26,7 +27,7 @@ use utils::json_conversion::JsonDeserialize;
 ///
 /// from tokens-interface.md/CreatePaymentAddressCB
 ///
-/// #Params
+/// # Params
 /// command_handle: command handle to map callback to context
 /// config_str: payment address config as json:
 ///   {
@@ -34,11 +35,11 @@ use utils::json_conversion::JsonDeserialize;
 ///   }
 /// cb: description
 ///
-/// #Returns
+/// # Returns
 /// on Success:  payment_address will have the format:
 ///              pay:sov:{32 byte public key}{4 digit check sum}
 ///
-/// #Errors
+/// # Errors
 /// description of errors
 #[no_mangle]
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
