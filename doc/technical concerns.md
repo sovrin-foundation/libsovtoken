@@ -12,7 +12,7 @@ See each of the below sub-items for proposed solutions
 > `Proposed solution`:  have the APIs return i32 for codes.  0 always means success.  Anything else is value that means
 something to the plugin
 
-### Duplication of code
+### Circular build references vs Duplication of code
 > `Proposed solution`:  put shared code into a separate library/crate and have indy-sdk and libsovtoken reference on the
 shared library
 
