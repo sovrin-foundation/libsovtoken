@@ -14,9 +14,10 @@ use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
 use logic::output_mint_config::OutputMintConfig;
-use utils::ffi_support::{str_from_char_ptr, str_to_char_ptr};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
 use utils::json_conversion::JsonDeserialize;
 
+/// # Description
 /// This method generates private part of payment address
 /// and stores it in a secure place. Ideally it should be
 /// secret in libindy wallet (see crypto module).
@@ -26,7 +27,7 @@ use utils::json_conversion::JsonDeserialize;
 ///
 /// from tokens-interface.md/CreatePaymentAddressCB
 ///
-/// #Params
+/// # Params
 /// command_handle: command handle to map callback to context
 /// config_str: payment address config as json:
 ///   {
@@ -34,11 +35,11 @@ use utils::json_conversion::JsonDeserialize;
 ///   }
 /// cb: description
 ///
-/// #Returns
+/// # Returns
 /// on Success:  payment_address will have the format:
 ///              pay:sov:{32 byte public key}{4 digit check sum}
 ///
-/// #Errors
+/// # Errors
 /// description of errors
 #[no_mangle]
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
@@ -46,7 +47,7 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
     // TODO:  missing wallet id
 
-    if false == cb.is_some() {
+    if cb.is_none() {
         return ErrorCode::CommonInvalidParam3;
     }
 
@@ -61,7 +62,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
     let payment_address = create_payment_address(config);
-    let payment_address_ptr =str_to_char_ptr(payment_address);
+    let payment_address_cstring = cstring_from_str(payment_address);
+    let payment_address_ptr = payment_address_cstring.as_ptr();
 
     match cb {
         Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
@@ -313,7 +315,6 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
         Ok(c) => c,
         Err(_) => return ErrorCode::CommonInvalidStructure ,
     };
-
 
     return ErrorCode::Success;
 }

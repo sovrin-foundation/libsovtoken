@@ -8,24 +8,46 @@
 #[allow(unused_imports)]
 
 extern crate libc;
+extern crate rand;
 
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
 
 use libc::c_char;
+use rand::Rng;
 use std::ptr;
 use std::ffi::CString;
 use std::thread;
 
 use indy::api::ErrorCode;
+use sovtoken::utils::ffi_support::str_from_char_ptr;
+use sovtoken::logic::payment_address_config::PaymentAddressConfig;
+use sovtoken::utils::json_conversion::*;
 
 // ***** HELPER TEST DATA  *****
 const COMMAND_HANDLE: i32 = 10;
+static VALID_SEED_LEN: usize = 32;
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{"seed":""}"#;
+static mut CallBack_Payment_Address: Option<String> = None;
 
 // ***** HELPER METHODS  *****
+// helper methods
+fn rand_string(length : usize) -> String {
+    let s = rand::thread_rng()
+            .gen_ascii_chars()
+            .take(length)
+            .collect::<String>();
+
+    return s;
+}
+
 extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) { }
+
+extern "C" fn test_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
+    let payment : &str = str_from_char_ptr(payment_address).unwrap();
+    unsafe { CallBack_Payment_Address = Some(payment.to_string()) };
+}
 
 // ***** UNIT TESTS *****
 
@@ -67,12 +89,14 @@ fn errors_with_invalid_config_json() {
 #[test]
 fn successfully_creates_payment_address_with_no_seed() {
 
+    unsafe { CallBack_Payment_Address = None };
+
     let handle = thread::spawn(||{
 
         let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
         let config_str_ptr = config_str.as_ptr();
 
-        let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_create_payment_callback);
+        let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(test_create_payment_callback);
 
         let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
     });
@@ -80,7 +104,47 @@ fn successfully_creates_payment_address_with_no_seed() {
 
     handle.join().unwrap();
 
-    unimplemented!();
+    unsafe {
+        match CallBack_Payment_Address {
+            Some(ref mut s) => assert!(s.len() >= 32, "callback did not receive valid payment address"),
+            None => assert!(false, "callback did not receive payment address"),
+        };
+    }
+
+}
+
+// this test passes valid parameters including a seed value for the key.  The callback is invoked and a valid payment address
+// is returned in the call back.  The payment address format is described in
+// create_payment_address_handler
+#[test]
+fn success_callback_is_called() {
+
+    unsafe { CallBack_Payment_Address = None };
+
+
+    let handle = thread::spawn(||{
+
+        let seed = rand_string(VALID_SEED_LEN);
+        let config: PaymentAddressConfig = PaymentAddressConfig { seed, };
+
+        let config_str =  CString::new(config.to_json().unwrap()).unwrap();
+        let config_str_ptr = config_str.as_ptr();
+
+        let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(test_create_payment_callback);
+
+        let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
+    });
+
+
+    handle.join().unwrap();
+
+    unsafe {
+        match CallBack_Payment_Address {
+            Some(ref mut s) => assert!(s.len() >= 32, "callback did not receive valid payment address"),
+            None => assert!(false, "callback did not receive payment address"),
+        };
+    }
+
 }
 
 // TODO:  the private address needs to be saved in the wallet.  if the wallet id
@@ -91,11 +155,7 @@ fn error_when_wallet_cannot_be_accessed() {
     unimplemented!();
 }
 
-// TODO: this test passes valid parameters.  the expectation is the callback is invoked
-#[test]
-fn success_callback_is_called() {
-    unimplemented!();
-}
+
 
 
 
