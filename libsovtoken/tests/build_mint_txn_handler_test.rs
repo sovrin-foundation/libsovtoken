@@ -2,6 +2,8 @@ extern crate libc;
 
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
+#[macro_use]
+extern crate serde_json;
 
 use libc::c_char;
 use std::ptr;
@@ -49,17 +51,30 @@ fn errors_with_invalid_outputs_json() {
 
 #[test]
 fn valid_output_json() {
+    static mut CALLBACK_CALLED: bool = false;
     extern fn valid_output_json_cb(command_handle: i32, error_code: ErrorCode, mint_request: *const c_char) {
+        unsafe { CALLBACK_CALLED = true; }
         assert_eq!(command_handle, COMMAND_HANDLE);
         assert_eq!(error_code, ErrorCode::Success);
-        let mint_request_as_json = str_from_char_ptr(mint_request).unwrap();
-        let expected = r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":[]}"#;
-        assert_eq!(mint_request_as_json, expected);
+        let mint_request_json_string = str_from_char_ptr(mint_request).unwrap();
+        let mint_request_json_value : serde_json::Value = serde_json::from_str(mint_request_json_string).unwrap();
+        let mint_operation = mint_request_json_value
+            .get("operation")
+            .unwrap();
+
+        let expected = json!({
+            "type": "1001",
+            "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
+        });
+        assert_eq!(mint_operation, &expected);
     }
 
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, outputs_str_ptr, Some(valid_output_json_cb));
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
+    unsafe {
+        assert!(CALLBACK_CALLED);
+    }
 }
 
