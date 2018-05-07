@@ -3,7 +3,7 @@
 
 use serde::{Serialize, Deserialize};
 
-type fee =  (String, u32, String)
+type Fee =  (String, u32, String);
 
 #[derive(Serialize, Deserialize)]
 pub struct Signatures {
@@ -14,8 +14,8 @@ pub struct Signatures {
 
 #[derive(Serialize, Deserialize)]
 pub struct FeesConfig {
-
     txn_type: u32,
     signatures: Signatures,
-    fees: Vec<fee>
+    fees: Vec<Fee>,
+
 }
