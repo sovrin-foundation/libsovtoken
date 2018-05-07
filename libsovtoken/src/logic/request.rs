@@ -1,4 +1,3 @@
-use libc::c_char;
 use std::ffi::CString;
 use utils::ffi_support::cstring_from_str;
 use serde::Serialize;
