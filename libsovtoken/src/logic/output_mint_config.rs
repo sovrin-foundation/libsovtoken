@@ -1,6 +1,8 @@
 /*!
-    Defines structure and implementation for OutputMintConfig and MintRequest
-    these are the structures for the 'build_mint_txn_handler'
+ *  Defines structure and implementation for OutputMintConfig and MintRequest
+ *  these are the structures for the [`build_mint_txn_handler`]
+ * 
+ *  [`build_mint_txn_handler`]: ../../api/fn.build_mint_txn_handler.html
  */
 
 
@@ -8,34 +10,53 @@ use logic::request::Request;
 
 type Output = (String, u32);
 
-
-#[warn(unused_imports)]
-#[allow(unused_imports)]
-
+/**
+ *  Json config to customize [`build_mint_txn_handler`]
+ *  
+ *  [`build_mint_txn_handler`]: ../../api/fn.build_mint_txn_handler.html
+ */
 #[derive(Serialize, Deserialize)]
 pub struct OutputMintConfig {
     pub outputs: Vec<Output>,
 }
 
 #[derive(Serialize, Debug)]
-struct MintRequest<'a> {
+pub struct MintRequest {
     #[serde(rename = "type")]
     txn_type: &'static str,
-    outputs: &'a Vec<(String, u32)>,
+    outputs: Vec<(String, u32)>,
     signatures: Vec<String>,
 }
- 
-impl<'a> MintRequest<'a> {
-    fn new(outputs: &'a Vec<Output>) -> Self {
+
+/**
+ * A struct that can be transformed into a Mint JSON object.
+ */
+impl MintRequest {
+
+    /**
+     * Creates a new `MintRequest` with `outputs`
+     */
+    pub fn new(outputs: Vec<Output>) -> Self {
         return MintRequest {
             txn_type: "1001",
-            outputs: &outputs,
+            outputs: outputs,
             signatures: Vec::new(),
         };
     }
 }
 
-impl<'a> Request for MintRequest<'a> {
+impl From<OutputMintConfig> for MintRequest {
+
+    /**
+     * Creates a `MintRequest` from an [`OutputMintConfig`].
+     */
+    fn from(mint_config: OutputMintConfig) -> Self {
+        return MintRequest::new(mint_config.outputs);
+    }
+}
+
+// TODO: Actually sign the Request
+impl Request for MintRequest {
     fn sign(&mut self, key: &str) -> bool {
         self.signatures.push(format!("000{}", key));
         return true;
@@ -59,32 +80,46 @@ mod output_mint_config_test {
 #[cfg(test)]
 mod mint_request_test {
     use super::*;
-    use std::ffi::CString;
-    use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
-    use utils::json_conversion::{JsonSerialize};
+    use utils::ffi_support::str_from_char_ptr;
 
+    fn initial_mint_request() -> MintRequest {
+        let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
+        return MintRequest::new(outputs);
+    }
 
-    #[test]
-    fn invalid_outputs() {
-        unimplemented!();
+    fn assert_mint_request<F>(expected: &str, f: F)
+        where F: Fn(&mut MintRequest) -> ()
+    {
+        let mut mint_req = initial_mint_request();
+        f(&mut mint_req);
+        let mint_req_c_string = mint_req.serialize_to_cstring();
+        let mint_req_unserialized_c_string = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
+        assert_eq!(mint_req_unserialized_c_string, expected);
     }
 
     #[test]
     fn unsigned_request() {
-        unimplemented!();
+        assert_mint_request(
+            r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":[]}"#,
+            |_mint_req| {}
+        );
     }
 
-    // TODO: Use wallet key.
+    #[test]
+    fn create_request_with_mint_config() {
+        let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
+        let mint_config = OutputMintConfig {
+            outputs: outputs.clone()
+        };
+        let request = MintRequest::from(mint_config);
+        assert_eq!(request.outputs, outputs);
+    }
+
     #[test]
     fn valid_request() {
-        let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
-        let mut mint = MintRequest::new(&outputs);
-        mint.sign("my_totally_random_key");
-        let cstring = mint.serialize_to_cstring();
-        let result = str_from_char_ptr(cstring.as_ptr()).unwrap();
-
-        let expected = r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":["000my_totally_random_key"]}"#;
-
-        assert_eq!(result, expected);
+        assert_mint_request(
+            r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":["000my_totally_random_key"]}"#,
+            |mint_req| { mint_req.sign("my_totally_random_key"); }
+        );
     }
 }
