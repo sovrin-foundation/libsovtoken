@@ -80,6 +80,7 @@ mod output_mint_config_test {
 #[cfg(test)]
 mod mint_request_test {
     use super::*;
+    use serde_json;
     use utils::ffi_support::str_from_char_ptr;
 
     fn initial_mint_request() -> MintRequest {
@@ -87,20 +88,25 @@ mod mint_request_test {
         return MintRequest::new(outputs);
     }
 
-    fn assert_mint_request<F>(expected: &str, f: F)
+    fn assert_mint_request<F>(expected: serde_json::Value, f: F)
         where F: Fn(&mut MintRequest) -> ()
     {
         let mut mint_req = initial_mint_request();
         f(&mut mint_req);
         let mint_req_c_string = mint_req.serialize_to_cstring();
-        let mint_req_unserialized_c_string = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
-        assert_eq!(mint_req_unserialized_c_string, expected);
+        let mint_req_json_str = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
+        let mint_req_json_value : serde_json::Value = serde_json::from_str(mint_req_json_str).unwrap();
+        assert_eq!(mint_req_json_value, expected);
     }
 
     #[test]
     fn unsigned_request() {
         assert_mint_request(
-            r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":[]}"#,
+            json!({
+                "type": "1001",
+                "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
+                "signatures": []
+            }),
             |_mint_req| {}
         );
     }
@@ -118,7 +124,11 @@ mod mint_request_test {
     #[test]
     fn valid_request() {
         assert_mint_request(
-            r#"{"type":"1001","outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],"signatures":["000my_totally_random_key"]}"#,
+            json!({
+                "type": "1001",
+                "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
+                "signatures": ["000my_totally_random_key"]
+            }),
             |mint_req| { mint_req.sign("my_totally_random_key"); }
         );
     }
