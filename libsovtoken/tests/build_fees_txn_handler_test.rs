@@ -13,13 +13,13 @@ use std::ffi::CString;
 use indy::api::ErrorCode;
 
 // ***** HELPER METHODS *****
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) { }
+extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char) { }
 
 // ***** HELPER TEST DATA  *****
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-const cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_create_payment_callback);
+const cb : Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)> = Some(empty_create_payment_callback);
 
 // ***** UNIT TESTS ****
 
@@ -42,7 +42,7 @@ fn errors_with_no_fees_json() {
 #[test]
 fn errors_with_invalid_fees_json() {
     let fees_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
-    let output_str_ptr = output_str.as_ptr();
-    let return_error = sovtoken::api::build_fees_txn_handler(COMMAND_HANDLE, output_str_ptr, cb);
+    let fees_str_ptr = fees_str.as_ptr();
+    let return_error = sovtoken::api::build_fees_txn_handler(COMMAND_HANDLE, fees_str_ptr, cb);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'build_fees_txn_handler'");
 }
