@@ -35,7 +35,7 @@ impl MintRequest {
     /**
      * Creates a new `MintRequest` with `outputs`
      */
-    pub fn new<'a>(outputs: Vec<Output>, did: String) -> Request<MintRequest> {
+    pub fn new(outputs: Vec<Output>, did: String) -> Request<MintRequest> {
         let mint = MintRequest {
             txn_type: "1001",
             outputs: outputs,
@@ -44,7 +44,7 @@ impl MintRequest {
         return Request::new(mint, did);
     }
 
-    pub fn from_config<'a>(mint_config: OutputMintConfig, did: String) -> Request<MintRequest> {
+    pub fn from_config(mint_config: OutputMintConfig, did: String) -> Request<MintRequest> {
         return MintRequest::new(mint_config.outputs, did);
     }
 }
