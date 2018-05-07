@@ -3,14 +3,6 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-extern crate libc;
-extern crate rand;
-
-extern crate indy;                      // lib-sdk project
-
-use self::rand::Rng;
-use std::panic;
-
 use std::str;
 use log;
 
@@ -18,7 +10,6 @@ use super::payment_address_config::PaymentAddressConfig;
 use libraries::sodium::{CryptoEngine};
 use libraries::rust_base58::Base58;
 use utils::general::some_or_none_option_u8;
-use utils::general::StringUtils;
 
 // statics that make up parts of the payment address
 pub static PAY_INDICATOR: &'static str = "pay";
@@ -70,7 +61,13 @@ pub fn create_payment_address(config: PaymentAddressConfig) -> String {
 
 #[cfg(test)]
 mod payments_tests {
+    extern crate rand;
+    use self::rand::Rng;
+    use std::panic;
+    use utils::general::StringUtils;
+
     use super::*;
+
 
     static VALID_ADDRESS_LEN: usize = 32;
     static VALID_SEED_LEN: usize = 32;
