@@ -237,6 +237,15 @@ pub extern "C" fn build_fees_txn_handler(command_handle: i32,
                                          cb: Option<extern fn(command_handle_: i32,
                                                            err: ErrorCode,
                                                            set_txn_fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+    if cb.is_some() == false {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    let outputs_json_str : &str = unpack_c_string_or_error!(fees_json, ErrorCode::CommonInvalidParam2);
+
+    
+    
+    
     return ErrorCode::Success;
 }
 

@@ -22,7 +22,7 @@ static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobb
 static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
 const cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_create_payment_callback);
 
-// ***** UNIT TESTS *****
+// ***** UNIT TESTS ****
 
 // the build_mint_txn_handler requires a callback and this test ensures that we
 // receive an error when no callback is provided
@@ -41,7 +41,7 @@ fn errors_with_no_outputs_json() {
 }
 
 // // the mint txn handler method requires a valid JSON format (format is described
-// in build_mint_txn_handler description).  Expecting error when invalid json is inputted
+// in build_mint_fees_handler description).  Expecting error when invalid json is inputted
 #[test]
 fn errors_with_invalid_outputs_json() {
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
