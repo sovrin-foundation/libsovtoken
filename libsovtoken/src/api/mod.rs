@@ -295,7 +295,7 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
         Err(_) => return ErrorCode::CommonInvalidStructure,
     };
 
-    let mint_request = MintRequest::from(outputs_config);
+    let mint_request = MintRequest::from_config(outputs_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
     let mint_request = mint_request.serialize_to_cstring();
 
     if cb.is_some() {

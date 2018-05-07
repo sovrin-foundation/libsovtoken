@@ -20,12 +20,11 @@ pub struct OutputMintConfig {
     pub outputs: Vec<Output>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct MintRequest {
     #[serde(rename = "type")]
     txn_type: &'static str,
     outputs: Vec<(String, u32)>,
-    signatures: Vec<String>,
 }
 
 /**
@@ -36,30 +35,17 @@ impl MintRequest {
     /**
      * Creates a new `MintRequest` with `outputs`
      */
-    pub fn new(outputs: Vec<Output>) -> Self {
-        return MintRequest {
+    pub fn new<'a>(outputs: Vec<Output>, did: String) -> Request<MintRequest> {
+        let mint = MintRequest {
             txn_type: "1001",
             outputs: outputs,
-            signatures: Vec::new(),
         };
+
+        return Request::new(mint, did);
     }
-}
 
-impl From<OutputMintConfig> for MintRequest {
-
-    /**
-     * Creates a `MintRequest` from an [`OutputMintConfig`].
-     */
-    fn from(mint_config: OutputMintConfig) -> Self {
-        return MintRequest::new(mint_config.outputs);
-    }
-}
-
-// TODO: Actually sign the Request
-impl Request for MintRequest {
-    fn sign(&mut self, key: &str) -> bool {
-        self.signatures.push(format!("000{}", key));
-        return true;
+    pub fn from_config<'a>(mint_config: OutputMintConfig, did: String) -> Request<MintRequest> {
+        return MintRequest::new(mint_config.outputs, did);
     }
 }
 
@@ -82,21 +68,29 @@ mod mint_request_test {
     use super::*;
     use serde_json;
     use utils::ffi_support::str_from_char_ptr;
+    use std::collections::HashMap;
+    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
-    fn initial_mint_request() -> MintRequest {
+    fn initial_mint_request() -> Request<MintRequest> {
         let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
-        return MintRequest::new(outputs);
+        let did = String::from("EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU");
+        return MintRequest::new(outputs, did);
     }
 
-    fn assert_mint_request<F>(expected: serde_json::Value, f: F)
-        where F: Fn(&mut MintRequest) -> ()
+    fn assert_mint_request<F>(expected: serde_json::Value, signatures: HashMap<String, String>, f: F)
+        where F: Fn(&mut Request<MintRequest>) -> ()
     {
         let mut mint_req = initial_mint_request();
         f(&mut mint_req);
         let mint_req_c_string = mint_req.serialize_to_cstring();
         let mint_req_json_str = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
-        let mint_req_json_value : serde_json::Value = serde_json::from_str(mint_req_json_str).unwrap();
-        assert_eq!(mint_req_json_value, expected);
+        let deserialized_mint_request: Request<MintRequest> = serde_json::from_str(mint_req_json_str).unwrap();
+        assert_eq!(deserialized_mint_request.identifier, "EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU");
+        assert_eq!(deserialized_mint_request.signatures, signatures);
+
+        let expected_json_str = expected.to_string();
+        let operation_json_value : serde_json::Value = serde_json::from_str(&deserialized_mint_request.operation.to_json().unwrap()).unwrap();
+        assert_eq!(operation_json_value, expected);
     }
 
     #[test]
@@ -105,8 +99,8 @@ mod mint_request_test {
             json!({
                 "type": "1001",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
-                "signatures": []
             }),
+            HashMap::new(),
             |_mint_req| {}
         );
     }
@@ -117,19 +111,24 @@ mod mint_request_test {
         let mint_config = OutputMintConfig {
             outputs: outputs.clone()
         };
-        let request = MintRequest::from(mint_config);
-        assert_eq!(request.outputs, outputs);
+        let request = MintRequest::from_config(mint_config, String::from("EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU"));
+        assert_eq!(request.operation.outputs, outputs);
     }
 
     #[test]
     fn valid_request() {
+        let mut sigs = HashMap::new();
+        sigs.insert(String::from("afesfghiofFiASaseUFeaeqiwtquDubwr"), String::from("000glgaeht3wFSdnsjBF23taweLDSUH"));
+
         assert_mint_request(
             json!({
                 "type": "1001",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
-                "signatures": ["000my_totally_random_key"]
             }),
-            |mint_req| { mint_req.sign("my_totally_random_key"); }
+            sigs,
+            |mint_req| {
+                mint_req.sign("afesfghiofFiASaseUFeaeqiwtquDubwr", "glgaeht3wFSdnsjBF23taweLDSUH");
+            }
         );
     }
 }

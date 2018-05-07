@@ -58,12 +58,15 @@ fn valid_output_json() {
         assert_eq!(error_code, ErrorCode::Success);
         let mint_request_json_string = str_from_char_ptr(mint_request).unwrap();
         let mint_request_json_value : serde_json::Value = serde_json::from_str(mint_request_json_string).unwrap();
+        let mint_operation = mint_request_json_value
+            .get("operation")
+            .unwrap();
+
         let expected = json!({
             "type": "1001",
-            "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
-            "signatures": []
+            "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
         });
-        assert_eq!(mint_request_json_value, expected);
+        assert_eq!(mint_operation, &expected);
     }
 
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
