@@ -7,13 +7,12 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use std::ffi::{CString, CStr};
-use std::ptr;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
-use logic::output_mint_config::OutputMintConfig;
+use logic::output_mint_config::{OutputMintConfig, MintRequest};
+use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
 use utils::json_conversion::JsonDeserialize;
 
@@ -287,21 +286,11 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
 }
 
 
-/// Description
-///
-/// from tokens-interface.md/BuildMintReqCB
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
+/// Builds a Mint Request to mint tokens
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)>)-> ErrorCode {
-    if cb.is_some() == false {
+    if cb.is_none() {
         return ErrorCode::CommonInvalidParam3;
     }
 
@@ -309,8 +298,15 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
 
     let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure ,
+        Err(_) => return ErrorCode::CommonInvalidStructure,
     };
+
+    let mint_request = MintRequest::from(outputs_config);
+    let mint_request = mint_request.serialize_to_cstring();
+
+    if cb.is_some() {
+        cb.unwrap()(command_handle, ErrorCode::Success, mint_request.as_ptr());
+    }
 
     return ErrorCode::Success;
 }
