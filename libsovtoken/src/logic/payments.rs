@@ -4,7 +4,7 @@
 #[warn(unused_imports)]
 
 use libc::c_char;
-use log;
+use log::*;
 use serde::{Serialize, Deserialize};
 use std::{str, thread};
 use std::ffi::{CString};
@@ -103,9 +103,13 @@ pub fn create_payment_address(command_handle: i32, wallet_id: i32, config: Payme
 #[cfg(test)]
 mod payments_tests {
     extern crate rand;
+    extern crate log;
+    
     use self::rand::Rng;
+    use log::*;
     use std::panic;
     use utils::general::StringUtils;
+    use utils::logger::ConsoleLogger;
 
     use super::*;
 
@@ -116,6 +120,7 @@ mod payments_tests {
     static CHECKSUM_LEN: usize = 4;
     static WALLET_ID: i32 = 10;
     static COMMAND_HANDLE: i32 = 10;
+    static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
 
     // helper methods
     fn rand_string(length : usize) -> String {
@@ -137,6 +142,9 @@ mod payments_tests {
     // a fully formatted address is returned.
     #[test]
     fn success_create_payment_with_seed_returns_address() {
+
+        log::set_logger(&TESTING_LOGGER);
+        log::set_max_level(LevelFilter::Trace);
 
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };

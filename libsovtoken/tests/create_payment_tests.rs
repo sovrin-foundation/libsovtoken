@@ -15,8 +15,6 @@ extern crate rand;
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
 
-
-
 use libc::c_char;
 use log::*;
 use rand::Rng;
