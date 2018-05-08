@@ -11,7 +11,7 @@ use std::str::Utf8Error;
 use libc::c_char;
 
 
-// utility method for converting const char * to a str.  Returns None
+// utility method for converting *const c_char a &str.  Returns None
 // if the input is invalid
 pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     if str_ptr.is_null() {
@@ -22,6 +22,21 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     let str_slice: &str = c_str.to_str().unwrap();
     return Some(str_slice);
 }
+
+
+// utility method for converting *const c_char a String.  Returns None
+// if the input is invalid
+pub fn string_from_char_ptr(str_ptr: *const c_char) -> Option<String> {
+    if str_ptr.is_null() {
+        return None;
+    }
+
+    let c_str: &CStr = unsafe { CStr::from_ptr(str_ptr)};
+    let str_slice: &str = c_str.to_str().unwrap();
+    return Some(str_slice.to_string());
+}
+
+
 
 pub fn cstring_from_str(string: String) -> CString {
     return CString::new(string).unwrap();

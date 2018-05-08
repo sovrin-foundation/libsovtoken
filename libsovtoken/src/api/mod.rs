@@ -13,7 +13,7 @@ use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
 use logic::request::Request;
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 
 /// # Description
@@ -50,17 +50,26 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let json_config_str: &str = unpack_c_string_or_error!(config_str, ErrorCode::CommonInvalidParam2);
+    if config_str.is_null() {
+        return ErrorCode::CommonInvalidParam2
+    }
 
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(json_config_str) {
+    let json_config_str: String = match string_from_char_ptr(config_str) {
+        Some(s) => s,
+        None => return ErrorCode::CommonInvalidParam2
+    };
+
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
         Ok(c) => c,
         Err(_) => return ErrorCode::CommonInvalidStructure,
     };
 
+
     // TODO:  once we get wallet id in the input, we will want to update create_payment_address
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
-    let payment_address = create_payment_address(config);
+    // let payment_address = create_payment_address(0, config_str);
+    let payment_address = create_payment_address(0, config);
     let payment_address_cstring = cstring_from_str(payment_address);
     let payment_address_ptr = payment_address_cstring.as_ptr();
 
