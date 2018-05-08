@@ -137,9 +137,7 @@ mod payments_tests {
     // a fully formatted address is returned.
     #[test]
     fn success_create_payment_with_seed_returns_address() {
-
-        env_logger::init().unwrap();
-
+        
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 

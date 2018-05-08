@@ -120,7 +120,6 @@ fn successfully_creates_payment_address_with_no_seed() {
         let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
     }).unwrap();
 
-
     match handle.join() {
         Err(e) => println!("thread error {:?}", e),
         _ => (),
