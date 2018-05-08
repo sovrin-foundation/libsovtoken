@@ -51,13 +51,13 @@ fn rand_string(length : usize) -> String {
 extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) { }
 
 extern "C" fn test_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-    let payment : String = string_from_char_ptr(payment_address).unwrap();
-    unsafe { CallBack_Payment_Address = Some(payment.to_string()) };
+    let payment : Option<String> = string_from_char_ptr(payment_address);
+    unsafe { CallBack_Payment_Address2 = payment };
 }
 
 extern "C" fn test_create_payment_callback2(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-    let payment : String = string_from_char_ptr(payment_address).unwrap();
-    unsafe { CallBack_Payment_Address2 = Some(payment.to_string()) };
+    let payment : Option<String> = string_from_char_ptr(payment_address);
+    unsafe { CallBack_Payment_Address2 = payment };
 }
 
 // ***** UNIT TESTS *****
@@ -101,7 +101,8 @@ fn errors_with_invalid_config_json() {
 #[test]
 fn successfully_creates_payment_address_with_no_seed() {
 
-    log::set_logger(&TESTING_LOGGER);
+    // the unwrap is to stop the warning "unused `std::result::Result` which must be used"
+    log::set_logger(&TESTING_LOGGER).unwrap();
     log::set_max_level(LevelFilter::Trace);
 
     trace!("logging started for successfully_creates_payment_address_with_no_seed");
@@ -139,7 +140,8 @@ fn successfully_creates_payment_address_with_no_seed() {
 #[test]
 fn success_callback_is_called() {
 
-    log::set_logger(&TESTING_LOGGER);
+    // the unwrap is to stop the warning "unused `std::result::Result` which must be used"
+    log::set_logger(&TESTING_LOGGER).unwrap();
     log::set_max_level(LevelFilter::Trace);
 
     trace!("logging started for success_callback_is_called");
