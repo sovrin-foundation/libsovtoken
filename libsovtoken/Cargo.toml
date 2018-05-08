@@ -15,7 +15,7 @@ description = "Payment handler for Sovrin tokens in libindy"
 base64 = "0.6.0"
 indy = { git = "https://github.com/hyperledger/indy-sdk.git" }
 libc = "0.2.21"
-log = "0.3.7"
+log = "0.4.1"
 rand = "0.4.2"
 rust-base58 = {version = "0.0.4"}
 serde = "1.0"
