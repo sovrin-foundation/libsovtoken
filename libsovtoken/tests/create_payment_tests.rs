@@ -29,7 +29,7 @@ use sovtoken::utils::json_conversion::*;
 use sovtoken::utils::logger::*;
 
 // ***** HELPER TEST DATA  *****
-const COMMAND_HANDLE: i32 = 10;
+const COMMAND_HANDLE: i32 = 1;
 static VALID_SEED_LEN: usize = 32;
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{"seed":""}"#;
