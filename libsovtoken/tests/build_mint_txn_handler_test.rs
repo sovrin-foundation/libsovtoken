@@ -12,14 +12,12 @@ use sovtoken::utils::ffi_support::str_from_char_ptr;
 
 use indy::api::ErrorCode;
 // ***** HELPER METHODS *****
-extern "C" fn empty_mint_request_cb(_command_handle: i32, _err: ErrorCode, _mint_request: *const c_char) { }
 
 // ***** HELPER TEST DATA  *****
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
-const EMPTY_CB : Option<extern fn(command_handle: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_mint_request_cb);
 
 // ***** UNIT TESTS ****
 
@@ -35,18 +33,32 @@ fn errors_with_no_call_back() {
 // a error is returned when no config is provided
 #[test]
 fn errors_with_no_outputs_json() {
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), EMPTY_CB);
+    static mut CALLBACK_CALLED: bool = false;
+    extern fn cb_no_json(_: i32, error_code: ErrorCode, _: *const c_char) {
+        unsafe { CALLBACK_CALLED = true; }
+        assert_eq!(error_code, ErrorCode::CommonInvalidParam2);
+    }
+
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), Some(cb_no_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_mint_txn_handler'");
+    unsafe { assert!(CALLBACK_CALLED) }
 }
 
 // // the mint txn handler method requires a valid JSON format (format is described
 // in build_mint_fees_handler description).  Expecting error when invalid json is inputted
 #[test]
 fn errors_with_invalid_outputs_json() {
+    static mut CALLBACK_CALLED: bool = false;
+    extern fn cb_invalid_json(_: i32, error_code: ErrorCode, _: *const c_char) {
+        unsafe { CALLBACK_CALLED = true; }
+        assert_eq!(error_code, ErrorCode::CommonInvalidStructure);
+    }
+
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, outputs_str_ptr, EMPTY_CB);
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, outputs_str_ptr, Some(cb_invalid_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'build_mint_txn_handler'");
+    unsafe { assert!(CALLBACK_CALLED) }
 }
 
 #[test]
@@ -63,7 +75,7 @@ fn valid_output_json() {
             .unwrap();
 
         let expected = json!({
-            "type": "1001",
+            "type": "10000",
             "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
         });
         assert_eq!(mint_operation, &expected);

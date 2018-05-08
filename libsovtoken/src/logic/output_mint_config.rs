@@ -37,7 +37,7 @@ impl MintRequest {
      */
     pub fn new(outputs: Vec<Output>, did: String) -> Request<MintRequest> {
         let mint = MintRequest {
-            txn_type: "1001",
+            txn_type: "10000",
             outputs: outputs,
         };
 
@@ -82,13 +82,12 @@ mod mint_request_test {
     {
         let mut mint_req = initial_mint_request();
         f(&mut mint_req);
-        let mint_req_c_string = mint_req.serialize_to_cstring();
+        let mint_req_c_string = mint_req.serialize_to_cstring().unwrap();
         let mint_req_json_str = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
         let deserialized_mint_request: Request<MintRequest> = serde_json::from_str(mint_req_json_str).unwrap();
         assert_eq!(deserialized_mint_request.identifier, "EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU");
         assert_eq!(deserialized_mint_request.signatures, signatures);
 
-        let expected_json_str = expected.to_string();
         let operation_json_value : serde_json::Value = serde_json::from_str(&deserialized_mint_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);
     }
@@ -97,7 +96,7 @@ mod mint_request_test {
     fn unsigned_request() {
         assert_mint_request(
             json!({
-                "type": "1001",
+                "type": "10000",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
             }),
             HashMap::new(),
@@ -122,12 +121,12 @@ mod mint_request_test {
 
         assert_mint_request(
             json!({
-                "type": "1001",
+                "type": "10000",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
             }),
             sigs,
             |mint_req| {
-                mint_req.sign("afesfghiofFiASaseUFeaeqiwtquDubwr", "glgaeht3wFSdnsjBF23taweLDSUH");
+                mint_req.sign("afesfghiofFiASaseUFeaeqiwtquDubwr", "glgaeht3wFSdnsjBF23taweLDSUH").unwrap();
             }
         );
     }

@@ -7,6 +7,7 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
+use std;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
@@ -15,6 +16,7 @@ use logic::output_mint_config::{OutputMintConfig, MintRequest};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
+use utils::general::ResultExtension;
 
 /// # Description
 /// This method generates private part of payment address
@@ -299,23 +301,32 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)>)-> ErrorCode {
+
+    let handle_result = |result: Result<*const c_char, ErrorCode>| {
+        let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
+        if cb.is_some() {
+            let json_pointer = result.unwrap_or(std::ptr::null());
+            cb.unwrap()(command_handle, result_error_code, json_pointer);
+        }
+        return result_error_code;
+    };
+
     if cb.is_none() {
-        return ErrorCode::CommonInvalidParam3;
+        return handle_result(Err(ErrorCode::CommonInvalidParam3));
     }
 
-    let outputs_json_str : &str = unpack_c_string_or_error!(outputs_json, ErrorCode::CommonInvalidParam2);
+    let outputs_json_str = match str_from_char_ptr(outputs_json) {
+        Some(s) => s,
+        None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
+    };
 
     let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure,
+        Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
     let mint_request = MintRequest::from_config(outputs_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
-    let mint_request = mint_request.serialize_to_cstring();
+    let mint_request = mint_request.serialize_to_cstring().unwrap();
 
-    if cb.is_some() {
-        cb.unwrap()(command_handle, ErrorCode::Success, mint_request.as_ptr());
-    }
-
-    return ErrorCode::Success;
+    return handle_result(Ok(mint_request.as_ptr()));
 }

@@ -3,6 +3,25 @@
 //! it should be in its own module.  keep these organized too please.
 
 
+
+pub trait ResultExtension<A> {
+    /**
+     * Unwraps `Ok` or `Err` for a `Result<A, A>`
+     * 
+     * The `Result`'s `Ok` and `Err` need to be the same type.
+    */
+    fn ok_or_err(self) -> A;
+}
+
+impl<A> ResultExtension<A> for Result<A, A> {
+    fn ok_or_err(self) -> A {
+        return match self {
+            Ok(a) => a,
+            Err(a) => a,
+        }
+    }
+}
+
 ///    Given an u8 array of 0 to any length, convert it to an Option type where
 ///    a zero length array becomes Option<None>
 ///
