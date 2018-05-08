@@ -69,7 +69,7 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
     // let payment_address = create_payment_address(0, config_str);
-    let payment_address = create_payment_address(0, config);
+    let payment_address = create_payment_address(command_handle, 0, config);
     let payment_address_cstring = cstring_from_str(payment_address);
     let payment_address_ptr = payment_address_cstring.as_ptr();
 
