@@ -103,7 +103,7 @@ fn errors_with_invalid_config_json() {
 #[test]
 fn successfully_creates_payment_address_with_no_seed() {
 
-    log::set_logger(&MY_LOGGER).unwrap();
+    log::set_logger(&TESTING_LOGGER).unwrap();
     log::set_max_level(LevelFilter::Trace);
 
     trace!("logging started for successfully_creates_payment_address_with_no_seed");
@@ -141,7 +141,7 @@ fn successfully_creates_payment_address_with_no_seed() {
 #[test]
 fn success_callback_is_called() {
 
-    log::set_logger(&MY_LOGGER);
+    log::set_logger(&TESTING_LOGGER);
     log::set_max_level(LevelFilter::Trace);
 
     trace!("logging started for success_callback_is_called");
