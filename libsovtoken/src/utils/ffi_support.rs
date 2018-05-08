@@ -10,9 +10,10 @@ use std::ffi::{CString, CStr};
 use std::str::Utf8Error;
 use libc::c_char;
 
-
-// utility method for converting *const c_char a &str.  Returns None
-// if the input is invalid
+/**
+    utility method for converting *const c_char a &str.  Returns None
+    if the input is invalid
+*/
 pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     if str_ptr.is_null() {
         return None;
@@ -23,17 +24,14 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     return Some(str_slice);
 }
 
-
-// utility method for converting *const c_char a String.  Returns None
-// if the input is invalid
+/**
+    utility method for converting *const c_char a String.  Returns None if the input is invalid
+*/
 pub fn string_from_char_ptr(str_ptr: *const c_char) -> Option<String> {
-    if str_ptr.is_null() {
-        return None;
-    }
-
-    let c_str: &CStr = unsafe { CStr::from_ptr(str_ptr)};
-    let str_slice: &str = c_str.to_str().unwrap();
-    return Some(str_slice.to_string());
+    match str_from_char_ptr(str_ptr) {
+        Some(s) => return Some(s.to_string()),
+        None => return None,
+    };
 }
 
 

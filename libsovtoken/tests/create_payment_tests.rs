@@ -23,7 +23,7 @@ use std::ffi::CString;
 use std::thread;
 
 use indy::api::ErrorCode;
-use sovtoken::utils::ffi_support::str_from_char_ptr;
+use sovtoken::utils::ffi_support::{str_from_char_ptr, string_from_char_ptr};
 use sovtoken::logic::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::json_conversion::*;
 use sovtoken::utils::logger::*;
@@ -51,12 +51,12 @@ fn rand_string(length : usize) -> String {
 extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) { }
 
 extern "C" fn test_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-    let payment : &str = str_from_char_ptr(payment_address).unwrap();
+    let payment : String = string_from_char_ptr(payment_address).unwrap();
     unsafe { CallBack_Payment_Address = Some(payment.to_string()) };
 }
 
 extern "C" fn test_create_payment_callback2(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-    let payment : &str = str_from_char_ptr(payment_address).unwrap();
+    let payment : String = string_from_char_ptr(payment_address).unwrap();
     unsafe { CallBack_Payment_Address2 = Some(payment.to_string()) };
 }
 
@@ -101,7 +101,7 @@ fn errors_with_invalid_config_json() {
 #[test]
 fn successfully_creates_payment_address_with_no_seed() {
 
-    log::set_logger(&TESTING_LOGGER).unwrap();
+    log::set_logger(&TESTING_LOGGER);
     log::set_max_level(LevelFilter::Trace);
 
     trace!("logging started for successfully_creates_payment_address_with_no_seed");
