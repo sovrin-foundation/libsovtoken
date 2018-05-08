@@ -75,7 +75,7 @@ fn valid_output_json() {
             .unwrap();
 
         let expected = json!({
-            "type": "1001",
+            "type": "10000",
             "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
         });
         assert_eq!(mint_operation, &expected);

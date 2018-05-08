@@ -37,7 +37,7 @@ impl MintRequest {
      */
     pub fn new(outputs: Vec<Output>, did: String) -> Request<MintRequest> {
         let mint = MintRequest {
-            txn_type: "1001",
+            txn_type: "10000",
             outputs: outputs,
         };
 
@@ -96,7 +96,7 @@ mod mint_request_test {
     fn unsigned_request() {
         assert_mint_request(
             json!({
-                "type": "1001",
+                "type": "10000",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
             }),
             HashMap::new(),
@@ -121,7 +121,7 @@ mod mint_request_test {
 
         assert_mint_request(
             json!({
-                "type": "1001",
+                "type": "10000",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
             }),
             sigs,

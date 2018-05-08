@@ -302,7 +302,7 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
 
     let outputs_json_str = match str_from_char_ptr(outputs_json) {
         Some(s) => s,
-        None => return handle_result(Err(ErrorCode::CommonInvalidParam3))
+        None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
     };
 
     let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
