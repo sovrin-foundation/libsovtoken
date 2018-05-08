@@ -27,7 +27,7 @@ pub struct Operation {
 #[derive(Serialize, Deserialize)]
 pub struct SetFeesRequest {
     #[serde(rename = "type")]
-    type_txn: String,
+    request_id: u32,
     signatures: Signatures,
     protocol_version: u32,
     operation: Operation,
@@ -67,20 +67,52 @@ mod fees_config_test {
     }
     #[test]
     fn valid_ops () {
-        let mut fees_map = HashMap::new();
-        fees_map.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u32);
-        fees_map.insert(String::from("ThisIsomeBizzareDIdsgivenTOme1"), 1001 as u32);
+        let mut fees = HashMap::new();
+        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u32);
+        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme1"), 1001 as u32);
 
-        let fee :Fees = Fees {
-            fees: fees_map,
+        let fee_test :Fees = Fees {
+            fees,
         };
         let op : Operation = Operation {
             type_op: String::from("FEE"),
-            fees: fee,
+            fees: fee_test,
+        };
+        assert_eq!(op.to_json().unwrap(), TEST_OPS_JSON);
+    }
+
+    #[test]
+    fn valid_request () {
+        let mut fees = HashMap::new();
+
+        let mut sig_map = HashMap::new();
+        sig_map.insert(String::from("one"), String::from("two"));
+        sig_map.insert(String::from("three"), String::from("four"));
+
+        let signatures : Signatures = Signatures {
+            signatures: sig_map,
         };
 
-        assert_eq!(op.to_json().unwrap(), TEST_OPS_JSON);
+        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u32);
+        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme1"), 1001 as u32);
+        let fee_test :Fees = Fees {
+            fees,
+        };
 
+        let operation : Operation = Operation {
+            type_op: String::from("FEE"),
+            fees: fee_test,
+        };
+
+        let request_id : u32 = 101010299102190291029;
+        let protocol_version: u32 = 1001;
+        let req : SetFeesRequest = Request {
+            type_txn,
+            signatures,
+            protocol_version,
+            operation,
+        };
+        
     }
 
 }
