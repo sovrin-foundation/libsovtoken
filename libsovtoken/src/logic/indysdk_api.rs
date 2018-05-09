@@ -3,7 +3,7 @@
 use super::payment_address_config::PaymentAddressConfig;
 
 /**
-    This defines the interfaces which can be replaced with different implementations
+    This defines the interfaces for INDY SDK crypto apis, which can be replaced with different implementations
     (aka production vs test time)
 
     modeling: master/libindy/src/api/crypto.rs

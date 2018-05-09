@@ -27,9 +27,11 @@ pub static SOVRIN_INDICATOR: &'static str = "sov";
 /// = ":"
 pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
 
-
+// ------------------------------------------------------------------
+// CryptoAPI implementation using INDY SDK
+// ------------------------------------------------------------------
 /**
-   Implementation of CreatePaymentAPI for use in productions environment
+   Implementation of CryptoAPI for use in productions environment
    This implementation calls Indy SDK indy_create_key(...)
 */
 pub struct CreatePaymentSDK{}
@@ -60,10 +62,16 @@ impl CryptoAPI for CreatePaymentSDK {
     }
 }
 
+// ------------------------------------------------------------------
+// CreatePaymentHandler
+// ------------------------------------------------------------------
 /**
     CreatePaymentHandler contains methods for creating a fully formatted address based on inputted
     seed.  If seed is empty then a randomly generated seed is used by libsodium
-    seed.  If seed is empty then a randomly generated seed is used by libsodium
+
+    In production runtime environment, the expectation is T is CreatePaymentSDK
+    and in testing environments its anything else as long as it implements CryptoAPI
+
 */
 pub struct CreatePaymentHandler<T> where T : CryptoAPI {
     injected_api : T
