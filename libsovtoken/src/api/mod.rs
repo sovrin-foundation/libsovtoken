@@ -17,6 +17,7 @@ use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
+use logic::fees_config::{SetFeesRequest, Fees};
 
 /// # Description
 /// This method generates private part of payment address
@@ -245,16 +246,35 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 pub extern "C" fn build_fees_txn_handler(command_handle: i32,
                                          fees_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
+
+    let handle_result = |result: Result<*const c_char, ErrorCode>| {
+        let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
+        if cb.is_some() {
+            let json_pointer = result.unwrap_or(std::ptr::null());
+            cb.unwrap()(command_handle, result_error_code, json_pointer);
+        }
+        return result_error_code;
+    };
+
     if cb.is_some() == false {
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let outputs_json_str : &str = unpack_c_string_or_error!(fees_json, ErrorCode::CommonInvalidParam2);
+    let fees_json_str : &str = match str_from_char_ptr(fees_json) {
 
-    
-    
-    
-    return ErrorCode::Success;
+        Some(s) => s,
+        None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
+    };
+
+    let fees_config: Fees = match Fees::from_json(fees_json_str) {
+        Ok(c) => c,
+        Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
+    };
+
+    let fees_request = SetFeesRequest::from_fee_config(fees_config);
+    let fees_request = fees_request.serialize_to_cstring().unwrap();
+
+    return handle_result(Ok(fees_request.as_ptr()));
 }
 
 /// Description
@@ -325,7 +345,7 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
-    let mint_request = MintRequest::from_config(outputs_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
+    let mint_request = MintRequest::from_config(outputs_config);
     let mint_request = mint_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(mint_request.as_ptr()));
