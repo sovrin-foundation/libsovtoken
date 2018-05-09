@@ -10,7 +10,6 @@
 use std;
 use libc::c_char;
 use indy::api::ErrorCode;
-use logic::fees_config::Fees;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
@@ -245,17 +244,13 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 #[no_mangle]
 pub extern "C" fn build_fees_txn_handler(command_handle: i32,
                                          fees_json: *const c_char,
-                                         cb: Option<extern fn(command_handle_: i32, err:ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
+                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
     if cb.is_some() == false {
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let fees_json_str : &str = unpack_c_string_or_error!(fees_json, ErrorCode::CommonInvalidParam2);
+    let outputs_json_str : &str = unpack_c_string_or_error!(fees_json, ErrorCode::CommonInvalidParam2);
 
-    let fees_config: Fees = match Fees::from_json(fees_json_str) {
-        Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure,
-    };
     
     
     
