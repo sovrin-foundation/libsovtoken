@@ -17,18 +17,18 @@ pub struct Request<T>
     pub identifier: String,
     pub req_id: u64,
     pub protocol_version: u32,
-    pub signatures: HashMap<String, String>
+    pub signatures: HashMap<String, String>,
 }
 impl<T> Request<T> 
     where T: Serialize
 {
     pub fn new(operation: T, did: String) -> Self {
         return Request {
-            operation: operation,
+            operation,
             identifier: did,
             req_id: COUNTER.fetch_add(1, Ordering::SeqCst) as u64,
             protocol_version: 1,
-            signatures: HashMap::new()
+            signatures: HashMap::new(),
         }
     }
 
