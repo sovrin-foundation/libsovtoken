@@ -49,7 +49,6 @@ mod fees_config_test {
     static TEST_SIGS_JSON: &'static str = r#"{"signatures":{"one":"two","three":"four"}}"#;
     static TEST_OPS_JSON: &'static str = r#"{"type":"FEE","fees":{"ThisIsomeBizzareDIdsgivenTOme":1001,"ThisIsomeBizzareDIdsgivenTOme1":1001}}"#;
 
-    const SET_FEES: &str = "20000";
     // fees_txn_handler requires that a valid fees transaction is serialized. This tests that
     // the serializing structure for fees works correctly
     fn initial_set_fee_request() -> Request<SetFeesRequest> {
