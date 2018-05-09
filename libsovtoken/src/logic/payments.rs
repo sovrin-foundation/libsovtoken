@@ -3,21 +3,18 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use libc::c_char;
 use log::*;
 use serde::{Serialize, Deserialize};
-use std::{str, thread};
+use std::{str};
 use std::ffi::{CString};
 
 use indy::api::ErrorCode;
 use indy::api::crypto::indy_create_key;
 use super::payment_address_config::PaymentAddressConfig;
-use libraries::sodium::{CryptoEngine};
-use libraries::rust_base58::Base58;
 use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
-
+use utils::callbacks::*;
 
 
 // ------------------------------------------------------------------
@@ -30,10 +27,10 @@ pub static SOVRIN_INDICATOR: &'static str = "sov";
 /// = ":"
 pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
 
-static mut INDY_CREATE_KEY_CALLBACK_RESULT : Option<String> = None;
+
 
 // ------------------------------------------------------------------
-// helper methods
+// methods for building the formatted address
 // ------------------------------------------------------------------
 // computes a check some based on an address
 fn compute_address_checksum(address: String) -> String {
@@ -54,6 +51,8 @@ fn create_formatted_address_with_checksum(address: String) -> String {
     return result;
 }
 
+
+
 // ------------------------------------------------------------------
 // logic
 // ------------------------------------------------------------------
@@ -66,47 +65,17 @@ fn create_formatted_address_with_checksum(address: String) -> String {
 */
 pub fn create_payment_address(command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
 
-    unsafe {
-        INDY_CREATE_KEY_CALLBACK_RESULT = None;
-    }
+    let (receiver, sdk_command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
 
-    let handle =  thread::Builder::new().name("thread_create_payment_address".to_string()).spawn(move ||{
+    let config_cstring: CString = config.serialize_to_cstring().unwrap();
+    let config_str_ptr = config_cstring.as_ptr();
 
-        // indy_create_key returns the verkey (pubkey) via this callback
-        extern "C" fn indy_create_key_callback(xcommand_handle: i32,
-                                                    err: ErrorCode,
-                                                    verkey: *const c_char) {
+    trace!("create_payment_address calling indy_create_key");
+    let result: ErrorCode = indy_create_key(command_handle, wallet_id, config_str_ptr, cb);
 
-            trace!("indy_create_key_callback invoked.");
+    let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
 
-            let log_string: String = string_from_char_ptr(verkey).unwrap();
-            trace!("indy_create_key_callback => {}", log_string);
-
-            unsafe {
-                INDY_CREATE_KEY_CALLBACK_RESULT = string_from_char_ptr(verkey);
-            }
-        }
-
-        let config_cstring: CString = config.serialize_to_cstring().unwrap();
-        let config_str_ptr = config_cstring.as_ptr();
-
-        trace!("calling indy_create_key");
-        let result: ErrorCode = indy_create_key(command_handle, wallet_id, config_str_ptr, Some(indy_create_key_callback));
-
-        if result != ErrorCode::Success {
-            panic!(format!("indy_create_key errored {:?}", result));
-        }
-
-    }).unwrap();
-
-    handle.join().unwrap();
-
-    unsafe {
-        match INDY_CREATE_KEY_CALLBACK_RESULT {
-            Some(ref mut s) => return create_formatted_address_with_checksum(s.to_string()),
-            None => panic!("verkey was not created"),
-        };
-    }
+    return create_formatted_address_with_checksum(payment_address);
 }
 
 // ------------------------------------------------------------------
@@ -126,14 +95,13 @@ mod payments_tests {
 
     use super::*;
 
-
+    const TIMEOUT_SECONDS: u64 = 20;
     static VALID_ADDRESS_LEN: usize = 32;
     static VALID_SEED_LEN: usize = 32;
     static INVALID_SEED_LEN: usize = 19;
     static CHECKSUM_LEN: usize = 4;
     static WALLET_ID: i32 = 10;
     static COMMAND_HANDLE: i32 = 10;
-    static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
 
     // helper methods
     fn rand_string(length : usize) -> String {
@@ -155,9 +123,6 @@ mod payments_tests {
     // a fully formatted address is returned.
     #[test]
     fn success_create_payment_with_seed_returns_address() {
-
-        log::set_logger(&TESTING_LOGGER);
-        log::set_max_level(LevelFilter::Trace);
 
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
