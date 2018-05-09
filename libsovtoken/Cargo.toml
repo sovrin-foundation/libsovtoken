@@ -5,7 +5,8 @@ authors = [
   "Matt Raffel <matt.raffel@evernym.com",
   "Stephen Felt <stephen.felt@evernym.com",
   "Cam Parra <camilo.parra@evernym.com",
-  "Darien Hess <darien.hess@evernym.com>"
+  "Darien Hess <darien.hess@evernym.com>",
+  "Jerry Senninger <jerry.senninger@evernym.com>"
   ]
 
 description = "Payment handler for Sovrin tokens in libindy"
@@ -14,6 +15,7 @@ description = "Payment handler for Sovrin tokens in libindy"
 [dependencies]
 base64 = "0.6.0"
 indy = { git = "https://github.com/hyperledger/indy-sdk.git" }
+lazy_static = "0.2"
 libc = "0.2.21"
 log = "0.4.1"
 rand = "0.4.2"

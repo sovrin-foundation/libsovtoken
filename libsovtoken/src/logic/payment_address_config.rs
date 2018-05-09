@@ -4,7 +4,12 @@
 #![warn(unused_imports)]
 #[allow(unused_imports)]
 
-use serde::{Serialize, Deserialize};
+use std::ffi::CString;
+
+use serde_json;
+
+use utils::ffi_support::cstring_from_str;
+use utils::json_conversion::JsonSerialize;
 
 /**
      The config structure maps to the config json structure
@@ -18,3 +23,13 @@ pub struct PaymentAddressConfig {
     pub seed : String,
 }
 
+impl PaymentAddressConfig {
+
+    /**
+        converts PaymentAddressConfig json encoded string (CString)
+    */
+    pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
+        let serialized = JsonSerialize::to_json(&self)?;
+        return Ok(cstring_from_str(serialized));
+    }
+}
