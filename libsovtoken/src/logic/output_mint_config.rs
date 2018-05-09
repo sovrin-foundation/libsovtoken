@@ -68,7 +68,6 @@ mod mint_request_test {
     use super::*;
     use serde_json;
     use utils::ffi_support::str_from_char_ptr;
-    use std::collections::HashMap;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
     fn initial_mint_request() -> Request<MintRequest> {
@@ -83,7 +82,7 @@ mod mint_request_test {
         f(&mut mint_req);
         let mint_req_c_string = mint_req.serialize_to_cstring().unwrap();
         let mint_req_json_str = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
-        let deserialized_mint_request: Request<MintRequest> = serde_json::from_str(mint_req_json_str).unwrap();
+        let deserialized_mint_request: Request<MintRequest> = Request::<MintRequest>::from_json(mint_req_json_str).unwrap();
         assert_eq!(deserialized_mint_request.protocol_version, 1);
 
         let operation_json_value : serde_json::Value = serde_json::from_str(&deserialized_mint_request.operation.to_json().unwrap()).unwrap();
@@ -107,7 +106,7 @@ mod mint_request_test {
                 "type": "10000",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
             }),
-            |mint_req| {}
+            |_mint_req| {}
         )
     }
 }

@@ -271,7 +271,7 @@ pub extern "C" fn build_fees_txn_handler(command_handle: i32,
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
-    let fees_request = SetFeesRequest::from_config(fees_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
+    let fees_request = SetFeesRequest::from_fee_config(fees_config);
     let fees_request = fees_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(fees_request.as_ptr()));

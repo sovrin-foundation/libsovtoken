@@ -3,8 +3,6 @@ use utils::ffi_support::cstring_from_str;
 use serde::Serialize;
 use serde_json;
 use utils::json_conversion::JsonSerialize;
-use std::collections::HashMap;
-
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

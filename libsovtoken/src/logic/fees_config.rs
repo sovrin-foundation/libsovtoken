@@ -22,16 +22,16 @@ pub struct SetFeesRequest {
 
 impl SetFeesRequest {
 
-    pub fn new(fees: HashMap<String, u64>, did: String) -> Request<SetFeesRequest> {
+    pub fn new(fees: HashMap<String, u64>) -> Request<SetFeesRequest> {
         let fee = SetFeesRequest {
             txn_type: SET_FEES,
             fees,
         };
-        return Request::new(fee, did);
+        return Request::new(fee);
     }
 
-    pub fn from_fee_config(fee: Fees, did: String) -> Request<SetFeesRequest> {
-        return SetFeesRequest::new(fee.fees, did);
+    pub fn from_fee_config(fee: Fees) -> Request<SetFeesRequest> {
+        return SetFeesRequest::new(fee.fees);
     }
 }
 
@@ -44,21 +44,16 @@ mod fees_config_test {
     use serde_json::{Value, Error};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
-    // TESTING GLOBAL VARS
-    static TEST_OP_JSON: &'static str = r#"{"fees":{"ThisIsomeBizzareDIdsgivenTOme":1001}}"#;
-    static TEST_SIGS_JSON: &'static str = r#"{"signatures":{"one":"two","three":"four"}}"#;
-    static TEST_OPS_JSON: &'static str = r#"{"type":"FEE","fees":{"ThisIsomeBizzareDIdsgivenTOme":1001,"ThisIsomeBizzareDIdsgivenTOme1":1001}}"#;
 
     // fees_txn_handler requires that a valid fees transaction is serialized. This tests that
     // the serializing structure for fees works correctly
     fn initial_set_fee_request() -> Request<SetFeesRequest> {
         let mut fees_map = HashMap::new();
         fees_map.insert(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10 as u64);
-        let did = String::from("EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU");
-        return SetFeesRequest::new(fees_map, did);
+        return SetFeesRequest::new(fees_map);
     }
 
-    fn assert_set_fee_request<F>(expected: serde_json::Value, signatures: HashMap<String, String>, f: F)
+    fn assert_set_fee_request<F>(expected: serde_json::Value, f: F)
         where F: Fn(&mut Request<SetFeesRequest>) -> ()
     {
         let mut set_fee_req = initial_set_fee_request();
@@ -66,24 +61,12 @@ mod fees_config_test {
         let set_fee_req_c_string = set_fee_req.serialize_to_cstring().unwrap();
         let set_fee_req_json_str = str_from_char_ptr(set_fee_req_c_string.as_ptr()).unwrap();
         let deserialized_set_fee_request: Request<SetFeesRequest> = serde_json::from_str(set_fee_req_json_str).unwrap();
-        assert_eq!(deserialized_set_fee_request.identifier, "EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU");
-        assert_eq!(deserialized_set_fee_request.signatures, signatures);
+        assert_eq!(deserialized_set_fee_request.protocol_version, 1);
 
         let operation_json_value: serde_json::Value = serde_json::from_str(&deserialized_set_fee_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);
     }
 
-    #[test]
-    fn unsigned_request() {
-        assert_set_fee_request(
-            json!({
-                "type": SET_FEES,
-                "fees": {"AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja":10},
-            }),
-            HashMap::new(),
-            |_set_fee_req| {}
-        );
-    }
     #[test]
     fn create_request_with_fees_config() {
         let mut fees_map = HashMap::new();
@@ -91,24 +74,18 @@ mod fees_config_test {
         let fees_config = Fees {
             fees: fees_map.clone()
         };
-        let request = SetFeesRequest::from_fee_config(fees_config, String::from("EFlzewrfDSfesaiuhgvcxFhhgpeBUddgseaGIUdFU"));
+        let request = SetFeesRequest::from_fee_config(fees_config);
         assert_eq!(request.operation.fees, fees_map);
     }
 
     #[test]
     fn valid_request() {
-        let mut sigs = HashMap::new();
-        sigs.insert(String::from("afesfghiofFiASaseUFeaeqiwtquDubwr"), String::from("000glgaeht3wFSdnsjBF23taweLDSUH"));
-
         assert_set_fee_request(
             json!({
                 "type": SET_FEES,
                 "fees": {"AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja":10},
             }),
-            sigs,
-            |fees_req| {
-                fees_req.sign("afesfghiofFiASaseUFeaeqiwtquDubwr", "glgaeht3wFSdnsjBF23taweLDSUH").unwrap();
-            }
+            |_fees_req| {}
         );
     }
 }
