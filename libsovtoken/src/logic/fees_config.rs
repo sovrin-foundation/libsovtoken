@@ -2,35 +2,31 @@
 #[allow(unused_imports)]
 
 use serde::{Serialize, Deserialize};
+use serde_json::{Value, Error};
 use std::collections::HashMap;
 
 //type Fee =  (String, u32, String);
 
 #[derive(Serialize, Deserialize)]
 pub struct Fees {
-   pub fees: HashMap<String, u32>,
+   pub  fees: HashMap<String, u64>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Signatures {
-    signatures: HashMap<String,String>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(rename = "type")]
-    type_op: String,
-    #[serde(flatten)]
-    fees: Fees,
-}
-
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct SetFeesRequest {
     #[serde(rename = "type")]
-    request_id: u32,
-    signatures: Signatures,
-    protocol_version: u32,
-    operation: Operation,
+    txn_type: &'static str,
+    fees:  HashMap<String, u64>,
+}
+
+impl SetFeesRequest {
+    pub fn new(outputs: HashMap<String>, did: String) -> Request<MintRequest> {
+        let mint = MintRequest {
+            txn_type: "20000",
+            outputs: outputs,
+        };
+    }
+
 }
 
 
@@ -41,6 +37,8 @@ mod fees_config_test {
     use super::*;
     use std::ffi::CString;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
+    use serde_json;
+    use serde_json::{Value, Error};
     use utils::json_conversion::{JsonSerialize};
 
     // TESTING GLOBAL VARS
@@ -50,10 +48,12 @@ mod fees_config_test {
 
     // fees_txn_handler requires that a valid fees transaction is serialized. This tests that
     // the serializing structure for fees works correctly
+
+
     #[test]
     fn valid_fees () {
         let mut fees_map = HashMap::new();
-        fees_map.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u32);
+        fees_map.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u64);
         let fee :Fees = Fees {
             fees: fees_map,
             };
@@ -79,8 +79,8 @@ mod fees_config_test {
     #[test]
     fn valid_ops () {
         let mut fees = HashMap::new();
-        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u32);
-        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme1"), 1001 as u32);
+        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u64);
+        fees.insert(String::from("ThisIsomeBizzareDIdsgivenTOme1"), 1001 as u64);
 
         let fee_test :Fees = Fees {
             fees,
@@ -97,17 +97,19 @@ mod fees_config_test {
     #[test]
     fn valid_request () {
 
-        let request_id : u32 = 1525718269097278;
-        let protocol_version: u32 = 1001;
-
-        let mut fees_map = HashMap::new();
+        let request_id : u64 = 1525718269097278;
+        let protocol_version: u64 = 1001;
+        let req_test = r#"{'reqId':1525718269097278,'signatures':{'CA4bVFDU4GLbX8xZju811o':'2NozDUZYJ2sxuGWmPG67j2tecyJRiDzaZSvgUp7Pkc9qzBCSeJQCgrfcX7Bs3JvTSFjYCTHGHU7XUj6DQ2wKx4ZZ', 'M9BJDuS24bqbJNvBRsoGg3':'dCPMnEYKESrPJFcGwBHwtWY9PmtB7tJYg35JLQz7jDGzfrPvTMfm462tsUC57iPkYRFmDnAhKeWigqZPFvr2hei'},'protocolVersion': 1,'operation':{'type':'20000','fees':{'10001':8,'1':4}}}"#;
+        let mut fees = HashMap::new();
         let mut sig_map = HashMap::new();
 
-        sig_map.insert(String::from("one"), String::from("two"));
-        sig_map.insert(String::from("three"), String::from("four"));
+        sig_map.insert(String::from("CA4bVFDU4GLbX8xZju811o"),
+                       String::from("2NozDUZYJ2sxuGWmPG67j2tecyJRiDzaZSvgUp7Pkc9qzBCSeJQCgrfcX7Bs3JvTSFjYCTHGHU7XUj6DQ2wKx4ZZ"));
+        sig_map.insert(String::from("M9BJDuS24bqbJNvBRsoGg3"),
+                       String::from("dCPMnEYKESrPJFcGwBHwtWY9PmtB7tJYg35JLQz7jDGzfrPvTMfm462tsUC57iPkYRFmDnAhKeWigqZPFvr2hei"));
 
-        fees_map.insert(String::from("ThisIsomeBizzareDIdsgivenTOme"), 1001 as u32);
-        fees_map.insert(String::from("ThisIsomeBizzareDIdsgivenTOme1"), 1001 as u32);
+        fees.insert(String::from("10001"), 8 as u64);
+        fees.insert(String::from("1"), 4 as u64);
 
         let signatures : Signatures = Signatures {
             signatures: sig_map,
@@ -121,13 +123,18 @@ mod fees_config_test {
             type_op: String::from("FEE"),
             fees: fee_test,
         };
-        let req : SetFeesRequest = Request {
-            type_txn,
+        let req : SetFeesRequest = SetFeesRequest {
+            request_id,
             signatures,
             protocol_version,
             operation,
         };
 
+        // 4,294,967,295
+        // 18,446,744,073,709,551,615
+        // 1,525,718,269,097,278
+        let json_req : Result<String, Error> = serde_json::from_str(req_test);
+        println!("{:?}", u64::max_value());
+        assert_eq!(req.to_json().unwrap(),req_test.to_string(), "Expecting a correct Json string")
     }
-
 }
