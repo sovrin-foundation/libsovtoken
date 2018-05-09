@@ -1,5 +1,5 @@
 //! contains helper functions for creating and executing the callbacks required
-//! to use indy-sdk API methods
+//! to use indy-sdk API methods.   Copied from master/libindy/tests/utils/callback.rs
 
 use libc::c_char;
 use std::ffi::CStr;
@@ -20,11 +20,13 @@ lazy_static! {
 }
 
 /**
+    provides callback wrappers and handling for all of the different types of callback
+    signatures used in INDY-SDK API functions.
 */
 pub struct CallbackUtils {}
 
 impl CallbackUtils {
-    pub fn _closure_to_cb_ec() -> (Receiver<ErrorCode>, i32,
+    pub fn closure_to_cb_ec() -> (Receiver<ErrorCode>, i32,
                                    Option<extern fn(command_handle: i32,
                                                     err: ErrorCode)>) {
         let (sender, receiver) = channel();
@@ -50,7 +52,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_i32() -> (Receiver<(ErrorCode, i32)>, i32,
+    pub fn closure_to_cb_ec_i32() -> (Receiver<(ErrorCode, i32)>, i32,
                                        Option<extern fn(command_handle: i32, err: ErrorCode,
                                                         c_i32: i32)>) {
         let (sender, receiver) = channel();
@@ -76,7 +78,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_bool() -> (Receiver<(ErrorCode, bool)>, i32,
+    pub fn closure_to_cb_ec_bool() -> (Receiver<(ErrorCode, bool)>, i32,
                                         Option<extern fn(command_handle: i32, err: ErrorCode,
                                                          valid: bool)>) {
         let (sender, receiver) = channel();
@@ -102,7 +104,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
+    pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
                                           Option<extern fn(command_handle: i32,
                                                            err: ErrorCode,
                                                            c_str: *const c_char)>) {
@@ -130,7 +132,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_string_string() -> (Receiver<(ErrorCode, String, String)>, i32,
+    pub fn closure_to_cb_ec_string_string() -> (Receiver<(ErrorCode, String, String)>, i32,
                                                  Option<extern fn(command_handle: i32,
                                                                   err: ErrorCode,
                                                                   str1: *const c_char,
@@ -160,7 +162,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_string_opt_string() -> (Receiver<(ErrorCode, String, Option<String>)>, i32,
+    pub fn closure_to_cb_ec_string_opt_string() -> (Receiver<(ErrorCode, String, Option<String>)>, i32,
                                                      Option<extern fn(command_handle: i32,
                                                                       err: ErrorCode,
                                                                       str1: *const c_char,
@@ -192,7 +194,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_vec_u8() -> (Receiver<(ErrorCode, Vec<u8>)>, i32,
+    pub fn closure_to_cb_ec_vec_u8() -> (Receiver<(ErrorCode, Vec<u8>)>, i32,
                                           Option<extern fn(command_handle: i32,
                                                            err: ErrorCode,
                                                            raw: *const u8,
@@ -221,7 +223,7 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
-    pub fn _closure_to_cb_ec_string_vec_u8() -> (Receiver<(ErrorCode, String, Vec<u8>)>, i32,
+    pub fn closure_to_cb_ec_string_vec_u8() -> (Receiver<(ErrorCode, String, Vec<u8>)>, i32,
                                                  Option<extern fn(command_handle: i32,
                                                                   err: ErrorCode,
                                                                   str: *const c_char,
