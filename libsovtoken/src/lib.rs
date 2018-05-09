@@ -6,11 +6,16 @@ extern crate base64;
 extern crate libc;
 extern crate rust_base58;
 extern crate serde;
-extern crate serde_json;
 extern crate sodiumoxide;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_derive;
+
+#[cfg(test)]
+#[macro_use]
+extern crate serde_json;
+#[cfg(not(test))]
+extern crate serde_json;
 
 extern crate indy;                      // lib-sdk project
 

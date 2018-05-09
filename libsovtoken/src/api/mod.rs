@@ -7,15 +7,16 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
+use std;
 use libc::c_char;
 use indy::api::ErrorCode;
-use logic::fees_config::Fees;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::create_payment_address;
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
 use logic::request::Request;
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
+use utils::general::ResultExtension;
 
 /// # Description
 /// This method generates private part of payment address
@@ -51,17 +52,26 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let json_config_str: &str = unpack_c_string_or_error!(config_str, ErrorCode::CommonInvalidParam2);
+    if config_str.is_null() {
+        return ErrorCode::CommonInvalidParam2
+    }
 
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(json_config_str) {
+    let json_config_str: String = match string_from_char_ptr(config_str) {
+        Some(s) => s,
+        None => return ErrorCode::CommonInvalidParam2
+    };
+
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
         Ok(c) => c,
         Err(_) => return ErrorCode::CommonInvalidStructure,
     };
 
+
     // TODO:  once we get wallet id in the input, we will want to update create_payment_address
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
-    let payment_address = create_payment_address(config);
+    // let payment_address = create_payment_address(0, config_str);
+    let payment_address = create_payment_address(command_handle, 0, config);
     let payment_address_cstring = cstring_from_str(payment_address);
     let payment_address_ptr = payment_address_cstring.as_ptr();
 
@@ -234,17 +244,13 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 #[no_mangle]
 pub extern "C" fn build_fees_txn_handler(command_handle: i32,
                                          fees_json: *const c_char,
-                                         cb: Option<extern fn(command_handle_: i32, err:ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
+                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
     if cb.is_some() == false {
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let fees_json_str : &str = unpack_c_string_or_error!(fees_json, ErrorCode::CommonInvalidParam2);
+    let outputs_json_str : &str = unpack_c_string_or_error!(fees_json, ErrorCode::CommonInvalidParam2);
 
-    let fees_config: Fees = match Fees::from_json(fees_json_str) {
-        Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure,
-    };
     
     
     
@@ -295,23 +301,32 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)>)-> ErrorCode {
+
+    let handle_result = |result: Result<*const c_char, ErrorCode>| {
+        let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
+        if cb.is_some() {
+            let json_pointer = result.unwrap_or(std::ptr::null());
+            cb.unwrap()(command_handle, result_error_code, json_pointer);
+        }
+        return result_error_code;
+    };
+
     if cb.is_none() {
-        return ErrorCode::CommonInvalidParam3;
+        return handle_result(Err(ErrorCode::CommonInvalidParam3));
     }
 
-    let outputs_json_str : &str = unpack_c_string_or_error!(outputs_json, ErrorCode::CommonInvalidParam2);
+    let outputs_json_str = match str_from_char_ptr(outputs_json) {
+        Some(s) => s,
+        None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
+    };
 
     let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure,
+        Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
-    let mint_request = MintRequest::from(outputs_config);
-    let mint_request = mint_request.serialize_to_cstring();
+    let mint_request = MintRequest::from_config(outputs_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
+    let mint_request = mint_request.serialize_to_cstring().unwrap();
 
-    if cb.is_some() {
-        cb.unwrap()(command_handle, ErrorCode::Success, mint_request.as_ptr());
-    }
-
-    return ErrorCode::Success;
+    return handle_result(Ok(mint_request.as_ptr()));
 }

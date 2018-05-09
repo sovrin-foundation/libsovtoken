@@ -6,3 +6,4 @@
 pub mod ffi_support;
 pub mod general;
 pub mod json_conversion;
+pub mod logger;

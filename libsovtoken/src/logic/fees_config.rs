@@ -5,8 +5,6 @@ use serde::{Serialize, Deserialize};
 use serde_json::{Value, Error};
 use std::collections::HashMap;
 
-//type Fee =  (String, u32, String);
-
 #[derive(Serialize, Deserialize)]
 pub struct Fees {
    pub  fees: HashMap<String, u64>,
@@ -30,10 +28,9 @@ impl SetFeesRequest {
 }
 
 
-
 #[cfg(test)]
 mod fees_config_test {
-    // TESTING DEPS
+
     use super::*;
     use std::ffi::CString;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
