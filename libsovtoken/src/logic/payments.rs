@@ -18,7 +18,11 @@ use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
 
+
+
+// ------------------------------------------------------------------
 // statics that make up parts of the payment address
+// ------------------------------------------------------------------
 /// = "pay"
 pub static PAY_INDICATOR: &'static str = "pay";
 /// = "sov"
@@ -28,6 +32,9 @@ pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
 
 static mut INDY_CREATE_KEY_CALLBACK_RESULT : Option<String> = None;
 
+// ------------------------------------------------------------------
+// helper methods
+// ------------------------------------------------------------------
 // computes a check some based on an address
 fn compute_address_checksum(address: String) -> String {
     return "1234".to_string();
@@ -46,6 +53,10 @@ fn create_formatted_address_with_checksum(address: String) -> String {
 
     return result;
 }
+
+// ------------------------------------------------------------------
+// logic
+// ------------------------------------------------------------------
 
 /**
    creates fully formatted address based on inputted seed.  If seed is empty
@@ -76,8 +87,7 @@ pub fn create_payment_address(command_handle: i32, wallet_id: i32, config: Payme
             }
         }
 
-        let config_str: String = config.to_json().unwrap();
-        let config_cstring: CString = cstring_from_str(config_str);
+        let config_cstring: CString = config.serialize_to_cstring().unwrap();
         let config_str_ptr = config_cstring.as_ptr();
 
         trace!("calling indy_create_key");
@@ -99,6 +109,9 @@ pub fn create_payment_address(command_handle: i32, wallet_id: i32, config: Payme
     }
 }
 
+// ------------------------------------------------------------------
+// unit tests
+// ------------------------------------------------------------------
 
 #[cfg(test)]
 mod payments_tests {
