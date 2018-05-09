@@ -28,18 +28,55 @@ pub static SOVRIN_INDICATOR: &'static str = "sov";
 pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
 
 
+/**
+    This defines the interfaces which can be replaced with different implementations
+    (aka production vs test time)
+*/
+pub trait CreatePaymentAPI {
+    fn new() -> Self;
+    fn create_payment_address(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String;
+}
 
-// ------------------------------------------------------------------
-// methods for building the formatted address
-// ------------------------------------------------------------------
-// computes a check some based on an address
+/**
+   Implementation of CreatePaymentAPI for use in productions environment
+*/
+pub struct CreatePaymentHandler{}
+
+impl CreatePaymentAPI for CreatePaymentHandler {
+
+    fn new() -> Self {
+        return CreatePaymentHandler{};
+    }
+
+    /**
+       creates fully formatted address based on inputted seed.  If seed is empty
+       then a randomly generated seed is used by libsodium
+       the format of the return is:
+           pay:sov:{32 byte address}{4 byte checksum}
+    */
+    fn create_payment_address(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
+        let (receiver, sdk_command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
+
+        let config_cstring: CString = config.serialize_to_cstring().unwrap();
+        let config_str_ptr = config_cstring.as_ptr();
+
+        trace!("create_payment_address calling indy_create_key");
+        let result: ErrorCode = indy_create_key(command_handle, wallet_id, config_str_ptr, cb);
+
+        // TODO on error this long_timeout also causes a long delay!
+        let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
+
+        return create_formatted_address_with_checksum(payment_address);
+    }
+}
+
+/** computes a checksum based on an address */
 fn compute_address_checksum(address: String) -> String {
     return "1234".to_string();
 }
 
-// creates the fully formatted payment address string
+/** creates the fully formatted payment address string */
 fn create_formatted_address_with_checksum(address: String) -> String {
-
     let mut result: String = PAY_INDICATOR.to_owned();
 
     result.push_str(PAYMENT_ADDRESS_FIELD_SEP);
@@ -51,32 +88,10 @@ fn create_formatted_address_with_checksum(address: String) -> String {
     return result;
 }
 
-
-
-// ------------------------------------------------------------------
-// logic
-// ------------------------------------------------------------------
-
-/**
-   creates fully formatted address based on inputted seed.  If seed is empty
-   then a randomly generated seed is used by libsodium
-   the format of the return is:
-       pay:sov:{32 byte address}{4 byte checksum}
-*/
-pub fn create_payment_address(command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
-
-    let (receiver, sdk_command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
-
-    let config_cstring: CString = config.serialize_to_cstring().unwrap();
-    let config_str_ptr = config_cstring.as_ptr();
-
-    trace!("create_payment_address calling indy_create_key");
-    let result: ErrorCode = indy_create_key(command_handle, wallet_id, config_str_ptr, cb);
-
-    let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
-
-    return create_formatted_address_with_checksum(payment_address);
+pub fn execute_create_payment<T>(injected : T, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String where T : CreatePaymentAPI {
+    return injected.create_payment_address(command_handle, wallet_id, config);
 }
+
 
 // ------------------------------------------------------------------
 // unit tests
@@ -95,7 +110,20 @@ mod payments_tests {
 
     use super::*;
 
-    const TIMEOUT_SECONDS: u64 = 20;
+    pub struct TestCreatePaymentHandler{}
+
+    impl CreatePaymentAPI for TestCreatePaymentHandler {
+
+        fn new() -> Self {
+            return TestCreatePaymentHandler{};
+        }
+
+        fn create_payment_address(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
+            return create_formatted_address_with_checksum(rand_string(32));
+        }
+    }
+
+
     static VALID_ADDRESS_LEN: usize = 32;
     static VALID_SEED_LEN: usize = 32;
     static INVALID_SEED_LEN: usize = 19;
@@ -115,8 +143,31 @@ mod payments_tests {
 
     // returns the last 4 chars if input
     fn get_address_checksum(address: &str) -> String {
-
         return address.from_right(CHECKSUM_LEN);
+    }
+
+    #[test]
+    fn success_validate_create_formatted_address_with_checksum() {
+        let address = create_formatted_address_with_checksum(rand_string(32));
+
+        // got our result, if its correct, it will look something like this:
+        // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
+        // break it up into the individual parts we expect to find and
+        // test the validity of the parts
+        let pay_indicator = &address[0..3];
+        let first_separator = &address[3..4];
+        let sov_indicator = &address[4..7];
+        let second_indicator = &address[7..8];
+        let result_address = &address[8..40];
+
+        let checksum: String = get_address_checksum( &address[..]);
+
+        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
+        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
+        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
+        assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
     }
 
     // This is the happy path test.  Config contains a seed and
@@ -127,7 +178,7 @@ mod payments_tests {
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
-        let address = create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+        let address = execute_create_payment(TestCreatePaymentHandler{},COMMAND_HANDLE, WALLET_ID, config);
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -158,7 +209,7 @@ mod payments_tests {
         let seed = String::new();
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
-        let address = create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+        let address = execute_create_payment(TestCreatePaymentHandler{}, COMMAND_HANDLE, WALLET_ID, config);
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -190,7 +241,7 @@ mod payments_tests {
             let seed = rand_string(INVALID_SEED_LEN);
             let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
-            let address = create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+            let address = execute_create_payment(TestCreatePaymentHandler{}, COMMAND_HANDLE, WALLET_ID, config);
         });
 
         assert!(result.is_err(), "create_payment_address did not throw error on invalid seed length");
