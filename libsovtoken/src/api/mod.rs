@@ -11,7 +11,7 @@ use std;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
-use logic::payments::create_payment_address;
+use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
@@ -71,8 +71,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     // TODO:  once we get wallet id in the input, we will want to update create_payment_address
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
-    // let payment_address = create_payment_address(0, config_str);
-    let payment_address = create_payment_address(command_handle, 0, config);
+    let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
+    let payment_address = handler.create_payment_address(command_handle, 0, config);
     let payment_address_cstring = cstring_from_str(payment_address);
     let payment_address_ptr = payment_address_cstring.as_ptr();
 
@@ -271,7 +271,7 @@ pub extern "C" fn build_fees_txn_handler(command_handle: i32,
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
-    let fees_request = SetFeesRequest::from_config(fees_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
+    let fees_request = SetFeesRequest::from_fee_config(fees_config);
     let fees_request = fees_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(fees_request.as_ptr()));
@@ -345,7 +345,7 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
-    let mint_request = MintRequest::from_config(outputs_config, String::from("ef2t3ti2ohfdERAAAWFNinseln"));
+    let mint_request = MintRequest::from_config(outputs_config);
     let mint_request = mint_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(mint_request.as_ptr()));
