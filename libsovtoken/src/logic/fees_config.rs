@@ -4,11 +4,6 @@
  *
  *  [`build_fees_txn_handler`]: ../../api/fn.build_fees_txn_handler.html
  */
-#![warn(unused_imports)]
-#[allow(unused_imports)]
-
-use serde::{Serialize, Deserialize};
-use serde_json::{Value, Error};
 use std::collections::HashMap;
 use logic::request::Request;
 
