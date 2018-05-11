@@ -299,6 +299,8 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
+                                             wallet_handle: i32,
+                                             submitter_did: *const c_char,
                                              cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
     return ErrorCode::Success;
 }
