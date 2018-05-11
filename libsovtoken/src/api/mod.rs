@@ -9,6 +9,7 @@
 
 use std;
 use libc::c_char;
+use indy::api::payments::indy_register_payment_method;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
@@ -349,4 +350,54 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *con
     let mint_request = mint_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(mint_request.as_ptr()));
+}
+
+
+
+
+/**
+    exported method indy-sdk will call for us to register our payment methods with indy-sdk
+
+    # Returns
+    ErrorCode from register_payment_method
+*/
+#[no_mangle]
+pub extern fn sovtoken_init() -> ErrorCode {
+
+    let payment_method_name = cstring_from_str("libsovtoken".to_string());
+
+    /*
+    return indy_register_payment_method(0,
+            payment_method_name.as_ptr(),
+            Some(create_payment_address_handler),
+            Some(add_request_fees_handler),
+            Some(parse_response_with_fees_handler),
+            Some(build_get_fees_txn_handler),
+            Some(parse_get_utxo_response_handler),
+            Some(build_payment_req_handler),
+            Some(parse_payment_response_handler),
+            Some(build_mint_txn_handler),
+            Some(build_fees_txn_handler),
+            Some(build_get_fees_txn_handler),
+            Some(parse_get_fees_txn_response_handler),
+             None
+        );
+    */
+
+    return indy_register_payment_method(0,
+            payment_method_name.as_ptr(),
+            Some(create_payment_address_handler),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+             None
+        );
+
 }
