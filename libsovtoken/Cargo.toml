@@ -14,7 +14,7 @@ description = "Payment handler for Sovrin tokens in libindy"
 
 [dependencies]
 base64 = "0.6.0"
-indy = { git = "https://github.com/hyperledger/indy-sdk.git" }
+indy = { git = "https://github.com/hyperledger/indy-sdk/tree/feature/payments.git" }
 lazy_static = "0.2"
 libc = "0.2.21"
 log = "0.4.1"
