@@ -278,8 +278,50 @@ impl CallbackUtils {
 
         (receiver, command_handle, Some(_callback))
     }
+
 }
 
+/**
+    Following the pattern of CallbackUtils, implements callbacks that expect to have a return
+    of ErrorCode
+*/
+pub struct CallbackWithErrorCodeReturnUtils {}
+
+impl CallbackWithErrorCodeReturnUtils {
+
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, c_str: *const c_char) -> ErrorCode >
+    */
+    pub fn closure_to_cb_ec_string_with_return() -> (Receiver<(ErrorCode, String)>, i32,
+                                          Option<extern fn(command_handle: i32,
+                                                           err: ErrorCode,
+                                                           c_str: *const c_char) -> ErrorCode >) {
+        let (sender, receiver) = channel();
+
+        lazy_static! {
+            static ref CALLBACKS: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String)->ErrorCode + Send > >> = Default::default();
+        }
+
+        let closure = Box::new(move |err: ErrorCode, val| {
+            sender.send((err, val)).unwrap();
+            return err;
+        });
+
+        extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_str: *const c_char) -> ErrorCode {
+            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut cb = callbacks.remove(&command_handle).unwrap();
+            let metadata = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
+            cb(err, metadata)
+        }
+
+        let mut callbacks = CALLBACKS.lock().unwrap();
+        let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
+        callbacks.insert(command_handle, closure);
+
+        (receiver, command_handle, Some(_callback))
+    }
+
+}
 
 /**
     helper methods for managing a timespan/delay
