@@ -376,9 +376,9 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32,
 pub extern fn sovtoken_init() -> ErrorCode {
 
     let payment_method_name = cstring_from_str("libsovtoken".to_string());
+    let command_id: i32 = 1819;
 
-
-    return indy_register_payment_method(0,
+    return indy_register_payment_method(command_id,
             payment_method_name.as_ptr(),
             Some(create_payment_address_handler),
             Some(add_request_fees_handler),
