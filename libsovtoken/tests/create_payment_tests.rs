@@ -98,7 +98,8 @@ fn successfully_creates_payment_address_with_no_seed() {
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, cb);
+    // let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, cb);
+    let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, None);
     assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
 
     let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::specific_timeout(TIMEOUT_SECONDS)).unwrap();
@@ -123,7 +124,8 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, cb);
+    // let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, cb);
+    let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, None);
     assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
 
     let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::specific_timeout(TIMEOUT_SECONDS)).unwrap();
@@ -131,13 +133,6 @@ fn success_callback_is_called() {
     assert!(payment_address.len() >= 32, "callback did not receive valid payment address");
 }
 
-// TODO:  the private address needs to be saved in the wallet.  if the wallet id
-// is not valid, the private address cannot be saved.  this test passes an invalid
-// wallet id and gets an error
-#[test]
-fn error_when_wallet_cannot_be_accessed() {
-    unimplemented!();
-}
 
 
 
