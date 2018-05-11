@@ -45,6 +45,7 @@ use logic::fees_config::{SetFeesRequest, Fees};
 /// description of errors
 #[no_mangle]
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
+                                                 wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
     // TODO:  missing wallet id
@@ -114,7 +115,11 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler(command_handle: i32, req_json: *const c_char, inputs_json: *const c_char,
+pub extern "C" fn add_request_fees_handler(command_handle: i32,
+                                           wallet_handle: i32,
+                                           submitter_did: *const c_char,
+                                           req_json: *const c_char,
+                                           inputs_json: *const c_char,
                                            outputs_json: *const c_char,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
@@ -157,6 +162,8 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 /// #Errors
 /// description of errors
 pub extern "C" fn build_payment_req_handler(command_handle: i32,
+                                            wallet_handle: i32,
+                                            submitter_did: *const c_char,
                                             inputs_json: *const c_char,
                                             outputs_json: *const c_char,
                                             cb: Option<extern fn(command_handle_: i32,
@@ -243,7 +250,9 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_fees_txn_handler(command_handle: i32,
+pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
+                                         wallet_handle: i32,
+                                         submitter_did: *const c_char,
                                          fees_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
 
