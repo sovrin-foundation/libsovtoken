@@ -9,7 +9,6 @@
 
 use std;
 use libc::c_char;
-use indy::api::payments::indy_register_payment_method;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
@@ -49,6 +48,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode>) -> ErrorCode {
+    // TODO:  missing wallet id
+
     if cb.is_none() {
         return ErrorCode::CommonInvalidParam3;
     }
@@ -67,6 +68,9 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         Err(_) => return ErrorCode::CommonInvalidStructure,
     };
 
+
+    // to return both payment address and private key pair so that we can write the private
+    // key into the ledger
     let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
     let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
     let payment_address_cstring = cstring_from_str(payment_address);
@@ -203,8 +207,6 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
-                                                 wallet_handle: i32,
-                                                 submitter_did: *const c_char,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
@@ -297,10 +299,9 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
-                                              wallet_handle: i32,
-                                              submitter_did: *const c_char,
-                                              cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
-
+                                             wallet_handle: i32,
+                                             submitter_did: *const c_char,
+                                             cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -328,10 +329,7 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
 
 /// Builds a Mint Request to mint tokens
 #[no_mangle]
-pub extern "C" fn build_mint_txn_handler(command_handle: i32,
-                                         wallet_handle: i32,
-                                         submitter_did: *const c_char,
-                                         outputs_json: *const c_char,
+pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char) -> ErrorCode>)-> ErrorCode {
 
     let handle_result = |result: Result<*const c_char, ErrorCode>| {
@@ -361,36 +359,4 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32,
     let mint_request = mint_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(mint_request.as_ptr()));
-}
-
-
-
-
-/**
-    exported method indy-sdk will call for us to register our payment methods with indy-sdk
-
-    # Returns
-    ErrorCode from register_payment_method
-*/
-#[no_mangle]
-pub extern fn sovtoken_init() -> ErrorCode {
-
-    let payment_method_name = cstring_from_str("libsovtoken".to_string());
-    let command_id: i32 = 1819;
-
-    return indy_register_payment_method(command_id,
-            payment_method_name.as_ptr(),
-            Some(create_payment_address_handler),
-            Some(add_request_fees_handler),
-            Some(parse_response_with_fees_handler),
-            Some(build_get_utxo_request_handler),
-            Some(parse_get_utxo_response_handler),
-            Some(build_payment_req_handler),
-            Some(parse_payment_response_handler),
-            Some(build_mint_txn_handler),
-            Some(build_set_txn_fees_handler),
-            Some(build_get_fees_txn_handler),
-            Some(parse_get_fees_txn_response_handler),
-             None
-        );
 }
