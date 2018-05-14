@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::sync::Mutex;
 use std::slice;
 use std::sync::mpsc::{channel, Receiver};
+use std::time::Duration;
 
 use indy::api::ErrorCode;
 
@@ -26,6 +27,9 @@ lazy_static! {
 pub struct CallbackUtils {}
 
 impl CallbackUtils {
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode)>
+    */
     pub fn closure_to_cb_ec() -> (Receiver<ErrorCode>, i32,
                                    Option<extern fn(command_handle: i32,
                                                     err: ErrorCode)>) {
@@ -52,6 +56,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, c_i32: i32)>
+    */
     pub fn closure_to_cb_ec_i32() -> (Receiver<(ErrorCode, i32)>, i32,
                                        Option<extern fn(command_handle: i32, err: ErrorCode,
                                                         c_i32: i32)>) {
@@ -78,6 +85,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, valid: bool)>
+    */
     pub fn closure_to_cb_ec_bool() -> (Receiver<(ErrorCode, bool)>, i32,
                                         Option<extern fn(command_handle: i32, err: ErrorCode,
                                                          valid: bool)>) {
@@ -104,6 +114,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, c_str: *const c_char)>
+    */
     pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
                                           Option<extern fn(command_handle: i32,
                                                            err: ErrorCode,
@@ -132,6 +145,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, str1: *const c_char, str2: *const c_char)>
+    */
     pub fn closure_to_cb_ec_string_string() -> (Receiver<(ErrorCode, String, String)>, i32,
                                                  Option<extern fn(command_handle: i32,
                                                                   err: ErrorCode,
@@ -162,6 +178,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, str1: *const c_char, str2: *const c_char)>
+    */
     pub fn closure_to_cb_ec_string_opt_string() -> (Receiver<(ErrorCode, String, Option<String>)>, i32,
                                                      Option<extern fn(command_handle: i32,
                                                                       err: ErrorCode,
@@ -194,6 +213,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, raw: *const u8, len: u32)>
+    */
     pub fn closure_to_cb_ec_vec_u8() -> (Receiver<(ErrorCode, Vec<u8>)>, i32,
                                           Option<extern fn(command_handle: i32,
                                                            err: ErrorCode,
@@ -223,6 +245,9 @@ impl CallbackUtils {
         (receiver, command_handle, Some(_callback))
     }
 
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, str: *const c_char, raw: *const u8, len: u32)>
+    */
     pub fn closure_to_cb_ec_string_vec_u8() -> (Receiver<(ErrorCode, String, Vec<u8>)>, i32,
                                                  Option<extern fn(command_handle: i32,
                                                                   err: ErrorCode,
@@ -252,5 +277,84 @@ impl CallbackUtils {
         callbacks.insert(command_handle, closure);
 
         (receiver, command_handle, Some(_callback))
+    }
+
+}
+
+/**
+    Following the pattern of CallbackUtils, implements callbacks that expect to have a return
+    of ErrorCode
+*/
+pub struct CallbackWithErrorCodeReturnUtils {}
+
+impl CallbackWithErrorCodeReturnUtils {
+
+    /**
+       cb => Option<extern fn(command_handle: i32, err: ErrorCode, c_str: *const c_char) -> ErrorCode >
+    */
+    pub fn closure_to_cb_ec_string_with_return() -> (Receiver<(ErrorCode, String)>, i32,
+                                          Option<extern fn(command_handle: i32,
+                                                           err: ErrorCode,
+                                                           c_str: *const c_char) -> ErrorCode >) {
+        let (sender, receiver) = channel();
+
+        lazy_static! {
+            static ref CALLBACKS: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String)->ErrorCode + Send > >> = Default::default();
+        }
+
+        let closure = Box::new(move |err: ErrorCode, val| {
+            sender.send((err, val)).unwrap();
+            return err;
+        });
+
+        extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_str: *const c_char) -> ErrorCode {
+            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut cb = callbacks.remove(&command_handle).unwrap();
+            let metadata = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
+            cb(err, metadata)
+        }
+
+        let mut callbacks = CALLBACKS.lock().unwrap();
+        let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
+        callbacks.insert(command_handle, closure);
+
+        (receiver, command_handle, Some(_callback))
+    }
+
+}
+
+/**
+    helper methods for managing a timespan/delay
+    copied from master/libindy/src/utils/timeout.rs
+*/
+pub struct TimeoutUtils {}
+
+impl TimeoutUtils {
+    /**
+        5 second delay
+    */
+    pub fn short_timeout() -> Duration {
+        Duration::from_secs(5)
+    }
+
+    /**
+        10 second delay
+    */
+    pub fn medium_timeout() -> Duration {
+        Duration::from_secs(10)
+    }
+
+    /**
+        specify the timeout in seconds
+    */
+    pub fn specific_timeout(seconds: u64) -> Duration {
+        Duration::from_secs(seconds)
+    }
+
+    /**
+        100 second delay
+    */
+    pub fn long_timeout() -> Duration {
+        Duration::from_secs(100)
     }
 }
