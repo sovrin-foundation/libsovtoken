@@ -5,12 +5,14 @@ extern crate indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
 
+use indy::api::ErrorCode;
+
 use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
 use sovtoken::utils::ffi_support::str_from_char_ptr;
 
-use indy::api::ErrorCode;
+
 // ***** HELPER METHODS *****
 
 // ***** HELPER TEST DATA  *****
@@ -34,9 +36,10 @@ fn errors_with_no_call_back() {
 #[test]
 fn errors_with_no_outputs_json() {
     static mut CALLBACK_CALLED: bool = false;
-    extern fn cb_no_json(_: i32, error_code: ErrorCode, _: *const c_char) {
+    extern "C" fn cb_no_json(_: i32, error_code: ErrorCode, _: *const c_char) -> ErrorCode {
         unsafe { CALLBACK_CALLED = true; }
         assert_eq!(error_code, ErrorCode::CommonInvalidParam2);
+        return ErrorCode::Success;
     }
 
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), Some(cb_no_json));
@@ -49,9 +52,10 @@ fn errors_with_no_outputs_json() {
 #[test]
 fn errors_with_invalid_outputs_json() {
     static mut CALLBACK_CALLED: bool = false;
-    extern fn cb_invalid_json(_: i32, error_code: ErrorCode, _: *const c_char) {
+    extern "C" fn cb_invalid_json(_: i32, error_code: ErrorCode, _: *const c_char) -> ErrorCode {
         unsafe { CALLBACK_CALLED = true; }
         assert_eq!(error_code, ErrorCode::CommonInvalidStructure);
+        return ErrorCode::Success;
     }
 
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
@@ -64,7 +68,7 @@ fn errors_with_invalid_outputs_json() {
 #[test]
 fn valid_output_json() {
     static mut CALLBACK_CALLED: bool = false;
-    extern fn valid_output_json_cb(command_handle: i32, error_code: ErrorCode, mint_request: *const c_char) {
+    extern "C" fn valid_output_json_cb(command_handle: i32, error_code: ErrorCode, mint_request: *const c_char) -> ErrorCode {
         unsafe { CALLBACK_CALLED = true; }
         assert_eq!(command_handle, COMMAND_HANDLE);
         assert_eq!(error_code, ErrorCode::Success);
@@ -79,6 +83,7 @@ fn valid_output_json() {
             "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
         });
         assert_eq!(mint_operation, &expected);
+        return ErrorCode::Success;
     }
 
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();

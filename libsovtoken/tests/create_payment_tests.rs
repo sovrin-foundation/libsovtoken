@@ -7,6 +7,7 @@
 #![allow(dead_code)]
 #[allow(unused_imports)]
 
+
 extern crate libc;
 extern crate rand;
 
@@ -16,25 +17,25 @@ extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
 
 use libc::c_char;
-use log::*;
 use rand::Rng;
 use std::ptr;
 use std::ffi::CString;
-use std::thread;
+use std::ffi::CStr;
+
+
 
 use indy::api::ErrorCode;
-use sovtoken::utils::ffi_support::{str_from_char_ptr, string_from_char_ptr};
 use sovtoken::logic::payment_address_config::PaymentAddressConfig;
-use sovtoken::utils::json_conversion::*;
 use sovtoken::utils::logger::*;
+use sovtoken::utils::callbacks::*;
 
 // ***** HELPER TEST DATA  *****
+const WALLET_ID: i32 = 99;
 const COMMAND_HANDLE: i32 = 1;
+const TIMEOUT_SECONDS: u64 = 20;
 static VALID_SEED_LEN: usize = 32;
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{"seed":""}"#;
-static mut CallBack_Payment_Address: Option<String> = None;
-static mut CallBack_Payment_Address2: Option<String> = None;
 static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
 
 // ***** HELPER METHODS  *****
@@ -48,17 +49,10 @@ fn rand_string(length : usize) -> String {
     return s;
 }
 
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) { }
-
-extern "C" fn test_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-    let payment : Option<String> = string_from_char_ptr(payment_address);
-    unsafe { CallBack_Payment_Address2 = payment };
+extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode {
+    return ErrorCode::Success;
 }
 
-extern "C" fn test_create_payment_callback2(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) {
-    let payment : Option<String> = string_from_char_ptr(payment_address);
-    unsafe { CallBack_Payment_Address2 = payment };
-}
 
 // ***** UNIT TESTS *****
 
@@ -66,7 +60,7 @@ extern "C" fn test_create_payment_callback2(command_handle_: i32, err: ErrorCode
 // receive error when no callback is provided
 #[test]
 fn errors_with_no_callback () {
-    let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, ptr::null(), None);
+    let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), None);
     assert_eq!(return_error, ErrorCode::CommonInvalidParam3, "Expecting Callback for 'create_payment_address_handler'"); 
 }
 
@@ -75,8 +69,8 @@ fn errors_with_no_callback () {
 // a error is returned when no config is provided
 #[test]
 fn errors_with_no_config() {
-    let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_create_payment_callback);
-    let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, ptr::null(), cb);
+    let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode> = Some(empty_create_payment_callback);
+    let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), cb);
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting Config for 'create_payment_address_handler'");
 }
 
@@ -88,8 +82,8 @@ fn errors_with_invalid_config_json() {
     let config_str = CString::new(INVALID_CONFIG_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(empty_create_payment_callback);
-    let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
+    let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode> = Some(empty_create_payment_callback);
+    let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, config_str_ptr, cb);
 
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'create_payment_address_handler'");
 }
@@ -101,36 +95,19 @@ fn errors_with_invalid_config_json() {
 #[test]
 fn successfully_creates_payment_address_with_no_seed() {
 
-    // the unwrap is to stop the warning "unused `std::result::Result` which must be used"
-    log::set_logger(&TESTING_LOGGER).unwrap();
-    log::set_max_level(LevelFilter::Trace);
-
     trace!("logging started for successfully_creates_payment_address_with_no_seed");
 
-    unsafe { CallBack_Payment_Address2 = None };
+    let (receiver, command_handle, cb) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
 
-    let handle = thread::Builder::new().name("thread_successfully_creates_payment_address_with_no_seed".to_string()).spawn(||{
+    let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
+    let config_str_ptr = config_str.as_ptr();
 
-        let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
-        let config_str_ptr = config_str.as_ptr();
+    let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, cb);
+    assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
 
-        let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(test_create_payment_callback2);
+    let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::specific_timeout(TIMEOUT_SECONDS)).unwrap();
 
-        let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
-    }).unwrap();
-
-    match handle.join() {
-        Err(e) => println!("thread error {:?}", e),
-        _ => (),
-    };
-
-    unsafe {
-        match CallBack_Payment_Address2 {
-            Some(ref mut s) => assert!(s.len() >= 32, "callback did not receive valid payment address"),
-            None => assert!(false, "callback did not receive any information for a payment address"),
-        };
-    }
-
+    assert!(payment_address.len() >= 32, "callback did not receive valid payment address");
 }
 
 
@@ -140,50 +117,25 @@ fn successfully_creates_payment_address_with_no_seed() {
 #[test]
 fn success_callback_is_called() {
 
-    // the unwrap is to stop the warning "unused `std::result::Result` which must be used"
-    log::set_logger(&TESTING_LOGGER).unwrap();
-    log::set_max_level(LevelFilter::Trace);
-
     trace!("logging started for success_callback_is_called");
 
+    let (receiver, command_handle, cb) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
 
-    unsafe { CallBack_Payment_Address = None };
+    let seed = rand_string(VALID_SEED_LEN);
+    let config: PaymentAddressConfig = PaymentAddressConfig { seed, };
 
-    let handle = thread::Builder::new().name("thread_success_callback_is_called".to_string()).spawn(||{
+    let config_str =  config.serialize_to_cstring().unwrap();
+    let config_str_ptr = config_str.as_ptr();
 
-        let seed = rand_string(VALID_SEED_LEN);
-        let config: PaymentAddressConfig = PaymentAddressConfig { seed, };
+    let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, cb);
+    // let return_error = sovtoken::api::create_payment_address_handler(command_handle, WALLET_ID, config_str_ptr, None);
+    assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
 
-        let config_str =  CString::new(config.to_json().unwrap()).unwrap();
-        let config_str_ptr = config_str.as_ptr();
+    let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::specific_timeout(TIMEOUT_SECONDS)).unwrap();
 
-        let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)> = Some(test_create_payment_callback);
-
-        let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, config_str_ptr, cb);
-    }).unwrap();
-
-    match handle.join() {
-        Err(e) => trace!("thread error! {:?}", e),
-        _ => (),
-    };
-
-    unsafe {
-        match CallBack_Payment_Address {
-            Some(ref mut s) => assert!(s.len() >= 32, "callback did not receive valid payment address"),
-            None => assert!(false, "callback did not receive any information for a payment address"),
-        };
-    }
-
+    assert!(payment_address.len() >= 32, "callback did not receive valid payment address");
 }
 
-
-// TODO:  the private address needs to be saved in the wallet.  if the wallet id
-// is not valid, the private address cannot be saved.  this test passes an invalid
-// wallet id and gets an error
-#[test]
-fn error_when_wallet_cannot_be_accessed() {
-    unimplemented!();
-}
 
 
 

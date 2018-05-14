@@ -11,7 +11,7 @@ use std;
 use libc::c_char;
 use indy::api::ErrorCode;
 use logic::payment_address_config::PaymentAddressConfig;
-use logic::payments::create_payment_address;
+use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
@@ -45,8 +45,9 @@ use logic::fees_config::{SetFeesRequest, Fees};
 /// description of errors
 #[no_mangle]
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
+                                                 wallet_handle: i32,
                                                  config_str: *const c_char,
-                                                 cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char)>) -> ErrorCode {
+                                                 cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode>) -> ErrorCode {
     // TODO:  missing wallet id
 
     if cb.is_none() {
@@ -68,11 +69,10 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     };
 
 
-    // TODO:  once we get wallet id in the input, we will want to update create_payment_address
     // to return both payment address and private key pair so that we can write the private
     // key into the ledger
-    // let payment_address = create_payment_address(0, config_str);
-    let payment_address = create_payment_address(command_handle, 0, config);
+    let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
+    let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
     let payment_address_cstring = cstring_from_str(payment_address);
     let payment_address_ptr = payment_address_cstring.as_ptr();
 
@@ -114,11 +114,15 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler(command_handle: i32, req_json: *const c_char, inputs_json: *const c_char,
+pub extern "C" fn add_request_fees_handler(command_handle: i32,
+                                           wallet_handle: i32,
+                                           submitter_did: *const c_char,
+                                           req_json: *const c_char,
+                                           inputs_json: *const c_char,
                                            outputs_json: *const c_char,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
-                                                               req_with_fees_json: *const c_char)>) -> ErrorCode {
+                                                               req_with_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -139,7 +143,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
                                                    req_json: *const c_char,
                                                    cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
-                                                               utxo_json: *const c_char)>) -> ErrorCode {
+                                                               utxo_json: *const c_char) -> ErrorCode>) -> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -157,6 +161,8 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 /// #Errors
 /// description of errors
 pub extern "C" fn build_payment_req_handler(command_handle: i32,
+                                            wallet_handle: i32,
+                                            submitter_did: *const c_char,
                                             inputs_json: *const c_char,
                                             outputs_json: *const c_char,
                                             cb: Option<extern fn(command_handle_: i32,
@@ -204,7 +210,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char)>)-> ErrorCode {
+                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -226,7 +232,7 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   resp_json: *const c_char,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
-                                                                       utxo_json: *const c_char)>)-> ErrorCode {
+                                                                       utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -243,9 +249,11 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 /// #Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_fees_txn_handler(command_handle: i32,
+pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
+                                         wallet_handle: i32,
+                                         submitter_did: *const c_char,
                                          fees_json: *const c_char,
-                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, set_txn_fees_json: *const c_char)>) -> ErrorCode {
+                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, set_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
     let handle_result = |result: Result<*const c_char, ErrorCode>| {
         let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
@@ -291,7 +299,9 @@ pub extern "C" fn build_fees_txn_handler(command_handle: i32,
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
-                                             cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char)>) -> ErrorCode {
+                                             wallet_handle: i32,
+                                             submitter_did: *const c_char,
+                                             cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -320,7 +330,7 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
 /// Builds a Mint Request to mint tokens
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
-                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char)>)-> ErrorCode {
+                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char) -> ErrorCode>)-> ErrorCode {
 
     let handle_result = |result: Result<*const c_char, ErrorCode>| {
         let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
