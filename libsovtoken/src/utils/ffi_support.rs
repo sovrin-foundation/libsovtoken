@@ -9,6 +9,8 @@
 use std::ffi::{CString, CStr};
 use std::str::Utf8Error;
 use libc::c_char;
+use indy::api::ErrorCode;
+use utils::json_conversion::JsonDeserialize;
 
 /**
     utility method for converting *const c_char a &str.  Returns None
@@ -35,25 +37,33 @@ pub fn string_from_char_ptr(str_ptr: *const c_char) -> Option<String> {
 }
 
 
-
 pub fn cstring_from_str(string: String) -> CString {
     return CString::new(string).unwrap();
 }
 
-/**
-    Transforms a c_string into a &str or returns an error_code.
 
-    ```
-        let c_string = std::ffi::CString::from("My test str");
-        let my_str: &str = unpack_c_string_or_error!(c_string, ErrorCode::CommonInvalidParam2);
-        // assert_eq!(my_str, "My test str");
-    ```
+/**
+    Deserialize a char ptr to a struct.
 */
-macro_rules! unpack_c_string_or_error {
-    ( $c_string:ident, $error_code:expr ) => {
-        match $crate::utils::ffi_support::str_from_char_ptr($c_string) {
-            Some(s) => s,
-            None => return $error_code,
+pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_char) -> Result<S, ErrorCode> {
+    let json_string = str_from_char_ptr(str_ptr).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let result = S::from_json(json_string).map_err(|_| ErrorCode::CommonInvalidStructure);
+    return result;
+}
+
+/**
+    Creates a closure which calls a callback on `Ok`.
+
+    Returns an `ErrorCode`
+*/
+macro_rules ! api_result_handler {
+    ( <$value_type:ty>, $command_handle:ident, $cb:ident ) => {
+        move |result: Result<$value_type, ErrorCode>| {
+            let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
+            if let (Some(cb), Ok(value)) = ($cb, result) {
+                cb($command_handle, result_error_code, value);
+            }
+            return result_error_code;
         }
     }
 }
@@ -64,29 +74,12 @@ mod ffi_support_tests {
     use std::ffi;
     use std::ffi::CString;
     use libc::c_char;
-
-    use utils::ffi_support::str_from_char_ptr;
+    use serde_json::Value;
+    use utils::general::ResultExtension;
+    use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr};
+    use indy::api::ErrorCode;
 
     static VALID_DUMMY_JSON: &'static str = r#"{"field1":"data"}"#;
-
-    // do not pretty this up with spaces or tests fail
-    fn unpack_c_string_wrapper(c_str: *const c_char) -> u32 {
-        unpack_c_string_or_error!(c_str, 0);
-        return 1;
-    }
-
-    #[test]
-    fn unpack_c_string_or_error_error_on_null() {
-        let status = self::unpack_c_string_wrapper(ptr::null());
-        assert_eq!(status, 0);
-    }
-
-    #[test]
-    fn unpack_c_string_success() {
-        let c_string = ffi::CString::new("My test str").unwrap().as_ptr();
-        let status = unpack_c_string_wrapper(c_string);
-        assert_eq!(status, 1);
-    }
 
     // this test makes sure our conversion from char * to str works by returning a valid
     // str object
@@ -107,4 +100,49 @@ mod ffi_support_tests {
 
         assert_eq!(None, json, "str_from_char_ptr didn't return None as expected");
     }
+
+    #[test]
+    fn deserialize_error_with_null_pointer() {
+        let pointer = ptr::null();
+        let error = deserialize_from_char_ptr::<Value>(pointer).unwrap_err();
+        assert_eq!(error, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_error_with_bad_json() {
+        let bad_json = cstring_from_str(String::from(r#"{fein:"aewf",}"#));
+        let pointer = bad_json.as_ptr();
+        let error = deserialize_from_char_ptr::<Value>(pointer).unwrap_err();
+        assert_eq!(error, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_good_json() {
+        let good_json = cstring_from_str(String::from(r#"{"a": 1}"#));
+        let pointer = good_json.as_ptr();
+        let json_value = deserialize_from_char_ptr::<Value>(pointer).unwrap();
+        assert_eq!(json_value.get("a").unwrap(), 1);
+    }
+
+    #[test]
+    fn api_result_handler_callback_on_ok() {
+        static mut CALLBACK_CALLED: bool = false;
+        extern fn callback(ch: i32, ec: ErrorCode, val: u32) {
+            assert_eq!(val, 2);
+            unsafe { CALLBACK_CALLED = true }
+        }
+
+        let ch = 1242;
+        let cb = Some(callback);
+        let result_handler = api_result_handler!(<u32>, ch, cb);
+        let result = result_handler(Ok(2));
+        assert_eq!(result, ErrorCode::Success);
+        assert!(unsafe { CALLBACK_CALLED });
+
+        unsafe { CALLBACK_CALLED = false }
+        let result = result_handler(Err(ErrorCode::CommonInvalidParam1));
+        assert_eq!(result, ErrorCode::CommonInvalidParam1);
+        assert!(! unsafe { CALLBACK_CALLED });
+    }
+
 }
