@@ -9,12 +9,13 @@
 
 use std;
 use libc::c_char;
-use indy::api::ErrorCode;
+use indy::api::{ErrorCode};
+use indy::api::payments::indy_register_payment_method;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
 use logic::request::Request;
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
 use logic::fees_config::{SetFeesRequest, Fees};
@@ -207,6 +208,8 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
+                                                 wallet_handle: i32,
+                                                 submitter_did: *const c_char,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
@@ -289,16 +292,16 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
 ///
 ///
 /// from tokens-interface.md/BuildGetTxnFeesReqCB
-/// #Params
+/// # Params
 /// param1: description.
 ///
-/// #Returns
+/// # Returns
 /// description. example if json, etc...
 ///
-/// #Errors
+/// # Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
+pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
                                              wallet_handle: i32,
                                              submitter_did: *const c_char,
                                              cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
@@ -309,16 +312,16 @@ pub extern "C" fn build_get_fees_txn_handler(command_handle: i32,
 ///
 ///
 /// from tokens-interface.md/ParseGetTxnFeesResponseCB
-/// #Params
+/// # Params
 /// param1: description.
 ///
-/// #Returns
+/// # Returns
 /// description. example if json, etc...
 ///
-/// #Errors
+/// # Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
+pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                                                       resp_json: *const c_char,
                                                       cb: Option<extern fn(command_handle_: i32,
                                                                 err: ErrorCode,
@@ -326,37 +329,64 @@ pub extern "C" fn parse_get_fees_txn_response_handler(command_handle: i32,
     return ErrorCode::Success;
 }
 
+type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
 /// Builds a Mint Request to mint tokens
 #[no_mangle]
-pub extern "C" fn build_mint_txn_handler(command_handle: i32, outputs_json: *const c_char,
-                                         cb: Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+pub extern "C" fn build_mint_txn_handler(
+    command_handle:i32,
+    wallet_handle: i32,
+    submitter_did: *const c_char,
+    outputs_json: *const c_char,
+    cb: JsonCallback) -> ErrorCode
+{
 
-    let handle_result = |result: Result<*const c_char, ErrorCode>| {
-        let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
-        if cb.is_some() {
-            let json_pointer = result.unwrap_or(std::ptr::null());
-            cb.unwrap()(command_handle, result_error_code, json_pointer);
-        }
-        return result_error_code;
-    };
+    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
     if cb.is_none() {
-        return handle_result(Err(ErrorCode::CommonInvalidParam3));
+        return handle_result(Err(ErrorCode::CommonInvalidParam5));
     }
 
-    let outputs_json_str = match str_from_char_ptr(outputs_json) {
-        Some(s) => s,
-        None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
-    };
-
-    let outputs_config: OutputMintConfig = match OutputMintConfig::from_json(outputs_json_str) {
+    let outputs_config = match deserialize_from_char_ptr::<OutputMintConfig>(outputs_json) {
         Ok(c) => c,
-        Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
+        Err(e) => return handle_result(Err(e))
     };
 
     let mint_request = MintRequest::from_config(outputs_config);
     let mint_request = mint_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(mint_request.as_ptr()));
+}
+
+/**
+    exported method indy-sdk will call for us to register our payment methods with indy-sdk
+
+    # Params
+    none
+
+    # Returns
+    ErrorCode from register_payment_method
+*/
+#[no_mangle]
+pub extern fn sovtoken_init() -> ErrorCode {
+
+    let payment_method_name = cstring_from_str("libsovtoken".to_string());
+    let command_id: i32 = 1819;
+
+    return indy_register_payment_method(command_id,
+            payment_method_name.as_ptr(),
+            Some(create_payment_address_handler),
+            Some(add_request_fees_handler),
+            Some(parse_response_with_fees_handler),
+            Some(build_get_utxo_request_handler),
+            Some(parse_get_utxo_response_handler),
+            Some(build_payment_req_handler),
+            Some(parse_payment_response_handler),
+            Some(build_mint_txn_handler),
+            Some(build_set_txn_fees_handler),
+            Some(build_get_txn_fees_handler),
+            Some(parse_get_txn_fees_response_handler),
+             None
+        );
+
 }
