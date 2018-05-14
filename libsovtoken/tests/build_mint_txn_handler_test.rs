@@ -27,8 +27,8 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 // receive an error when no callback is provided
 #[test]
 fn errors_with_no_call_back() {
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam3, "Expecting Callback for 'build_mint_txn_handler'"); 
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), None);
+    assert_eq!(return_error, ErrorCode::CommonInvalidParam5, "Expecting Callback for 'build_mint_txn_handler'"); 
 }
 
 // the build mint txn handler method requires an outputs_json parameter and this test ensures that 
@@ -38,13 +38,13 @@ fn errors_with_no_outputs_json() {
     static mut CALLBACK_CALLED: bool = false;
     extern "C" fn cb_no_json(_: i32, error_code: ErrorCode, _: *const c_char) -> ErrorCode {
         unsafe { CALLBACK_CALLED = true; }
-        assert_eq!(error_code, ErrorCode::CommonInvalidParam2);
+        assert_eq!(error_code, ErrorCode::CommonInvalidStructure);
         return ErrorCode::Success;
     }
 
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, ptr::null(), Some(cb_no_json));
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_mint_txn_handler'");
-    unsafe { assert!(CALLBACK_CALLED) }
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), Some(cb_no_json));
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_mint_txn_handler'");
+    unsafe { assert!(! CALLBACK_CALLED) }
 }
 
 // // the mint txn handler method requires a valid JSON format (format is described
@@ -60,9 +60,9 @@ fn errors_with_invalid_outputs_json() {
 
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, outputs_str_ptr, Some(cb_invalid_json));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(cb_invalid_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'build_mint_txn_handler'");
-    unsafe { assert!(CALLBACK_CALLED) }
+    unsafe { assert!(! CALLBACK_CALLED) }
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn valid_output_json() {
 
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, outputs_str_ptr, Some(valid_output_json_cb));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(valid_output_json_cb));
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe {
         assert!(CALLBACK_CALLED);
