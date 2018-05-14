@@ -292,13 +292,13 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
 ///
 ///
 /// from tokens-interface.md/BuildGetTxnFeesReqCB
-/// #Params
+/// # Params
 /// param1: description.
 ///
-/// #Returns
+/// # Returns
 /// description. example if json, etc...
 ///
-/// #Errors
+/// # Errors
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
@@ -312,13 +312,13 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
 ///
 ///
 /// from tokens-interface.md/ParseGetTxnFeesResponseCB
-/// #Params
+/// # Params
 /// param1: description.
 ///
-/// #Returns
+/// # Returns
 /// description. example if json, etc...
 ///
-/// #Errors
+/// # Errors
 /// description of errors
 #[no_mangle]
 pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
@@ -367,6 +367,9 @@ pub extern "C" fn build_mint_txn_handler(command_handle: i32, wallet_handle: i32
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
 
+    # Params
+    none
+
     # Returns
     ErrorCode from register_payment_method
 */
@@ -375,7 +378,7 @@ pub extern fn sovtoken_init() -> ErrorCode {
 
     let payment_method_name = cstring_from_str("libsovtoken".to_string());
     let command_id: i32 = 1819;
-    
+
     return indy_register_payment_method(command_id,
             payment_method_name.as_ptr(),
             Some(create_payment_address_handler),
