@@ -7,8 +7,7 @@
 
 
 use logic::request::Request;
-
-type Output = (String, u32);
+use logic::output::Output;
 
 /**
  *  Json config to customize [`build_mint_txn_handler`]
@@ -24,7 +23,7 @@ pub struct OutputMintConfig {
 pub struct MintRequest {
     #[serde(rename = "type")]
     txn_type: &'static str,
-    outputs: Vec<(String, u32)>,
+    outputs: Vec<(Output)>,
 }
 
 /**
@@ -52,12 +51,14 @@ impl MintRequest {
 // this test ensures that the deserialized JSON is serialized correctly
 #[cfg(test)]
 mod output_mint_config_test {
-    use super::OutputMintConfig;
+    use super::*;
     use utils::json_conversion::JsonSerialize;
+
     #[test]
     fn serializing_mint_struct_config() {
+        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let mint : OutputMintConfig = OutputMintConfig { 
-            outputs: vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)],
+            outputs: vec![output],
         };
         assert_eq!(mint.to_json().unwrap(), r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
     }
@@ -71,7 +72,8 @@ mod mint_request_test {
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
     fn initial_mint_request() -> Request<MintRequest> {
-        let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
+        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let outputs = vec![output];
         return MintRequest::new(outputs);
     }
 
@@ -91,7 +93,8 @@ mod mint_request_test {
 
     #[test]
     fn create_request_with_mint_config() {
-        let outputs = vec![(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10)];
+        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let outputs = vec![output];
         let mint_config = OutputMintConfig {
             outputs: outputs.clone()
         };
