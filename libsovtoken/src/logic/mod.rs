@@ -9,4 +9,4 @@ pub mod payment_address_config;
 pub mod payments;
 pub mod request;
 pub mod set_fees;
-
+pub mod output;
