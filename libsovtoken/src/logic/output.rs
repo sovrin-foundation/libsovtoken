@@ -1,6 +1,55 @@
+/*!
+    Payment Output
+*/
+
 use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use std::fmt;
 
+
+/**
+    Struct which holds a payment address, token amount, and extra data.
+
+    ```text
+    // (payment_address, token_amount)
+    ("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5)
+    ```
+
+    # Deserialization
+    Output can be deseriazlized from an array or an object. Both are valid:
+
+    ## From Array
+    ```
+    use sovtoken::utils::json_conversion::JsonDeserialize;
+    use sovtoken::logic::output::Output;
+    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5]"#;
+    let output = Output::from_json(json);
+    ```
+
+    ## From Object
+    ```
+    use sovtoken::utils::json_conversion::JsonDeserialize;
+    use sovtoken::logic::output::Output;
+    let json = r#"{
+        "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+        "amount": 5,
+        "extra": None
+    }"#;
+    let output = Output::from_json(json);
+    ```
+
+    # Serialization
+    When Output is serialized, it is always serialized as an array:
+
+    ```
+    use sovtoken::utils::json_conversion::JsonSerialize;
+    use sovtoken::logic::output::Output;
+    let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+    let output = Output::new(address, 5, None);
+    let json = Output::to_json(&output).unwrap();
+    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",5]"#);
+    ```
+
+*/
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Output {
     payment_address: String,
