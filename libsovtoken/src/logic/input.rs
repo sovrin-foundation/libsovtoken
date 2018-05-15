@@ -6,46 +6,49 @@ use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use std::fmt;
 
 /**
-    Struct which holds a payment address, token amount, and extra data.
+    Struct which holds a payment address, token amount, signature, and extra data.
 
     ```text
-    // (payment_address, token_amount)
-    ("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5)
+    // (payment_address, token_amount, signature)
+    ("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5, "239asdkj3298uadkljasd98u234ijasdlkj")
     ```
 
     # Deserialization
-    Output can be deseriazlized from an array or an object. Both are valid:
+    Input can be deserialized from an array or an object. Both are valid:
 
     ## From Array
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
-    use sovtoken::logic::output::Output;
-    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5]"#;
-    let output = Output::from_json(json);
+    use sovtoken::logic::input::Input;
+    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5, "239asdkj3298uadkljasd98u234ijasdlkj"]"#;
+    let input = Input::from_json(json);
     ```
 
     ## From Object
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
-    use sovtoken::logic::output::Output;
+    use sovtoken::logic::input::Input;
     let json = r#"{
         "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
         "amount": 5,
+        "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         "extra": None
     }"#;
-    let output = Output::from_json(json);
+    let input = Input::from_json(json);
     ```
 
     # Serialization
-    When Output is serialized, it is always serialized as an array:
+    When Input is serialized, it is always serialized as an array:
 
     ```
     use sovtoken::utils::json_conversion::JsonSerialize;
-    use sovtoken::logic::output::Output;
+    use sovtoken::logic::input::Input;
     let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
-    let output = Output::new(address, 5, None);
-    let json = Output::to_json(&output).unwrap();
-    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",5]"#);
+    let signature = String::from("239asdkj3298uadkljasd98u234ijasdlkj");
+    let input = Input::new(address, 5, signature, None);
+
+    let json = Input::to_json(&input).unwrap();
+    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",5, "239asdkj3298uadkljasd98u234ijasdlkj"]"#);
     ```
 
 */
@@ -122,7 +125,7 @@ impl<'de> Deserialize<'de> for Input {
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
                 let signature = signature.ok_or_else(|| de::Error::missing_field("signature"))?;
 
-                return Ok(Input::new(payment_address, amount,signature, extra));
+                return Ok(Input::new(payment_address, amount, signature, extra));
             }
         }
 
