@@ -16,6 +16,7 @@ use indy::api::payments::indy_register_payment_method;
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
+use logic::fees_req_config::{InputConfig, OutputConfig, FeesRequest};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
@@ -176,7 +177,32 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             cb: Option<extern fn(command_handle_: i32,
                                                         err: ErrorCode,
                                                         payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
-    return ErrorCode::Success;
+
+
+    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+
+    if cb.is_none() {
+        return handle_result(Err(ErrorCode::CommonInvalidParam5));
+    }
+    if submitter_did.is_null() {
+       return handle_result(Err(ErrorCode::CommonInvalidParam2));
+    }
+
+    let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
+        Ok(c) => c,
+        Err(e) => return handle_result(Err(e))
+    };
+
+    let inputs_config = match deserialize_from_char_ptr::<InputConfig>(inputs_json) {
+        Ok(c) => c,
+        Err(e) => return handle_result(Err(e))
+    };
+
+    let fees_request = FeesRequest::from_config(outputs_config,inputs_config);
+    let fees_request = fees_request.serialize_to_cstring().unwrap();
+
+    return handle_result(Ok(fees_request.as_ptr()));
+
 }
 
 /// Description
