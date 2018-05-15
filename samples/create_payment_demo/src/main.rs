@@ -1,7 +1,7 @@
 #![warn(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-#[allow(unused_imports)]
+
 
 extern crate indy;
 extern crate sovtoken;
@@ -65,7 +65,7 @@ fn main() {
     println!("initializing libraries");
     initialize_libraries();
 
-    let wallet_name = "payment_wallet".to_string();
+    let wallet_name = "payment_test_wallet_123".to_string();
 
     println!("Setting up an wallet called {}....", wallet_name);
     setup_wallet(&wallet_name);

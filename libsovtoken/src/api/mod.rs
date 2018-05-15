@@ -55,9 +55,9 @@ type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_p
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
-                                                 cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode>) -> ErrorCode {
+                                                 cb: JsonCallback) -> ErrorCode {
     if cb.is_none() {
-        return ErrorCode::CommonInvalidParam3;
+        return ErrorCode::CommonInvalidParam4;
     }
 
     if config_str.is_null() {
