@@ -11,13 +11,16 @@ use std::ffi::CString;
 
 use indy::api::ErrorCode;
 use indy::api::wallet::*;
+use sovtoken::api::*;
 use sovtoken::utils::callbacks::{CallbackUtils, TimeoutUtils};
 
 
 static POOL_NAME: &str = "pool_1";
 static XTYPE: &str = "default";
 
-
+fn initialize_libraries() {
+    sovtoken_init();
+}
 
 fn setup_wallet(wallet_name: &String) {
 
@@ -59,6 +62,8 @@ fn open_wallet(wallet_name: &String) -> i32 {
 
 fn main() {
 
+    println!("initializing libraries");
+    initialize_libraries();
 
     let wallet_name = "payment_wallet".to_string();
 
