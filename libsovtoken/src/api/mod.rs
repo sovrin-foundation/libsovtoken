@@ -8,6 +8,8 @@
 #[warn(unused_imports)]
 
 use std;
+use std::thread;
+
 use libc::c_char;
 use indy::api::{ErrorCode};
 use indy::api::payments::indy_register_payment_method;
@@ -20,6 +22,10 @@ use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_p
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
 use logic::fees_config::{SetFeesRequest, Fees};
+
+
+type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
+
 
 /// # Description
 /// This method generates private part of payment address
@@ -49,11 +55,9 @@ use logic::fees_config::{SetFeesRequest, Fees};
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
-                                                 cb: Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode>) -> ErrorCode {
-    // TODO:  missing wallet id
-
+                                                 cb: JsonCallback) -> ErrorCode {
     if cb.is_none() {
-        return ErrorCode::CommonInvalidParam3;
+        return ErrorCode::CommonInvalidParam4;
     }
 
     if config_str.is_null() {
@@ -70,18 +74,20 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         Err(_) => return ErrorCode::CommonInvalidStructure,
     };
 
+    thread::spawn(move || {
+        // to return both payment address and private key pair so that we can write the private
+        // key into the ledger
+        let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
+        let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
+        let payment_address_cstring = cstring_from_str(payment_address);
+        let payment_address_ptr = payment_address_cstring.as_ptr();
 
-    // to return both payment address and private key pair so that we can write the private
-    // key into the ledger
-    let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
-    let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
-    let payment_address_cstring = cstring_from_str(payment_address);
-    let payment_address_ptr = payment_address_cstring.as_ptr();
+        match cb {
+            Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+            None => panic!("cb was null even after check"),
+        };
+    });
 
-    match cb {
-        Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
-        None => panic!("cb was null even after check"),
-    };
 
     return ErrorCode::Success;
 }
@@ -162,6 +168,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 ///
 /// #Errors
 /// description of errors
+#[no_mangle]
 pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             wallet_handle: i32,
                                             submitter_did: *const c_char,
@@ -210,6 +217,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 ///
 /// #Errors
 /// description of errors
+#[no_mangle]
 pub extern "C" fn parse_payment_response_handler(command_handle: i32,
                                                  resp_json: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
@@ -355,7 +363,6 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
     return ErrorCode::Success;
 }
 
-type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
 /// Builds a Mint Request to mint tokens
 #[no_mangle]

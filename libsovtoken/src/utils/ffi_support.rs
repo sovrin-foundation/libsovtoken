@@ -68,6 +68,18 @@ macro_rules ! api_result_handler {
     }
 }
 
+/**
+    Checks that a callback is not null.  Copied from indy-sdk
+*/
+macro_rules! check_useful_c_callback {
+    ($x:ident, $e:expr) => {
+        let $x = match $x {
+            Some($x) => $x,
+            None => return $e
+        };
+    }
+}
+
 #[cfg(test)]
 mod ffi_support_tests {
     use std::ptr;

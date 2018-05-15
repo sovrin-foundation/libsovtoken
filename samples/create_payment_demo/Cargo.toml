@@ -1,0 +1,8 @@
+[package]
+name = "create_payment_demo"
+version = "0.1.0"
+authors = ["matt raffel <matt.raffel@evernym.com>"]
+
+[dependencies]
+indy = {git = "https://github.com/hyperledger/indy-sdk.git", branch = "feature/payments" }
+libsovtoken = { path = "../../libsovtoken" }

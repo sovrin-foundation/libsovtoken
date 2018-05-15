@@ -30,4 +30,4 @@ sodiumoxide = {version = "0.0.14"}
 [lib]
 name = "sovtoken"
 path = "src/lib.rs"
-crate-type = ["rlib", "dylib"]
+crate-type = ["staticlib", "rlib", "dylib"]
