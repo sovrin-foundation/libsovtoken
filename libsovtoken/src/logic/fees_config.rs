@@ -47,12 +47,9 @@ impl SetFeesRequest {
 #[cfg(test)]
 mod fees_config_test {
     use super::*;
-    use std::ffi::CString;
-    use utils::ffi_support::{str_from_char_ptr, cstring_from_str};
     use serde_json;
-    use serde_json::{Value, Error};
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-
+    use utils::json_conversion::{JsonSerialize};
+    use utils::ffi_support::{str_from_char_ptr};
 
     // fees_txn_handler requires that a valid fees transaction is serialized. This tests that
     // the serializing structure for fees works correctly

@@ -4,13 +4,10 @@
  *
  *  [`build_payment_req_handler`]: ../../api/fn.build_payment_req_handler.html
  */
-use std::collections::HashMap;
 use logic::request::Request;
 
-use logic::output::Output;
 use logic::input::Input;
-
-const SET_FEES: &str = "20000";
+use logic::output::Output;
 
 /**
  *  Json config to customize [`build_payment_req_handler`]
@@ -64,7 +61,6 @@ impl FeesRequest {
 // this test ensures that the deserialized JSON is serialized correctly
 #[cfg(test)]
 mod fees_req_output_config_test {
-    use super::InputConfig;
     use super::*;
     use utils::json_conversion::JsonSerialize;
 

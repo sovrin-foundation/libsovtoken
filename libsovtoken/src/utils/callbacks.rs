@@ -16,9 +16,9 @@ lazy_static! {
     static ref COMMAND_HANDLE_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
 }
 
-lazy_static! {
-    static ref CLOSURE_CB_MAP: Mutex<HashMap<i32, i32>> = Default::default();
-}
+//lazy_static! {
+//    static ref CLOSURE_CB_MAP: Mutex<HashMap<i32, i32>> = Default::default();
+//}
 
 /**
     provides callback wrappers and handling for all of the different types of callback

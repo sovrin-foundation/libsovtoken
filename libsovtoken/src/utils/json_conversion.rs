@@ -41,8 +41,7 @@ impl<T:Serialize> JsonSerialize for T { }
 
 #[cfg(test)]
 mod json_conversion_tests {
-
-    use serde::{Serialize, Deserialize};
+    
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
     // helper structures and data
