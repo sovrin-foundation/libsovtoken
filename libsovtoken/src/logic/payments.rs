@@ -3,7 +3,6 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use std::{str};
 use std::ffi::{CString};
 
 use indy::api::*;
