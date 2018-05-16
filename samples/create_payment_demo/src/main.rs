@@ -69,15 +69,15 @@ fn open_wallet(wallet_name: &String) -> i32 {
 }
 
 /**
-   Entry point for the create payment addrress demo.  It will setup the environment, create the payment address
-   and prove it was created by doing something.  preferrably with a wow factor and maybe some cool colors
+   Entry point for the create payment address demo.  It will setup the environment, create the payment address
+   and prove it was created by doing something.  preferably with a wow factor and maybe some cool colors
 */
 fn main() {
 
     println!("initializing libraries");
     initialize_libraries();
 
-    let wallet_name = "payment_test_wallet".to_string();
+    let wallet_name = "payment_test_wallet_bob".to_string();
 
     println!("Setting up an wallet called {}....", wallet_name);
     setup_wallet(&wallet_name);

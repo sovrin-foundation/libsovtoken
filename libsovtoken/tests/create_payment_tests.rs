@@ -5,7 +5,7 @@
 #![warn(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
-#[allow(unused_imports)]
+#![allow(unused_imports)]
 
 
 extern crate libc;
@@ -22,9 +22,8 @@ use std::ptr;
 use std::ffi::CString;
 use std::ffi::CStr;
 
-
-
 use indy::api::ErrorCode;
+use indy::api::wallet::{indy_create_wallet, indy_open_wallet};
 use sovtoken::logic::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
 use sovtoken::utils::callbacks::*;
@@ -38,6 +37,10 @@ static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{"seed":""}"#;
 static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
 
+static WALLET_NAME: &str = "payment_test_wallet";
+static POOL_NAME: &str = "pool_1";
+static XTYPE: &str = "default";
+
 // ***** HELPER METHODS  *****
 // helper methods
 fn rand_string(length : usize) -> String {
@@ -47,6 +50,27 @@ fn rand_string(length : usize) -> String {
             .collect::<String>();
 
     return s;
+}
+
+fn create_test_wallet() {
+    let pool = CString::new(POOL_NAME.to_string()).unwrap();
+    let xtype = CString::new(XTYPE.to_string()).unwrap();
+    let wallet = CString::new(WALLET_NAME.to_string()).unwrap();
+
+    let (create_wallet_receiver, create_wallet_command_handle, create_wallet_callback) = CallbackUtils::closure_to_cb_ec();
+    let err =
+        indy_create_wallet(create_wallet_command_handle,
+                           pool.as_ptr(),
+                           wallet.as_ptr(),
+                           xtype.as_ptr(),
+                           ptr::null(),
+                           ptr::null(),
+                           create_wallet_callback);
+
+
+    assert_eq!(ErrorCode::Success, err);
+    let err = create_wallet_receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
+    assert_eq!(ErrorCode::Success, err);
 }
 
 extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode {
@@ -96,6 +120,7 @@ fn errors_with_invalid_config_json() {
 fn successfully_creates_payment_address_with_no_seed() {
 
     trace!("logging started for successfully_creates_payment_address_with_no_seed");
+    create_test_wallet();
 
     let (receiver, command_handle, cb) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
 
@@ -118,6 +143,7 @@ fn successfully_creates_payment_address_with_no_seed() {
 fn success_callback_is_called() {
 
     trace!("logging started for success_callback_is_called");
+    create_test_wallet();
 
     let (receiver, command_handle, cb) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
 
