@@ -22,9 +22,8 @@ use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_p
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
 use logic::fees_config::{SetFeesRequest, Fees};
-
-
-type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
+use utils::types::{JsonCallback};
+use logic::request;
 
 
 /// # Description
@@ -248,6 +247,16 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
                                                                       get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+
+
+
+    if cb.is_some() == false {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+
+
     return ErrorCode::Success;
 }
 
@@ -270,6 +279,10 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+
+
+
     return ErrorCode::Success;
 }
 

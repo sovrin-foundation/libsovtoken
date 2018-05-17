@@ -8,3 +8,4 @@ pub mod general;
 pub mod json_conversion;
 pub mod logger;
 pub mod random;
+pub mod types;
