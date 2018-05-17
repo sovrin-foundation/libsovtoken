@@ -5,6 +5,7 @@ use serde_json;
 use utils::json_conversion::JsonSerialize;
 use indy::api::ErrorCode;
 use std::os::raw::c_char;
+use utils::callbacks::closure_to_cb_ec_string;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +42,7 @@ pub fn build_get_txn_request (submitter_did: &str,
 
     }
 
-    let (command_handle, cb) = callbacks::closure_to_cb_ec_string(cb);
+    let (command_handle, cb) = closure_to_cb_ec_string(cb);
     let submitter_did = CString::new(submitter_did).unwrap();
 
     unsafe {

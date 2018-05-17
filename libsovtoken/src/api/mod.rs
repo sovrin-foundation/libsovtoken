@@ -9,6 +9,7 @@
 
 use std;
 use std::thread;
+use std::ffi::{CString, CStr};
 
 use libc::c_char;
 use indy::api::{ErrorCode};
@@ -246,18 +247,22 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+                                                                      get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
 
 
 
 
-    if cb.is_some() == false {
-        return ErrorCode::CommonInvalidParam3;
-    }
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
 
-
-
-    return ErrorCode::Success;
+    let submitter_did = unsafe { CStr::from_ptr(submitter_did).to_str() }.unwrap();
+    request::build_get_txn_request(
+        submitter_did,
+        1,
+        Box::new(move |ec, res| {
+            let res = CString::new(res).unwrap();
+            cb(command_handle, ec, res.as_ptr());
+        })
+    )
 }
 
 /// Description
