@@ -1,5 +1,5 @@
 //!
-//! tests for Payment related functions
+//! tests for API related functions
 
 
 #![warn(unused_imports)]
@@ -7,26 +7,11 @@
 #![allow(dead_code)]
 #[allow(unused_imports)]
 
-
-extern crate libc;
-extern crate rand;
-
-#[macro_use] extern crate log;
-
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
 
-use libc::c_char;
-use rand::Rng;
-use std::ptr;
-use std::ffi::CString;
-
-
 use indy::api::ErrorCode;
 use sovtoken::api::sovtoken_init;
-use sovtoken::logic::payment_address_config::PaymentAddressConfig;
-use sovtoken::utils::logger::*;
-use sovtoken::utils::callbacks::*;
 
 
 
