@@ -20,8 +20,6 @@ use libc::c_char;
 use rand::Rng;
 use std::ptr;
 use std::ffi::CString;
-use std::ffi::CStr;
-
 
 
 use indy::api::ErrorCode;

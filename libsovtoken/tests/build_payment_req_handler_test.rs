@@ -2,7 +2,7 @@ extern crate libc;
 
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
-#[macro_use]
+
 extern crate serde_json;
 
 use indy::api::ErrorCode;
@@ -10,11 +10,10 @@ use indy::api::ErrorCode;
 use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
-use sovtoken::utils::ffi_support::str_from_char_ptr;
 
 
 // ***** HELPER METHODS *****
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char) -> ErrorCode {
+extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: ErrorCode, _payment_req: *const c_char) -> ErrorCode {
     return ErrorCode::Success;
 }
 
@@ -24,7 +23,7 @@ const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
 const WALLET_HANDLE:i32 = 0;
-const cb : Option<extern fn(command_handle_: i32, err: ErrorCode, mint_req_json: *const c_char) -> ErrorCode > = Some(empty_create_payment_callback);
+const CB : Option<extern fn(_command_handle_: i32, err: ErrorCode, payment_req_json: *const c_char) -> ErrorCode > = Some(empty_create_payment_callback);
 
 // ***** UNIT TESTS ****
 
@@ -50,7 +49,7 @@ fn errors_with_no_inputs_json() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 ptr::null(),
-                                                                cb);
+                                                                CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting inputs_json for 'build_payment_req_handler'");
 }
 
@@ -65,7 +64,7 @@ fn errors_with_no_outputs_json() {
                                                                 ptr::null(),
                                                                 input_json_ptr,
                                                                 ptr::null(),
-                                                                cb);
+                                                                CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
@@ -76,13 +75,13 @@ fn errors_with_no_submitter_did_json() {
     let input_json :CString = CString::new(INVALID_OUTPUT_JSON).unwrap();
     let input_json_ptr = input_json.as_ptr();
     let output_json :CString = CString::new(VALID_OUTPUT_JSON).unwrap();
-    let output_json_ptr = input_json.as_ptr();
+    let output_json_ptr = output_json.as_ptr();
 
     let return_error = sovtoken::api::build_payment_req_handler(COMMAND_HANDLE,
                                                                 WALLET_HANDLE,
                                                                 ptr::null(),
                                                                 input_json_ptr,
                                                                 output_json_ptr,
-                                                                cb);
+                                                                CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
 }
