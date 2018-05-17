@@ -400,8 +400,17 @@ pub extern "C" fn build_mint_txn_handler(
     # Returns
     ErrorCode from register_payment_method
 */
+
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
+
+    let (sender, receiver) = std::sync::mpsc::channel();
+
+    let closure: Box<FnMut(ErrorCode) + Send> = Box::new(move |err| {
+        sender.send(err).unwrap();
+    });
+
+    let (cmd_handle, cb) = callbacks::closure_to_cb_ec(closure);
 
     let payment_method_name = cstring_from_str("libsovtoken".to_string());
     let command_id: i32 = 1819;
@@ -419,7 +428,54 @@ pub extern fn sovtoken_init() -> ErrorCode {
             Some(build_set_txn_fees_handler),
             Some(build_get_txn_fees_handler),
             Some(parse_get_txn_fees_response_handler),
-             None
+             cb
         );
+
+    receiver.recv().unwrap()
+}
+
+/**
+    copied from libnullpay
+*/
+mod callbacks {
+
+    use indy::api::ErrorCode;
+    use libc::c_char;
+    use std::collections::HashMap;
+    use std::ffi::CStr;
+    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+
+    type EcClosure = Box<FnMut(ErrorCode) + Send>;
+    type EcCallback = Option<extern fn(command_handle: i32, err: ErrorCode)>;
+    type EcStringClosure = Box<FnMut(ErrorCode, String) + Send>;
+    type EcStringCallback = Option<extern fn(command_handle: i32, err: ErrorCode, c_str: *const c_char)>;
+
+
+    lazy_static! {
+        static ref IDS_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT; //TODO use AtomicI32
+    }
+
+    pub fn get_next_id() -> i32 {
+        (IDS_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32
+    }
+
+    pub fn closure_to_cb_ec(closure: EcClosure) -> (i32, EcCallback) {
+        lazy_static! {
+           static ref CALLBACKS: Mutex<HashMap<i32, Box<EcClosure>>> = Default::default();
+        }
+
+        extern "C" fn _callback(command_handle: i32, err: ErrorCode) {
+            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut cb = callbacks.remove(&command_handle).unwrap();
+            cb(err)
+        }
+
+        let command_handle = get_next_id();
+        let mut callbacks = CALLBACKS.lock().unwrap();
+        callbacks.insert(command_handle, Box::new(closure));
+
+        (command_handle, Some(_callback))
+    }
 
 }

@@ -11,6 +11,10 @@ authors = [
 
 description = "Payment handler for Sovrin tokens in libindy"
 
+[lib]
+name = "sovtoken"
+path = "src/lib.rs"
+crate-type = ["staticlib", "rlib", "dylib"]
 
 [dependencies]
 base64 = "0.6.0"
@@ -27,7 +31,3 @@ sha2 = "0.6.0"
 sha3 = "0.6.0"
 sodiumoxide = {version = "0.0.14"}
 
-[lib]
-name = "sovtoken"
-path = "src/lib.rs"
-crate-type = ["staticlib", "rlib", "dylib"]
