@@ -4,13 +4,10 @@
  *
  *  [`build_payment_req_handler`]: ../../api/fn.build_payment_req_handler.html
  */
-use std::collections::HashMap;
 use logic::request::Request;
 
-use logic::output::Output;
 use logic::input::Input;
-
-const SET_FEES: &str = "20000";
+use logic::output::Output;
 
 /**
  *  Json config to customize [`build_payment_req_handler`]
@@ -64,7 +61,6 @@ impl FeesRequest {
 // this test ensures that the deserialized JSON is serialized correctly
 #[cfg(test)]
 mod fees_req_output_config_test {
-    use super::InputConfig;
     use super::*;
     use utils::json_conversion::JsonSerialize;
 
@@ -89,12 +85,12 @@ mod fees_req_input_config_test {
     #[test]
     fn serializing_fee_struct_output_config() {
 
-        let input = Input::new(String::from("dakjhe238yad"),15,String::from("239asdkj3298uadkljasd98u234ijasdlkj"), None);
+        let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
 
         let fee: InputConfig = InputConfig {
             inputs: vec![input],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"inputs":[["dakjhe238yad",15,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"inputs":[["dakjhe238yad",30,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
     }
 }
 
@@ -108,7 +104,7 @@ mod fees_request_test {
 
     fn initial_fees_request() -> Request<FeesRequest> {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let input = Input::new(String::from("dakjhe238yad"),15,String::from("239asdkj3298uadkljasd98u234ijasdlkj"), None);
+        let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
 
         let outputs = vec![output];
         let inputs = vec![input];
@@ -132,7 +128,7 @@ mod fees_request_test {
     #[test]
     fn create_request_with_fees_config() {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let input = Input::new(String::from("dakjhe238yad"),15,String::from("239asdkj3298uadkljasd98u234ijasdlkj"), None);
+        let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
 
         let outputs = vec![output];
         let inputs = vec![input];
@@ -156,7 +152,7 @@ mod fees_request_test {
             json!({
                 "type": "10000",
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
-                "inputs": [["dakjhe238yad", 15, "239asdkj3298uadkljasd98u234ijasdlkj"]]
+                "inputs": [["dakjhe238yad", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]]
             }),
             |_fees_req| {}
         )
