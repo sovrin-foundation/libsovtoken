@@ -1,5 +1,8 @@
+/// Methods for dealing with addresses, pub keys and private keys
+
+use rust_base58::ToBase58;
 use indy::api::ErrorCode;
-use utils::random::rand_string;
+
 use utils::general::StringUtils;
 
 
@@ -37,7 +40,10 @@ pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
 
 /** computes a checksum based on an address */
 pub fn compute_address_checksum(address: String) -> String {
-    return "1234".to_string();
+    let address_bytes = address.into_bytes();
+    let with_checksum = address_bytes.to_base58();
+    let check_sum =  with_checksum.as_str().from_right(CHECKSUM_LEN);
+    return check_sum;
 }
 
 /** creates the fully formatted payment address string */
@@ -81,8 +87,9 @@ fn validate_address(address: String) -> Result<String, ErrorCode> {
 
 #[cfg(test)]
 mod address_tests {
-    use super::*;
+    use utils::random::rand_string;
 
+    use super::*;
 
     fn verkey_invalid_address_length(length: usize) {
         assert!(length != VALID_ADDRESS_LEN);
@@ -99,7 +106,6 @@ mod address_tests {
         verkey_invalid_address_length(30);
         verkey_invalid_address_length(40);
     }
-
 
     #[test]
     fn test_verkey_invalid_address_indicator() {
@@ -150,6 +156,7 @@ mod address_tests {
         let address = String::from("pay:sov:tsnhvjruaskqncfyeonHJdkeuxAejdijdeA");
         assert_eq!(get_checksum(&address).unwrap_err(), ErrorCode::CommonInvalidStructure);
     }
+
     #[test]
     fn test_get_checksum() {
         let address = String::from("pay:sov:tsnhvjruaskqncfyeponHJdkeuxAejdijdeA");
