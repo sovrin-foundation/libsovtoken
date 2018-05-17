@@ -19,7 +19,7 @@ use sovtoken::utils::callbacks::{CallbackUtils, TimeoutUtils};
 static POOL: &str = "pool_1";
 static TYPE: &str = "default";
 static PAYMENT_METHOD: &str = "sov";
-static WALLET: &str = "payment_test_wallet_bob";
+static WALLET: &str = "wallet_b";
 static PAYMENT_CONFIG: &str = r#"{}"#;
 
 /**
@@ -118,10 +118,11 @@ fn main() {
     initialize_libraries();
 
 
-    println!("Setting up an wallet called {}....", WALLET);
+    println!("Setting up an wallet called '{}'", WALLET);
     create_wallet(POOL, WALLET, Some(TYPE), None, None);
     println!("opening wallet.");
     let wallet_handle: i32 = open_wallet(WALLET, None, None);
+
 
     println!("creating a payment");
     let payment_address:String = create_payment(wallet_handle);
