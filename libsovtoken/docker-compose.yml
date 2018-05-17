@@ -1,0 +1,13 @@
+version: '2'
+services:
+  libsovtoken-rust-test:
+    build:
+      context:
+      dockerfile: ci/ubuntu.dockerfile
+      command: cargo test --color=always -- --nocapture
+      volumes:
+        - ".:/home/token_user/libsovtoken-rust"
+      working_dir: /home/token_user/libsovtoken-rust
+      environment:
+        - RUST_TEST_THREADS=1
+        - RUST_BACKTRACE=1
