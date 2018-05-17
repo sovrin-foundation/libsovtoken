@@ -16,9 +16,10 @@ use sovtoken::api::*;
 use sovtoken::utils::callbacks::{CallbackUtils, TimeoutUtils};
 
 
-static POOL_NAME: &str = "pool_1";
-static XTYPE: &str = "default";
+static POOL: &str = "pool_1";
+static TYPE: &str = "default";
 static PAYMENT_METHOD: &str = "sov";
+static WALLET: &str = "payment_test_wallet_bob";
 static PAYMENT_CONFIG: &str = r#"{}"#;
 
 /**
@@ -42,20 +43,23 @@ fn clean_up(wallet_name: &String) {
     let err = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
 }
 
-fn setup_wallet(wallet_name: &String) {
+fn create_wallet(pool_name: &str, wallet_name: &str, xtype: Option<&str>, config: Option<&str>, credentials: Option<&str>) {
 
-    let pool = CString::new(POOL_NAME.to_string()).unwrap();
-    let xtype = CString::new(XTYPE.to_string()).unwrap();
-    let wallet = CString::new(wallet_name.to_string()).unwrap();
+    let pool_name = CString::new(pool_name).unwrap();
+    let wallet_name = CString::new(wallet_name).unwrap();
+    let xtype_str = xtype.map(|s| CString::new(s).unwrap()).unwrap_or(CString::new("").unwrap());
+    let config_str = config.map(|s| CString::new(s).unwrap()).unwrap_or(CString::new("").unwrap());
+    let credentials_str = credentials.map(|s| CString::new(s).unwrap()).unwrap_or(CString::new("").unwrap());
+
 
     let (create_wallet_receiver, create_wallet_command_handle, create_wallet_callback) = CallbackUtils::closure_to_cb_ec();
     let err =
         indy_create_wallet(create_wallet_command_handle,
-                           pool.as_ptr(),
-                           wallet.as_ptr(),
-                           xtype.as_ptr(),
-                           null(),
-                           null(),
+                            pool_name.as_ptr(),
+                            wallet_name.as_ptr(),
+                            if xtype.is_some() { xtype_str.as_ptr() } else { null() },
+                            if config.is_some() { config_str.as_ptr() } else { null() },
+                            if credentials.is_some() { credentials_str.as_ptr() } else { null() },
                            create_wallet_callback);
 
 
@@ -65,17 +69,19 @@ fn setup_wallet(wallet_name: &String) {
 
 }
 
-fn open_wallet(wallet_name: &String) -> i32 {
+fn open_wallet(wallet_name: &str, config: Option<&str>, credentials: Option<&str>) -> i32 {
 
-    let wallet = CString::new(POOL_NAME.to_string()).unwrap();
+    let wallet_name = CString::new(wallet_name).unwrap();
+    let config_str = config.map(|s| CString::new(s).unwrap()).unwrap_or(CString::new("").unwrap());
+    let credentials_str = credentials.map(|s| CString::new(s).unwrap()).unwrap_or(CString::new("").unwrap());
 
     let (open_wallet_receiver, open_wallet_command_handle, open_wallet_callback) = CallbackUtils::closure_to_cb_ec_i32();
 
     let err =
         indy_open_wallet(open_wallet_command_handle,
-                         wallet.as_ptr(),
-                         null(),
-                         null(),
+                         wallet_name.as_ptr(),
+                         if config.is_some() { config_str.as_ptr() } else { null() },
+                         if credentials.is_some() { credentials_str.as_ptr() } else { null() },
                          open_wallet_callback);
 
     assert_eq!(ErrorCode::Success, err);
@@ -107,16 +113,15 @@ fn create_payment(wallet_handle: i32) -> String {
 */
 fn main() {
 
-    let wallet_name = "payment_test_wallet_bob".to_string();
 
-    println!("initializing libraries");
+    println!("initializing libsovtoken -> indy-sdk");
     initialize_libraries();
 
 
-    println!("Setting up an wallet called {}....", wallet_name);
-    setup_wallet(&wallet_name);
+    println!("Setting up an wallet called {}....", WALLET);
+    create_wallet(POOL, WALLET, Some(TYPE), None, None);
     println!("opening wallet.");
-    let wallet_handle: i32 = open_wallet(&wallet_name);
+    let wallet_handle: i32 = open_wallet(WALLET, None, None);
 
     println!("creating a payment");
     let payment_address:String = create_payment(wallet_handle);
@@ -124,8 +129,7 @@ fn main() {
     println!();
     println!("received a payment address of '{}'", payment_address);
 
-
     // final step
     println!("demo complete, running cleanup");
-    clean_up(&wallet_name);
+    clean_up(&WALLET.to_string());
 }

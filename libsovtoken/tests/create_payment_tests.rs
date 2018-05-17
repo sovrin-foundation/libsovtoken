@@ -23,7 +23,7 @@ use std::ffi::CString;
 use std::ffi::CStr;
 
 use indy::api::ErrorCode;
-use indy::api::wallet::{indy_create_wallet, indy_open_wallet};
+use indy::api::wallet::{indy_create_wallet, indy_open_wallet, indy_delete_wallet};
 use sovtoken::logic::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
 use sovtoken::utils::callbacks::*;
@@ -52,7 +52,20 @@ fn rand_string(length : usize) -> String {
     return s;
 }
 
+// delete the existing wallet, if it exists and don't care if it doesn't
+fn clean_up_test_wallet() {
+    let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec();
+
+    let wallet = CString::new(WALLET_NAME.to_string()).unwrap();
+
+    let err = indy_delete_wallet(command_handle, wallet.as_ptr(), ptr::null(),cb);
+
+    let err = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
+}
+
+// create the wallet we need for tests
 fn create_test_wallet() {
+
     let pool = CString::new(POOL_NAME.to_string()).unwrap();
     let xtype = CString::new(XTYPE.to_string()).unwrap();
     let wallet = CString::new(WALLET_NAME.to_string()).unwrap();
@@ -98,6 +111,7 @@ fn errors_with_no_config() {
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting Config for 'create_payment_address_handler'");
 }
 
+
 // the create payment method requires a valid JSON format (format is described
 // in create_payment_address_handler description).  Expecting error when invalid json is inputted
 #[test]
@@ -120,6 +134,7 @@ fn errors_with_invalid_config_json() {
 fn successfully_creates_payment_address_with_no_seed() {
 
     trace!("logging started for successfully_creates_payment_address_with_no_seed");
+    clean_up_test_wallet();
     create_test_wallet();
 
     let (receiver, command_handle, cb) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
@@ -143,6 +158,7 @@ fn successfully_creates_payment_address_with_no_seed() {
 fn success_callback_is_called() {
 
     trace!("logging started for success_callback_is_called");
+    clean_up_test_wallet();
     create_test_wallet();
 
     let (receiver, command_handle, cb) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
