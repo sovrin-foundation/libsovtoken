@@ -90,7 +90,7 @@ mod fees_req_input_config_test {
         let fee: InputConfig = InputConfig {
             inputs: vec![input],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"inputs":[["dakjhe238yad",15,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"inputs":[["dakjhe238yad",30,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
     }
 }
 

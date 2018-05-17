@@ -10,7 +10,7 @@ use std::fmt;
 
     ```text
     // (payment_address, seq_no, signature)
-    ("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj")
+    ("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj")
     ```
 
     # Deserialization
@@ -20,7 +20,7 @@ use std::fmt;
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
-    let json = r#"["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]"#;
+    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]"#;
     let input = Input::from_json(json);
     ```
 
@@ -29,7 +29,7 @@ use std::fmt;
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
     let json = r#"{
-        "paymentAddress": "AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+        "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
         "seq_no": 30,
         "signature": "239asdkj3298uadkljasd98u234ijasdlkj"
     }"#;
@@ -42,12 +42,12 @@ use std::fmt;
     ```
     use sovtoken::utils::json_conversion::JsonSerialize;
     use sovtoken::logic::input::Input;
-    let address = String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+    let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
     let signature = String::from("239asdkj3298uadkljasd98u234ijasdlkj");
     let input = Input::new(address, 30, signature);
 
     let json = Input::to_json(&input).unwrap();
-    assert_eq!(json, r#"["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30,"239asdkj3298uadkljasd98u234ijasdlkj"]"#);
+    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30,"239asdkj3298uadkljasd98u234ijasdlkj"]"#);
     ```
 
 */
@@ -158,13 +158,13 @@ mod input_tests {
     }
 
     fn input_with_extra() -> Input {
-        let address = String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
         let signature = String::from("239asdkj3298uadkljasd98u234ijasdlkj");
         return Input::new(address, 30, signature);
     }
 
     fn input_without_extra() -> Input {
-        let address = String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
         let signature= String::from("239asdkj3298uadkljasd98u234ijasdlkj");
         return Input::new(address, 30, signature);
     }
@@ -177,15 +177,15 @@ mod input_tests {
 
     #[test]
     fn deserialize_input_tuple() {
-        let json = json!(["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
-        let expected = Input::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 30, String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
+        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
+        let expected = Input::new(String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 30, String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
         assert_valid_deserialize(json, expected);
     }
 
     #[test]
     fn deserialize_invalid_input_object() {
         let json = json!({
-            "paymentAddress": "AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "seq_no": 30,
         });
         assert_invalid_deserialize(json, "missing field `signature`");
@@ -194,7 +194,7 @@ mod input_tests {
     #[test]
     fn deserialize_input_object_without_extra() {
         let json = json!({
-            "paymentAddress": "AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "seq_no": 30,
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         });
@@ -205,7 +205,7 @@ mod input_tests {
     #[test]
     fn deserialize_input_object_with_extra() {
         let json = json!({
-            "paymentAddress": "AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "seq_no": 30,
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         });
@@ -215,14 +215,14 @@ mod input_tests {
 
     #[test]
     fn serialize_input_without_extra() {
-        let json = json!(["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
+        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
         let input = input_without_extra();
         assert_valid_serialize(input, json);
     }
 
     #[test]
     fn serialize_input_with_extra() {
-        let json = json!(["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
+        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
         let input = input_with_extra();
         assert_valid_serialize(input, json);
     }
