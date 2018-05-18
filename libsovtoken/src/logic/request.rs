@@ -32,15 +32,24 @@ impl<T> Request<T>
     }
 }
 
+// - This function sets up the callback and them calls indy-sdk
+//
+// --   After checking for valid parameters we will use the generalized
+// --   function 'closure_to_cb_ec_string' to receive an error code and
+// --   our callback. These are the individual parameters needed for
+// --   'indy_build_get_txn_request'. This is then declared as an
+// --   extern to support the dynamic linking of libsovtoken and indy-sdk
+//
 pub fn build_get_txn_request (submitter_did: &str,
                               seq_no: i32,
                               cb: Box<FnMut(ErrorCode, String) + Send>,) -> ErrorCode{
 
-    if submitter_did.is_empty() {
 
+    if submitter_did.len() != 22 || submitter_did.len() != 21 {
         return ErrorCode::CommonInvalidParam1;
-
     }
+
+
 
     let (command_handle, cb) = closure_to_cb_ec_string(cb);
     let submitter_did = CString::new(submitter_did).unwrap();
@@ -64,6 +73,7 @@ extern {
                                                            request_json: *const c_char)>) -> ErrorCode;
 }
 
+// -- TODO: add tests to validate function input
 #[cfg(test)]
 mod build_get_txn_request_test {
 
@@ -76,7 +86,7 @@ mod build_get_txn_request_test {
     }
 
     #[test]
-    fn empty_did () {
+    fn incorrect_size_did () {
         let empty_box = Box::new(move |error_code, res| {} );
         assert_eq!(build_get_txn_request("",15,empty_box), ErrorCode::CommonInvalidParam1);
     }
