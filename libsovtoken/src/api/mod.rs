@@ -9,6 +9,7 @@
 
 use std;
 use std::thread;
+use std::ffi::{CString, CStr};
 
 use libc::c_char;
 use indy::api::{ErrorCode};
@@ -22,9 +23,8 @@ use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_p
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
 use logic::fees_config::{SetFeesRequest, Fees};
-
-
-type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
+use utils::types::{JsonCallback};
+use logic::request;
 
 
 /// # Description
@@ -247,8 +247,35 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-    return ErrorCode::Success;
+                                                                      get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
+
+    // DONE: ask why nothing is being done with the payment address
+    // THIS UNWRAP THE CB
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
+    // * C_CHAR to &str
+    let submitter_did = unsafe { CStr::from_ptr(submitter_did).to_str() }.unwrap();
+    let payment_address = unsafe { CStr::from_ptr(payment_address).to_str() }.unwrap();
+    // Helper Vars
+    let did_len = submitter_did.len();
+    let add_len = payment_address.len();
+
+    // validation
+    if did_len != 22 || did_len != 21 {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    if add_len != 32 {
+        return ErrorCode::CommonInvalidParam4;
+    }
+    // start the CBs
+    request::build_get_txn_request(
+        submitter_did,
+        1,
+        Box::new(move |ec, res| {
+            let res = CString::new(res).unwrap();
+            cb(command_handle, ec, res.as_ptr());
+        })
+    )
 }
 
 /// Description
@@ -270,6 +297,13 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+
+
+    //check_useful_c_callback!(cb);
+
+
+
     return ErrorCode::Success;
 }
 
