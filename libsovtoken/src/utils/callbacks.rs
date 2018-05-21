@@ -319,6 +319,36 @@ impl CallbackWithErrorCodeReturnUtils {
 
 }
 
+
+pub mod closure_to_cb {
+    use super::*;
+    use logic::types::ClosureString;
+
+    pub type PointerLengthCallback = Option<extern fn(i32, ErrorCode, *const u8, u32)>;
+
+    pub fn string_from_pointer_and_length(closure: ClosureString) -> (i32, PointerLengthCallback) {
+        lazy_static! {
+            static ref CALLBACKS: Mutex<HashMap<i32, ClosureString>> = Default::default();
+        }
+
+        let mut callbacks = CALLBACKS.lock().unwrap();
+        let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
+        callbacks.insert(command_handle, closure);
+
+        extern "C" fn _callback(command_handle: i32, err: ErrorCode, raw: *const u8, len: u32) {
+            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut cb = callbacks.remove(&command_handle).unwrap();
+
+            let len = len as usize;
+            let mut_ptr = raw as *mut u8;
+            let string: String = unsafe { String::from_raw_parts(mut_ptr, len, len) };
+            cb(err, string);
+        }
+
+        (command_handle, Some(_callback))
+    }
+}
+
 /**
     helper methods for managing a timespan/delay
     copied from master/libindy/src/utils/timeout.rs
@@ -352,5 +382,31 @@ impl TimeoutUtils {
     */
     pub fn long_timeout() -> Duration {
         Duration::from_secs(100)
+    }
+}
+
+#[cfg(test)]
+mod closure_to_cb_tests {
+    use super::*;
+    use utils::ffi_support::c_pointer_from_string;
+
+    #[test]
+    fn test_string_from_pointer_and_length() {
+        static mut CALLBACK_CALLED: bool = false;
+        extern fn send_to_cb(command_handle: i32, callback: closure_to_cb::PointerLengthCallback) {
+            let string = String::from("Would you rather have fingers as long as legs or legs as long as fingers?");
+            let length = string.len() as u32;
+            let pointer = c_pointer_from_string(string) as *const u8;
+            callback.unwrap()(command_handle, ErrorCode::Success, pointer, length);
+        };
+
+        let (command_handle, cb) = closure_to_cb::string_from_pointer_and_length(Box::new(|error_code, string| {
+            unsafe { CALLBACK_CALLED = true };
+            assert_eq!(error_code, ErrorCode::Success);
+            assert_eq!(string, String::from("Would you rather have fingers as long as legs or legs as long as fingers?")); 
+        }));
+
+        send_to_cb(command_handle, cb);
+        assert!(unsafe { CALLBACK_CALLED });
     }
 }
