@@ -92,8 +92,10 @@ pub mod base58 {
 #[cfg(test)]
 mod general_tests {
 
+    use indy::api::ErrorCode;
     use utils::general::StringUtils;
     use utils::general::some_or_none_option_u8;
+    use super::base58;
 
     #[test]
     fn success_empty_u8_array_becomes_option_none() {
@@ -135,5 +137,26 @@ mod general_tests {
         let result = copy.from_right(75);
 
         assert_eq!(data, result, "from_right test failed");
+    }
+
+    fn deserialize_base58_string(serialized: &str, expected: Result<&str, ErrorCode>) {
+        let serialized = String::from(serialized);
+        let expected = expected.map(|deserialized| String::from(deserialized));
+        assert_eq!(base58::deserialize_string(serialized), expected);
+    }
+
+    #[test]
+    fn deserialize_invalid_base58_string() {
+        deserialize_base58_string("3NbSEAfMyPeDTppHLeehRonkVwi537H9YFCvV", Err(ErrorCode::CommonInvalidStructure));
+    }
+
+    #[test]
+    fn deserialize_valid_base58_string_invalid_checksum() {
+        deserialize_base58_string("3NbSEAfMyPeDeKn6mTppHLkVwi537H9YFdeV", Err(ErrorCode::CommonInvalidStructure));
+    }
+
+    #[test]
+    fn deserialize_valid_base58_string_valid_checksum() {
+        deserialize_base58_string("3NbSEAfMyPeDeKn6mTppHLkVwi537H9YFCvV", Ok("My base58 test string."));
     }
 }
