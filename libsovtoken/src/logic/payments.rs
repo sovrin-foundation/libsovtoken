@@ -6,14 +6,16 @@
 use std::ffi::{CString};
 
 use indy::api::*;
+use libc::c_char;
 use logic::indysdk_api::CryptoAPI;
 use super::payment_address_config::PaymentAddressConfig;
-use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
+use utils::ffi_support::{string_from_char_ptr, cstring_from_str, c_pointer_from_string};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
 use utils::callbacks::*;
 use logic::address;
 use logic::address::{PAY_INDICATOR, SOVRIN_INDICATOR, PAYMENT_ADDRESS_FIELD_SEP, CHECKSUM_LEN, VALID_ADDRESS_LEN};
+use logic::types::ClosureString;
 
 
 
@@ -49,6 +51,22 @@ impl CryptoAPI for CreatePaymentSDK {
         let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
 
         return payment_address;
+    }
+
+    fn indy_crypto_sign (
+        &self,
+        wallet_handle: i32,
+        verkey: String,
+        message: String,
+        cb: ClosureString
+    )
+    {
+        let verkey_ptr = c_pointer_from_string(verkey);
+        let message_len = message.len() as u32;
+        let message_ptr = c_pointer_from_string(message) as *const u8;
+
+        let (command_handle, cb) = closure_to_cb::string_from_pointer_and_length(cb);
+        crypto::indy_crypto_sign(command_handle, wallet_handle, verkey_ptr, message_ptr, message_len, cb);
     }
 }
 
@@ -104,6 +122,15 @@ mod payments_tests {
     impl CryptoAPI for CreatePaymentSDKMockHandler {
         fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
             return rand_string(32);
+        }
+        fn indy_crypto_sign (
+            &self,
+            wallet_handle: i32,
+            verkey: String,
+            message: String,
+            cb: ClosureString
+        ) {
+//            cb(ErrorCode::Success, String::from("a"));
         }
     }
 
