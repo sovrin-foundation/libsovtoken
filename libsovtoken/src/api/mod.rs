@@ -373,22 +373,20 @@ pub extern "C" fn build_mint_txn_handler(
     outputs_json: *const c_char,
     cb: JsonCallback) -> ErrorCode
 {
-
-    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-
-    if cb.is_none() {
-        return handle_result(Err(ErrorCode::CommonInvalidParam5));
-    }
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
 
     let outputs_config = match deserialize_from_char_ptr::<OutputMintConfig>(outputs_json) {
         Ok(c) => c,
-        Err(e) => return handle_result(Err(e))
+        Err(e) => return e
     };
 
-    let mint_request = MintRequest::from_config(outputs_config);
-    let mint_request = mint_request.serialize_to_cstring().unwrap();
+    thread::spawn(move | | {
+        let mint_request = MintRequest::from_config(outputs_config);
+        let mint_request = mint_request.serialize_to_cstring().unwrap();
+        cb(command_handle, ErrorCode::Success, mint_request.as_ptr());
+    });
 
-    return handle_result(Ok(mint_request.as_ptr()));
+    return ErrorCode::Success;
 }
 
 /**

@@ -11,6 +11,7 @@ use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
 use sovtoken::utils::ffi_support::str_from_char_ptr;
+use sovtoken::utils::callbacks::CallbackWithErrorCodeReturnUtils;
 
 
 // ***** HELPER METHODS *****
@@ -28,7 +29,7 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 #[test]
 fn errors_with_no_call_back() {
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam5, "Expecting Callback for 'build_mint_txn_handler'"); 
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Callback for 'build_mint_txn_handler'");
 }
 
 // the build mint txn handler method requires an outputs_json parameter and this test ensures that 
@@ -67,31 +68,23 @@ fn errors_with_invalid_outputs_json() {
 
 #[test]
 fn valid_output_json() {
-    static mut CALLBACK_CALLED: bool = false;
-    extern "C" fn valid_output_json_cb(command_handle: i32, error_code: ErrorCode, mint_request: *const c_char) -> ErrorCode {
-        unsafe { CALLBACK_CALLED = true; }
-        assert_eq!(command_handle, COMMAND_HANDLE);
-        assert_eq!(error_code, ErrorCode::Success);
-        let mint_request_json_string = str_from_char_ptr(mint_request).unwrap();
-        let mint_request_json_value : serde_json::Value = serde_json::from_str(mint_request_json_string).unwrap();
-        let mint_operation = mint_request_json_value
-            .get("operation")
-            .unwrap();
-
-        let expected = json!({
-            "type": "10000",
-            "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
-        });
-        assert_eq!(mint_operation, &expected);
-        return ErrorCode::Success;
-    }
-
+    let (receiver, command_handle, cob) = CallbackWithErrorCodeReturnUtils::closure_to_cb_ec_string_with_return();
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(valid_output_json_cb));
+    let return_error = sovtoken::api::build_mint_txn_handler(command_handle, 1, ptr::null(), outputs_str_ptr, cob);
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
-    unsafe {
-        assert!(CALLBACK_CALLED);
-    }
+
+    let (error_code, mint_request) = receiver.recv_timeout(std::time::Duration::from_millis(500)).unwrap();
+    assert_eq!(error_code, ErrorCode::Success);
+    let mint_request_json_value : serde_json::Value = serde_json::from_str(&mint_request).unwrap();
+    let mint_operation = mint_request_json_value
+        .get("operation")
+        .unwrap();
+
+    let expected = json!({
+        "type": "10000",
+        "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
+    });
+    assert_eq!(mint_operation, &expected);
 }
 
