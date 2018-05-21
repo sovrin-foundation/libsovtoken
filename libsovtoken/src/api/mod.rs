@@ -434,13 +434,15 @@ pub extern "C" fn build_mint_txn_handler(
     # Returns
     ErrorCode from register_payment_method
 */
+
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
-    let payment_method_name = cstring_from_str("libsovtoken".to_string());
-    let command_id: i32 = 1819;
+    let (receiver, command_handle, cb) = ::utils::callbacks::CallbackUtils::closure_to_cb_ec();
 
-    return indy_register_payment_method(command_id,
+    let payment_method_name = cstring_from_str("libsovtoken".to_string());
+
+    indy_register_payment_method(command_handle,
             payment_method_name.as_ptr(),
             Some(create_payment_address_handler),
             Some(add_request_fees_handler),
@@ -453,7 +455,8 @@ pub extern fn sovtoken_init() -> ErrorCode {
             Some(build_set_txn_fees_handler),
             Some(build_get_txn_fees_handler),
             Some(parse_get_txn_fees_response_handler),
-             None
+             cb
         );
 
+    receiver.recv().unwrap()
 }
