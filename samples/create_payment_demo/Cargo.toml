@@ -2,7 +2,9 @@
 name = "create_payment_demo"
 version = "0.1.0"
 authors = ["matt raffel <matt.raffel@evernym.com>"]
+build = "build.rs"
 
 [dependencies]
-indy = {git = "https://github.com/hyperledger/indy-sdk.git" }
 libsovtoken = { path = "../../libsovtoken" }
+lazy_static = "0.2"
+libc = "0.2.21"
