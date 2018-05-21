@@ -45,14 +45,15 @@ pub fn build_get_txn_request (submitter_did: &str,
                               cb: Box<FnMut(ErrorCode, String) + Send>,) -> ErrorCode{
 
 
-    if submitter_did.len() != 22 || submitter_did.len() != 21 {
-        return ErrorCode::CommonInvalidParam1;
-    }
-
-
-
     let (command_handle, cb) = closure_to_cb_ec_string(cb);
     let submitter_did = CString::new(submitter_did).unwrap();
+
+    // helper vars
+    let did_len = submitter_did.len();
+
+    if did_len != 22 || did_len != 21 {
+        return ErrorCode::CommonInvalidParam1;
+    }
 
     unsafe {
         indy_build_get_txn_request(

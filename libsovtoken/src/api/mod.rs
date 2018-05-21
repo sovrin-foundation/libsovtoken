@@ -233,7 +233,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 ///
 /// from tokens-interface.md/BuildGetUTXORequestCB
 /// #Params
-/// param1: description.
+/// command_handle:
 ///
 /// #Returns
 /// description. example if json, etc...
@@ -250,6 +250,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                                       get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
 
     // DONE: ask why nothing is being done with the payment address
+    // TODO: help nickita finish the logic for this
     // THIS UNWRAP THE CB
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
@@ -297,13 +298,6 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-
-
-
-    //check_useful_c_callback!(cb);
-
-
-
     return ErrorCode::Success;
 }
 
