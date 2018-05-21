@@ -25,6 +25,8 @@ use utils::general::ResultExtension;
 use logic::fees_config::{SetFeesRequest, Fees};
 use utils::types::{JsonCallback};
 use logic::request;
+use utils::validation::{validate_did_len, validate_address_len};
+use logic::address::{validate_address};
 
 
 /// # Description
@@ -254,20 +256,17 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
     // THIS UNWRAP THE CB
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
-    let submitter_did = unsafe { CStr::from_ptr(submitter_did).to_str() }.unwrap();
-    let payment_address = unsafe { CStr::from_ptr(payment_address).to_str() }.unwrap();
+    let submitter_did =  str_from_char_ptr(submitter_did).unwrap();
+    let payment_address = str_from_char_ptr(payment_address).unwrap();
     // Helper Vars
-    let did_len = submitter_did.len();
     let add_len = payment_address.len();
 
     // validation
-    if did_len != 22 || did_len != 21 {
+    if !validate_did_len(submitter_did) {
         return ErrorCode::CommonInvalidParam3;
     }
 
-    if add_len != 32 {
-        return ErrorCode::CommonInvalidParam4;
-    }
+    validate_address(String::from(payment_address));
     // start the CBs
     request::build_get_txn_request(
         submitter_did,
