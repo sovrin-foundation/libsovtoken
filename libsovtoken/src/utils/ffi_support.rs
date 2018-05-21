@@ -51,6 +51,11 @@ pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_c
     return result;
 }
 
+pub fn c_pointer_from_string(string: String) -> *const c_char {
+    let cstring = CString::new(string).unwrap();
+    return Box::new(cstring).into_raw();
+}
+
 /**
     Creates a closure which calls a callback on `Ok`.
 
@@ -88,7 +93,7 @@ mod ffi_support_tests {
     use libc::c_char;
     use serde_json::Value;
     use utils::general::ResultExtension;
-    use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr};
+    use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr, c_pointer_from_string, string_from_char_ptr};
     use indy::api::ErrorCode;
 
     static VALID_DUMMY_JSON: &'static str = r#"{"field1":"data"}"#;
@@ -111,6 +116,14 @@ mod ffi_support_tests {
         let json: Option<&str> = str_from_char_ptr(ptr::null());
 
         assert_eq!(None, json, "str_from_char_ptr didn't return None as expected");
+    }
+
+    #[test]
+    fn test_c_pointer_from_string() {
+        let string = String::from("test1234");
+        let pointer = c_pointer_from_string(string.clone());
+        let string2 = string_from_char_ptr(pointer).unwrap();
+        assert_eq!(string2, string);
     }
 
     #[test]
