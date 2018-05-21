@@ -53,14 +53,18 @@ use std::fmt;
 */
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
-    payment_address: String,
-    seq_no: u32,
-    signature: String
+    pub payment_address: String,
+    pub seq_no: u32,
+    pub signature: Option<String>
 }
 
 impl Input {
-    pub fn new(payment_address: String, seq_no: u32, signature: String) -> Input {
+    pub fn new(payment_address: String, seq_no: u32, signature: Option<String>) -> Input {
         return Input { payment_address, seq_no, signature};
+    }
+
+    pub fn sign_with(self, signature: String) -> Self {
+        return Input::new(self.payment_address, self.seq_no, Some(signature));
     }
 }
 
@@ -106,6 +110,7 @@ impl<'de> Deserialize<'de> for Input {
                 let mut seq_no = None;
                 let mut signature = None;
 
+
                 while let Some(key) = map.next_key()? {
                     match key {
                         "paymentAddress" => { payment_address = map.next_value()?; },
@@ -127,6 +132,7 @@ impl<'de> Deserialize<'de> for Input {
         return deserializer.deserialize_struct("Input", FIELDS, InputVisitor);
     }
 }
+
 
 #[cfg(test)]
 mod input_tests {
@@ -159,14 +165,20 @@ mod input_tests {
 
     fn input_with_extra() -> Input {
         let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
-        let signature = String::from("239asdkj3298uadkljasd98u234ijasdlkj");
+        let signature = Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
         return Input::new(address, 30, signature);
+        panic!("There is no extra.");
     }
 
     fn input_without_extra() -> Input {
         let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
-        let signature= String::from("239asdkj3298uadkljasd98u234ijasdlkj");
+        let signature= Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
         return Input::new(address, 30, signature);
+    }
+
+    fn input_without_extra_or_signature() -> Input {
+        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        return Input::new(address, 30, None);
     }
 
     #[test]
@@ -178,7 +190,7 @@ mod input_tests {
     #[test]
     fn deserialize_input_tuple() {
         let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
-        let expected = Input::new(String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 30, String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
+        let expected = Input::new(String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 30, Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
         assert_valid_deserialize(json, expected);
     }
 
@@ -186,10 +198,21 @@ mod input_tests {
     fn deserialize_invalid_input_object() {
         let json = json!({
             "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
+        });
+        assert_invalid_deserialize(json, "missing field `seq_no`");
+    }
+
+    #[test]
+    fn deserialize_input_object_without_signature_or_extra() {
+        let json = json!({
+            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "seq_no": 30,
         });
-        assert_invalid_deserialize(json, "missing field `signature`");
+        let input = input_without_extra_or_signature();
+        assert_valid_deserialize(json, input);
     }
+
 
     #[test]
     fn deserialize_input_object_without_extra() {
@@ -214,6 +237,13 @@ mod input_tests {
     }
 
     #[test]
+    fn serialize_input_without_extra_or_signature() {
+        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30]);
+        let input = input_without_extra_or_signature();
+        assert_valid_serialize(input, json);
+    }
+
+    #[test]
     fn serialize_input_without_extra() {
         let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
         let input = input_without_extra();
@@ -225,6 +255,15 @@ mod input_tests {
         let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]);
         let input = input_with_extra();
         assert_valid_serialize(input, json);
+        panic!("There is no extra.");
     }
 
+    #[test]
+    fn sign_input() {
+        let input = Input::new(String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 30, None);
+        let signed_input = input.sign_with(String::from("3aRkv0kyRjCYu7SazNpbOzJPhKWlQDFBU7Judz16nx6CzAUsp06q2PaPWmKh"));
+        assert_eq!(signed_input.payment_address, String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"));
+        assert_eq!(signed_input.seq_no, 30);
+        assert_eq!(signed_input.signature.unwrap(), String::from("3aRkv0kyRjCYu7SazNpbOzJPhKWlQDFBU7Judz16nx6CzAUsp06q2PaPWmKh"));
+    }
 }

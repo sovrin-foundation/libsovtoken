@@ -72,7 +72,6 @@ impl Serialize for Output {
     }
 }
 
-
 impl<'de> Deserialize<'de> for Output {
     fn deserialize<D: de::Deserializer<'de>>(deserializer: D) -> Result<Output, D::Error> {
         struct OutputVisitor;
