@@ -1,8 +1,4 @@
-use std::thread;
-use std::time;
 use std::sync::{Mutex, Arc};
-use std::cmp::Ordering;
-
 
 pub fn map_async<C, F, R>(v: Vec<R>, cb_map: C, cb_finish: F)
     where
@@ -38,6 +34,9 @@ pub fn map_async<C, F, R>(v: Vec<R>, cb_map: C, cb_finish: F)
 #[cfg(test)]
 mod async_map_tests {
     use super::*;
+    use std::thread;
+    use std::time;
+
 
     #[test]
     fn test_async_add_1() {
