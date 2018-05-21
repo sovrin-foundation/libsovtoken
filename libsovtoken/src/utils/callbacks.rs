@@ -9,6 +9,7 @@ use std::sync::Mutex;
 use std::slice;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::Duration;
+use utils::types::{JsonCallback, ErrorCodeStringClosure, ErrorCodeStringCallback};
 
 use indy::api::ErrorCode;
 
@@ -277,6 +278,29 @@ impl CallbackUtils {
 
 }
 
+pub struct CallBackWithClosureParamsUtils {}
+
+impl CallBackWithClosureParamsUtils {
+
+    pub fn closure_to_cb_ec_string(closure:  ErrorCodeStringClosure) -> (i32, ErrorCodeStringCallback) {
+        lazy_static! {
+            static ref CALLBACKS: Mutex<HashMap<i32, ErrorCodeStringClosure>> = Default::default();
+        }
+
+        extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_str: *const c_char) {
+            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut cb = callbacks.remove(&command_handle).unwrap();
+            let metadata = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
+            cb(err, metadata)
+        }
+
+        let mut callbacks = CALLBACKS.lock().unwrap();
+        let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
+        callbacks.insert(command_handle, closure);
+
+        (command_handle, Some(_callback))
+    }
+}
 /**
     Following the pattern of CallbackUtils, implements callbacks that expect to have a return
     of ErrorCode
@@ -354,3 +378,4 @@ impl TimeoutUtils {
         Duration::from_secs(100)
     }
 }
+

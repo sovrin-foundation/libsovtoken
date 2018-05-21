@@ -9,6 +9,7 @@
 
 use std;
 use std::thread;
+use std::ffi::{CString, CStr};
 
 use libc::c_char;
 use indy::api::{ErrorCode};
@@ -22,9 +23,10 @@ use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_p
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
 use logic::fees_config::{SetFeesRequest, Fees};
-
-
-type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
+use utils::types::{JsonCallback};
+use logic::request;
+use utils::validation::{validate_did_len, validate_address_len};
+use logic::address::{validate_address};
 
 
 /// # Description
@@ -233,7 +235,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 ///
 /// from tokens-interface.md/BuildGetUTXORequestCB
 /// #Params
-/// param1: description.
+/// command_handle:
 ///
 /// #Returns
 /// description. example if json, etc...
@@ -247,8 +249,33 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-    return ErrorCode::Success;
+                                                                      get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
+
+    // DONE: ask why nothing is being done with the payment address
+    // TODO: help nickita finish the logic for this
+    // THIS UNWRAP THE CB
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
+    // * C_CHAR to &str
+    let submitter_did =  str_from_char_ptr(submitter_did).unwrap();
+    let payment_address = str_from_char_ptr(payment_address).unwrap();
+    // Helper Vars
+    let add_len = payment_address.len();
+
+    // validation
+    if !validate_did_len(submitter_did) {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    validate_address(String::from(payment_address));
+    // start the CBs
+    request::build_get_txn_request(
+        submitter_did,
+        1,
+        Box::new(move |ec, res| {
+            let res = CString::new(res).unwrap();
+            cb(command_handle, ec, res.as_ptr());
+        })
+    )
 }
 
 /// Description
