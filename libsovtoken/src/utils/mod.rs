@@ -7,4 +7,5 @@ pub mod callbacks;
 pub mod general;
 pub mod json_conversion;
 pub mod logger;
+pub mod map_async;
 pub mod random;

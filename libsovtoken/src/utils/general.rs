@@ -64,6 +64,26 @@ impl<'a> StringUtils for &'a str {
 }
 
 
+pub mod base58 {
+    use indy::api::ErrorCode;
+    use rust_base58::{FromBase58};
+
+    /**
+        Deserializes a base58 String object with checksum.
+
+        Errors: `ErrorCode::CommonInvalidStructure`.
+    */
+    pub fn deserialize_string(s: String) -> Result<String, ErrorCode> {
+        let deserialized_bytes = s
+            .into_bytes()
+            .from_base58_check()
+            .map_err(|_| ErrorCode::CommonInvalidStructure)?;
+        return String::from_utf8(deserialized_bytes)
+            .map_err(|_| ErrorCode::CommonInvalidStructure);
+    }
+}
+
+
 /*
          UNIT TESTS BELOW
          (and only unit tests---do not add more functions below this mod)
