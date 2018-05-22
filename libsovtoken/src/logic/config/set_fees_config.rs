@@ -2,7 +2,7 @@
  *  Defines structure and implementation Fees and SetFeesRequest
  *  these are the structures for the [`build_fees_txn_handler`]
  *
- *  [`build_fees_txn_handler`]: ../../api/fn.build_fees_txn_handler.html
+ *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
  */
 use std::collections::HashMap;
 use logic::request::Request;
@@ -12,7 +12,7 @@ const SET_FEES: &str = "20000";
 /**
  *  Json config to customize [`build_fees_txn_handler`]
  *
- *  [`build_fees_txn_handler`]: ../../api/fn.build_fees_txn_handler.html
+ *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
  */
 #[derive(Serialize, Deserialize)]
 pub struct Fees {

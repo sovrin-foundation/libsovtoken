@@ -13,15 +13,19 @@ use std::thread;
 use libc::c_char;
 use indy::api::{ErrorCode};
 use indy::api::payments::indy_register_payment_method;
-use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
-use logic::output_mint_config::{OutputMintConfig, MintRequest};
-use logic::fees_req_config::{InputConfig, OutputConfig, FeesRequest};
+
+use logic::config::{
+    payment_config::{PaymentRequest},
+    general::{InputConfig, OutputConfig},
+    output_mint_config::{MintRequest},
+    payment_address_config::{PaymentAddressConfig},
+    set_fees_config::{SetFeesRequest, Fees},
+};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
-use logic::fees_config::{SetFeesRequest, Fees};
 
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
@@ -78,12 +82,12 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
-        let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
+        let (error_code, payment_address) = handler.create_payment_address(command_handle, wallet_handle, config);
         let payment_address_cstring = cstring_from_str(payment_address);
         let payment_address_ptr = payment_address_cstring.as_ptr();
 
         match cb {
-            Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+            Some(f) => f(command_handle, error_code, payment_address_ptr),
             None => panic!("cb was null even after check"),
         };
     });
@@ -198,10 +202,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         Err(e) => return handle_result(Err(e))
     };
 
-    let fees_request = FeesRequest::from_config(outputs_config,inputs_config);
-    let fees_request = fees_request.serialize_to_cstring().unwrap();
+    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
+    let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    return handle_result(Ok(fees_request.as_ptr()));
+    return handle_result(Ok(payment_request.as_ptr()));
 
 }
 
@@ -380,7 +384,7 @@ pub extern "C" fn build_mint_txn_handler(
         return handle_result(Err(ErrorCode::CommonInvalidParam5));
     }
 
-    let outputs_config = match deserialize_from_char_ptr::<OutputMintConfig>(outputs_json) {
+    let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
         Ok(c) => c,
         Err(e) => return handle_result(Err(e))
     };
