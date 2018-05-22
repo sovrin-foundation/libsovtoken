@@ -11,8 +11,8 @@ use std;
 use std::thread;
 
 use libc::c_char;
+use indy::payments::Payment;
 use indy::ErrorCode;
-use indy::payment::Payment;//::api::payments::indy_register_payment_method;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::config::{
@@ -81,19 +81,25 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     thread::spawn(move || {
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
+        let mut result : ErrorCode = ErrorCode::Success;
+        let mut payment_address_ptr = std::ptr::null();
+
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
         match handler.create_payment_address(wallet_handle, config) {
             Ok(payment_address) => {
                 let payment_address_cstring = cstring_from_str(payment_address);
-                let payment_address_ptr = payment_address_cstring.as_ptr();
+                payment_address_ptr = payment_address_cstring.as_ptr();
 
-                match cb {
-                    Some(f) => f(command_handle, error_code, payment_address_ptr),
-                    None => panic!("cb was null even after check"),
-                };
             },
-            Err(e) => panic!(e)
-        }
+            Err(e) => { result = ErrorCode::CommonInvalidState; },
+        };
+
+        match cb {
+            Some(f) => f(command_handle, result, payment_address_ptr),
+            None => panic!("cb was null even after check"),
+        };
+
+
     });
 
 
@@ -412,6 +418,7 @@ pub extern "C" fn build_mint_txn_handler(
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
+    /*  TEMPORARY while rust-indy gets this method in
     let (receiver, command_handle, cb) = ::utils::callbacks::CallbackUtils::closure_to_cb_ec();
 
     let payment_method_name = cstring_from_str("libsovtoken".to_string());
@@ -435,4 +442,6 @@ pub extern fn sovtoken_init() -> ErrorCode {
         );
 
     receiver.recv().unwrap()
+    */
+    return ErrorCode::CommonInvalidStructure;
 }
