@@ -178,4 +178,11 @@ extern "C" {
                                         cb: Option<extern fn(xcommand_handle: i32,
                                                            err: ErrorCode,
                                                            payment_address: *const c_char)>) -> ErrorCode;
+
+    #[no_mangle]
+    pub fn indy_list_payment_addresses(command_handle: i32,
+                                          wallet_handle: i32,
+                                          cb: Option<extern fn(command_handle_: i32,
+                                                               err: ErrorCode,
+                                                               payment_addresses_json: *const c_char)>) -> ErrorCode;
 }

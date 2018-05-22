@@ -117,6 +117,21 @@ fn create_payment(wallet_handle: i32) -> String {
 }
 
 
+fn get_payment_addresses(wallet_handle: i32) -> String {
+
+    let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
+
+    unsafe {
+        let err = indy_list_payment_addresses(command_handle, wallet_handle, cb);
+        assert_eq!(ErrorCode::Success, err);
+    };
+
+    let (result, addresses_json) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
+    assert_eq!(ErrorCode::Success, result);
+
+    return addresses_json;
+}
+
 /**
    Entry point for the create payment address demo.  It will setup the environment, create the payment address
    and prove it was created by doing something.  preferably with a wow factor and maybe some cool colors
@@ -143,17 +158,27 @@ fn main() {
         println!("     ....and opening wallet.");
         let wallet_handle: i32 = open_wallet(&wallet_name);
 
+        println!("3 => getting payment addresses BEFORE create payment");
+        let addresses_json = get_payment_addresses(wallet_handle);
+        println!("     ....received list of addresses");
+        println!("     {}", addresses_json);
 
-        println!("3 => creating a payment");
+        println!("4 => creating a payment");
         let payment_address: String = create_payment(wallet_handle);
 
         println!("     ....received a payment address of '{}'", payment_address);
+
+        println!("5 => getting payment addresses");
+        let addresses_json = get_payment_addresses(wallet_handle);
+        println!("     ....received list of addresses");
+        println!("     {}", addresses_json);
     });
 
     if false == panic_result.is_err() {
-        println!("4 => payment complete, running cleanup");
+        println!("6 => payment complete, running cleanup");
     } else {
-        println!("4 => running cleanup after error");
+        println!();
+        println!("6 => running cleanup after error");
     }
 
     clean_up(&wallet_name);
