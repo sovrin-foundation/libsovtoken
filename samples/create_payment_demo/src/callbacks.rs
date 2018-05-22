@@ -14,6 +14,9 @@ use indy::*;
 
 lazy_static! {
     static ref COMMAND_HANDLE_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
+    static ref CALLBACKS_EC: Mutex<HashMap<i32, Box<FnMut(ErrorCode) + Send>>> = Default::default();
+    static ref CALLBACKS_EC_I32: Mutex<HashMap<i32, Box<FnMut(ErrorCode, i32) + Send>>> = Default::default();
+    static ref CALLBACKS_EC_STRING: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String) + Send > >> = Default::default();
 }
 
 pub struct CallbackUtils {}
@@ -26,21 +29,17 @@ impl CallbackUtils {
 
         let (sender, receiver) = channel();
 
-        lazy_static! {
-            static ref CALLBACKS: Mutex<HashMap<i32, Box<FnMut(ErrorCode) + Send>>> = Default::default();
-        }
-
         let closure = Box::new(move |err| {
             sender.send(err).unwrap();
         });
 
         extern "C" fn _callback(command_handle: i32, err: ErrorCode) {
-            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut callbacks = CALLBACKS_EC.lock().unwrap();
             let mut cb = callbacks.remove(&command_handle).unwrap();
             cb(err)
         }
 
-        let mut callbacks = CALLBACKS.lock().unwrap();
+        let mut callbacks = CALLBACKS_EC.lock().unwrap();
         let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
         callbacks.insert(command_handle, closure);
 
@@ -53,21 +52,17 @@ impl CallbackUtils {
                                                         c_i32: i32)>) {
         let (sender, receiver) = channel();
 
-        lazy_static! {
-            static ref CALLBACKS: Mutex<HashMap<i32, Box<FnMut(ErrorCode, i32) + Send>>> = Default::default();
-        }
-
         let closure = Box::new(move |err, val| {
             sender.send((err, val)).unwrap();
         });
 
         extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_i32: i32) {
-            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut callbacks = CALLBACKS_EC_I32.lock().unwrap();
             let mut cb = callbacks.remove(&command_handle).unwrap();
             cb(err, c_i32)
         }
 
-        let mut callbacks = CALLBACKS.lock().unwrap();
+        let mut callbacks = CALLBACKS_EC_I32.lock().unwrap();
         let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
         callbacks.insert(command_handle, closure);
 
@@ -80,22 +75,18 @@ impl CallbackUtils {
                                                            c_str: *const c_char)>) {
         let (sender, receiver) = channel();
 
-        lazy_static! {
-            static ref CALLBACKS: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String) + Send > >> = Default::default();
-        }
-
         let closure = Box::new(move |err, val| {
             sender.send((err, val)).unwrap();
         });
 
         extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_str: *const c_char) {
-            let mut callbacks = CALLBACKS.lock().unwrap();
+            let mut callbacks = CALLBACKS_EC_STRING.lock().unwrap();
             let mut cb = callbacks.remove(&command_handle).unwrap();
             let metadata = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
             cb(err, metadata)
         }
 
-        let mut callbacks = CALLBACKS.lock().unwrap();
+        let mut callbacks = CALLBACKS_EC_STRING.lock().unwrap();
         let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
         callbacks.insert(command_handle, closure);
 

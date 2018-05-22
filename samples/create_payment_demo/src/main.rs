@@ -19,9 +19,9 @@ use callbacks::*;
 /**
    calls sovtoken to initialize indy-sdk with libsovtoken payment methods
 */
-/*fn initialize_libraries() {
-    sovtoken_init();
-}*/
+fn initialize_libraries() {
+    // sovtoken_init();
+}
 
 /**
    cleans up any
@@ -37,12 +37,13 @@ fn clean_up(wallet_name: &String) {
     let err = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
 }
 
-
+/**
+    creates wallet for test
+*/
 fn create_wallet(pool_name: &String, wallet_name: &String) {
 
     let pool_name = CString::new(pool_name.to_string()).unwrap();
     let wallet_name = CString::new(wallet_name.to_string()).unwrap();
-
 
     let (create_wallet_receiver, create_wallet_command_handle, create_wallet_callback) = CallbackUtils::closure_to_cb_ec();
 
@@ -59,16 +60,17 @@ fn create_wallet(pool_name: &String, wallet_name: &String) {
         assert_eq!(ErrorCode::Success, err);
     };
 
-
     let err = create_wallet_receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
     assert_eq!(ErrorCode::Success, err);
 
 }
 
+/**
+   opens wallet
+*/
+fn open_wallet(wallet_name: &String) -> i32 {
 
-fn open_wallet(wallet_name: &str) -> i32 {
-
-    let wallet_name = CString::new(wallet_name).unwrap();
+    let wallet_name = CString::new(wallet_name.to_string()).unwrap();
 
     let (open_wallet_receiver, open_wallet_command_handle, open_wallet_callback) = CallbackUtils::closure_to_cb_ec_i32();
 
@@ -90,11 +92,15 @@ fn open_wallet(wallet_name: &str) -> i32 {
 }
 
 
+/**
+   calls indy_create_payment_address which is expected to call libsovtoken::create_payment_address_handler and return
+   a payment address looking like pay:sov:{address}{checksum}
+*/
 fn create_payment(wallet_handle: i32) -> String {
 
     let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
 
-    let payment_method = CString::new("sov".to_string()).unwrap();
+    let payment_method = CString::new("pay::sov".to_string()).unwrap();
     let config = CString::new(r#"{}"#.to_string()).unwrap();
 
     unsafe {
@@ -103,6 +109,7 @@ fn create_payment(wallet_handle: i32) -> String {
     };
 
     let (result, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
+    assert_eq!(ErrorCode::Success, result);
 
     return payment_address;
 }
@@ -114,27 +121,42 @@ fn create_payment(wallet_handle: i32) -> String {
 */
 fn main() {
 
-    let POOL: String = "pool_1".to_string();
-    let WALLET: String = "wallet_b".to_string();
-
-    println!("initializing libsovtoken -> indy-sdk");
-    // initialize_libraries();
-
-    println!("Setting up an wallet called '{}'", WALLET);
-    create_wallet(&POOL, &WALLET);
-    println!("opening wallet.");
-    let wallet_handle: i32 = open_wallet(&WALLET);
-
-
-    println!("creating a payment");
-    // let payment_address:String = create_payment(wallet_handle);
-
     println!();
-    // println!("received a payment address of '{}'", payment_address);
+    println!();
+    println!("----------------------------------------------------");
+    println!("create payment address demo starts");
+    println!();
 
-    // final step
-    println!("payment complete, running cleanup");
+    let POOL: String = "pool_1".to_string();
+    let WALLET: String = "payment_demo".to_string();
+
+    let panic_result = std::panic::catch_unwind( ||
+    {
+        println!("1 => initializing libsovtoken -> indy-sdk");
+        initialize_libraries();
+
+        println!("2 => Setting up an wallet called '{}'", WALLET);
+        create_wallet(&POOL, &WALLET);
+        println!("     ....opening wallet.");
+        let wallet_handle: i32 = open_wallet(&WALLET);
+
+
+        println!("3 => creating a payment");
+        let payment_address: String = create_payment(wallet_handle);
+
+        println!();
+        println!("     received a payment address of '{}'", payment_address);
+    });
+
+    if false == panic_result.is_err() {
+        println!("4 => payment complete, running cleanup");
+    } else {
+        println!("4 => running cleanup after error");
+    }
+
     clean_up(&WALLET);
 
+    println!();
     println!("demo finished....");
+    println!("----------------------------------------------------");
 }
