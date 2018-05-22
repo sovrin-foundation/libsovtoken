@@ -406,7 +406,8 @@ pub extern fn sovtoken_init() -> ErrorCode {
 
     let (receiver, command_handle, cb) = ::utils::callbacks::CallbackUtils::closure_to_cb_ec();
 
-    let payment_method_name = cstring_from_str("libsovtoken".to_string());
+    // this string is what is used in payment_method parameter for indy_create_payment_address
+    let payment_method_name = cstring_from_str("pay:sov".to_string());
 
     indy_register_payment_method(command_handle,
             payment_method_name.as_ptr(),
@@ -421,7 +422,7 @@ pub extern fn sovtoken_init() -> ErrorCode {
             Some(build_set_txn_fees_handler),
             Some(build_get_txn_fees_handler),
             Some(parse_get_txn_fees_response_handler),
-             cb
+            cb
         );
 
     receiver.recv().unwrap()

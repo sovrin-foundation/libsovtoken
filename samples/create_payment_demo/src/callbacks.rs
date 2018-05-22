@@ -6,7 +6,6 @@ use std::ffi::CStr;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::sync::Mutex;
-use std::slice;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::Duration;
 

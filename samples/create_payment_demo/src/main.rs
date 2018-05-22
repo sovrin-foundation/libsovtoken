@@ -8,11 +8,13 @@ extern crate libc;
 
 mod indy;
 mod callbacks;
+mod libsovtoken;
 
 use std::ptr::null;
 use std::ffi::CString;
 
 use indy::*;
+use libsovtoken::*;
 use callbacks::*;
 
 
@@ -20,7 +22,7 @@ use callbacks::*;
    calls sovtoken to initialize indy-sdk with libsovtoken payment methods
 */
 fn initialize_libraries() {
-    // sovtoken_init();
+    // unsafe { sovtoken_init(); };
 }
 
 /**
@@ -127,25 +129,25 @@ fn main() {
     println!("create payment address demo starts");
     println!();
 
-    let POOL: String = "pool_1".to_string();
-    let WALLET: String = "payment_demo".to_string();
+    let pool_name: String = "pool_1".to_string();
+    let wallet_name: String = "payment_demo".to_string();
 
     let panic_result = std::panic::catch_unwind( ||
     {
         println!("1 => initializing libsovtoken -> indy-sdk");
         initialize_libraries();
 
-        println!("2 => Setting up an wallet called '{}'", WALLET);
-        create_wallet(&POOL, &WALLET);
-        println!("     ....opening wallet.");
-        let wallet_handle: i32 = open_wallet(&WALLET);
+
+        println!("2 => Setting up an wallet called '{}'", wallet_name);
+        create_wallet(&pool_name, &wallet_name);
+        println!("     ....and opening wallet.");
+        let wallet_handle: i32 = open_wallet(&wallet_name);
 
 
         println!("3 => creating a payment");
         let payment_address: String = create_payment(wallet_handle);
 
-        println!();
-        println!("     received a payment address of '{}'", payment_address);
+        println!("     ....received a payment address of '{}'", payment_address);
     });
 
     if false == panic_result.is_err() {
@@ -154,7 +156,7 @@ fn main() {
         println!("4 => running cleanup after error");
     }
 
-    clean_up(&WALLET);
+    clean_up(&wallet_name);
 
     println!();
     println!("demo finished....");
