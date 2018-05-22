@@ -16,7 +16,7 @@ use indy::api::payments::indy_register_payment_method;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::config::{
-    fees_req_config::{FeesRequest},
+    payment_config::{PaymentRequest},
     general::{InputConfig, OutputConfig},
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
@@ -202,10 +202,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         Err(e) => return handle_result(Err(e))
     };
 
-    let fees_request = FeesRequest::from_config(outputs_config,inputs_config);
-    let fees_request = fees_request.serialize_to_cstring().unwrap();
+    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
+    let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    return handle_result(Ok(fees_request.as_ptr()));
+    return handle_result(Ok(payment_request.as_ptr()));
 
 }
 
