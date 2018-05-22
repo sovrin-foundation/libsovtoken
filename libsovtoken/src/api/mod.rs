@@ -13,15 +13,21 @@ use std::thread;
 use libc::c_char;
 use indy::api::{ErrorCode};
 use indy::api::payments::indy_register_payment_method;
-use logic::payment_address_config::PaymentAddressConfig;
+//use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
-use logic::output_mint_config::{OutputMintConfig, MintRequest};
-use logic::fees_req_config::{InputConfig, OutputConfig, FeesRequest};
+//use logic::output_mint_config::{OutputMintConfig, MintRequest};
+//use logic::fees_req_config::{InputConfig, OutputConfig, FeesRequest};
+use logic::config::{
+    payment_address_config::{PaymentAddressConfig},
+    output_mint_config::{OutputMintConfig, MintRequest},
+    fees_req_config::{InputConfig, OutputConfig, FeesRequest},
+    fees_config::{SetFeesRequest, Fees},
+};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
-use logic::fees_config::{SetFeesRequest, Fees};
+//use logic::fees_config::{SetFeesRequest, Fees};
 
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;

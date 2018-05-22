@@ -7,7 +7,7 @@ use std::ffi::{CString};
 
 use indy::api::*;
 use logic::indysdk_api::CryptoAPI;
-use super::payment_address_config::PaymentAddressConfig;
+use super::config::payment_address_config::PaymentAddressConfig;
 use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;

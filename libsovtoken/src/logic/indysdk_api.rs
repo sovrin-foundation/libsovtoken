@@ -1,6 +1,6 @@
 //! this module defines traits which represent INDY SDK API calls
 
-use super::payment_address_config::PaymentAddressConfig;
+use super::config::payment_address_config::PaymentAddressConfig;
 
 /**
     This defines the interfaces for INDY SDK crypto apis, which can be replaced with different implementations

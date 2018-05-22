@@ -23,7 +23,7 @@ use std::ffi::CString;
 
 
 use indy::api::ErrorCode;
-use sovtoken::logic::payment_address_config::PaymentAddressConfig;
+use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
 use sovtoken::utils::callbacks::*;
 
