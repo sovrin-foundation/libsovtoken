@@ -152,7 +152,6 @@ fn main() {
         println!("1 => initializing libsovtoken -> indy-sdk");
         initialize_libraries();
 
-
         println!("2 => Setting up an wallet called '{}'", wallet_name);
         create_wallet(&pool_name, &wallet_name);
         println!("     ....and opening wallet.");
@@ -165,7 +164,6 @@ fn main() {
 
         println!("4 => creating a payment");
         let payment_address: String = create_payment(wallet_handle);
-
         println!("     ....received a payment address of '{}'", payment_address);
 
         println!("5 => getting payment addresses");
