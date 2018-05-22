@@ -2,7 +2,7 @@
  *  Defines structure and implementation for OutputConfig and MintRequest
  *  these are the structures for the [`build_mint_txn_handler`]
  * 
- *  [`build_mint_txn_handler`]: ../../api/fn.build_mint_txn_handler.html
+ *  [`build_mint_txn_handler`]: ../../../api/fn.build_mint_txn_handler.html
  */
 
 
@@ -11,9 +11,9 @@ use logic::output::Output;
 use logic::config::general::OutputConfig;
 
 /**
- *  Json config to customize [`build_mint_txn_handler`]
+ *  A struct which can be transformed into a mint JSON object for [`build_mint_txn_handler`]
  *  
- *  [`build_mint_txn_handler`]: ../../api/fn.build_mint_txn_handler.html
+ *  [`build_mint_txn_handler`]: ../../../api/fn.build_mint_txn_handler.html
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct MintRequest {
@@ -22,9 +22,6 @@ pub struct MintRequest {
     outputs: Vec<(Output)>,
 }
 
-/**
- * A struct that can be transformed into a Mint JSON object.
- */
 impl MintRequest {
 
     /**
@@ -39,6 +36,10 @@ impl MintRequest {
         return Request::new(mint);
     }
 
+    /**
+     * Creates a new `MintRequest` from an [`OutputConfig`].
+     * [`OutputConfig`]: ../general/struct.OutputConfig.html
+     */
     pub fn from_config(mint_config: OutputConfig) -> Request<MintRequest> {
         return MintRequest::new(mint_config.outputs);
     }

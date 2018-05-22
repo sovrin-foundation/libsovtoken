@@ -2,7 +2,7 @@
  *  Defines structure and implementation inputs and outputs and submitter did
  *  these are the structures for the [`build_payment_req_handler`]
  *
- *  [`build_payment_req_handler`]: ../../api/fn.build_payment_req_handler.html
+ *  [`build_payment_req_handler`]: ../../../api/fn.build_payment_req_handler.html
  */
 use logic::request::Request;
 

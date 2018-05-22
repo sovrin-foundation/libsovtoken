@@ -1,3 +1,7 @@
+/*!
+ *  Holds config structs for the configs passed into the api.
+ */
+
 pub mod general;
 pub mod output_mint_config;
 pub mod payment_address_config;
