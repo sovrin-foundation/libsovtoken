@@ -35,10 +35,11 @@ impl CryptoAPI for CreatePaymentSDK {
            pay:sov:{32 byte address}{4 byte checksum}
     */
     fn indy_create_key(&self, wallet_id: IndyHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
-        trace!("create_payment_address calling indy_create_key");
 
-        // calls indy::api::crypto::indy_create_key
-        Key::create(wallet_id, config.to_json())
+        trace!("create_payment_address calling indy_create_key");
+        let config_json: String = config.to_json().unwrap();
+
+        return Key::create(wallet_id, &config_json);
     }
 }
 
