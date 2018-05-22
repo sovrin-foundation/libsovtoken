@@ -3,8 +3,6 @@
 #![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use std::ffi::{CString};
-
 use indy::{ErrorCode, IndyHandle};
 use indy::crypto::Key;
 use logic::indysdk_api::CryptoAPI;
