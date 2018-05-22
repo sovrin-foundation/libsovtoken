@@ -1,5 +1,5 @@
 //! this module defines traits which represent INDY SDK API calls
-
+use indy::api::ErrorCode;
 use super::config::payment_address_config::PaymentAddressConfig;
 
 /**
@@ -9,5 +9,5 @@ use super::config::payment_address_config::PaymentAddressConfig;
     modeling: master/libindy/src/api/crypto.rs
 */
 pub trait CryptoAPI {
-    fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String;
+    fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String);
 }

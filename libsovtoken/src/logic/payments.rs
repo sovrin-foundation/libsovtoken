@@ -34,7 +34,7 @@ impl CryptoAPI for CreatePaymentSDK {
        the format of the return is:
            pay:sov:{32 byte address}{4 byte checksum}
     */
-    fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
+    fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String) {
         let (receiver, sdk_command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
 
         let config_cstring: CString = config.serialize_to_cstring().unwrap();
@@ -48,7 +48,7 @@ impl CryptoAPI for CreatePaymentSDK {
         // TODO on error this long_timeout also causes a long delay!
         let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
 
-        return payment_address;
+        return (err, payment_address);
     }
 }
 
@@ -76,9 +76,9 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
        the format of the return is:
            pay:sov:{32 byte address}{4 byte checksum}
     */
-    pub fn create_payment_address(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
-        let address = self.injected_api.indy_create_key(command_handle, wallet_id, config);
-        return address::create_formatted_address_with_checksum(address);
+    pub fn create_payment_address(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String) {
+        let (error_code, address) = self.injected_api.indy_create_key(command_handle, wallet_id, config);
+        return (error_code, address::create_formatted_address_with_checksum(address));
     }
 }
 
@@ -102,8 +102,8 @@ mod payments_tests {
     // mock SDK api calls with a call that will generate a random 32 byte string
     struct CreatePaymentSDKMockHandler {}
     impl CryptoAPI for CreatePaymentSDKMockHandler {
-        fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> String {
-            return rand_string(32);
+        fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String) {
+            return (ErrorCode::Success, rand_string(32));
         }
     }
 
@@ -121,7 +121,7 @@ mod payments_tests {
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
-        let address = handler.create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+        let (error_code, address) = handler.create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -141,7 +141,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
-
+        assert_eq!(ErrorCode::Success, error_code);
     }
 
     // This is the happy path test when seed provided is empty.  Expectation is a
@@ -153,7 +153,7 @@ mod payments_tests {
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
-        let address = handler.create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+        let (error_code, address) = handler.create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -173,5 +173,6 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+        assert_eq!(ErrorCode::Success, error_code);
     }
 }

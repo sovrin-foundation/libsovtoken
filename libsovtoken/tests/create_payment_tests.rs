@@ -59,7 +59,7 @@ extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode
 #[test]
 fn errors_with_no_callback () {
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam3, "Expecting Callback for 'create_payment_address_handler'"); 
+    assert_eq!(return_error, ErrorCode::CommonInvalidParam4, "Expecting Callback for 'create_payment_address_handler'"); 
 }
 
 
@@ -106,6 +106,7 @@ fn successfully_creates_payment_address_with_no_seed() {
     let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::specific_timeout(TIMEOUT_SECONDS)).unwrap();
 
     assert!(payment_address.len() >= 32, "callback did not receive valid payment address");
+    assert_eq!(ErrorCode::Success, err);
 }
 
 
@@ -132,6 +133,7 @@ fn success_callback_is_called() {
     let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::specific_timeout(TIMEOUT_SECONDS)).unwrap();
 
     assert!(payment_address.len() >= 32, "callback did not receive valid payment address");
+    assert_eq!(ErrorCode::Success, err);
 }
 
 

@@ -82,12 +82,12 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
-        let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
+        let (error_code, payment_address) = handler.create_payment_address(command_handle, wallet_handle, config);
         let payment_address_cstring = cstring_from_str(payment_address);
         let payment_address_ptr = payment_address_cstring.as_ptr();
 
         match cb {
-            Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+            Some(f) => f(command_handle, error_code, payment_address_ptr),
             None => panic!("cb was null even after check"),
         };
     });
