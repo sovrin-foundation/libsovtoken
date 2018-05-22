@@ -1,5 +1,5 @@
 /*!
- *  Defines structure and implementation for OutputMintConfig and MintRequest
+ *  Defines structure and implementation for OutputConfig and MintRequest
  *  these are the structures for the [`build_mint_txn_handler`]
  * 
  *  [`build_mint_txn_handler`]: ../../api/fn.build_mint_txn_handler.html
@@ -8,17 +8,13 @@
 
 use logic::request::Request;
 use logic::output::Output;
+use logic::config::general::OutputConfig;
 
 /**
  *  Json config to customize [`build_mint_txn_handler`]
  *  
  *  [`build_mint_txn_handler`]: ../../api/fn.build_mint_txn_handler.html
  */
-#[derive(Serialize, Deserialize)]
-pub struct OutputMintConfig {
-    pub outputs: Vec<Output>,
-}
-
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct MintRequest {
     #[serde(rename = "type")]
@@ -43,7 +39,7 @@ impl MintRequest {
         return Request::new(mint);
     }
 
-    pub fn from_config(mint_config: OutputMintConfig) -> Request<MintRequest> {
+    pub fn from_config(mint_config: OutputConfig) -> Request<MintRequest> {
         return MintRequest::new(mint_config.outputs);
     }
 }
@@ -57,7 +53,7 @@ mod output_mint_config_test {
     #[test]
     fn serializing_mint_struct_config() {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let mint : OutputMintConfig = OutputMintConfig { 
+        let mint : OutputConfig = OutputConfig { 
             outputs: vec![output],
         };
         assert_eq!(mint.to_json().unwrap(), r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
@@ -95,7 +91,7 @@ mod mint_request_test {
     fn create_request_with_mint_config() {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let outputs = vec![output];
-        let mint_config = OutputMintConfig {
+        let mint_config = OutputConfig {
             outputs: outputs.clone()
         };
         let request = MintRequest::from_config(mint_config);

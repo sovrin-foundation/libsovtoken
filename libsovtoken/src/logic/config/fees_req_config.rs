@@ -8,23 +8,8 @@ use logic::request::Request;
 
 use logic::input::Input;
 use logic::output::Output;
+use super::general::{InputConfig, OutputConfig};
 
-/**
- *  Json config to customize [`build_payment_req_handler`]
- *
- *  [`build_fees_txn_handler`]: ../../api/fn.build_payment_req_handler.html
- */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct InputConfig {
-    inputs:Vec<Input>,
-
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct OutputConfig {
-    outputs:Vec<(Output)>,
-
-}
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct FeesRequest {
@@ -38,8 +23,7 @@ pub struct FeesRequest {
  * A struct that can be transformed into a Fees JSON object.
  */
 impl FeesRequest {
-
-
+    
     /**
      * Creates a new `FeesRequest` with `inputs` and `outputs`
      */
