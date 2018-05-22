@@ -5,13 +5,13 @@
 
 use std::ffi::{CString};
 
-use indy::api::*;
+use indy::{ErrorCode, IndyHandle};
+use indy::crypto::Key;
 use logic::indysdk_api::CryptoAPI;
 use super::config::payment_address_config::PaymentAddressConfig;
 use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
-use utils::callbacks::*;
 use logic::address;
 use logic::address::{PAY_INDICATOR, SOVRIN_INDICATOR, PAYMENT_ADDRESS_FIELD_SEP, CHECKSUM_LEN, VALID_ADDRESS_LEN};
 
@@ -34,21 +34,11 @@ impl CryptoAPI for CreatePaymentSDK {
        the format of the return is:
            pay:sov:{32 byte address}{4 byte checksum}
     */
-    fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String) {
-        let (receiver, sdk_command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
-
-        let config_cstring: CString = config.serialize_to_cstring().unwrap();
-        let config_str_ptr = config_cstring.as_ptr();
-
+    fn indy_create_key(&self, wallet_id: IndyHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
         trace!("create_payment_address calling indy_create_key");
 
         // calls indy::api::crypto::indy_create_key
-        let result: ErrorCode = crypto::indy_create_key(sdk_command_handle, wallet_id, config_str_ptr, cb);
-
-        // TODO on error this long_timeout also causes a long delay!
-        let (err, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
-
-        return (err, payment_address);
+        Key::create(wallet_id, config.to_json())
     }
 }
 
@@ -76,9 +66,9 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
        the format of the return is:
            pay:sov:{32 byte address}{4 byte checksum}
     */
-    pub fn create_payment_address(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String) {
-        let (error_code, address) = self.injected_api.indy_create_key(command_handle, wallet_id, config);
-        return (error_code, address::create_formatted_address_with_checksum(address));
+    pub fn create_payment_address(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+        let address = self.injected_api.indy_create_key(wallet_id, config)?;
+        return Ok(address::create_formatted_address_with_checksum(address));
     }
 }
 
@@ -102,8 +92,8 @@ mod payments_tests {
     // mock SDK api calls with a call that will generate a random 32 byte string
     struct CreatePaymentSDKMockHandler {}
     impl CryptoAPI for CreatePaymentSDKMockHandler {
-        fn indy_create_key(&self, command_handle: i32, wallet_id: i32, config: PaymentAddressConfig) -> (ErrorCode, String) {
-            return (ErrorCode::Success, rand_string(32));
+        fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+            return Ok(rand_string(32));
         }
     }
 
@@ -121,7 +111,7 @@ mod payments_tests {
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
-        let (error_code, address) = handler.create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+        let (error_code, address) = handler.create_payment_address(WALLET_ID, config);
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -153,7 +143,7 @@ mod payments_tests {
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
-        let (error_code, address) = handler.create_payment_address(COMMAND_HANDLE, WALLET_ID, config);
+        let (error_code, address) = handler.create_payment_address(WALLET_ID, config);
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
