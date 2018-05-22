@@ -1,9 +1,11 @@
 use std::sync::{Mutex, Arc};
 
-pub fn map_async<C, F, R>(v: Vec<R>, cb_map: C, cb_finish: F)
+pub struct CallbackFailed;
+
+pub fn map_async<C, F, R, E>(v: Vec<R>, cb_map: C, cb_finish: F)
     where
-        C: Fn(R, Arc<Fn(R) + Send + Sync>) + Send + Sync + 'static,
-        F: Fn(Vec<R>) + Send + Sync + 'static,
+        C: Fn(R, Arc<Fn(Result<R, E>) + Send + Sync>) + Send + Sync + 'static,
+        F: Fn(Result<Vec<R>, CallbackFailed>) + Send + Sync + 'static,
         R: Clone + Send + 'static
 {
 
@@ -14,15 +16,19 @@ pub fn map_async<C, F, R>(v: Vec<R>, cb_map: C, cb_finish: F)
     for value in v {
         let m_clone = m.clone();
         let cb_finish_arc_clone = cb_finish_arc.clone();
-        let done = Arc::new(move |num| {
-
-            let mut guard = m_clone.lock().unwrap();
-            guard.push(num);
-
-            if guard.len() == length {
-                let mapped = (*guard).clone();
-                cb_finish_arc_clone(mapped);
+        let done = Arc::new(move |result| {
+            if let Ok(mapped_value) = result {
+                let mut guard = m_clone.lock().unwrap();
+                guard.push(mapped_value);
+                
+                if guard.len() == length {
+                    let mapped = (*guard).clone();
+                    cb_finish_arc_clone(Ok(mapped));
+                }
             }
+            else {
+                cb_finish_arc_clone(Err(CallbackFailed));
+            };
         });
 
         cb_map(value, done);
