@@ -33,7 +33,9 @@ pub static VALID_ADDRESS_LEN: usize = 32;
     ```
 */
 pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
+    println!("address = {}", address);
     let address = validate_address(address)?;
+    println!("address validated {}", address);
     let verkey = &address[8..40];
     return Ok(String::from(verkey));
 }
@@ -72,6 +74,9 @@ fn sovrin_indicator() -> String {
 
 fn validate_address(address: String) -> Result<String, ErrorCode> {
     let indicator = sovrin_indicator();
+    println!("sovrin indicator = {}", indicator);
+    println!("address len = {}",address.len());
+
     if !address.starts_with(&indicator) {
         return Err(ErrorCode::CommonInvalidStructure);
     }
@@ -92,7 +97,7 @@ mod address_tests {
     use super::*;
 
     fn verkey_invalid_address_length(length: usize) {
-        assert!(length != VALID_ADDRESS_LEN);
+        assert_ne!(length, VALID_ADDRESS_LEN);
         let verkey = rand_string(length);
         let checksum = rand_string(CHECKSUM_LEN);
         let invalid_address = format!("pay:sov:{}{}", verkey, checksum);

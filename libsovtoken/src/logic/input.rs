@@ -85,9 +85,10 @@ impl Input {
 
 impl Serialize for Input {
     fn serialize<S: ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        if self.signature.is_none() {
-            return Err(ser::Error::custom("Expected Input to have a signature."))
-        }
+
+//        if self.signature.is_none() {
+//            return Err(ser::Error::custom("Expected Input to have a signature."))
+//        }
 
         let mut seq = serializer.serialize_tuple(2)?;
         seq.serialize_element(&self.payment_address)?;
