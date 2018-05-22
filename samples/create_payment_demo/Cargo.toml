@@ -5,6 +5,7 @@ authors = ["matt raffel <matt.raffel@evernym.com>"]
 build = "build.rs"
 
 [dependencies]
-libsovtoken = { path = "../../libsovtoken" }
+# libsovtoken = { path = "../../../../../mk/libsovtoken/libsovtoken/" }
+# libsovtoken = { path = "../../libsovtoken/" }
 lazy_static = "0.2"
 libc = "0.2.21"
