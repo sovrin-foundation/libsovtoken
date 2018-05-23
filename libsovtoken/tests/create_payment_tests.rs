@@ -25,7 +25,6 @@ use std::ffi::CString;
 use indy::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
-use sovtoken::utils::callbacks::*;
 
 // ***** HELPER TEST DATA  *****
 const WALLET_ID: i32 = 99;

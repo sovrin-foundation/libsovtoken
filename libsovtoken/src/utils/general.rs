@@ -65,7 +65,7 @@ impl<'a> StringUtils for &'a str {
 
 
 pub mod base58 {
-    use indy::api::ErrorCode;
+    use indy::ErrorCode;
     use rust_base58::{FromBase58};
 
     /**
@@ -92,7 +92,7 @@ pub mod base58 {
 #[cfg(test)]
 mod general_tests {
 
-    use indy::api::ErrorCode;
+    use indy::ErrorCode;
     use utils::general::StringUtils;
     use utils::general::some_or_none_option_u8;
     use super::base58;

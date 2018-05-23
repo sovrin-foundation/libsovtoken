@@ -69,7 +69,7 @@ mod fees_req_input_config_test {
     #[test]
     fn serializing_fee_struct_output_config() {
 
-        let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
+        let input = Input::new(String::from("dakjhe238yad"), 30, Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
 
         let fee: InputConfig = InputConfig {
             inputs: vec![input],
