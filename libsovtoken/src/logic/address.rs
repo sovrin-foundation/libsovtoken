@@ -84,6 +84,15 @@ pub fn validate_address(address: String) -> Result<String, ErrorCode> {
     return Ok(address);
 }
 
+pub fn get_address_chopped ( address : &str, checksum: bool) -> Result<Vec<&str>, ErrorCode> {
+
+    let mut address_chopped : Vec<&str> = address.split(":").collect();
+    if !checksum {
+        address_chopped.insert(3, verkey_from_address(String::from(address)).unwrap().as_str());
+    }
+    Ok(address_chopped)
+}
+
 
 #[cfg(test)]
 mod address_tests {

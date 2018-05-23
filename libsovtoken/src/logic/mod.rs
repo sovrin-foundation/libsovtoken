@@ -13,3 +13,4 @@ pub mod output_mint_config;
 pub mod payment_address_config;
 pub mod payments;
 pub mod request;
+pub mod utxo;

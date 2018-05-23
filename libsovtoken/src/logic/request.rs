@@ -1,11 +1,12 @@
-use std::ffi::CString;
-use utils::ffi_support::cstring_from_str;
 use serde::Serialize;
 use serde_json;
-use utils::json_conversion::JsonSerialize;
-use indy::api::ErrorCode;
 use std::os::raw::c_char;
+use std::ffi::CString;
+
+use indy::api::ErrorCode;
 use utils::callbacks::*;
+use utils::json_conversion::JsonSerialize;
+use utils::ffi_support::cstring_from_str;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

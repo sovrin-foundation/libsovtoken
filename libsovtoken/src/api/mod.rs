@@ -14,20 +14,20 @@ use std::ffi::{CString, CStr};
 use libc::c_char;
 use indy::api::{ErrorCode};
 use indy::api::payments::indy_register_payment_method;
+use logic::address::{validate_address};
 use logic::payment_address_config::PaymentAddressConfig;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 use logic::output_mint_config::{OutputMintConfig, MintRequest};
+use logic::fees_config::{SetFeesRequest, Fees};
 use logic::fees_req_config::{InputConfig, OutputConfig, FeesRequest};
-use logic::request::Request;
+use logic::request::*;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
-use logic::fees_config::{SetFeesRequest, Fees};
 use utils::types::{JsonCallback};
-use logic::request;
 use utils::validation::{validate_did_len, validate_address_len};
-use logic::address::{validate_address};
-
+use logic::utxo::*;
+use utils::types::UTXOInfo;
 
 /// # Description
 /// This method generates private part of payment address
@@ -252,7 +252,6 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                                       get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
 
     // DONE: ask why nothing is being done with the payment address
-    // TODO: help nickita finish the logic for this
     // THIS UNWRAP THE CB
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
@@ -268,10 +267,14 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     validate_address(String::from(payment_address));
     // start the CBs
-    request::build_get_txn_request(
+    build_get_txn_request(
         submitter_did,
         1,
         Box::new(move |ec, res| {
+            let ec = if ec == ErrorCode::Success{
+                let utxos = get_utxos_by_payment_address(String::from(payment_address.clone()));
+                let infos: Vec<UTXOInfo> = utxos.into_iter().filter_map(|utxo| get_utxo_info(utxo)).collect();
+            };
             let res = CString::new(res).unwrap();
             cb(command_handle, ec, res.as_ptr());
         })
