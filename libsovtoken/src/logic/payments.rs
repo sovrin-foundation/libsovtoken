@@ -105,24 +105,7 @@ mod payments_tests {
 
     static VALID_SEED_LEN: usize = 32;
     static WALLET_ID: i32 = 10;
-
-    #[test]
-    fn silly_test() {
-
-        let seed = String::new();
-        let config: PaymentAddressConfig = PaymentAddressConfig { seed };
-
-        let mut config_json: String = config.to_json().unwrap();
-
-        if 0 == config.seed.chars().count() {
-            config_json = r#"{ }"#.to_string();
-        }
-
-        println!("output {}", config_json);
-        assert_eq!(0, 1);
-    }
-
-
+    
     // This is the happy path test.  Config contains a seed and
     // a fully formatted address is returned.
     #[test]
