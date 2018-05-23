@@ -414,34 +414,26 @@ pub extern "C" fn build_mint_txn_handler(
     # Returns
     ErrorCode from register_payment_method
 */
-
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
-    /*  TEMPORARY while rust-indy gets this method in
-    let (receiver, command_handle, cb) = ::utils::callbacks::CallbackUtils::closure_to_cb_ec();
+    let result = match Payment::register(
+        "libsovtoken",
+        create_payment_address_handler,
+        add_request_fees_handler,
+        parse_response_with_fees_handler,
+        build_get_utxo_request_handler,
+        parse_get_utxo_response_handler,
+        build_payment_req_handler,
+        parse_payment_response_handler,
+        build_mint_txn_handler,
+        build_set_txn_fees_handler,
+        build_get_txn_fees_handler,
+        parse_get_txn_fees_response_handler
+    ) {
+        Ok(()) => ErrorCode::Success ,
+        Err(e) => e ,
+    };
 
-    let payment_method_name = cstring_from_str("libsovtoken".to_string());
-
-    Payment::
-
-    indy_register_payment_method(command_handle,
-            payment_method_name.as_ptr(),
-            Some(create_payment_address_handler),
-            Some(add_request_fees_handler),
-            Some(parse_response_with_fees_handler),
-            Some(build_get_utxo_request_handler),
-            Some(parse_get_utxo_response_handler),
-            Some(build_payment_req_handler),
-            Some(parse_payment_response_handler),
-            Some(build_mint_txn_handler),
-            Some(build_set_txn_fees_handler),
-            Some(build_get_txn_fees_handler),
-            Some(parse_get_txn_fees_response_handler),
-             cb
-        );
-
-    receiver.recv().unwrap()
-    */
-    return ErrorCode::CommonInvalidStructure;
+    return result;
 }

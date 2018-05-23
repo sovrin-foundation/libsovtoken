@@ -110,7 +110,11 @@ mod payments_tests {
         let seed = rand_string(VALID_SEED_LEN);
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
-        let (error_code, address) = handler.create_payment_address(WALLET_ID, config);
+
+        let address = match handler.create_payment_address(WALLET_ID, config) {
+            Ok(s) => s,
+            Err(e) => "".to_string(),
+        };
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -130,7 +134,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
-        assert_eq!(ErrorCode::Success, error_code);
+
     }
 
     // This is the happy path test when seed provided is empty.  Expectation is a
@@ -142,7 +146,10 @@ mod payments_tests {
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
-        let (error_code, address) = handler.create_payment_address(WALLET_ID, config);
+        let address = match handler.create_payment_address(WALLET_ID, config){
+            Ok(s) => s,
+            Err(e) => "".to_string(),
+        };
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -162,6 +169,6 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
-        assert_eq!(ErrorCode::Success, error_code);
+
     }
 }
