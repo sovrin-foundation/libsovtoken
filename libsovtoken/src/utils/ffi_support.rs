@@ -51,6 +51,11 @@ pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_c
     return result;
 }
 
+pub fn c_pointer_from_string(string: String) -> *const c_char {
+    let cstring = CString::new(string).unwrap();
+    return Box::new(cstring).into_raw();
+}
+
 /**
     Creates a closure which calls a callback on `Ok`.
 

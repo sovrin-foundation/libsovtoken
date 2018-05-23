@@ -8,11 +8,13 @@
 #[warn(unused_imports)]
 
 use std;
+use std::ffi::CString;
 use std::thread;
 
 use libc::c_char;
 use indy::payments::Payment;
 use indy::ErrorCode;
+use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::config::{
@@ -23,9 +25,12 @@ use logic::config::{
     set_fees_config::{SetFeesRequest, Fees},
 };
 use logic::request::Request;
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
+use utils::types::*;
+use utils::validation::{validate_did_len, validate_address_len};
+
 
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
@@ -263,11 +268,8 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                                       err: ErrorCode,
                                                                       get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
 
-    // DONE: ask why nothing is being done with the payment address
-    // THIS UNWRAP THE CB
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
-    let submitter_did =  str_from_char_ptr(submitter_did).unwrap();
+    let submitter_did = str_from_char_ptr(submitter_did).unwrap();
     let payment_address = str_from_char_ptr(payment_address).unwrap();
     // Helper Vars
     let add_len = payment_address.len();
@@ -278,19 +280,15 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
     }
 
     validate_address(String::from(payment_address));
+
     // start the CBs
-    build_get_txn_request(
-        submitter_did,
-        1,
-        Box::new(move |ec, res| {
-            let ec = if ec == ErrorCode::Success{
-                let utxos = get_utxos_by_payment_address(String::from(payment_address.clone()));
-                let infos: Vec<UTXOInfo> = utxos.into_iter().filter_map(|utxo| get_utxo_info(utxo)).collect();
-            };
-            let res = CString::new(res).unwrap();
-            cb(command_handle, ec, res.as_ptr());
-        })
-    )
+    return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
+        Ok((txn_req, ..)) => {
+            cb(command_handle, ErrorCode::Success, c_pointer_from_string(txn_req));
+            ErrorCode::Success
+        },
+        Err(e) => e
+    };
 }
 
 /// Description

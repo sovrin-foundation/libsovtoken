@@ -1,4 +1,4 @@
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 use std::os::raw::c_char;
 
 // common types of callbacks or structures

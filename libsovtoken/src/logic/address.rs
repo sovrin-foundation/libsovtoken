@@ -70,7 +70,7 @@ fn sovrin_indicator() -> String {
     );
 }
 
-fn validate_address(address: String) -> Result<String, ErrorCode> {
+pub fn validate_address(address: String) -> Result<String, ErrorCode> {
     let indicator = sovrin_indicator();
     if !address.starts_with(&indicator) {
         return Err(ErrorCode::CommonInvalidStructure);
@@ -84,8 +84,6 @@ fn validate_address(address: String) -> Result<String, ErrorCode> {
     return Ok(address);
 }
 
-
-#[cfg(test)]
 mod address_tests {
     use utils::random::rand_string;
 
