@@ -9,7 +9,7 @@
 use std::ffi::{CString, CStr};
 use std::str::Utf8Error;
 use libc::c_char;
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 use utils::json_conversion::JsonDeserialize;
 
 /**

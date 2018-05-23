@@ -11,17 +11,21 @@ use std;
 use std::thread;
 
 use libc::c_char;
-use indy::api::{ErrorCode};
-use indy::api::payments::indy_register_payment_method;
-use logic::payment_address_config::PaymentAddressConfig;
+use indy::payments::Payment;
+use indy::ErrorCode;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
-use logic::output_mint_config::{OutputMintConfig, MintRequest};
-use logic::fees_req_config::{InputConfig, OutputConfig, FeesRequest};
+
+use logic::config::{
+    payment_config::{PaymentRequest},
+    general::{InputConfig, OutputConfig},
+    output_mint_config::{MintRequest},
+    payment_address_config::{PaymentAddressConfig},
+    set_fees_config::{SetFeesRequest, Fees},
+};
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
-use logic::fees_config::{SetFeesRequest, Fees};
 
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
@@ -77,15 +81,25 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     thread::spawn(move || {
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
+        let mut result : ErrorCode = ErrorCode::Success;
+        let mut payment_address_ptr = std::ptr::null();
+
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
-        let payment_address = handler.create_payment_address(command_handle, wallet_handle, config);
-        let payment_address_cstring = cstring_from_str(payment_address);
-        let payment_address_ptr = payment_address_cstring.as_ptr();
+        match handler.create_payment_address(wallet_handle, config) {
+            Ok(payment_address) => {
+                let payment_address_cstring = cstring_from_str(payment_address);
+                payment_address_ptr = payment_address_cstring.as_ptr();
+
+            },
+            Err(e) => { result = ErrorCode::CommonInvalidState; },
+        };
 
         match cb {
-            Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+            Some(f) => f(command_handle, result, payment_address_ptr),
             None => panic!("cb was null even after check"),
         };
+
+
     });
 
 
@@ -198,10 +212,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         Err(e) => return handle_result(Err(e))
     };
 
-    let fees_request = FeesRequest::from_config(outputs_config,inputs_config);
-    let fees_request = fees_request.serialize_to_cstring().unwrap();
+    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
+    let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    return handle_result(Ok(fees_request.as_ptr()));
+    return handle_result(Ok(payment_request.as_ptr()));
 
 }
 
@@ -380,7 +394,7 @@ pub extern "C" fn build_mint_txn_handler(
         return handle_result(Err(ErrorCode::CommonInvalidParam5));
     }
 
-    let outputs_config = match deserialize_from_char_ptr::<OutputMintConfig>(outputs_json) {
+    let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
         Ok(c) => c,
         Err(e) => return handle_result(Err(e))
     };
@@ -400,13 +414,18 @@ pub extern "C" fn build_mint_txn_handler(
     # Returns
     ErrorCode from register_payment_method
 */
+
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
-    let payment_method_name = cstring_from_str("libsovtoken".to_string());
-    let command_id: i32 = 1819;
+    /*  TEMPORARY while rust-indy gets this method in
+    let (receiver, command_handle, cb) = ::utils::callbacks::CallbackUtils::closure_to_cb_ec();
 
-    return indy_register_payment_method(command_id,
+    let payment_method_name = cstring_from_str("libsovtoken".to_string());
+
+    Payment::
+
+    indy_register_payment_method(command_handle,
             payment_method_name.as_ptr(),
             Some(create_payment_address_handler),
             Some(add_request_fees_handler),
@@ -419,7 +438,10 @@ pub extern fn sovtoken_init() -> ErrorCode {
             Some(build_set_txn_fees_handler),
             Some(build_get_txn_fees_handler),
             Some(parse_get_txn_fees_response_handler),
-             None
+             cb
         );
 
+    receiver.recv().unwrap()
+    */
+    return ErrorCode::CommonInvalidStructure;
 }

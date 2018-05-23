@@ -1,7 +1,7 @@
 /// Methods for dealing with addresses, pub keys and private keys
 
 use rust_base58::ToBase58;
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 
 use utils::general::StringUtils;
 
@@ -41,7 +41,7 @@ pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
 /** computes a checksum based on an address */
 pub fn compute_address_checksum(address: String) -> String {
     let address_bytes = address.into_bytes();
-    let with_checksum = address_bytes.to_base58();
+    let with_checksum = address_bytes.to_base58_check();
     let check_sum =  with_checksum.as_str().from_right(CHECKSUM_LEN);
     return check_sum;
 }
