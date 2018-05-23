@@ -29,8 +29,7 @@ use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_p
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
 use utils::types::*;
-use utils::validation::{validate_did_len, validate_address_len};
-
+use utils::validation::{validate_did_len};
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
@@ -265,10 +264,9 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  submitter_did: *const c_char,
                                                  payment_address: *const c_char,
-                                                 cb: Option<extern fn(command_handle_: i32,
-                                                                      err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
+                                                 cb: JsonCallback)-> ErrorCode {
 
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
     let submitter_did = str_from_char_ptr(submitter_did).unwrap();
     let payment_address = str_from_char_ptr(payment_address).unwrap();
@@ -280,7 +278,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    validate_address(String::from(payment_address))?;
+    validate_address(String::from(payment_address));
 
     // start the CBs
     return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
