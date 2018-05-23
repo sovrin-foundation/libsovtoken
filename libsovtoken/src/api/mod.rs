@@ -261,8 +261,36 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-    return ErrorCode::Success;
+                                                                      get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
+
+    // DONE: ask why nothing is being done with the payment address
+    // THIS UNWRAP THE CB
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
+    // * C_CHAR to &str
+    let submitter_did =  str_from_char_ptr(submitter_did).unwrap();
+    let payment_address = str_from_char_ptr(payment_address).unwrap();
+    // Helper Vars
+    let add_len = payment_address.len();
+
+    // validation
+    if !validate_did_len(submitter_did) {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    validate_address(String::from(payment_address));
+    // start the CBs
+    build_get_txn_request(
+        submitter_did,
+        1,
+        Box::new(move |ec, res| {
+            let ec = if ec == ErrorCode::Success{
+                let utxos = get_utxos_by_payment_address(String::from(payment_address.clone()));
+                let infos: Vec<UTXOInfo> = utxos.into_iter().filter_map(|utxo| get_utxo_info(utxo)).collect();
+            };
+            let res = CString::new(res).unwrap();
+            cb(command_handle, ec, res.as_ptr());
+        })
+    )
 }
 
 /// Description
