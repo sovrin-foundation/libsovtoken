@@ -11,8 +11,8 @@ use std;
 use std::thread;
 
 use libc::c_char;
-use indy::api::{ErrorCode};
-use indy::api::payments::indy_register_payment_method;
+use indy::payments::Payment;
+use indy::ErrorCode;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::config::{
@@ -81,15 +81,25 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     thread::spawn(move || {
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
+        let mut result : ErrorCode = ErrorCode::Success;
+        let mut payment_address_ptr = std::ptr::null();
+
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
-        let (error_code, payment_address) = handler.create_payment_address(command_handle, wallet_handle, config);
-        let payment_address_cstring = cstring_from_str(payment_address);
-        let payment_address_ptr = payment_address_cstring.as_ptr();
+        match handler.create_payment_address(wallet_handle, config) {
+            Ok(payment_address) => {
+                let payment_address_cstring = cstring_from_str(payment_address);
+                payment_address_ptr = payment_address_cstring.as_ptr();
+
+            },
+            Err(e) => { result = ErrorCode::CommonInvalidState; },
+        };
 
         match cb {
-            Some(f) => f(command_handle, error_code, payment_address_ptr),
+            Some(f) => f(command_handle, result, payment_address_ptr),
             None => panic!("cb was null even after check"),
         };
+
+
     });
 
 
@@ -408,9 +418,12 @@ pub extern "C" fn build_mint_txn_handler(
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
+    /*  TEMPORARY while rust-indy gets this method in
     let (receiver, command_handle, cb) = ::utils::callbacks::CallbackUtils::closure_to_cb_ec();
 
     let payment_method_name = cstring_from_str("libsovtoken".to_string());
+
+    Payment::
 
     indy_register_payment_method(command_handle,
             payment_method_name.as_ptr(),
@@ -429,4 +442,6 @@ pub extern fn sovtoken_init() -> ErrorCode {
         );
 
     receiver.recv().unwrap()
+    */
+    return ErrorCode::CommonInvalidStructure;
 }

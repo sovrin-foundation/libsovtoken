@@ -1,7 +1,7 @@
 /// Methods for dealing with addresses, pub keys and private keys
 
 use rust_base58::ToBase58;
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 
 use utils::general::StringUtils;
 
