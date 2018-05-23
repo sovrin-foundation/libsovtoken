@@ -14,7 +14,7 @@ description = "Payment handler for Sovrin tokens in libindy"
 [lib]
 name = "sovtoken"
 path = "src/lib.rs"
-crate-type = ["staticlib", "rlib", "dylib"]
+crate-type = ["staticlib", "rlib", "cdylib"]
 
 [dependencies]
 base64 = "0.6.0"

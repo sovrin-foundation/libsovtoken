@@ -24,7 +24,7 @@ use callbacks::*;
    calls sovtoken to initialize indy-sdk with libsovtoken payment methods
 */
 fn initialize_libraries() {
-    // unsafe { sovtoken_init(); };
+    unsafe { sovtoken_init(); };
 }
 
 
@@ -107,7 +107,7 @@ fn create_payment(wallet_handle: i32) -> String {
     let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
 
     let payment_method = CString::new("pay::sov".to_string()).unwrap();
-    let config = CString::new(r#"{}"#.to_string()).unwrap();
+    let config = CString::new(r#"{ "seed" : "12345678901234567890123456789012" }"#.to_string()).unwrap();
 
     unsafe {
         let err = indy_create_payment_address(command_handle, wallet_handle, payment_method.as_ptr(), config.as_ptr(), cb);
