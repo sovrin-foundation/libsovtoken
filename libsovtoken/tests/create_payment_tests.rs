@@ -38,10 +38,10 @@ const WALLET_ID: i32 = 99;
 const COMMAND_HANDLE: i32 = 1;
 const TIMEOUT_SECONDS: u64 = 20;
 static VALID_SEED_LEN: usize = 32;
-static WALLET_NAME: &'static str = "integration_test_wallet";
+static WALLET_NAME_1: &'static str = "integration_test_wallet_1";
+static WALLET_NAME_2: &'static str = "integration_test_wallet_2";
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
-static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{"seed":""}"#;
-static VALID_CONFIG_EMPTY_SEED_JSON2: &'static str = r#"{}"#;
+static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{}"#;
 static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
 
 // ***** HELPER METHODS  *****
@@ -91,14 +91,14 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
 }
 
 //
-fn safely_create_wallet() -> i32 {
+fn safely_create_wallet(wallet_name : &str) -> i32 {
     let panic_result = std::panic::catch_unwind( ||
          {
-             Wallet::delete_wallet(WALLET_NAME);
+             Wallet::delete_wallet(wallet_name);
          });
 
-    Wallet::create_wallet("pool_1", WALLET_NAME, None, Some(VALID_CONFIG_EMPTY_SEED_JSON2), None);
-    let wallet_id: i32 = Wallet::open_wallet(WALLET_NAME, None, None).unwrap();
+    Wallet::create_wallet("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None);
+    let wallet_id: i32 = Wallet::open_wallet(wallet_name, None, None).unwrap();
 
     return wallet_id;
 }
@@ -151,7 +151,7 @@ fn successfully_creates_payment_address_with_no_seed() {
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = safely_create_wallet();
+    let wallet_id: i32 = safely_create_wallet(WALLET_NAME_1);
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
 
@@ -181,7 +181,7 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = safely_create_wallet();
+    let wallet_id: i32 = safely_create_wallet(WALLET_NAME_2);
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
     assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
