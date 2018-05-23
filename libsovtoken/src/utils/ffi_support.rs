@@ -89,7 +89,7 @@ mod ffi_support_tests {
     use serde_json::Value;
     use utils::general::ResultExtension;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr};
-    use indy::api::ErrorCode;
+    use indy::ErrorCode;
 
     static VALID_DUMMY_JSON: &'static str = r#"{"field1":"data"}"#;
 

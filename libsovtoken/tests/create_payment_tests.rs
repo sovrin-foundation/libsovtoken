@@ -14,7 +14,7 @@ extern crate rand;
 #[macro_use] extern crate log;
 
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
+extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 use libc::c_char;
 use rand::Rng;
@@ -22,7 +22,7 @@ use std::ptr;
 use std::ffi::CString;
 
 
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
 use sovtoken::utils::callbacks::*;
