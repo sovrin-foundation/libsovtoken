@@ -8,11 +8,13 @@
 #[warn(unused_imports)]
 
 use std;
+use std::ffi::CString;
 use std::thread;
 
 use libc::c_char;
 use indy::payments::Payment;
 use indy::ErrorCode;
+use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::config::{
@@ -23,9 +25,12 @@ use logic::config::{
     set_fees_config::{SetFeesRequest, Fees},
 };
 use logic::request::Request;
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
+use utils::types::*;
+use utils::validation::{validate_did_len, validate_address_len};
+
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
@@ -262,8 +267,29 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                                       err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-    return ErrorCode::Success;
+                                                                      get_utxo_txn_json: *const c_char)-> ErrorCode>)-> ErrorCode {
+
+    // * C_CHAR to &str
+    let submitter_did = str_from_char_ptr(submitter_did).unwrap();
+    let payment_address = str_from_char_ptr(payment_address).unwrap();
+    // Helper Vars
+    let add_len = payment_address.len();
+
+    // validation
+    if !validate_did_len(submitter_did) {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    validate_address(String::from(payment_address))?;
+
+    // start the CBs
+    return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
+        Ok((txn_req, ..)) => {
+            cb(command_handle, ErrorCode::Success, c_pointer_from_string(txn_req));
+            ErrorCode::Success
+        },
+        Err(e) => e
+    };
 }
 
 /// Description

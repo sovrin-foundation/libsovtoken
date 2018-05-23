@@ -69,8 +69,11 @@ fn sovrin_indicator() -> String {
         separator = PAYMENT_ADDRESS_FIELD_SEP,
     );
 }
-
-fn validate_address(address: String) -> Result<String, ErrorCode> {
+/**
+   `validate_address` simply checks that an address is formatted
+   as the following pay:sov:<address><checksum>
+*/
+pub fn validate_address(address: String) -> Result<String, ErrorCode> {
     let indicator = sovrin_indicator();
     if !address.starts_with(&indicator) {
         return Err(ErrorCode::CommonInvalidStructure);
@@ -84,8 +87,6 @@ fn validate_address(address: String) -> Result<String, ErrorCode> {
     return Ok(address);
 }
 
-
-#[cfg(test)]
 mod address_tests {
     use utils::random::rand_string;
 
