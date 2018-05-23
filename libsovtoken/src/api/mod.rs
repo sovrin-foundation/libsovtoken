@@ -320,7 +320,6 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
     }
 
     let fees_json_str : &str = match str_from_char_ptr(fees_json) {
-
         Some(s) => s,
         None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
     };

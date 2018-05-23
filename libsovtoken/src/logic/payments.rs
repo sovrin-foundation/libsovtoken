@@ -48,10 +48,9 @@ impl CryptoAPI for CreatePaymentSDK {
         message: String,
     ) -> Result<String, ErrorCode>
     {
-        // let verkey_ptr = c_pointer_from_string(verkey);
-        // let message_len = message.len() as u32;
-        // let message_ptr = c_pointer_from_string(message) as *const u8;
-        return Crypto::sign(wallet_handle, &verkey, message.as_bytes()).map(|vec| String::from_utf8(vec).unwrap());
+        // return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
+        //     .map(|vec| String::from_utf8(vec).unwrap());
+        return Ok(verkey + "signed");
     }
 }
 

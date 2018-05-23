@@ -23,12 +23,12 @@ use std::fmt;
 
     ## From Object
     ### Required Fields
-        - `paymentAddress`
-        - `sequenceNumber`
+        * paymentAddress
+        * sequenceNumber
 
     ### Optional Fields
-        - `signature`
-        - `extra`
+        * signature
+        * extra
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
@@ -48,7 +48,7 @@ use std::fmt;
     use sovtoken::logic::input::Input;
     let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
     let signature = String::from("239asdkj3298uadkljasd98u234ijasdlkj");
-    let input = Input::new(address, 30, signature);
+    let input = Input::new(address, 30, Some(signature));
 
     let json = Input::to_json(&input).unwrap();
     assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30,"239asdkj3298uadkljasd98u234ijasdlkj"]"#);
