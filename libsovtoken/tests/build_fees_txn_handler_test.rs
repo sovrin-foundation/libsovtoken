@@ -6,9 +6,9 @@
 extern crate libc;
 
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
+extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 
 use libc::c_char;
 use std::ptr;

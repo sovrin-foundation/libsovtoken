@@ -8,9 +8,9 @@
 #[allow(unused_imports)]
 
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
+extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
-use indy::api::ErrorCode;
+use indy::ErrorCode;
 use sovtoken::api::sovtoken_init;
 
 
