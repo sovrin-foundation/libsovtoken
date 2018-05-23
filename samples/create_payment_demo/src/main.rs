@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
+extern crate ansi_term;
 extern crate libc;
 
 #[macro_use] extern crate lazy_static;
@@ -13,6 +14,7 @@ mod libsovtoken;
 use std::ptr::null;
 use std::ffi::CString;
 
+use ansi_term::*;
 use indy::*;
 use libsovtoken::*;
 use callbacks::*;
@@ -136,14 +138,14 @@ fn get_payment_addresses(wallet_handle: i32) -> String {
 
 /**
    Entry point for the create payment address demo.  It will setup the environment, create the payment address
-   and prove it was created by doing something.  preferably with a wow factor and maybe some cool colors
+   and prove it was created by by calling indysdk::indy_list_payment_addresses.
 */
 fn main() {
 
     println!();
     println!();
-    println!("----------------------------------------------------");
-    println!("create payment address demo starts");
+    println!("{}", Color::Blue.paint("----------------------------------------------------"));
+    println!("{}", Color::Blue.paint("create payment address demo starts"));
     println!();
 
     let pool_name: String = "pool_1".to_string();
@@ -152,43 +154,44 @@ fn main() {
     let panic_result = std::panic::catch_unwind( ||
     {
         println!();
-        println!("1 => initializing libsovtoken -> indy-sdk");
+        println!("{}{}", Color::Cyan.paint("1"), " => initializing libsovtoken -> indy-sdk");
         initialize_libraries();
 
         println!();
-        println!("2 => Setting up an wallet called '{}'", wallet_name);
+        println!("{}{}'{}'", Color::Cyan.paint("2"), " => Setting up an wallet called ", wallet_name);
         create_wallet(&pool_name, &wallet_name);
         println!("     ....and opening wallet.");
         let wallet_handle: i32 = open_wallet(&wallet_name);
 
         println!();
-        println!("3 => getting payment addresses BEFORE create payment");
+        println!("{}{}", Color::Cyan.paint("3"), " => getting payment addresses BEFORE create payment");
         let addresses_json = get_payment_addresses(wallet_handle);
         println!("     ....received list of addresses");
-        println!("     {}", addresses_json);
+        println!("     {}", Color::Yellow.paint(addresses_json));
 
         println!();
-        println!("4 => creating a payment");
+        println!("{}{}", Color::Cyan.paint("4"), " => creating a payment");
         let payment_address: String = create_payment(wallet_handle);
         println!("     ....received a payment address of '{}'", payment_address);
 
         println!();
-        println!("5 => getting payment addresses");
+        println!("{}{}", Color::Cyan.paint("5"), " => getting payment addresses");
         let addresses_json = get_payment_addresses(wallet_handle);
         println!("     ....received list of addresses");
-        println!("     {}", addresses_json);
+        println!("     {}", Color::Yellow.paint(addresses_json));
     });
 
     println!();
     if false == panic_result.is_err() {
-        println!("6 => payment complete, running cleanup");
+        println!("{}", Color::Green.paint("6 => create payment address success, running cleanup"));
     } else {
-        println!("6 => running cleanup after error");
+        println!("{}", Color::Red.on(Color::White).paint("6 => running cleanup after error"));
     }
 
     clean_up(&wallet_name);
 
     println!();
-    println!("demo finished....");
-    println!("----------------------------------------------------");
+    println!("{}", Color::Blue.paint("demo finished...."));
+    println!("{}", Color::Blue.paint("----------------------------------------------------"));
+    println!();
 }
