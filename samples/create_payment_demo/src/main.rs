@@ -25,6 +25,7 @@ fn initialize_libraries() {
     // unsafe { sovtoken_init(); };
 }
 
+
 /**
    cleans up any
 */
@@ -66,6 +67,7 @@ fn create_wallet(pool_name: &String, wallet_name: &String) {
     assert_eq!(ErrorCode::Success, err);
 
 }
+
 
 /**
    opens wallet
@@ -149,33 +151,38 @@ fn main() {
 
     let panic_result = std::panic::catch_unwind( ||
     {
+        println!();
         println!("1 => initializing libsovtoken -> indy-sdk");
         initialize_libraries();
 
+        println!();
         println!("2 => Setting up an wallet called '{}'", wallet_name);
         create_wallet(&pool_name, &wallet_name);
         println!("     ....and opening wallet.");
         let wallet_handle: i32 = open_wallet(&wallet_name);
 
+        println!();
         println!("3 => getting payment addresses BEFORE create payment");
         let addresses_json = get_payment_addresses(wallet_handle);
         println!("     ....received list of addresses");
         println!("     {}", addresses_json);
 
+        println!();
         println!("4 => creating a payment");
         let payment_address: String = create_payment(wallet_handle);
         println!("     ....received a payment address of '{}'", payment_address);
 
+        println!();
         println!("5 => getting payment addresses");
         let addresses_json = get_payment_addresses(wallet_handle);
         println!("     ....received list of addresses");
         println!("     {}", addresses_json);
     });
 
+    println!();
     if false == panic_result.is_err() {
         println!("6 => payment complete, running cleanup");
     } else {
-        println!();
         println!("6 => running cleanup after error");
     }
 
