@@ -18,7 +18,7 @@ extern crate serde_json;
 #[cfg(not(test))]
 extern crate serde_json;
 
-extern crate indy;                      // lib-sdk project
+extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 
 
