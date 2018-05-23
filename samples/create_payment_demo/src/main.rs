@@ -164,7 +164,7 @@ fn main() {
         let wallet_handle: i32 = open_wallet(&wallet_name);
 
         println!();
-        println!("{}{}", Color::Cyan.paint("3"), " => getting payment addresses BEFORE create payment");
+        println!("{}{}", Color::Cyan.paint("3"), " => getting payment addresses in wallet BEFORE create payment");
         let addresses_json = get_payment_addresses(wallet_handle);
         println!("     ....received list of addresses");
         println!("     {}", Color::Yellow.paint(addresses_json));
@@ -175,7 +175,7 @@ fn main() {
         println!("     ....received a payment address of '{}'", Color::Cyan.paint(payment_address));
 
         println!();
-        println!("{}{}", Color::Cyan.paint("5"), " => getting payment addresses");
+        println!("{}{}", Color::Cyan.paint("5"), " => getting payment addresses in wallet");
         let addresses_json = get_payment_addresses(wallet_handle);
         println!("     ....received list of addresses");
         println!("     {}", Color::Yellow.paint(addresses_json));
