@@ -96,11 +96,11 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
 fn safely_create_wallet(wallet_name : &str) -> i32 {
     let panic_result = std::panic::catch_unwind( ||
          {
-             Wallet::delete_wallet(wallet_name);
+             Wallet::delete(wallet_name);
          });
 
-    Wallet::create_wallet("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None);
-    let wallet_id: i32 = Wallet::open_wallet(wallet_name, None, None).unwrap();
+    Wallet::create("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None);
+    let wallet_id: i32 = Wallet::open(wallet_name, None, None).unwrap();
 
     return wallet_id;
 }
@@ -125,6 +125,7 @@ fn errors_with_no_config() {
     assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting Config for 'create_payment_address_handler'");
 }
 
+
 // the create payment method requires a valid JSON format (format is described
 // in create_payment_address_handler description).  Expecting error when invalid json is inputted
 #[test]
@@ -146,7 +147,7 @@ fn errors_with_invalid_config_json() {
 #[test]
 fn successfully_creates_payment_address_with_no_seed() {
 
-    trace!("logging started for successfully_creates_payment_address_with_no_seed");
+    debug!("logging started for successfully_creates_payment_address_with_no_seed");
 
     let (receiver, command_handle, cb) = closure_to_cb_ec_string();
 

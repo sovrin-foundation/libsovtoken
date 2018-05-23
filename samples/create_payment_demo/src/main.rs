@@ -4,8 +4,12 @@
 
 extern crate ansi_term;
 extern crate libc;
+extern crate rand;
+extern crate serde;
 
 #[macro_use] extern crate lazy_static;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_json;
 
 mod indy;
 mod callbacks;
@@ -15,10 +19,23 @@ use std::ptr::null;
 use std::ffi::CString;
 
 use ansi_term::*;
+use callbacks::*;
 use indy::*;
 use libsovtoken::*;
-use callbacks::*;
+use rand::Rng;
+// use serde_json::*;
 
+/**
+    creates a randomly generated string of inputted length
+*/
+fn rand_string(length : usize) -> String {
+    let s = rand::thread_rng()
+            .gen_ascii_chars()
+            .take(length)
+            .collect::<String>();
+
+    return s;
+}
 
 /**
    calls sovtoken to initialize indy-sdk with libsovtoken payment methods
@@ -107,7 +124,9 @@ fn create_payment(wallet_handle: i32) -> String {
     let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
 
     let payment_method = CString::new("pay::sov".to_string()).unwrap();
-    let config = CString::new(r#"{ "seed" : "12345678901234567890123456789012" }"#.to_string()).unwrap();
+    let random_seed = rand_string(32);
+    let json_seed = json!( { "seed" : random_seed } ).to_string();
+    let config = CString::new(json_seed).unwrap();
 
     unsafe {
         let err = indy_create_payment_address(command_handle, wallet_handle, payment_method.as_ptr(), config.as_ptr(), cb);
@@ -120,7 +139,31 @@ fn create_payment(wallet_handle: i32) -> String {
     return payment_address;
 }
 
+/**
+   calls indy_create_payment_address with no seed value and expect libsovtoken::create_payment_address_handler to return
+   a payment address looking like pay:sov:{address}{checksum}
+*/
+fn create_payment_no_seed(wallet_handle: i32) -> String {
 
+    let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
+
+    let payment_method = CString::new("pay::sov".to_string()).unwrap();
+    let config = CString::new(r#"{}"#).unwrap();
+
+    unsafe {
+        let err = indy_create_payment_address(command_handle, wallet_handle, payment_method.as_ptr(), config.as_ptr(), cb);
+        assert_eq!(ErrorCode::Success, err);
+    };
+
+    let (result, payment_address) = receiver.recv_timeout(TimeoutUtils::long_timeout()).unwrap();
+    assert_eq!(ErrorCode::Success, result);
+
+    return payment_address;
+}
+
+/**
+     gets list of addresses on the wallet specified by wallet_handle
+*/
 fn get_payment_addresses(wallet_handle: i32) -> String {
 
     let (receiver, command_handle, cb) = CallbackUtils::closure_to_cb_ec_string();
@@ -170,8 +213,12 @@ fn main() {
         println!("     {}", Color::Yellow.paint(addresses_json));
 
         println!();
-        println!("{}{}", Color::Cyan.paint("4"), " => creating a payment");
+        println!("{}{}", Color::Cyan.paint("4"), " => creating a payment with seed");
         let payment_address: String = create_payment(wallet_handle);
+        println!("     ....received a payment address of '{}'", Color::Cyan.paint(payment_address));
+
+        println!("  => creating a payment WITHOUT seed");
+        let payment_address: String = create_payment_no_seed(wallet_handle);
         println!("     ....received a payment address of '{}'", Color::Cyan.paint(payment_address));
 
         println!();

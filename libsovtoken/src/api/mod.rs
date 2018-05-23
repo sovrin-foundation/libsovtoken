@@ -78,7 +78,7 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
 
     let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
         Ok(c) => c,
-        Err(_) => PaymentAddressConfig(),
+        Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
 
     thread::spawn(move || {

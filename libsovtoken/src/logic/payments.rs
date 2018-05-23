@@ -34,8 +34,14 @@ impl CryptoAPI for CreatePaymentSDK {
     */
     fn indy_create_key(&self, wallet_id: IndyHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
 
-        trace!("create_payment_address calling indy_create_key");
-        let config_json: String = config.to_json().unwrap();
+        debug!("create_payment_address calling indy_create_key");
+        let mut config_json: String = config.to_json().unwrap();
+
+        // indy-sdk expects a valid but empty input to be this below
+        // so if no seed was provided, create the json to look like this instead
+        if 0 == config.seed.chars().count() {
+            config_json = r#"{ }"#.to_string();
+        }
 
         return Key::create(wallet_id, &config_json);
     }
@@ -99,7 +105,22 @@ mod payments_tests {
 
     static VALID_SEED_LEN: usize = 32;
     static WALLET_ID: i32 = 10;
-    static COMMAND_HANDLE: i32 = 10;
+
+    #[test]
+    fn silly_test() {
+
+        let seed = String::new();
+        let config: PaymentAddressConfig = PaymentAddressConfig { seed };
+
+        let mut config_json: String = config.to_json().unwrap();
+
+        if 0 == config.seed.chars().count() {
+            config_json = r#"{ }"#.to_string();
+        }
+
+        println!("output {}", config_json);
+        assert_eq!(0, 1);
+    }
 
 
     // This is the happy path test.  Config contains a seed and
