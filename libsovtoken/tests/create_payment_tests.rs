@@ -64,6 +64,7 @@ lazy_static! {
     static ref CALLBACKS_EC_STRING: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String) + Send > >> = Default::default();
 }
 
+// a callback handler for the API calls
 pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
                                       Option<extern fn(command_handle: i32,
                                                        err: ErrorCode,
@@ -90,7 +91,8 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
     (receiver, command_handle, Some(_callback))
 }
 
-//
+// deletes, creates and opens a wallet.  it will successfully create and open the wallet,
+// regardless if the wallet exists
 fn safely_create_wallet(wallet_name : &str) -> i32 {
     let panic_result = std::panic::catch_unwind( ||
          {

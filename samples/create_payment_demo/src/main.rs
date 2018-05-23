@@ -172,7 +172,7 @@ fn main() {
         println!();
         println!("{}{}", Color::Cyan.paint("4"), " => creating a payment");
         let payment_address: String = create_payment(wallet_handle);
-        println!("     ....received a payment address of '{}'", payment_address);
+        println!("     ....received a payment address of '{}'", Color::Cyan.paint(payment_address));
 
         println!();
         println!("{}{}", Color::Cyan.paint("5"), " => getting payment addresses");
