@@ -1,6 +1,6 @@
-#![warn(unused_imports)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
+#[warn(unused_imports)]
 
 extern crate ansi_term;
 extern crate libc;
@@ -213,13 +213,13 @@ fn main() {
         println!("     {}", Color::Yellow.paint(addresses_json));
 
         println!();
-        println!("{}{}", Color::Cyan.paint("4"), " => creating a payment with seed");
+        println!("{}{}", Color::Cyan.paint("4"), " => creating an address using a seed value");
         let payment_address: String = create_payment(wallet_handle);
-        println!("     ....received a payment address of '{}'", Color::Cyan.paint(payment_address));
+        println!("     ....received an address of '{}'", Color::Cyan.paint(payment_address));
 
-        println!("  => creating a payment WITHOUT seed");
+        println!("  => creating an address WITHOUT seed");
         let payment_address: String = create_payment_no_seed(wallet_handle);
-        println!("     ....received a payment address of '{}'", Color::Cyan.paint(payment_address));
+        println!("     ....received an address of '{}'", Color::Cyan.paint(payment_address));
 
         println!();
         println!("{}{}", Color::Cyan.paint("5"), " => getting payment addresses in wallet");
