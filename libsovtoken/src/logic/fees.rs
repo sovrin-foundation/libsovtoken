@@ -76,6 +76,7 @@ trait InputSigner:  {
          return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
              .map(|vec| String::from_utf8(vec).unwrap());
     }
+
 }
 
 #[cfg(test)]
@@ -113,19 +114,27 @@ mod test_fees {
         unimplemented!();
     }
 
+    #[test]
     fn sign_input_invalid_address_output() {
-        unimplemented!();
+        /*
+            Neither sign_input or sign_inputs is expecting multiple addresses.
+        */
+        let wallet_handle = 1;
+        let (inputs, mut outputs) = inputs_outputs_valid();
+        String::remove(&mut outputs[0].payment_address, 5);
+
+        let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &outputs).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
     }
 
     #[test]
     fn sign_input_invalid_address_input() {
         let wallet_handle = 1;
-        let (inputs, outputs) = inputs_outputs_valid();
+        let (mut inputs, outputs) = inputs_outputs_valid();
 
-        let mut input = inputs.into_iter().nth(0).unwrap();
-        String::remove(&mut input.payment_address, 5);
+        String::remove(&mut inputs[0].payment_address, 5);
 
-        let signed_input = MockedFees::sign_input(wallet_handle, &input, &outputs).unwrap_err();
+        let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &outputs).unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
     }
 
@@ -133,10 +142,9 @@ mod test_fees {
     fn sign_input() {
         let (inputs, outputs) = inputs_outputs_valid();
 
-        let input = inputs.into_iter().nth(0).unwrap();
         let wallet_handle = 1;
 
-        let signed_input = MockedFees::sign_input( wallet_handle, &input, &outputs).unwrap();
+        let signed_input = MockedFees::sign_input( wallet_handle, &inputs[0], &outputs).unwrap();
         let expected = Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sssigned")));
         assert_eq!(expected, signed_input);
     }
