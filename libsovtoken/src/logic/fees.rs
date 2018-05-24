@@ -30,10 +30,10 @@ impl Fees {
 
 trait InputSigner:  {
 
-    fn sign_inputs(wallet_handle: IndyHandle, inputs: &Vec<Input>, outputs: &Vec<Output>)
-        -> Result<Vec<Input>, ErrorCode>
+    fn sign_inputs(wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
+        -> Result<Inputs, ErrorCode>
     {
-        let signed_inputs: Result<Vec<Input>, ErrorCode> = inputs.iter()
+        let signed_inputs: Result<Inputs, ErrorCode> = inputs.iter()
             .map(|input| Self::sign_input(wallet_handle, input, outputs))
             .collect();
 
@@ -97,7 +97,7 @@ mod test_fees {
         }
     }
 
-    fn inputs_outputs_valid() -> (Vec<Input>, Vec<Output>) {
+    fn inputs_outputs_valid() -> (Inputs, Outputs) {
         let outputs = vec![
             Output::new(String::from("pay:sov:gGpXeIzxDaZmeVhJZs6qWrdBPbDG3AfTW7RD"), 10, None),
             Output::new(String::from("pay:sov:jtCpdpjVjIJ5vrIlD3KwFjzz8LBaJGIJVUn2"), 22, None),
