@@ -76,6 +76,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         None => return ErrorCode::CommonInvalidParam2
     };
 
+    // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
+    // like { } as valid.  if we get any kind of serialization failure assume we can use the default
     let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
         Ok(c) => c,
         Err(_) => PaymentAddressConfig { seed : "".to_string()},
