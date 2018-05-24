@@ -96,11 +96,11 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
 fn safely_create_wallet(wallet_name : &str) -> i32 {
     let panic_result = std::panic::catch_unwind( ||
          {
-             Wallet::delete_wallet(wallet_name).unwrap();
+             Wallet::delete(wallet_name).unwrap();
          });
 
-    Wallet::create_wallet("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None).unwrap();
-    let wallet_id: i32 = Wallet::open_wallet(wallet_name, None, None).unwrap();
+    Wallet::create("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None).unwrap();
+    let wallet_id: i32 = Wallet::open(wallet_name, None, None).unwrap();
 
     return wallet_id;
 }
@@ -127,9 +127,10 @@ fn errors_with_no_config() {
 
 
 // the create payment method requires a valid JSON format (format is described
-// in create_payment_address_handler description).  Expecting error when invalid json is inputted
+// in create_payment_address_handler description).  When invalid json is sent,
+// default empty is used instead
 #[test]
-fn errors_with_invalid_config_json() {
+fn success_with_invalid_config_json() {
 
     let config_str = CString::new(INVALID_CONFIG_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
@@ -137,7 +138,7 @@ fn errors_with_invalid_config_json() {
     let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode> = Some(empty_create_payment_callback);
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, config_str_ptr, cb);
 
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'create_payment_address_handler'");
+    assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'create_payment_address_handler'");
 }
 
 
