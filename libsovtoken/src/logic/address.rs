@@ -87,6 +87,7 @@ pub fn validate_address(address: String) -> Result<String, ErrorCode> {
     return Ok(address);
 }
 
+#[cfg(test)]
 mod address_tests {
     use utils::random::rand_string;
 
