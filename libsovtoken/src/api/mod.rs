@@ -8,11 +8,13 @@
 #[warn(unused_imports)]
 
 use std;
+use std::ffi::CString;
 use std::thread;
 
 use libc::c_char;
 use indy::payments::Payment;
 use indy::ErrorCode;
+use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::config::{
@@ -23,10 +25,11 @@ use logic::config::{
     set_fees_config::{SetFeesRequest, Fees},
 };
 use logic::request::Request;
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
-
+use utils::types::*;
+use utils::validation::{validate_did_len};
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
@@ -73,33 +76,37 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         None => return ErrorCode::CommonInvalidParam2
     };
 
+    // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
+    // like { } as valid.  if we get any kind of serialization failure assume we can use the default
     let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure,
+        Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
 
     thread::spawn(move || {
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
-        let mut result : ErrorCode = ErrorCode::Success;
-        let mut payment_address_ptr = std::ptr::null();
-
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
         match handler.create_payment_address(wallet_handle, config) {
             Ok(payment_address) => {
+                debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
                 let payment_address_cstring = cstring_from_str(payment_address);
-                payment_address_ptr = payment_address_cstring.as_ptr();
+                let payment_address_ptr = payment_address_cstring.as_ptr();
+
+                match cb {
+                    Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+                    None => panic!("cb was null even after check"),
+                };
 
             },
-            Err(e) => { result = ErrorCode::CommonInvalidState; },
+            Err(e) => {
+                match cb {
+                    Some(f) => f(command_handle, ErrorCode::CommonInvalidState, std::ptr::null()),
+                    None => panic!("cb was null even after check"),
+                };
+
+            },
         };
-
-        match cb {
-            Some(f) => f(command_handle, result, payment_address_ptr),
-            None => panic!("cb was null even after check"),
-        };
-
-
     });
 
 
@@ -259,10 +266,32 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  submitter_did: *const c_char,
                                                  payment_address: *const c_char,
-                                                 cb: Option<extern fn(command_handle_: i32,
-                                                                      err: ErrorCode,
-                                                                      get_utxo_txn_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-    return ErrorCode::Success;
+                                                 cb: JsonCallback)-> ErrorCode {
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
+    // * C_CHAR to &str
+    let submitter_did = str_from_char_ptr(submitter_did).unwrap();
+    let payment_address = str_from_char_ptr(payment_address).unwrap();
+    // Helper Vars
+    let add_len = payment_address.len();
+
+    // validation
+    if !validate_did_len(submitter_did) {
+        return ErrorCode::CommonInvalidParam3;
+    }
+
+    if let Err(e) = validate_address(String::from(payment_address)) {
+        return e;
+    }
+
+    // start the CBs
+    return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
+        Ok((txn_req, ..)) => {
+            cb(command_handle, ErrorCode::Success, c_pointer_from_string(txn_req));
+            ErrorCode::Success
+        },
+        Err(e) => e
+    };
 }
 
 /// Description
@@ -416,8 +445,9 @@ pub extern "C" fn build_mint_txn_handler(
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
+    debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "libsovtoken",
+        "pay::sov",
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,
@@ -434,5 +464,6 @@ pub extern fn sovtoken_init() -> ErrorCode {
         Err(e) => e ,
     };
 
+    debug!("sovtoken_init() returning {:?}", result);
     return result;
 }
