@@ -96,11 +96,11 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
 fn safely_create_wallet(wallet_name : &str) -> i32 {
     let panic_result = std::panic::catch_unwind( ||
          {
-             Wallet::delete(wallet_name);
+             Wallet::delete_wallet(wallet_name).unwrap();
          });
 
-    Wallet::create("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None);
-    let wallet_id: i32 = Wallet::open(wallet_name, None, None).unwrap();
+    Wallet::create_wallet("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None).unwrap();
+    let wallet_id: i32 = Wallet::open_wallet(wallet_name, None, None).unwrap();
 
     return wallet_id;
 }

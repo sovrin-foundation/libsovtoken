@@ -278,7 +278,9 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    validate_address(String::from(payment_address));
+    if let Err(e) = validate_address(String::from(payment_address)) {
+        return e;
+    }
 
     // start the CBs
     return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
