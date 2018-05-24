@@ -11,9 +11,6 @@ use indy::crypto::Crypto;
 type Inputs = Vec<Input>;
 type Outputs = Vec<Output>;
 
-static WALLET_NAME_1: &'static str = "sign_test_wallet_1";
-static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{}"#;
-
 #[derive(Debug)]
 struct Fees {
     outputs: Outputs,
