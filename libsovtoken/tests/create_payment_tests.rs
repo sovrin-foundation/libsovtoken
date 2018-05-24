@@ -59,38 +59,6 @@ extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode
     return ErrorCode::Success;
 }
 
-lazy_static! {
-    static ref COMMAND_HANDLE_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
-    static ref CALLBACKS_EC_STRING: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String) + Send > >> = Default::default();
-}
-
-// a callback handler for the API calls
-pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
-                                      Option<extern fn(command_handle: i32,
-                                                       err: ErrorCode,
-                                                       c_str: *const c_char) -> ErrorCode>) {
-    let (sender, receiver) = channel();
-
-    let closure = Box::new(move |err: ErrorCode, val: String| {
-        sender.send((err, val)).unwrap();
-    });
-
-    extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_str: *const c_char) -> ErrorCode {
-        let mut callbacks = CALLBACKS_EC_STRING.lock().unwrap();
-        let mut cb = callbacks.remove(&command_handle).unwrap();
-        let metadata = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
-        cb(err, metadata);
-
-        return err;
-    }
-
-    let mut callbacks = CALLBACKS_EC_STRING.lock().unwrap();
-    let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
-    callbacks.insert(command_handle, closure);
-
-    (receiver, command_handle, Some(_callback))
-}
-
 // deletes, creates and opens a wallet.  it will successfully create and open the wallet,
 // regardless if the wallet exists
 fn safely_create_wallet(wallet_name : &str) -> i32 {
@@ -150,7 +118,7 @@ fn successfully_creates_payment_address_with_no_seed() {
 
     debug!("logging started for successfully_creates_payment_address_with_no_seed");
 
-    let (receiver, command_handle, cb) = closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = indy::utils::callbacks::ClosureHandler::cb_ec_string();
 
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
@@ -177,7 +145,7 @@ fn success_callback_is_called() {
 
     trace!("logging started for success_callback_is_called");
 
-    let (receiver, command_handle, cb) = closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = indy::utils::callbacks::ClosureHandler::cb_ec_string();
 
     let seed = rand_string(VALID_SEED_LEN);
     let config: PaymentAddressConfig = PaymentAddressConfig { seed, };
