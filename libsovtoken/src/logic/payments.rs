@@ -4,7 +4,7 @@
 #[warn(unused_imports)]
 
 use indy::{ErrorCode, IndyHandle};
-use indy::crypto::{Key, Crypto};
+use indy::crypto::Key;
 use logic::indysdk_api::CryptoAPI;
 use super::config::payment_address_config::PaymentAddressConfig;
 use utils::ffi_support::{string_from_char_ptr, cstring_from_str, c_pointer_from_string};
@@ -45,19 +45,6 @@ impl CryptoAPI for CreatePaymentSDK {
         }
 
         return Key::create(wallet_id, &config_json);
-    }
-
-    fn indy_crypto_sign (
-        &self,
-        wallet_handle: IndyHandle,
-        verkey: String,
-        message: String,
-    ) -> Result<String, ErrorCode>
-    {
-         return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
-             .map(|vec| String::from_utf8(vec).unwrap());
-
-        //return Ok(verkey + "signed");
     }
 }
 
@@ -113,14 +100,6 @@ mod payments_tests {
     impl CryptoAPI for CreatePaymentSDKMockHandler {
         fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
             return Ok(rand_string(32));
-        }
-        fn indy_crypto_sign (
-            &self,
-            wallet_handle: i32,
-            verkey: String,
-            message: String,
-        ) -> Result<String, ErrorCode> {
-            return Err(ErrorCode::CommonInvalidParam2);
         }
     }
 

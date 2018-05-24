@@ -1,8 +1,6 @@
 //! this module defines traits which represent INDY SDK API calls
 use indy::ErrorCode;
 use super::config::payment_address_config::PaymentAddressConfig;
-use logic::types::ClosureString;
-
 
 /**
     This defines the interfaces for INDY SDK crypto apis, which can be replaced with different implementations
@@ -12,5 +10,4 @@ use logic::types::ClosureString;
 */
 pub trait CryptoAPI {
     fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode>;
-    fn indy_crypto_sign(&self, wallet_id: i32, verkey: String, message: String) -> Result<String, ErrorCode>;
 }

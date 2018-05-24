@@ -1,17 +1,12 @@
 #![allow(dead_code)]
 
+use indy::IndyHandle;
 use serde_json;
 use indy::ErrorCode;
 use logic::address;
-use logic::indysdk_api::CryptoAPI;
 use logic::input::Input;
 use logic::output::Output;
-use logic::payments::{CreatePaymentSDK};
-//use logic::types::ClosureString;
-//use utils::json_conversion::JsonDeserialize;
-
-use indy::wallet::Wallet;
-use std;
+use indy::crypto::Crypto;
 
 type Inputs = Vec<Input>;
 type Outputs = Vec<Output>;
@@ -19,34 +14,33 @@ type Outputs = Vec<Output>;
 static WALLET_NAME_1: &'static str = "sign_test_wallet_1";
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{}"#;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 struct Fees {
     outputs: Outputs,
     inputs: Inputs,
 }
 
-
+impl InputSigner for Fees {}
 impl Fees {
-    pub fn new(inputs: Inputs, outputs: Outputs) -> Self {
+    fn new(inputs: Inputs, outputs: Outputs) -> Self
+    {
         return Fees { inputs, outputs };
     }
+}
 
-    pub fn sign_inputs(self, wallet_handle: i32)
-        -> Result<Fees, ErrorCode>
+trait InputSigner:  {
+
+    fn sign_inputs(wallet_handle: IndyHandle, inputs: &Vec<Input>, outputs: &Vec<Output>)
+        -> Result<Vec<Input>, ErrorCode>
     {
-        let outputs = self.outputs;
-
-        let signed_inputs: Result<Vec<Input>, ErrorCode> = self.inputs.iter()
-            .map(|input| Fees::sign_input(wallet_handle, input, &outputs))
+        let signed_inputs: Result<Vec<Input>, ErrorCode> = inputs.iter()
+            .map(|input| Self::sign_input(wallet_handle, input, outputs))
             .collect();
 
-        let signed_fees = Fees::new(signed_inputs?, outputs);
-
-        return Ok(signed_fees);
+        return signed_inputs;
     }
 
-    pub fn sign_input(wallet_handle: i32, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
+    fn sign_input(wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
     {
         println!("get to a new line for readability");
         println!("signing input = {:?}", input);
@@ -72,10 +66,18 @@ impl Fees {
 
         println!("message to sign = {:?}", message);
 
-        let payment_handler = CreatePaymentSDK {};
-        return payment_handler
-            .indy_crypto_sign(wallet_handle, verkey, message)
+        return Self::indy_crypto_sign(wallet_handle, verkey, message)
             .map(|signed_string| input.clone().sign_with(signed_string));
+    }
+
+    fn indy_crypto_sign (
+        wallet_handle: IndyHandle,
+        verkey: String,
+        message: String,
+    ) -> Result<String, ErrorCode>
+    {
+         return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
+             .map(|vec| String::from_utf8(vec).unwrap());
     }
 }
 
@@ -83,45 +85,22 @@ impl Fees {
 mod test_fees {
     use super::*;
 
-    // deletes, creates and opens a wallet.  it will successfully create and open the wallet,
-    // regardless if the wallet exists
-    fn safely_create_wallet(wallet_name : &str) -> i32 {
-        let panic_result = std::panic::catch_unwind( ||
-             {
-                 Wallet::delete_wallet(wallet_name);
-             });
+    struct MockedFees {}
 
-        Wallet::create_wallet("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None);
-        let wallet_id: i32 = Wallet::open_wallet(wallet_name, None, None).unwrap();
-
-        return wallet_id;
+    impl InputSigner for MockedFees {
+        fn indy_crypto_sign(
+            _wallet_handle: IndyHandle,
+            verkey: String,
+            _message: String
+        ) -> Result<String, ErrorCode> {
+            return Ok(verkey + "signed");
+        }
     }
 
-
-    #[test]
-    fn sign_input() {
+    fn inputs_outputs_valid() -> (Vec<Input>, Vec<Output>) {
         let outputs = vec![
-            Output::new(String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es"), 10, None),
-            Output::new(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q"), 22, None),
-        ];
-
-        let input = Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, None);
-
-        let wallet_handle: i32 = safely_create_wallet(WALLET_NAME_1);
-        println!("wallet id = {:?}", wallet_handle);
-
-//        let wallet_handle = 1;
-
-        let signed_input = Fees::sign_input( wallet_handle, &input, &outputs).unwrap();
-        let expected = Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sssigned")));
-        assert_eq!(expected, signed_input);
-    }
-
-    #[test]
-    fn sign_multi_input() {
-        let outputs = vec![
-            Output::new(String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es"), 10, None),
-            Output::new(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q"), 22, None),
+            Output::new(String::from("pay:sov:gGpXeIzxDaZmeVhJZs6qWrdBPbDG3AfTW7RD"), 10, None),
+            Output::new(String::from("pay:sov:jtCpdpjVjIJ5vrIlD3KwFjzz8LBaJGIJVUn2"), 22, None),
         ];
 
         let inputs = vec![
@@ -129,22 +108,53 @@ mod test_fees {
             Input::new(String::from("pay:sov:anotherGGUf33VxAwgTFjkxu1A9JM3Sscd5F"), 1, None),
         ]; 
 
+        return (inputs, outputs);
+    }
+
+    #[test]
+    fn sign_input_invalid_sequence_number() {
+        unimplemented!();
+    }
+
+    fn sign_input_invalid_address_output() {
+        unimplemented!();
+    }
+
+    #[test]
+    fn sign_input_invalid_address_input() {
+        let wallet_handle = 1;
+        let (inputs, outputs) = inputs_outputs_valid();
+
+        let mut input = inputs.into_iter().nth(0).unwrap();
+        String::remove(&mut input.payment_address, 5);
+
+        let signed_input = MockedFees::sign_input(wallet_handle, &input, &outputs).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
+    }
+
+    #[test]
+    fn sign_input() {
+        let (inputs, outputs) = inputs_outputs_valid();
+
+        let input = inputs.into_iter().nth(0).unwrap();
+        let wallet_handle = 1;
+
+        let signed_input = MockedFees::sign_input( wallet_handle, &input, &outputs).unwrap();
+        let expected = Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sssigned")));
+        assert_eq!(expected, signed_input);
+    }
+
+    #[test]
+    fn sign_multi_input() {
+        let wallet_handle = 1;
+        let (inputs, outputs) = inputs_outputs_valid();
+        
         let expected_signed_inputs = vec![
             Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sssigned"))),
             Input::new(String::from("pay:sov:anotherGGUf33VxAwgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("anotherGGUf33VxAwgTFjkxu1A9JM3Sssigned"))),
         ];
         
-        let wallet_handle = 1;
-
-        let fees = Fees::new(inputs, outputs);
-
-        println!("these are the fees = {:?}", fees);
-
-        let fees_signed = fees.sign_inputs(wallet_handle).unwrap();
-
-        println!("Completed signed_fees = {:?} ", fees_signed);
-
-        assert_eq!(expected_signed_inputs, fees_signed.inputs);
-
+        let signed_inputs = MockedFees::sign_inputs(wallet_handle, &inputs, &outputs).unwrap();
+        assert_eq!(expected_signed_inputs, signed_inputs);
     }
 }
