@@ -141,6 +141,18 @@ mod test_fees {
         assert_eq!(expected, signed_input);
     }
 
+
+    #[test]
+    fn sign_multi_input_invalid_input_address() {
+        let wallet_handle = 1;
+        let (mut inputs, outputs) = inputs_outputs_valid();
+        String::remove(&mut inputs[0].payment_address, 5);
+
+        let signed_inputs = MockedFees::sign_inputs(wallet_handle, &inputs, &outputs).unwrap_err();
+
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_inputs);
+    }
+
     #[test]
     fn sign_multi_input() {
         let wallet_handle = 1;
