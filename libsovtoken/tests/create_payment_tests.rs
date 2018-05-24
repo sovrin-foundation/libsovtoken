@@ -107,16 +107,16 @@ fn safely_create_wallet(wallet_name : &str) -> i32 {
 
 // ***** UNIT TESTS *****
 
-// the create payment requires a callback and this test ensures we have 
+// the create payment requires a callback and this test ensures we have
 // receive error when no callback is provided
 #[test]
 fn errors_with_no_callback () {
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam4, "Expecting Callback for 'create_payment_address_handler'"); 
+    assert_eq!(return_error, ErrorCode::CommonInvalidParam4, "Expecting Callback for 'create_payment_address_handler'");
 }
 
 
-// the create payment method requires a config parameter and this test ensures that 
+// the create payment method requires a config parameter and this test ensures that
 // a error is returned when no config is provided
 #[test]
 fn errors_with_no_config() {
@@ -197,9 +197,3 @@ fn success_callback_is_called() {
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 
 }
-
-
-
-
-
-
