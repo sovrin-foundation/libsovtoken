@@ -48,9 +48,10 @@ impl CryptoAPI for CreatePaymentSDK {
         message: String,
     ) -> Result<String, ErrorCode>
     {
-        // return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
-        //     .map(|vec| String::from_utf8(vec).unwrap());
-        return Ok(verkey + "signed");
+         return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
+             .map(|vec| String::from_utf8(vec).unwrap());
+
+        //return Ok(verkey + "signed");
     }
 }
 
@@ -120,7 +121,7 @@ mod payments_tests {
 
     static VALID_SEED_LEN: usize = 32;
     static WALLET_ID: i32 = 10;
-    static COMMAND_HANDLE: i32 = 10;
+//    static COMMAND_HANDLE: i32 = 10;
 
 
     // This is the happy path test.  Config contains a seed and
