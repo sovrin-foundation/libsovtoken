@@ -152,6 +152,12 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
                                                                req_with_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
+
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam6);
+
+    cb(command_handle, ErrorCode::CommonInvalidState, req_json);
+
     return ErrorCode::Success;
 }
 
@@ -447,7 +453,7 @@ pub extern fn sovtoken_init() -> ErrorCode {
 
     debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "pay::sov",
+        "pay:sov:",
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,

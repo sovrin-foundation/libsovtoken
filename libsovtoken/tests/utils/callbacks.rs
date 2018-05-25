@@ -1,3 +1,9 @@
+/*!
+    Set of callback utils for testing.
+
+    **These should only be used for testing**
+*/
+
 extern crate rust_indy_sdk as indy;
 
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
@@ -9,7 +15,7 @@ use std::ffi::CStr;
 
 use indy::ErrorCode;
 
-type Callbacks<F: Send> = Mutex<HashMap<i32, Box<F>>>;
+type Callbacks<F> = Mutex<HashMap<i32, Box<F>>>;
 
 macro_rules! closure_cb {
     ($closure:ident, $($name:ident : $ntype:ty),*) => {{
