@@ -29,9 +29,9 @@ use std::sync::mpsc::{channel, Receiver};
 use std::time::Duration;
 
 use indy::ErrorCode;
-use indy::wallet::Wallet;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
+mod utils;
 
 // ***** HELPER TEST DATA  *****
 const WALLET_ID: i32 = 99;
@@ -91,20 +91,6 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
     (receiver, command_handle, Some(_callback))
 }
 
-// deletes, creates and opens a wallet.  it will successfully create and open the wallet,
-// regardless if the wallet exists
-fn safely_create_wallet(wallet_name : &str) -> i32 {
-    let panic_result = std::panic::catch_unwind( ||
-         {
-             Wallet::delete(wallet_name).unwrap();
-         });
-
-    Wallet::create("pool_1", wallet_name, None, Some(VALID_CONFIG_EMPTY_SEED_JSON), None).unwrap();
-    let wallet_id: i32 = Wallet::open(wallet_name, None, None).unwrap();
-
-    return wallet_id;
-}
-
 // ***** UNIT TESTS *****
 
 // the create payment requires a callback and this test ensures we have
@@ -155,7 +141,7 @@ fn successfully_creates_payment_address_with_no_seed() {
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = safely_create_wallet(WALLET_NAME_1);
+    let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_1);
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
 
@@ -185,7 +171,7 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = safely_create_wallet(WALLET_NAME_2);
+    let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_1);
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
     assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
