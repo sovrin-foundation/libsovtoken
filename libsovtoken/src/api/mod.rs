@@ -25,6 +25,7 @@ use logic::config::{
     set_fees_config::{SetFeesRequest, Fees},
 };
 use logic::request::Request;
+use serde_json;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
@@ -145,7 +146,7 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 #[no_mangle]
 pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                            wallet_handle: i32,
-                                           submitter_did: *const c_char,
+                                           did: *const c_char, // TODO: Need to remove.
                                            req_json: *const c_char,
                                            inputs_json: *const c_char,
                                            outputs_json: *const c_char,
@@ -155,6 +156,62 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
 
 
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam6);
+
+    trace!("Converting request_json pointer to string");
+    let request_json = match string_from_char_ptr(req_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert request_json pointer to string");
+            return ErrorCode::CommonInvalidParam3;
+        }
+    };
+
+    trace!("Converting request_json pointer to string");
+    let inputs_json = match string_from_char_ptr(inputs_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidParam4;
+        }
+    };
+
+    trace!("Converting request_json pointer to string");
+    let outputs_json = match string_from_char_ptr(outputs_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert outputs_json pointer to string.");
+            return ErrorCode::CommonInvalidParam5;
+        }
+    };
+
+    trace!("Converting request_json to serde::json::Value");
+    let request_json: serde_json::Value = match serde_json::from_str(&request_json) {
+        Ok(value) => value,
+        Err(_) => {
+            error!("request_json was invalid json.");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let transaction_type = match request_json.get("type") {
+        Some(txn_type) => txn_type,
+        None => {
+            error!("request_json didn't contain a transaction type.");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    debug!("Request transaction type was: {}", transaction_type);
+
+    /*
+        Errors when the request is a XFER request becaause the 
+        fees should be implicit in the operation's inputs and
+        outputs.
+    */
+    if transaction_type == "10000" {
+        error!("Can't add fees to a transfer request");
+        return ErrorCode::CommonInvalidStructure;
+    }
 
     cb(command_handle, ErrorCode::CommonInvalidState, req_json);
 
