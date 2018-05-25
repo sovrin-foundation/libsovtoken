@@ -3,9 +3,9 @@
 This document is kept to list technical concerns the token team will want to address in libsovtoken (or indy-sdk
 where this libraries interact).
 
-# Issues -- RESOLVED
+# Issues
 
-# Issue: circular references between indy-sdk and libsovtoken
+# Issue -- RESOLVED: circular references between indy-sdk and libsovtoken
 See each of the below sub-items for proposed solutions
 
 ### APIs return type 'ErrorCode'
