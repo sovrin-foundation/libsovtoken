@@ -1,2 +1,3 @@
-#[cfg(test)]
+
 pub mod wallet;
+pub mod callbacks;

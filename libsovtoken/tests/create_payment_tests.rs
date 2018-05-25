@@ -20,18 +20,15 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 use libc::c_char;
 use rand::Rng;
 use std::ffi::CStr;
-use std::collections::HashMap;
 use std::ptr;
 use std::ffi::CString;
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
-use std::sync::Mutex;
-use std::sync::mpsc::{channel, Receiver};
 use std::time::Duration;
 
 use indy::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::utils::logger::*;
 mod utils;
+use utils::callbacks::closure_to_cb_ec_string;
 
 // ***** HELPER TEST DATA  *****
 const WALLET_ID: i32 = 99;
@@ -59,37 +56,6 @@ extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode
     return ErrorCode::Success;
 }
 
-lazy_static! {
-    static ref COMMAND_HANDLE_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
-    static ref CALLBACKS_EC_STRING: Mutex < HashMap < i32, Box < FnMut(ErrorCode, String) + Send > >> = Default::default();
-}
-
-// a callback handler for the API calls
-pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
-                                      Option<extern fn(command_handle: i32,
-                                                       err: ErrorCode,
-                                                       c_str: *const c_char) -> ErrorCode>) {
-    let (sender, receiver) = channel();
-
-    let closure = Box::new(move |err: ErrorCode, val: String| {
-        sender.send((err, val)).unwrap();
-    });
-
-    extern "C" fn _callback(command_handle: i32, err: ErrorCode, c_str: *const c_char) -> ErrorCode {
-        let mut callbacks = CALLBACKS_EC_STRING.lock().unwrap();
-        let mut cb = callbacks.remove(&command_handle).unwrap();
-        let metadata = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
-        cb(err, metadata);
-
-        return err;
-    }
-
-    let mut callbacks = CALLBACKS_EC_STRING.lock().unwrap();
-    let command_handle = (COMMAND_HANDLE_COUNTER.fetch_add(1, Ordering::SeqCst) + 1) as i32;
-    callbacks.insert(command_handle, closure);
-
-    (receiver, command_handle, Some(_callback))
-}
 
 // ***** UNIT TESTS *****
 
