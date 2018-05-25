@@ -171,7 +171,7 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_1);
+    let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_2);
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
     assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
