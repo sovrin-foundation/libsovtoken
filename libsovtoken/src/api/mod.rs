@@ -95,14 +95,20 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
 
                 match cb {
                     Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
-                    None => panic!("cb was null even after check"),
+                    None => {
+                        error!("cb was null even after check");
+                        ErrorCode::CommonInvalidState
+                    },
                 };
 
             },
             Err(e) => {
                 match cb {
                     Some(f) => f(command_handle, ErrorCode::CommonInvalidState, std::ptr::null()),
-                    None => panic!("cb was null even after check"),
+                    None => {
+                        error!("cb was null even after check");
+                        ErrorCode::CommonInvalidState
+                    },
                 };
 
             },
@@ -445,6 +451,8 @@ pub extern "C" fn build_mint_txn_handler(
 */
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
+
+    super::utils::logger::init_log();
 
     debug!("sovtoken_init() started");
     let result = match Payment::register(
