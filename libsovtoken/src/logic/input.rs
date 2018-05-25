@@ -23,12 +23,13 @@ use std::fmt;
 
     ## From Object
     ### Required Fields
-        * paymentAddress
-        * sequenceNumber
+    * paymentAddress
+    * sequenceNumber
 
     ### Optional Fields
-        * signature
-        * extra
+    * signature
+    * extra
+    
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
