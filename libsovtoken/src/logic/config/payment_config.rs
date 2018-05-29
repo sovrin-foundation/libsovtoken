@@ -27,18 +27,18 @@ impl PaymentRequest {
     /**
      * Creates a new `PaymentRequest` with `inputs` and `outputs`
      */
-    pub fn new(outputs: Vec<Output>, inputs: Vec<Input>) -> Request<PaymentRequest> {
+    pub fn new(outputs: Vec<Output>, inputs: Vec<Input>, identifier : String) -> Request<PaymentRequest> {
         let fees = PaymentRequest {
             txn_type: "10000",
             inputs,
             outputs,
         };
 
-        return Request::new(fees);
+        return Request::new(fees, identifier);
     }
 
-    pub fn from_config(fees_output_config: OutputConfig, fees_input_config: InputConfig) -> Request<PaymentRequest> {
-        return PaymentRequest::new(fees_output_config.outputs, fees_input_config.inputs );
+    pub fn from_config(fees_output_config: OutputConfig, fees_input_config: InputConfig, identifier : String) -> Request<PaymentRequest> {
+        return PaymentRequest::new(fees_output_config.outputs, fees_input_config.inputs, identifier);
     }
 }
 
@@ -84,15 +84,17 @@ mod fees_request_test {
     use serde_json;
     use utils::ffi_support::str_from_char_ptr;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+    use utils::random::rand_string;
 
 
     fn initial_fees_request() -> Request<PaymentRequest> {
+        let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
 
         let outputs = vec![output];
         let inputs = vec![input];
-        return PaymentRequest::new(outputs, inputs);
+        return PaymentRequest::new(outputs, inputs, identifier);
     }
 
     fn assert_fees_request<F>(expected: serde_json::Value, f: F)
@@ -111,6 +113,7 @@ mod fees_request_test {
 
     #[test]
     fn create_request_with_fees_config() {
+        let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
 
@@ -125,7 +128,7 @@ mod fees_request_test {
             inputs: inputs.clone()
         };
 
-        let request = PaymentRequest::from_config(output_config, input_config);
+        let request = PaymentRequest::from_config(output_config, input_config, identifier);
         assert_eq!(request.operation.outputs, outputs);
         assert_eq!(request.operation.inputs, inputs);
     }

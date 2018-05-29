@@ -6,8 +6,8 @@
  */
 use std::collections::HashMap;
 use logic::request::Request;
-use rand;
-const GET_FEES : String = String::from("20001");
+
+const GET_FEES : &str = "20001";
 
 /**
  *  Json config to customize [`build_fees_txn_handler`]
@@ -22,9 +22,9 @@ pub struct getFeesRequest {
 
 impl getFeesRequest {
 
-    pub fn new(identifiers : String, identifier: String) -> Request<getFeesRequest> {
+    pub fn new(identifier : String) -> Request<getFeesRequest> {
         let req = getFeesRequest {
-            txn_type: GET_FEES,
+            txn_type: GET_FEES.to_string(),
         };
         return Request::new(req, identifier);
     }
