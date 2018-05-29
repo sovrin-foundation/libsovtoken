@@ -10,6 +10,7 @@ authors = [
   ]
 
 description = "Payment handler for Sovrin tokens in libindy"
+build="build.rs"
 
 [lib]
 name = "sovtoken"
