@@ -6,7 +6,7 @@ fn main() {
 
     let libindy_lib_path = env::var("LIBINDY_DIR").unwrap();
     println!("cargo:rustc-link-search=native={}",libindy_lib_path);
-    println!("cargo:rustc-link-search=native=/Users/matt.raffel/src/evernym/libsovtoken/TOK-130/libsovtoken/target/debug/");
+    println!("cargo:rustc-link-search=native=../../libsovtoken/target/debug/");
 
     if let Ok(mode) = env::var("LIBINDY_STATIC") {
         println!("cargo:rustc-link-lib=static=indy");

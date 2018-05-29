@@ -5,7 +5,7 @@ where this libraries interact).
 
 # Issues
 
-# Issue: circular references between indy-sdk and libsovtoken
+# Issue -- RESOLVED: circular references between indy-sdk and libsovtoken
 See each of the below sub-items for proposed solutions
 
 ### APIs return type 'ErrorCode'
@@ -17,3 +17,5 @@ something to the plugin
 shared library
 
 
+### Resolution
+This issue is resolved by using rust-indy-sdk

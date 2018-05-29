@@ -3,6 +3,7 @@
 // Pull in all external dependencies
 //
 extern crate base64;
+extern crate env_logger;
 extern crate libc;
 extern crate rust_base58;
 extern crate serde;
