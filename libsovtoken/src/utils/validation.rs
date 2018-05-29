@@ -1,5 +1,3 @@
-use indy::ErrorCode;
-
 /**
     `validate_did_len` expects a did and then validates that
     it is the correct length

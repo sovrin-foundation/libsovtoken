@@ -31,7 +31,6 @@ use utils::general::ResultExtension;
 use utils::types::*;
 use utils::validation::{validate_did_len};
 
-
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
 
@@ -77,33 +76,43 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         None => return ErrorCode::CommonInvalidParam2
     };
 
+    // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
+    // like { } as valid.  if we get any kind of serialization failure assume we can use the default
     let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
         Ok(c) => c,
-        Err(_) => return ErrorCode::CommonInvalidStructure,
+        Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
 
     thread::spawn(move || {
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
-        let mut result : ErrorCode = ErrorCode::Success;
-        let mut payment_address_ptr = std::ptr::null();
-
         let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
         match handler.create_payment_address(wallet_handle, config) {
             Ok(payment_address) => {
+                debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
                 let payment_address_cstring = cstring_from_str(payment_address);
-                payment_address_ptr = payment_address_cstring.as_ptr();
+                let payment_address_ptr = payment_address_cstring.as_ptr();
+
+                match cb {
+                    Some(f) => f(command_handle, ErrorCode::Success, payment_address_ptr),
+                    None => {
+                        error!("cb was null even after check");
+                        ErrorCode::CommonInvalidState
+                    },
+                };
 
             },
-            Err(e) => { result = ErrorCode::CommonInvalidState; },
+            Err(e) => {
+                match cb {
+                    Some(f) => f(command_handle, ErrorCode::CommonInvalidState, std::ptr::null()),
+                    None => {
+                        error!("cb was null even after check");
+                        ErrorCode::CommonInvalidState
+                    },
+                };
+
+            },
         };
-
-        match cb {
-            Some(f) => f(command_handle, result, payment_address_ptr),
-            None => panic!("cb was null even after check"),
-        };
-
-
     });
 
 
@@ -277,7 +286,9 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    validate_address(String::from(payment_address));
+    if let Err(e) = validate_address(String::from(payment_address)) {
+        return e;
+    }
 
     // start the CBs
     return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
@@ -441,8 +452,11 @@ pub extern "C" fn build_mint_txn_handler(
 #[no_mangle]
 pub extern fn sovtoken_init() -> ErrorCode {
 
+    super::utils::logger::init_log();
+
+    debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "libsovtoken",
+        "pay::sov",
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,
@@ -459,5 +473,6 @@ pub extern fn sovtoken_init() -> ErrorCode {
         Err(e) => e ,
     };
 
+    debug!("sovtoken_init() returning {:?}", result);
     return result;
 }
