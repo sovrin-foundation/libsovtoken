@@ -8,11 +8,11 @@ use logic::input::Input;
 use logic::output::Output;
 use indy::crypto::Crypto;
 
-type Inputs = Vec<Input>;
-type Outputs = Vec<Output>;
+pub type Inputs = Vec<Input>;
+pub type Outputs = Vec<Output>;
 
 #[derive(Debug)]
-struct Fees {
+pub struct Fees {
     outputs: Outputs,
     inputs: Inputs,
 }
@@ -109,23 +109,23 @@ mod test_fees {
         return (inputs, outputs);
     }
 
-    #[test]
-    fn sign_input_invalid_sequence_number() {
-        unimplemented!();
-    }
+   #[test]
+   fn sign_input_invalid_sequence_number() {
+       unimplemented!();
+   }
 
-    #[test]
-    fn sign_input_invalid_address_output() {
-        /*
-            Neither sign_input or sign_inputs is expecting multiple addresses.
-        */
-        let wallet_handle = 1;
-        let (inputs, mut outputs) = inputs_outputs_valid();
-        String::remove(&mut outputs[0].payment_address, 5);
+   #[test]
+   fn sign_input_invalid_address_output() {
+       /*
+           Neither sign_input or sign_inputs is expecting multiple addresses.
+       */
+       let wallet_handle = 1;
+       let (inputs, mut outputs) = inputs_outputs_valid();
+       String::remove(&mut outputs[0].payment_address, 5);
 
-        let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &outputs).unwrap_err();
-        assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
-    }
+       let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &outputs).unwrap_err();
+       assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
+   }
 
     #[test]
     fn sign_input_invalid_address_input() {

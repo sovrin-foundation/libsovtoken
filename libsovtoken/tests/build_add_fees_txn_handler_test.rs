@@ -2,7 +2,7 @@
 #[macro_use] extern crate serde_json;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
-mod utils;
+pub mod utils;
 
 use indy::payments::Payment;
 use indy::{IndyHandle, ErrorCode};
@@ -31,20 +31,18 @@ fn test_add_fees_to_request_valid() {
     println!("Starting a add_fees_to_request_valid test");
     sovtoken::api::sovtoken_init();
 
-    let wallet_handle = utils::wallet::create_wallet("Wallet1");
+    let wallet_handle = utils::wallet::create_wallet("Wallet2");
     let input_address = Payment::create_payment_address(wallet_handle, "pay:sov:", "{}").unwrap();
     let fake_request = json!({
        "operation": {
-           "type": ""
+           "type": "3"
        }
     });
-
-    let fake_request = "{}";
 
     let inputs = json!([
        {
            "paymentAddress": input_address,
-           "seq_no": 1,
+           "sequenceNumber": 1,
        }
     ]);
     let outputs = json!([
@@ -58,7 +56,7 @@ fn test_add_fees_to_request_valid() {
        "fees": {
            "inputs": [{
                "paymentAddress": input_address,
-               "seq_no": 1,
+               "sequenceNumber": 1,
                "signature": "",
            }],
 

@@ -1,5 +1,5 @@
 /*!
- *  Defines structure and implementation Fees and SetFeesRequest
+ *  Defines structure and implementation SetFeesConfig and SetFeesRequest
  *  these are the structures for the [`build_fees_txn_handler`]
  *
  *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
@@ -15,8 +15,8 @@ const SET_FEES: &str = "20000";
  *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
  */
 #[derive(Serialize, Deserialize)]
-pub struct Fees {
-   pub  fees: HashMap<String, u64>,
+pub struct SetFeesConfig {
+   pub fees: HashMap<String, u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
@@ -27,7 +27,7 @@ pub struct SetFeesRequest {
 }
 
 /**
- * A struct that can be transformed into a Fees JSON object.
+ * A struct that can be transformed into a SetFeesConfig JSON object.
  */
 impl SetFeesRequest {
 
@@ -39,7 +39,7 @@ impl SetFeesRequest {
         return Request::new(fee);
     }
 
-    pub fn from_fee_config(fee: Fees) -> Request<SetFeesRequest> {
+    pub fn from_fee_config(fee: SetFeesConfig) -> Request<SetFeesRequest> {
         return SetFeesRequest::new(fee.fees);
     }
 }
@@ -77,7 +77,7 @@ mod fees_config_test {
     fn create_request_with_fees_config() {
         let mut fees_map = HashMap::new();
         fees_map.insert(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10 as u64);
-        let fees_config = Fees {
+        let fees_config = SetFeesConfig {
             fees: fees_map.clone()
         };
         let request = SetFeesRequest::from_fee_config(fees_config);

@@ -22,8 +22,9 @@ use logic::config::{
     general::{InputConfig, OutputConfig},
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
-    set_fees_config::{SetFeesRequest, Fees},
+    set_fees_config::{SetFeesRequest, SetFeesConfig},
 };
+use logic::fees::{Inputs, Outputs, Fees};
 use logic::request::Request;
 use serde_json;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
@@ -160,6 +161,14 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                                                err: ErrorCode,
                                                                req_with_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
+    /*
+        ================
+        DESESRIALIZATION
+        ================
+
+        Logic which deserializes the parameters and assigns them
+        to appropriate structures.
+    */
 
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam6);
 
@@ -171,6 +180,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
             return ErrorCode::CommonInvalidParam3;
         }
     };
+    debug!("request_json >>> {:?}", request_json);
 
     trace!("Converting request_json pointer to string");
     let inputs_json = match string_from_char_ptr(inputs_json) {
@@ -199,15 +209,45 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         }
     };
 
-    let transaction_type = match request_json.get("type") {
+    let inputs: Inputs = match serde_json::from_str(&inputs_json) {
+        Ok(inputs) => inputs,
+        Err(e) => {
+            error!("inputs_json was invalid. Received error >>> {:?}", e);
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+    trace!("Deserialized inputs.");
+
+    let outputs: Outputs = match serde_json::from_str(&outputs_json) {
+        Ok(outputs) => outputs,
+        Err(e) => {
+            error!("outputs_json was invalid. Received error >>> {:?}", e);
+            return ErrorCode::CommonInvalidStructure
+        }
+    };
+    trace!("Deserialized outputs.");
+
+    trace!("Getting type from request_json");
+    let option_type = request_json.get("operation").and_then(|operation| operation.get("type"));
+    let transaction_type = match option_type {
         Some(txn_type) => txn_type,
         None => {
             error!("request_json didn't contain a transaction type.");
             return ErrorCode::CommonInvalidStructure;
         }
     };
+    debug!("Request transaction type was >>> {}", transaction_type);
 
-    debug!("Request transaction type was: {}", transaction_type);
+
+
+    /*
+        =====
+        LOGIC
+        =====
+
+        The actual logic of the method.
+    */
+
 
     /*
         Errors when the request is a XFER request becaause the 
@@ -220,6 +260,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     }
 
     cb(command_handle, ErrorCode::CommonInvalidState, req_json);
+
 
     return ErrorCode::Success;
 }
@@ -422,7 +463,7 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
         None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
     };
 
-    let fees_config: Fees = match Fees::from_json(fees_json_str) {
+    let fees_config: SetFeesConfig = match SetFeesConfig::from_json(fees_json_str) {
         Ok(c) => c,
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
