@@ -24,7 +24,7 @@ use logic::config::{
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},
 };
-use logic::fees::{Inputs, Outputs, Fees};
+use logic::fees::{Inputs, Outputs, Fees, InputSigner};
 use logic::request::Request;
 use serde_json;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
@@ -161,12 +161,15 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                                                err: ErrorCode,
                                                                req_with_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
+    let key_fees = String::from("fees");
+    let key_operation = String::from("operation");                                                               
+
     /*
         ================
         DESESRIALIZATION
         ================
 
-        Logic which deserializes the parameters and assigns them
+        Deserializes the parameters and assigns them
         to appropriate structures.
     */
 
@@ -201,13 +204,22 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     };
 
     trace!("Converting request_json to serde::json::Value");
-    let request_json: serde_json::Value = match serde_json::from_str(&request_json) {
+    let mut request_json_object: serde_json::Value = match serde_json::from_str(&request_json) {
         Ok(value) => value,
-        Err(_) => {
-            error!("request_json was invalid json.");
+        Err(e) => {
+            error!("request_json was invalid. Received error >>> {:?}", e);
             return ErrorCode::CommonInvalidStructure;
         }
     };
+
+    let request_json_map = match request_json_object.as_object_mut() {
+        Some(request_json_map) => request_json_map,
+        None => {
+            error!("request_json was not an object");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+    trace!("request_json was an object");
 
     let inputs: Inputs = match serde_json::from_str(&inputs_json) {
         Ok(inputs) => inputs,
@@ -227,19 +239,6 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     };
     trace!("Deserialized outputs.");
 
-    trace!("Getting type from request_json");
-    let option_type = request_json.get("operation").and_then(|operation| operation.get("type"));
-    let transaction_type = match option_type {
-        Some(txn_type) => txn_type,
-        None => {
-            error!("request_json didn't contain a transaction type.");
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-    debug!("Request transaction type was >>> {}", transaction_type);
-
-
-
     /*
         =====
         LOGIC
@@ -247,20 +246,54 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
 
         The actual logic of the method.
     */
+    {
+        trace!("Getting type from request_json");
+        let type_as_option = request_json_map.get(&key_operation).and_then(|operation| operation.get("type"));
+        let transaction_type = match type_as_option {
+            Some(txn_type) => txn_type,
+            None => {
+                error!("request_json didn't contain a transaction type.");
+                return ErrorCode::CommonInvalidStructure;
+            }
+        };
+        debug!("Request transaction type was >>> {}", transaction_type);
 
-
-    /*
-        Errors when the request is a XFER request becaause the 
-        fees should be implicit in the operation's inputs and
-        outputs.
-    */
-    if transaction_type == "10000" {
-        error!("Can't add fees to a transfer request");
-        return ErrorCode::CommonInvalidStructure;
+        /*
+            Errors when the request is a XFER request becaause the 
+            fees should be implicit in the operation's inputs and
+            outputs.
+        */
+        if transaction_type == "10000" {
+            error!("Can't add fees to a transfer request");
+            return ErrorCode::CommonInvalidStructure;
+        }
     }
 
-    cb(command_handle, ErrorCode::CommonInvalidState, req_json);
+    let signed_inputs = match Fees::sign_inputs(wallet_handle, &inputs, &outputs) {
+        Ok(signed_inputs) => signed_inputs,
+        Err(e) => {
+            error!("Couldn't sign inputs. Received error >>> {:?}", e);
+            return e;
+        }
+    };
+    debug!("Signed inputs >>> {:?}", signed_inputs);
 
+    let fees = Fees::new(signed_inputs, outputs);
+    trace!("Created fees structure.");
+
+    request_json_map.insert(key_fees, json!(fees));
+    trace!("Added fees to request_json.");
+
+    let serialized_request_with_fees = match serde_json::from_value(json!(request_json_map)) {
+        Ok(serialized) => serialized,
+        Err(e) => {
+            error!("Invalid request_with_fees. Received error >>> {:?}", e);
+            return ErrorCode::CommonInvalidState;
+        }
+    };
+    trace!("Serialized request_with_fees");
+
+    cb(command_handle, ErrorCode::Success, c_pointer_from_string(serialized_request_with_fees));
 
     return ErrorCode::Success;
 }

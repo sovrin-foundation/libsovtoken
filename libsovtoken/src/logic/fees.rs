@@ -11,7 +11,7 @@ use indy::crypto::Crypto;
 pub type Inputs = Vec<Input>;
 pub type Outputs = Vec<Output>;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Fees {
     outputs: Outputs,
     inputs: Inputs,
@@ -19,13 +19,13 @@ pub struct Fees {
 
 impl InputSigner for Fees {}
 impl Fees {
-    fn new(inputs: Inputs, outputs: Outputs) -> Self
+    pub fn new(inputs: Inputs, outputs: Outputs) -> Self
     {
         return Fees { inputs, outputs };
     }
 }
 
-trait InputSigner:  {
+pub trait InputSigner:  {
 
     fn sign_inputs(wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
         -> Result<Inputs, ErrorCode>
@@ -39,29 +39,14 @@ trait InputSigner:  {
 
     fn sign_input(wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
     {
-        println!("get to a new line for readability");
-        println!("signing input = {:?}", input);
-        println!("input payment_address = {:?}", input.payment_address);
-
-//      let deserialized_address = base58::deserialize_string(input.payment_address.clone())?;
-
-        let deserialized_address = input.payment_address.clone();
-
-        println!("deserialized address = {:?}", deserialized_address);
-
-        let verkey = address::verkey_from_address(deserialized_address)?;
-
-        println!("verkey = {:?}", verkey);
+        let verkey = address::verkey_from_address(input.payment_address.clone())?;
+        debug!("Received verkey for payment address >>> {:?}", input.payment_address);
 
         let message_json_value = json!([[input.payment_address, input.sequence_number], outputs]);
-
-        println!("message_json_value to sign = {:?}", message_json_value);
 
         let message = serde_json::to_string(&message_json_value)
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
-
-        println!("message to sign = {:?}", message);
 
         return Self::indy_crypto_sign(wallet_handle, verkey, message)
             .map(|signed_string| input.clone().sign_with(signed_string));
