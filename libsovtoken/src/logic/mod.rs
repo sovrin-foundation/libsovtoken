@@ -3,6 +3,7 @@
 // actually doing the work of libsovtoken
 //
 
+pub mod add_request_fees;
 pub mod address;
 pub mod fees;
 pub mod config;
