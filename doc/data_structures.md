@@ -1,7 +1,9 @@
 
-# UTXO data structures
+# LibSovToken Data Structures
+These data structures are expected by LibSovToken when it is used as a payment handler for Indy-SDK.
+The methods listed below are part of the Indy-SDK payments API, they are handled by LibSovToken.
 
-## method: build_get_utxo_request_handler
+## method: indy_build_get_utxo_request
 ### inputs: 
 
     submitter_did
@@ -25,7 +27,7 @@
     
     
     
-## method: parse_get_utxo_response_handler
+## method: indy_parse_get_utxo_response
 ### inputs:
 version 1, it will change in a later version.  
 resp_json
@@ -63,7 +65,7 @@ resp_json
 ```
 
 
-## method: build_payment_req_handler
+## method: indy_build_payment_req
 ### inputs:
     wallet_handle
     submitter_did
@@ -119,7 +121,7 @@ resp_json
     }
 ```     
     
-## method: parse_payment_response_handler
+## method: indy_parse_payment_response
 ### inputs:
     resp_json
 ```json 
@@ -171,3 +173,33 @@ resp_json
         "txnTime": 1527714130
     }
 ```
+
+## method: indy_add_request_fees
+
+### inputs:
+
+### return:
+
+## method: indy_parse_response_with_fees
+
+### inputs:
+
+### return:
+
+## method: indy_build_set_txn_fees_req
+
+### inputs:
+
+### return:
+
+## method: indy_build_get_txn_fees_req
+
+### inputs:
+
+### return:
+
+## method: indy_parse_get_txn_fees_response
+
+### inputs:
+
+### return:
