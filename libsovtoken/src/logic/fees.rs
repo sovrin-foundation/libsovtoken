@@ -47,26 +47,18 @@ pub type Outputs = Vec<Output>;
  */
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Fees {
-    outputs: Outputs,
-    inputs: Inputs,
+    pub outputs: Outputs,
+    pub inputs: Inputs,
 }
 
-
 impl InputSigner for Fees {}
+
 impl Fees {
     pub fn new(inputs: Inputs, outputs: Outputs) -> Self
     {
         return Fees { inputs, outputs };
     }
 }
-
-/**
- * Signing of [`Inputs`] and [`Outputs`]
- * 
- * [`Inputs`]: Inputs
- * [`Outputs`]: Outputs
- */
-pub trait InputSigner:  {
 
     /** 
      * Signs [`Inputs`]
@@ -77,6 +69,8 @@ pub trait InputSigner:  {
      * [`Input`]: Input
      * [`Inputs`]: Inputs
      */
+pub trait InputSigner:  {
+
     fn sign_inputs(wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
         -> Result<Inputs, ErrorCode>
     {

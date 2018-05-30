@@ -18,6 +18,8 @@ use indy::ErrorCode;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
+use logic::fees::{Fees, Inputs, Outputs, InputSigner};
+
 use logic::config::{
     payment_config::{PaymentRequest},
     general::{InputConfig, OutputConfig},
@@ -25,10 +27,12 @@ use logic::config::{
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},
     get_fees_config::getFeesRequest,
+    // set_fees_config::{SetFeesRequest, FeesConfig},
 };
-use logic::fees::{Inputs, Outputs, Fees, InputSigner};
+
 use logic::request::Request;
 use serde_json;
+use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
@@ -247,6 +251,9 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         =====
 
         The actual logic of the method.
+        Errors when the request is a XFER request because the
+        fees should be implicit in the operation's inputs and
+        outputs.
     */
     {
         trace!("Getting type from request_json");
@@ -345,6 +352,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                                         payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
 
+    println!("move to new line {}", "yes");
+
+    println!("wallet is {:?}", wallet_handle);
+
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
     if cb.is_none() {
@@ -354,26 +365,52 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
        return handle_result(Err(ErrorCode::CommonInvalidParam2));
     }
 
-    let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
-        Ok(c) => c,
-        Err(e) => return handle_result(Err(e))
-    };
-
-    let inputs_config = match deserialize_from_char_ptr::<InputConfig>(inputs_json) {
-        Ok(c) => c,
-        Err(e) => return handle_result(Err(e))
-    };
-    let submitter_did = match string_from_char_ptr(submitter_did) {
+    let inputs_json_string = match string_from_char_ptr(inputs_json) {
         Some(s) => s,
         None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure;
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidParam4;
         }
     };
-    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config, submitter_did);
-    let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    return handle_result(Ok(payment_request.as_ptr()));
+    println!("inputs_json_string = {:?}", inputs_json_string);
+
+    trace!("Converting request_json pointer to string");
+    let outputs_json_string = match string_from_char_ptr(outputs_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert outputs_json pointer to string.");
+            return ErrorCode::CommonInvalidParam5;
+        }
+    };
+
+     println!("outputs_json_string = {:?}", outputs_json_string);
+
+
+    let the_input: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
+
+    let the_outputs: Outputs = serde_json::from_str(&outputs_json_string).unwrap();
+
+    let signed = Fees::sign_inputs(wallet_handle, &the_input, &the_outputs);
+
+    println!("signed = {:?}", signed);
+
+
+
+
+
+
+//    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
+//    let payment_request = payment_request.serialize_to_cstring().unwrap();
+//
+//    println!("payment_request = {:?}", payment_request);
+//
+//    return handle_result(Ok(payment_request.as_ptr()));
+
+
+
+
+    return ErrorCode::Success;
 
 }
 
