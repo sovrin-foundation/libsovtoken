@@ -175,14 +175,14 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         to appropriate structures.
     */
 
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam6);
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
 
     trace!("Converting request_json pointer to string");
     let request_json = match string_from_char_ptr(req_json) {
         Some(s) => s,
         None => {
             error!("Failed to convert request_json pointer to string");
-            return ErrorCode::CommonInvalidParam3;
+            return ErrorCode::CommonInvalidStructure;
         }
     };
     debug!("request_json >>> {:?}", request_json);
@@ -192,7 +192,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         Some(s) => s,
         None => {
             error!("Failed to convert inputs_json pointer to string");
-            return ErrorCode::CommonInvalidParam4;
+            return ErrorCode::CommonInvalidStructure;
         }
     };
 
@@ -201,7 +201,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         Some(s) => s,
         None => {
             error!("Failed to convert outputs_json pointer to string.");
-            return ErrorCode::CommonInvalidParam5;
+            return ErrorCode::CommonInvalidStructure;
         }
     };
 
