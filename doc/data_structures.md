@@ -11,15 +11,16 @@
 
 ```json
 {
-'identifier': '6ouriXMZkLeHsuXrN1X1fd', 
-'operation': 
- {
-  'address': '2jyMWLv8NuxUV4yDc46mLQMn9WUUzeKURX3d2yQqgoLqEQC2sf', 
-  'type': '10002'
- }, 
-'reqId': 6284, 
-'protocolVersion': 1
+  "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+  "operation":
+   {
+    "address": "2jyMWLv8NuxUV4yDc46mLQMn9WUUzeKURX3d2yQqgoLqEQC2sf",
+    "type": "10002"
+   },
+  "reqId": 6284,
+  "protocolVersion": 1
 }
+
 ```
     
     
