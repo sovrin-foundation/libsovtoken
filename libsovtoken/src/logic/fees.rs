@@ -104,6 +104,11 @@ pub trait InputSigner:  {
      */
     fn sign_input(wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
     {
+        if outputs.len() < 1 {
+            error!("No outputs found.");
+            return Err(ErrorCode::CommonInvalidStructure);
+        }
+
         let verkey = address::verkey_from_address(input.payment_address.clone())?;
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
@@ -163,10 +168,14 @@ mod test_fees {
         return (inputs, outputs);
     }
 
-//    #[test]
-//    fn sign_input_invalid_sequence_number() {
-//        unimplemented!();
-//    }
+    #[test]
+    fn sign_input_invalid_empty_outputs() {
+        let (inputs, _) = inputs_outputs_valid();
+        let wallet_handle = 1;
+
+        let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &Vec::new()).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
+    }
 
     #[test]
     fn sign_input_invalid_address_input() {
@@ -185,11 +194,19 @@ mod test_fees {
 
         let wallet_handle = 1;
 
-        let signed_input = MockedFees::sign_input( wallet_handle, &inputs[0], &outputs).unwrap();
+        let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &outputs).unwrap();
         let expected = Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, Some(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIsigned")));
         assert_eq!(expected, signed_input);
     }
 
+    #[test]
+    fn sign_multi_input_valid_empty_inputs() {
+        let (_, outputs) = inputs_outputs_valid();
+        let wallet_handle = 1;
+
+        let signed_inputs = MockedFees::sign_inputs(wallet_handle, &Vec::new(), &outputs).unwrap();
+        assert!(signed_inputs.is_empty());
+    }
 
     #[test]
     fn sign_multi_input_invalid_input_address() {
