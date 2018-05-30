@@ -19,7 +19,6 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 use libc::c_char;
 use rand::Rng;
-use std::ffi::CStr;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;

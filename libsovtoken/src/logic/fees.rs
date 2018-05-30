@@ -1,4 +1,9 @@
-#![allow(dead_code)]
+/*!
+ * Signing of [`Inputs`] and [`Outputs`]
+ * 
+ * [`Inputs`]: Inputs
+ * [`Outputs`]: Outputs
+ */
 
 use indy::IndyHandle;
 use serde_json;
@@ -12,11 +17,40 @@ use utils::general::base58::serialize_bytes;
 pub type Inputs = Vec<Input>;
 pub type Outputs = Vec<Output>;
 
+/**
+ * Holds `inputs` and `outputs`
+ * 
+ * ### Fields
+ * - `inputs`
+ * - `outputs`
+ * 
+ * ## Example
+ * 
+ * ```
+ *  # extern crate sovtoken;
+ *  # fn main() {
+ *      use sovtoken::logic::input::Input;
+ *      use sovtoken::logic::output::Output;
+ *      use sovtoken::logic::fees::Fees;
+ *      use sovtoken::logic::fees::InputSigner;
+ *  
+ *      // Need an actual wallet_handle
+ *      let wallet_handle = 1;
+ *      let address_input = String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121");
+ *      let address_output = String::from("pay:sov:FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp");
+ *      let inputs = vec![Input::new(address_input, 1, None)];
+ *      let outputs = vec![Output::new(address_output, 20, None)];
+ *  
+ *      let signed_inputs = Fees::sign_inputs(wallet_handle, &inputs, &outputs);
+ *  # }
+ * ```
+ */
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Fees {
     outputs: Outputs,
     inputs: Inputs,
 }
+
 
 impl InputSigner for Fees {}
 impl Fees {
@@ -26,11 +60,32 @@ impl Fees {
     }
 }
 
+/**
+ * Signing of [`Inputs`] and [`Outputs`]
+ * 
+ * [`Inputs`]: Inputs
+ * [`Outputs`]: Outputs
+ */
 pub trait InputSigner:  {
 
+    /** 
+     * Signs [`Inputs`]
+     * 
+     * Validates that inputs and outputs both have a valid `payment_address`.
+     * Signs each [`Input`] with [`sign_input`]
+     * 
+     * [`Input`]: Input
+     * [`Inputs`]: Inputs
+     */
     fn sign_inputs(wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
         -> Result<Inputs, ErrorCode>
     {
+        for (output, input) in Iterator::zip(outputs.iter(), inputs.iter()) {
+           address::validate_address(output.payment_address.clone())?;
+           address::validate_address(input.payment_address.clone())?;
+        }
+
+
         let signed_inputs: Result<Inputs, ErrorCode> = inputs.iter()
             .map(|input| Self::sign_input(wallet_handle, input, outputs))
             .collect();
@@ -38,6 +93,15 @@ pub trait InputSigner:  {
         return signed_inputs;
     }
 
+    /**
+     * Signs an [`Input`] with indy_crypto_sign
+     * 
+     * Validates the `input`'s `payment_address`, but not the `outputs`.
+     * The message that will be signed is
+     * `[[<payment_address>, <sequence_number>], [<Output>, <Output>, ...]]`
+     * 
+     * [`Input`]: Input
+     */
     fn sign_input(wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
     {
         let verkey = address::verkey_from_address(input.payment_address.clone())?;
@@ -99,23 +163,10 @@ mod test_fees {
         return (inputs, outputs);
     }
 
-   #[test]
-   fn sign_input_invalid_sequence_number() {
-       unimplemented!();
-   }
-
-   #[test]
-   fn sign_input_invalid_address_output() {
-       /*
-           Neither sign_input or sign_inputs is expecting multiple addresses.
-       */
-       let wallet_handle = 1;
-       let (inputs, mut outputs) = inputs_outputs_valid();
-       String::remove(&mut outputs[0].payment_address, 5);
-
-       let signed_input = MockedFees::sign_input(wallet_handle, &inputs[0], &outputs).unwrap_err();
-       assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
-   }
+//    #[test]
+//    fn sign_input_invalid_sequence_number() {
+//        unimplemented!();
+//    }
 
     #[test]
     fn sign_input_invalid_address_input() {
@@ -150,6 +201,16 @@ mod test_fees {
 
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_inputs);
     }
+
+    #[test]
+   fn sign_inputs_invalid_address_output() {
+       let wallet_handle = 1;
+       let (inputs, mut outputs) = inputs_outputs_valid();
+       String::remove(&mut outputs[0].payment_address, 5);
+
+       let signed_input = MockedFees::sign_inputs(wallet_handle, &inputs, &outputs).unwrap_err();
+       assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
+   }
 
     #[test]
     fn sign_multi_input() {

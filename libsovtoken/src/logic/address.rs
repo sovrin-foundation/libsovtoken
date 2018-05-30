@@ -30,9 +30,9 @@ pub const ADDRESS_LEN: usize = VERKEY_LEN + CHECKSUM_LEN + 8;
 
     ```
     use sovtoken::logic::address::verkey_from_address;
-    let address = String::from("pay:sov:tsnhvjruaskqncfyeponHJdkeuxAejdijdeA");
+    let address = String::from("pay:sov:XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ");
     let verkey = verkey_from_address(address).unwrap();
-    assert_eq!(verkey, String::from("tsnhvjruaskqncfyeponHJdkeuxAejdi"));
+    assert_eq!(verkey, String::from("XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLX"));
     ```
 */
 pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
