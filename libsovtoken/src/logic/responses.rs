@@ -1,6 +1,6 @@
 //! Contains the response types
 
-use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
+// use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use super::input::Input;
 use super::output::Output;
 use utils::random::rand_req_id;
@@ -8,6 +8,7 @@ use utils::random::rand_req_id;
 /**
     enumeration matches values for the op field in json
 */
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Copy)]
 pub enum ReponseOperations {
     REPLY,
     REJECT,
@@ -21,12 +22,14 @@ pub enum ReponseOperations {
     json
 */
 
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Result {
     pub audit_path: Vec<String>,
     pub extra : String,
     pub identifier : String,
     pub inputs: Option<Vec<Input>>,
-    pub outputs: Vec<Output>,
+    pub outputs: Option<Vec<Output>>,
     pub req_id : u32,
     pub root_hash : String,
     pub seq_no: u32,
@@ -59,8 +62,7 @@ impl Result {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponseSuccess {
     pub op : ReponseOperations,
@@ -81,8 +83,7 @@ impl ResponseSuccess
 /**
     Contains fields that define error responses
 */
-#[derive(Debug, Eq, PartialEq, Clone)]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponseError {
     pub identifier : String,
