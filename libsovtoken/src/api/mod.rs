@@ -284,7 +284,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     request_json_map.insert(key_fees, json!(fees));
     trace!("Added fees to request_json.");
 
-    let serialized_request_with_fees = match serde_json::from_value(json!(request_json_map)) {
+    let serialized_request_with_fees = match serde_json::to_string(&json!(request_json_map)) {
         Ok(serialized) => serialized,
         Err(e) => {
             error!("Invalid request_with_fees. Received error >>> {:?}", e);

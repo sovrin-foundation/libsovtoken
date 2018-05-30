@@ -7,6 +7,7 @@ use logic::address;
 use logic::input::Input;
 use logic::output::Output;
 use indy::crypto::Crypto;
+use utils::general::base58::serialize_bytes;
 
 pub type Inputs = Vec<Input>;
 pub type Outputs = Vec<Output>;
@@ -40,16 +41,20 @@ pub trait InputSigner:  {
     fn sign_input(wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
     {
         let verkey = address::verkey_from_address(input.payment_address.clone())?;
-        debug!("Received verkey for payment address >>> {:?}", input.payment_address);
+        debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.payment_address, input.sequence_number], outputs]);
+        debug!("Message to sign >>> {:?}", message_json_value);
 
         let message = serde_json::to_string(&message_json_value)
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
 
         return Self::indy_crypto_sign(wallet_handle, verkey, message)
-            .map(|signed_string| input.clone().sign_with(signed_string));
+            .map(|signed_string| {
+                debug!("Received encoded signature >>> {:?}", signed_string);
+                input.clone().sign_with(signed_string)
+            });
     }
 
     fn indy_crypto_sign (
@@ -59,7 +64,7 @@ pub trait InputSigner:  {
     ) -> Result<String, ErrorCode>
     {
          return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
-             .map(|vec| String::from_utf8(vec).unwrap());
+             .map(|vec| serialize_bytes(&vec));
     }
 
 }
@@ -82,13 +87,13 @@ mod test_fees {
 
     fn inputs_outputs_valid() -> (Inputs, Outputs) {
         let outputs = vec![
-            Output::new(String::from("pay:sov:gGpXeIzxDaZmeVhJZs6qWrdBPbDG3AfTW7RD"), 10, None),
-            Output::new(String::from("pay:sov:jtCpdpjVjIJ5vrIlD3KwFjzz8LBaJGIJVUn2"), 22, None),
+            Output::new(String::from("pay:sov:Va8VcAE9CDnDEXSDQlbluWBRO5hFpTEqbSzK1UgnpbUabg9Q"), 10, None),
+            Output::new(String::from("pay:sov:FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp"), 22, None),
         ];
 
         let inputs = vec![
-            Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, None),
-            Input::new(String::from("pay:sov:anotherGGUf33VxAwgTFjkxu1A9JM3Sscd5F"), 1, None),
+            Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, None),
+            Input::new(String::from("pay:sov:hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMSGfg"), 1, None),
         ]; 
 
         return (inputs, outputs);
@@ -130,7 +135,7 @@ mod test_fees {
         let wallet_handle = 1;
 
         let signed_input = MockedFees::sign_input( wallet_handle, &inputs[0], &outputs).unwrap();
-        let expected = Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sssigned")));
+        let expected = Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, Some(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIsigned")));
         assert_eq!(expected, signed_input);
     }
 
@@ -152,8 +157,8 @@ mod test_fees {
         let (inputs, outputs) = inputs_outputs_valid();
         
         let expected_signed_inputs = vec![
-            Input::new(String::from("pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sssigned"))),
-            Input::new(String::from("pay:sov:anotherGGUf33VxAwgTFjkxu1A9JM3Sscd5F"), 1, Some(String::from("anotherGGUf33VxAwgTFjkxu1A9JM3Sssigned"))),
+            Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, Some(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIsigned"))),
+            Input::new(String::from("pay:sov:hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMSGfg"), 1, Some(String::from("hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMsigned"))),
         ];
         
         let signed_inputs = MockedFees::sign_inputs(wallet_handle, &inputs, &outputs).unwrap();

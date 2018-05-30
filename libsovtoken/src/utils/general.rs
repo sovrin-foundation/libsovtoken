@@ -66,7 +66,7 @@ impl<'a> StringUtils for &'a str {
 
 pub mod base58 {
     use indy::ErrorCode;
-    use rust_base58::{FromBase58};
+    use rust_base58::{FromBase58, ToBase58};
 
     /**
         Deserializes a base58 String object with checksum.
@@ -80,6 +80,10 @@ pub mod base58 {
             .map_err(|_| ErrorCode::CommonInvalidStructure)?;
         return String::from_utf8(deserialized_bytes)
             .map_err(|_| ErrorCode::CommonInvalidStructure);
+    }
+
+    pub fn serialize_bytes(bytes: &[u8]) -> String {
+        return bytes.to_base58()
     }
 }
 

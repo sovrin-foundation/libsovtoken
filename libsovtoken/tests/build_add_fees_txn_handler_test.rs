@@ -26,13 +26,22 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, req
     return ResultHandler::one(error_code, receiver); 
 }
 
-#[test]
-fn test_add_fees_to_request_valid() {
-    println!("Starting a add_fees_to_request_valid test");
+fn init_wallet_with_address() -> (IndyHandle, String) {
     sovtoken::api::sovtoken_init();
 
-    let wallet_handle = utils::wallet::create_wallet("Wallet2");
-    let input_address = Payment::create_payment_address(wallet_handle, "pay:sov:", "{}").unwrap();
+    let wallet_handle = utils::wallet::create_wallet("wallet_add_fees");
+    let key_config = json!({
+        "seed": str::repeat("2", 32),
+    });
+
+    let input_address = Payment::create_payment_address(wallet_handle, "pay:sov:", &key_config.to_string()).unwrap();
+    return (wallet_handle, input_address);
+}
+
+#[test]
+fn test_add_fees_to_request_valid() {
+    let (wallet_handle, input_address) = init_wallet_with_address();
+
     let fake_request = json!({
        "operation": {
            "type": "3"
@@ -45,31 +54,24 @@ fn test_add_fees_to_request_valid() {
            "sequenceNumber": 1,
        }
     ]);
+    
     let outputs = json!([
        {
-           "paymentAddress": "pay:sov:gGpXeIzxDaZmeVhJZs6qWrdBPbDG3AfTW7RD",
+           "paymentAddress": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
            "amount": 20,
        }
     ]);
 
     let expected_fees_request = json!({
        "fees": {
-           "inputs": [{
-               "paymentAddress": input_address,
-               "sequenceNumber": 1,
-               "signature": "",
-           }],
-
-           "outputs": [{
-               "paymentAddress": "pay:sov:gGpXeIzxDaZmeVhJZs6qWrdBPbDG3AfTW7RD",
-               "amount": 20
-           }]
+           "inputs": [["pay:sov:7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "26ojHzMwmKcq72DmNJKVYDBf3jfBquhWXQ2bTFVkzcgTCawezMtsKEvUAZJKxvQdCSn9SYfxEUu2Wc3WwAjnDmWQ"]],
+           "outputs": [["pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 20]]
+       },
+       "operation": {
+           "type": "3"
        }
     });
 
-    println!("Calling call_add_fees");
     let result = call_add_fees(wallet_handle, inputs.to_string(), outputs.to_string(), fake_request.to_string()).unwrap();
-    println!("Received result {:?}", result);
-    let result_as_json_value = serde_json::to_value(&result).unwrap();
-    assert_eq!(expected_fees_request, result_as_json_value);
+    assert_eq!(expected_fees_request.to_string(), result);
 }
