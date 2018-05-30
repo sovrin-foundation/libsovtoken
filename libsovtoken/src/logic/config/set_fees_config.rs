@@ -31,16 +31,16 @@ pub struct SetFeesRequest {
  */
 impl SetFeesRequest {
 
-    pub fn new(fees: HashMap<String, u64>) -> Request<SetFeesRequest> {
+    pub fn new(fees: HashMap<String, u64>, identifier : String) -> Request<SetFeesRequest> {
         let fee = SetFeesRequest {
             txn_type: SET_FEES,
             fees,
         };
-        return Request::new(fee);
+        return Request::new(fee, identifier);
     }
 
-    pub fn from_fee_config(fee: SetFeesConfig) -> Request<SetFeesRequest> {
-        return SetFeesRequest::new(fee.fees);
+    pub fn from_fee_config(fee: SetFeesConfig, identifier: String) -> Request<SetFeesRequest> {
+        return SetFeesRequest::new(fee.fees, identifier);
     }
 }
 
@@ -50,13 +50,15 @@ mod fees_config_test {
     use serde_json;
     use utils::json_conversion::{JsonSerialize};
     use utils::ffi_support::{str_from_char_ptr};
+    use utils::random::rand_string;
 
     // fees_txn_handler requires that a valid fees transaction is serialized. This tests that
     // the serializing structure for fees works correctly
     fn initial_set_fee_request() -> Request<SetFeesRequest> {
+        let identifier: String = rand_string(21);
         let mut fees_map = HashMap::new();
         fees_map.insert(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10 as u64);
-        return SetFeesRequest::new(fees_map);
+        return SetFeesRequest::new(fees_map, identifier);
     }
 
     fn assert_set_fee_request<F>(expected: serde_json::Value, f: F)
@@ -75,12 +77,13 @@ mod fees_config_test {
 
     #[test]
     fn create_request_with_fees_config() {
+        let identifier: String = rand_string(21);
         let mut fees_map = HashMap::new();
         fees_map.insert(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10 as u64);
         let fees_config = SetFeesConfig {
             fees: fees_map.clone()
         };
-        let request = SetFeesRequest::from_fee_config(fees_config);
+        let request = SetFeesRequest::from_fee_config(fees_config, identifier);
         assert_eq!(request.operation.fees, fees_map);
     }
 
