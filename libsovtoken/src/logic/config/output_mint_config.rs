@@ -27,21 +27,21 @@ impl MintRequest {
     /**
      * Creates a new `MintRequest` with `outputs`
      */
-    pub fn new(outputs: Vec<Output>) -> Request<MintRequest> {
+    pub fn new(outputs: Vec<Output>, identifier : String ) -> Request<MintRequest> {
         let mint = MintRequest {
             txn_type: "10000",
             outputs: outputs,
         };
 
-        return Request::new(mint);
+        return Request::new(mint, identifier);
     }
 
     /**
      * Creates a new `MintRequest` from an [`OutputConfig`].
      * [`OutputConfig`]: ../general/struct.OutputConfig.html
      */
-    pub fn from_config(mint_config: OutputConfig) -> Request<MintRequest> {
-        return MintRequest::new(mint_config.outputs);
+    pub fn from_config(mint_config: OutputConfig, identifier : String) -> Request<MintRequest> {
+        return MintRequest::new(mint_config.outputs, identifier);
     }
 }
 
@@ -67,11 +67,13 @@ mod mint_request_test {
     use serde_json;
     use utils::ffi_support::str_from_char_ptr;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+    use utils::random::rand_string;
 
     fn initial_mint_request() -> Request<MintRequest> {
+        let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let outputs = vec![output];
-        return MintRequest::new(outputs);
+        return MintRequest::new(outputs, identifier);
     }
 
     fn assert_mint_request<F>(expected: serde_json::Value, f: F)
@@ -90,12 +92,13 @@ mod mint_request_test {
 
     #[test]
     fn create_request_with_mint_config() {
+        let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let outputs = vec![output];
         let mint_config = OutputConfig {
             outputs: outputs.clone()
         };
-        let request = MintRequest::from_config(mint_config);
+        let request = MintRequest::from_config(mint_config, identifier);
         assert_eq!(request.operation.outputs, outputs);
     }
 

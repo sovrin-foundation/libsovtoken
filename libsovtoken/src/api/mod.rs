@@ -13,6 +13,7 @@ use std::thread;
 
 use libc::c_char;
 use indy::payments::Payment;
+use indy::ledger::Ledger;
 use indy::ErrorCode;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
@@ -23,6 +24,7 @@ use logic::config::{
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, Fees},
+    get_fees_config::getFeesRequest,
 };
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
@@ -224,8 +226,14 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         Ok(c) => c,
         Err(e) => return handle_result(Err(e))
     };
-
-    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
+    let submitter_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config, submitter_did);
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(payment_request.as_ptr()));
@@ -276,10 +284,21 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
-    let submitter_did = str_from_char_ptr(submitter_did).unwrap();
-    let payment_address = str_from_char_ptr(payment_address).unwrap();
-    // Helper Vars
-    let add_len = payment_address.len();
+    let submitter_did = match str_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let payment_address = match str_from_char_ptr(payment_address) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
 
     // validation
     if !validate_did_len(submitter_did) {
@@ -365,7 +384,16 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
 
-    let fees_request = SetFeesRequest::from_fee_config(fees_config);
+    let submitter_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let fees_request = SetFeesRequest::from_fee_config(fees_config, submitter_did);
+
     let fees_request = fees_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(fees_request.as_ptr()));
@@ -388,7 +416,26 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
                                              wallet_handle: i32,
                                              submitter_did: *const c_char,
                                              cb: Option<extern fn(command_handle_: i32, err: ErrorCode, get_txn_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
-    return ErrorCode::Success;
+
+    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+
+    if cb.is_none() {
+        return handle_result(Err(ErrorCode::CommonInvalidStructure));
+    }
+
+    let submitter_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let get_txn_request = getFeesRequest::new(submitter_did);
+
+    let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
+
+    return handle_result(Ok(get_txn_request.as_ptr()));
 }
 
 /// Description
@@ -424,7 +471,7 @@ pub extern "C" fn build_mint_txn_handler(
 {
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-
+    let submitter_did = string_from_char_ptr(submitter_did);
     if cb.is_none() {
         return handle_result(Err(ErrorCode::CommonInvalidParam5));
     }
@@ -434,7 +481,7 @@ pub extern "C" fn build_mint_txn_handler(
         Err(e) => return handle_result(Err(e))
     };
 
-    let mint_request = MintRequest::from_config(outputs_config);
+    let mint_request = MintRequest::from_config(outputs_config, submitter_did.unwrap());
     let mint_request = mint_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(mint_request.as_ptr()));
