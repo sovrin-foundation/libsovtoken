@@ -43,7 +43,7 @@ impl CryptoAPI for CreatePaymentSDK {
             config_json = r#"{ }"#.to_string();
         }
 
-        return Key::create(wallet_id, &config_json);
+        return Key::create(wallet_id, Some(&config_json));
     }
 }
 
