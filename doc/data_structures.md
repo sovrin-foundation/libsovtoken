@@ -32,7 +32,7 @@ resp_json
 ```json
 {
     "op": "REPLY",
-    "protocolVersion": 1
+    "protocolVersion": 1,
     "result": {
         "type": "10002",
         "address": "<pay:sov:{address}{checksum}>",
