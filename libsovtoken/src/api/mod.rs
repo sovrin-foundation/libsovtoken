@@ -226,7 +226,13 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         Ok(c) => c,
         Err(e) => return handle_result(Err(e))
     };
-    let submitter_did = string_from_char_ptr(submitter_did).unwrap();
+    let submitter_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
     let payment_request = PaymentRequest::from_config(outputs_config,inputs_config, submitter_did);
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
@@ -278,10 +284,21 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
     // * C_CHAR to &str
-    let submitter_did = str_from_char_ptr(submitter_did).unwrap();
-    let payment_address = str_from_char_ptr(payment_address).unwrap();
-    // Helper Vars
-    let add_len = payment_address.len();
+    let submitter_did = match str_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let payment_address = match str_from_char_ptr(payment_address) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
 
     // validation
     if !validate_did_len(submitter_did) {
@@ -366,8 +383,17 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
         Ok(c) => c,
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
-    let submitter_did = string_from_char_ptr(submitter_did).unwrap();
+
+    let submitter_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
     let fees_request = SetFeesRequest::from_fee_config(fees_config, submitter_did);
+
     let fees_request = fees_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(fees_request.as_ptr()));
@@ -396,13 +422,20 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
     if cb.is_none() {
         return handle_result(Err(ErrorCode::CommonInvalidStructure));
     }
-    let submitter_did = string_from_char_ptr(submitter_did).unwrap();
+
+    let submitter_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
     let get_txn_request = getFeesRequest::new(submitter_did);
+
     let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
 
     return handle_result(Ok(get_txn_request.as_ptr()));
-
-    return ErrorCode::Success;
 }
 
 /// Description
