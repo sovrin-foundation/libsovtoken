@@ -125,46 +125,43 @@ fn success_signed_request() {
     let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
 
     let payment_address_1 = Payment::create_payment_address(wallet_id,"pay:sov:", "{}").unwrap();
+    let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
 
+    let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
 
-
-//    let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-
-//    let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-
-//    let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
+    let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
 
     println!("wallet id = {:?}", wallet_id);
-//    println!("payment_address_1 = {:?}", payment_address_1);
-//    println!("payment_address_2 = {:?}", payment_address_2);
-//    println!("payment_address_3 = {:?}", payment_address_3);
-//    println!("payment_address_4 = {:?}", payment_address_4);
+    println!("payment_address_1 = {:?}", payment_address_1);
+    println!("payment_address_2 = {:?}", payment_address_2);
+    println!("payment_address_3 = {:?}", payment_address_3);
+    println!("payment_address_4 = {:?}", payment_address_4);
 
 
 
-//    let inputs = json!([
-//        {
-//            "paymentAddress": payment_address_1,
-//            "sequenceNumber": 1
-//        },
-//        {
-//            "paymentAddress": payment_address_2,
-//            "sequenceNumber": 1,
-//            "extra": "extra data",
-//        }
-//     ]);
-//
-//    let outputs = json!([
-//        {
-//            "paymentAddress": payment_address_3,
-//            "amount": 10
-//        },
-//        {
-//            "paymentAddress": payment_address_4,
-//            "amount": 22,
-//            "extra": "extra data"
-//        }
-//    ]);
+    let inputs = json!([
+        {
+            "paymentAddress": payment_address_1,
+            "sequenceNumber": 1
+        },
+        {
+            "paymentAddress": payment_address_2,
+            "sequenceNumber": 1,
+            "extra": "extra data",
+        }
+     ]);
+
+    let outputs = json!([
+        {
+            "paymentAddress": payment_address_3,
+            "amount": 10
+        },
+        {
+            "paymentAddress": payment_address_4,
+            "amount": 22,
+            "extra": "extra data"
+        }
+    ]);
 
 
 
@@ -176,29 +173,25 @@ fn success_signed_request() {
 
 
 
-
-
-
-
     println!("Calling build_payment_req");
 
-//    let result = sovtoken::api::build_payment_req_handler(
-//        COMMAND_HANDLE,
-//        wallet_id,
-//        c_pointer_from_string(did),
-//        c_pointer_from_string(inputs.to_string()),
-//        c_pointer_from_string(outputs.to_string()),
-//        CB
-//    );
-//
-//    println!("Received result {:?}", result);
+    let result = sovtoken::api::build_payment_req_handler(
+        COMMAND_HANDLE,
+        wallet_id,
+        c_pointer_from_string(did),
+        c_pointer_from_string(inputs.to_string()),
+        c_pointer_from_string(outputs.to_string()),
+        CB
+    );
+
+    println!("Received result {:?}", result);
 
     assert!(true);
    // assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 
-#[test]
+//#[test]
 fn create_a_new_wallet(){
 
     let wallet_name = "new_wallet";

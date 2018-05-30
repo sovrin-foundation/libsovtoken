@@ -246,7 +246,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
     println!("move to new line {}", "yes");
 
-    println!("wallet is {:?}", wallet_handle);
+    println!("build_payment_req >>> wallet is {:?}", wallet_handle);
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
@@ -276,8 +276,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         }
     };
 
-     println!("outputs_json_string = {:?}", outputs_json_string);
+    println!("outputs_json_string = {:?}", outputs_json_string);
 
+
+    // TODO: remove pay:sov: from the addresses before signing them.
 
     let the_input: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
 
