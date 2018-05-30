@@ -117,5 +117,10 @@ resp_json
         }
 ```     
     
+## method: parse_payment_response_handler
+### inputs:
+    resp_json
     
     
+### return:
+    json
