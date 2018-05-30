@@ -9,35 +9,40 @@
     
 ### return:
 
-    json
+```json
+{
+    "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+    "operation":
     {
-    'identifier': '6ouriXMZkLeHsuXrN1X1fd', 
-    'operation': 
-     {
-      'address': <"pay:sov:{address}{checksum}">, 
-      'type': '10002'
-     }, 
-    'reqId': 6284, 
-    'protocolVersion': 1
-    }
+        "address": "2jyMWLv8NuxUV4yDc46mLQMn9WUUzeKURX3d2yQqgoLqEQC2sf",
+        "type": "10002"
+    },
+    "reqId": 6284,
+    "protocolVersion": 1
+}
+
+```
     
     
     
 ## method: parse_get_utxo_response_handler
 ### inputs:
-    version 1, it will change
-    resp_json
-    {
-        'op': 'REPLY', 
-        'protocolVersion': 1
-        'result': {
-            'type': '10002', 
-            'address': <"pay:sov:{address}{checksum}">, 
-            'identifier': '6ouriXMZkLeHsuXrN1X1fd', 
-            'reqId': 23887, 
-            'outputs': []
-        }
+version 1, it will change
+resp_json
+```json
+{
+    "op": "REPLY",
+    "protocolVersion": 1
+    "result": {
+        "type": "10002",
+        "address": "<pay:sov:{address}{checksum}>",
+        "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+        "reqId": 23887,
+        "outputs": []
     }
+}
+
+```
     
     
 ### return:
