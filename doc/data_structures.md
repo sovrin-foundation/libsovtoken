@@ -1,5 +1,5 @@
 
-# UTOX data structures
+# UTXO data structures
 
 ## method: build_get_utxo_request_handler
 ### inputs: 
@@ -61,3 +61,35 @@ resp_json
         ]
     }
 ```
+
+
+## build_payment_req_handler
+### inputs:
+    wallet_handle
+    submitter_did
+    inputs_json
+```
+    {
+       'identifier': 'F8s1tgmNmHpMq3noQTVNqP6axfE9ATD8s63KSyzThixT',
+       'operation': {
+           'inputs': [
+               ['217PRj6piK5G77AcxS9GAsk1FCfaZn54bYiHzmabyzKtBrWnUk', 4, '3uhXG9gMQ5KeUCd3P4udoFuhZAy4fLCGzSjKNXtYiSp1tjYoY48Tq4EhrPmnqff7TebVFU8zqVpab7CQnNxD7NdT'],
+               ['2RKhX72u617CffvqrontubPRh7zBKqcgmT8reDEeBLemFLgYkr', 4, '3mPYwTTZ2fpc3F7XacoPyXW8CgCB64k8HkZ68Tqz7xDv3UNrCmiE4EkKysgE3ACZWWFA3wGmywoeBBTJzX3QVps6'],
+               ['2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX', 4, '3RQbmFyKsR5VS1GswdXJ7eAvik1dw2tDZMMts2Fg7yws8oYcw521nDRDD9SoerQXzE5DjxEj6mfo5yrjem2r7d9F']
+           ],
+           'type': '10001',
+           'extra': None,
+           'outputs': [
+               ['2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es', 27]
+           ]
+       },
+       'reqId': 1527711037434862
+    }
+```    
+    
+    outputs_json
+    
+    
+### return:
+
+    payment_req_json
