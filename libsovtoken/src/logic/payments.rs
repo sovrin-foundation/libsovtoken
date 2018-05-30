@@ -19,8 +19,6 @@ use logic::address::{
     SOVRIN_INDICATOR,
     VERKEY_LEN,
 };
-use logic::types::ClosureString;
-
 
 
 // ------------------------------------------------------------------
