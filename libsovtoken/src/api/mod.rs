@@ -15,6 +15,7 @@ use libc::c_char;
 use indy::payments::Payment;
 use indy::ledger::Ledger;
 use indy::ErrorCode;
+use logic::add_request_fees;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
@@ -167,140 +168,31 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                                                err: ErrorCode,
                                                                req_with_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
-    let key_fees = String::from("fees");
-    let key_operation = String::from("operation");                                                               
+    let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
+        Ok(tup) => tup,
+        Err(error_code) => {
+            error!("Error in deserializing the add_request_fees_handler arguments.");
+            return error_code;
+        }
+    };
 
     /*
-        ================
-        DESESRIALIZATION
-        ================
-
-        Deserializes the parameters and assigns them
-        to appropriate structures.
-    */
-
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
-
-    trace!("Converting request_json pointer to string");
-    let request_json = match string_from_char_ptr(req_json) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert request_json pointer to string");
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-    debug!("request_json >>> {:?}", request_json);
-
-    trace!("Converting request_json pointer to string");
-    let inputs_json = match string_from_char_ptr(inputs_json) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert inputs_json pointer to string");
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-
-    trace!("Converting request_json pointer to string");
-    let outputs_json = match string_from_char_ptr(outputs_json) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert outputs_json pointer to string.");
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-
-    trace!("Converting request_json to serde::json::Value");
-    let mut request_json_object: serde_json::Value = match serde_json::from_str(&request_json) {
-        Ok(value) => value,
-        Err(e) => {
-            error!("request_json was invalid. Received error >>> {:?}", e);
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-
-    let request_json_map = match request_json_object.as_object_mut() {
-        Some(request_json_map) => request_json_map,
-        None => {
-            error!("request_json was not an object");
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-    trace!("request_json was an object");
-
-    let inputs: Inputs = match serde_json::from_str(&inputs_json) {
-        Ok(inputs) => inputs,
-        Err(e) => {
-            error!("inputs_json was invalid. Received error >>> {:?}", e);
-            return ErrorCode::CommonInvalidStructure;
-        }
-    };
-    trace!("Deserialized inputs.");
-
-    let outputs: Outputs = match serde_json::from_str(&outputs_json) {
-        Ok(outputs) => outputs,
-        Err(e) => {
-            error!("outputs_json was invalid. Received error >>> {:?}", e);
-            return ErrorCode::CommonInvalidStructure
-        }
-    };
-    trace!("Deserialized outputs.");
-
-    /*
-        =====
-        LOGIC
-        =====
-
-        The actual logic of the method.
-        Errors when the request is a XFER request because the
+        Errors when the request is a XFER request becaause the 
         fees should be implicit in the operation's inputs and
         outputs.
     */
-    {
-        trace!("Getting type from request_json");
-        let type_as_option = request_json_map.get(&key_operation).and_then(|operation| operation.get("type"));
-        let transaction_type = match type_as_option {
-            Some(txn_type) => txn_type,
-            None => {
-                error!("request_json didn't contain a transaction type.");
-                return ErrorCode::CommonInvalidStructure;
-            }
-        };
-        debug!("Request transaction type was >>> {}", transaction_type);
-
-        /*
-            Errors when the request is a XFER request becaause the 
-            fees should be implicit in the operation's inputs and
-            outputs.
-        */
-        if transaction_type == "10000" {
-            error!("Can't add fees to a transfer request");
-            return ErrorCode::CommonInvalidStructure;
-        }
+    if let Err(_) = add_request_fees::validate_type_not_transfer(&request_json_map) {
+        error!("Can't add fees to a transfer request");
+        return ErrorCode::CommonInvalidStructure;
     }
 
-    let signed_inputs = match Fees::sign_inputs(wallet_handle, &inputs, &outputs) {
-        Ok(signed_inputs) => signed_inputs,
+    let serialized_request_with_fees = match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map) {
+        Ok(map) => map,
         Err(e) => {
-            error!("Couldn't sign inputs. Received error >>> {:?}", e);
+            error!("Received error adding fees to request_json'");
             return e;
         }
     };
-    debug!("Signed inputs >>> {:?}", signed_inputs);
-
-    let fees = Fees::new(signed_inputs, outputs);
-    trace!("Created fees structure.");
-
-    request_json_map.insert(key_fees, json!(fees));
-    trace!("Added fees to request_json.");
-
-    let serialized_request_with_fees = match serde_json::to_string(&json!(request_json_map)) {
-        Ok(serialized) => serialized,
-        Err(e) => {
-            error!("Invalid request_with_fees. Received error >>> {:?}", e);
-            return ErrorCode::CommonInvalidState;
-        }
-    };
-    trace!("Serialized request_with_fees");
 
     cb(command_handle, ErrorCode::Success, c_pointer_from_string(serialized_request_with_fees));
 

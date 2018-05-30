@@ -7,7 +7,7 @@ use indy::{ErrorCode, IndyHandle};
 use indy::crypto::Key;
 use logic::indysdk_api::CryptoAPI;
 use super::config::payment_address_config::PaymentAddressConfig;
-use utils::ffi_support::{string_from_char_ptr, cstring_from_str, c_pointer_from_string};
+use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
 use logic::address;
