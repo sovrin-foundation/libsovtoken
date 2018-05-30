@@ -1,12 +1,14 @@
 
-UTOX data structures
+# UTOX data structures
 
-method: build_get_utxo_request_handler
-inputs: 
+## method: build_get_utxo_request_handler
+### inputs: 
+
     submitter_did
     payment_address
     
-return:
+### return:
+
     json
     {
     'identifier': '6ouriXMZkLeHsuXrN1X1fd', 
@@ -22,9 +24,9 @@ return:
     
     
     
-method: parse_get_utxo_response_handler
-inputs:
+## method: parse_get_utxo_response_handler
+### inputs:
     resp_json
     
-return:
+### return:
     utxo_json
