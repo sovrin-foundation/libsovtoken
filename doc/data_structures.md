@@ -1,5 +1,5 @@
 
-# UTOX data structures
+# UTXO data structures
 
 ## method: build_get_utxo_request_handler
 ### inputs: 
