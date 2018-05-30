@@ -27,7 +27,7 @@
     
 ## method: parse_get_utxo_response_handler
 ### inputs:
-version 1, it will change
+version 1, it will change in a later version.  
 resp_json
 ```json
 {
@@ -50,9 +50,14 @@ resp_json
     
 ### return:
     utxo_json
+    note: ver field is just in case the output format changes in the future
 ``` json
-    "outputs": [
-        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, 10], 
-        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 3, 3]
-    ],
+    {
+    "ver": 1,
+    "utxos": 
+        [
+            {"address" : "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqno": 2, "amount": 10 }, 
+            {"address" : "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqno": 3, "amount": 5 },
+        ]
+    }
 ```
