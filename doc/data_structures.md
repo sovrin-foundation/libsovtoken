@@ -63,7 +63,7 @@ resp_json
 ```
 
 
-## build_payment_req_handler
+## method: build_payment_req_handler
 ### inputs:
     wallet_handle
     submitter_did
@@ -107,7 +107,7 @@ resp_json
                     ["2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX", 14, "3RQbmFyKsR5VS1GswdXJ7eAvik1dw2tDZMMts2Fg7yws8oYcw521nDRDD9SoerQXzE5DjxEj6mfo5yrjem2r7d9F"]
                 ],
                 "type": "10001",
-                "extra": None,
+                "extra": null,
                 "outputs": [
                     ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 27],
                     ["DhzPC0E3WNMdxP6PcdspMJpjwNI1tk4jKlXYNJNXzFNcpJce", 3 ]
