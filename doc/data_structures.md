@@ -73,9 +73,9 @@ resp_json
     "ver": 1,
     "utxos": 
         [
-            {"address" : "pay:sov:217PRj6piK5G77AcxS9GAsk1FCfaZn54bYiHzmabyzKtBrWnUk", "seqno": 2, "amount": 10 }, 
-            {"address" : "pay:sov:2RKhX72u617CffvqrontubPRh7zBKqcgmT8reDEeBLemFLgYkr", "seqno": 5, "amount": 15 },
-            {"address" : "pay:sov:2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX", "seqno": 14, "amount": 5 },
+            {"address" : "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqno": 2, "amount": 10 }, 
+            {"address" : "pay:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", "seqno": 5, "amount": 15 },
+            {"address" : "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqno": 14, "amount": 15 },
         ]
     }
 ```    
@@ -86,8 +86,9 @@ resp_json
     "ver": 1,
     "destinationAddresses": 
         [
-            {"address" : "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "amount": 27 },
-            {"address" : "pay:sov:DhzPC0E3WNMdxP6PcdspMJpjwNI1tk4jKlXYNJNXzFNcpJce", "amount": 3 }, 
+            {"address" : "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "amount": 11 },
+            {"address" : "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", "amount": 19 }, 
+            {"address" : "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "amount": 9 },
         ]
     }
 ```    
@@ -98,55 +99,72 @@ resp_json
     note: output to ledger excludes address prefix "pay:sov"
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ``` json
-        {
-            "identifier": "F8s1tgmNmHpMq3noQTVNqP6axfE9ATD8s63KSyzThixT",
-            "operation": {
-                "inputs": [
-                    ["217PRj6piK5G77AcxS9GAsk1FCfaZn54bYiHzmabyzKtBrWnUk", 2, "3uhXG9gMQ5KeUCd3P4udoFuhZAy4fLCGzSjKNXtYiSp1tjYoY48Tq4EhrPmnqff7TebVFU8zqVpab7CQnNxD7NdT"],
-                    ["2RKhX72u617CffvqrontubPRh7zBKqcgmT8reDEeBLemFLgYkr", 5, "3mPYwTTZ2fpc3F7XacoPyXW8CgCB64k8HkZ68Tqz7xDv3UNrCmiE4EkKysgE3ACZWWFA3wGmywoeBBTJzX3QVps6"],
-                    ["2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX", 14, "3RQbmFyKsR5VS1GswdXJ7eAvik1dw2tDZMMts2Fg7yws8oYcw521nDRDD9SoerQXzE5DjxEj6mfo5yrjem2r7d9F"]
-                ],
-                "type": "10001",
-                "extra": null,
-                "outputs": [
-                    ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 27],
-                    ["DhzPC0E3WNMdxP6PcdspMJpjwNI1tk4jKlXYNJNXzFNcpJce", 3 ]
-                ]
-            },
-            "reqId": 1527711037434862
+    {
+        "identifier": "DiHngdSyNFVs1CRcLxVA84xuKZLNhVWzSkdsnwJveKtN",
+        "reqId": 1527714086374556,
+        "operation": {
+            "type": "10001",
+            "extra": null,
+            "outputs": [
+                ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+                ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
+            ],
+            "inputs": [
+                ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
+                ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 5, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 14, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
+            ]
         }
+    }
 ```     
     
 ## method: parse_payment_response_handler
 ### inputs:
     resp_json
 ```json 
-        {
-            "op": "REPLY",
-            "result": {
-                "auditPath": ["Ca86JVfFnnRiKdsUCwkHjKXUhMcRCcuD44GoW8ChdJZU", "B9aBg94HJD68k3FS7Xik5VfwCA3vBXDSthr6eXhZDStG"],
-                "signatures": null,
-                "reqId": 1527712589780601,
-                "extra": null,
-                "seqNo": 4,
-                "inputs": [
-                    ["2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC", 3, "3RqpRBNrNEDjdH6SPEtHBz1SjzeySGCZRdCX5z5Vwc4DmCDkVgxAvc2jnZjkHwNJqbxKFT7cfbkkBfAbooGRwZMr"],
-                    ["knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL", 3, "PV5Pt1aep3ejrcFBq4VkfYcuJCkWNfSfC3zMckUPVpbKXAhQApH8rrxaChzbhdDXVXdiGjz1S1gkiUfbnjsqVux"],
-                    ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 3, "2a9gbMxZiV7CNacEmrvj4W36aeQC7XCHxzAcPrAsX7cmJMRnsNA4RmeRNW8Rwy2qs8GRcUBaFbmdAKpqsTLzaEYM"]
-                ],
-                "signature": null,
-                "identifier": "AT32EYyf4WTqbNfkGofQ7vFrXcbL24DoCZQK4WHWjMZM",
-                "rootHash": "ELouWgpqJrT6ENreQo6afXx9aBtuhnWtDKyriaM4fEgb",
-                "txnTime": 1527712991,
-                "outputs": [
-                    ["iu4wAP3TycMGCEh6tudajEwwSYspP9kBcgAkbBwqLQAxoyKHt", 17],
-                    ["2e6yD9dWwCbgMMdc59ZK5ikoZJFoLA2eBLfez65Next4vBW2pm", 7],
-                    ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 15]
-                ],
-                "type": "10001"
-            }
+    {
+        "op": "REPLY",
+        "result": {
+            "identifier": "DiHngdSyNFVs1CRcLxVA84xuKZLNhVWzSkdsnwJveKtN",
+            "outputs": [
+                ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+                ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
+            ],
+            "seqNo": 4,
+            "rootHash": "FRkqRd5jyNRK3SGSGNoR6xMmYQvLVnotGLGWYxR1dCN4",
+            "signature": null,
+            "extra": null,
+            "inputs": [
+                ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 3, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
+                ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 3, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 3, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
+            ],
+            "signatures": null,
+            "reqId": 1527714086374556,
+            "auditPath": [
+                "6QFFFVbio2q8viWBbuVfvQsv3Qgd3Ub64Qv41i5wH8Bo", "8vDzQmeYb8ecQ7Nyv5i6V8nUwT3fsebqTHMXqgzYi1NU"
+            ],
+            "type": "10001",
+            "txnTime": 1527714130
         }
+    }
 ```
     
 ### return:
     json
+``` {
+        "outputs": [
+            ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+            ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
+            ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
+        ],
+        "inputs": [
+                ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 3, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
+                ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 3, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 3, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
+        ],
+        "txnTime": 1527714130
+    }
+```
