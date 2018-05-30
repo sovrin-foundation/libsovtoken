@@ -35,7 +35,7 @@ resp_json
     "protocolVersion": 1,
     "result": {
         "type": "10002",
-        "address": "<pay:sov:{address}{checksum}>",
+        "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
         "identifier": "6ouriXMZkLeHsuXrN1X1fd",
         "reqId": 23887,
         "outputs": [
@@ -56,8 +56,8 @@ resp_json
     "ver": 1,
     "utxos": 
         [
-            {"address" : "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqno": 2, "amount": 10 }, 
-            {"address" : "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqno": 3, "amount": 5 },
+            {"address" : "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqno": 2, "amount": 10 }, 
+            {"address" : "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqno": 3, "amount": 5 },
         ]
     }
 ```
@@ -68,28 +68,54 @@ resp_json
     wallet_handle
     submitter_did
     inputs_json
-```json
-{
-    "identifier": "F8s1tgmNmHpMq3noQTVNqP6axfE9ATD8s63KSyzThixT",
-    "operation": {
-        "inputs": [
-            ["217PRj6piK5G77AcxS9GAsk1FCfaZn54bYiHzmabyzKtBrWnUk", 4, "3uhXG9gMQ5KeUCd3P4udoFuhZAy4fLCGzSjKNXtYiSp1tjYoY48Tq4EhrPmnqff7TebVFU8zqVpab7CQnNxD7NdT"],
-            ["2RKhX72u617CffvqrontubPRh7zBKqcgmT8reDEeBLemFLgYkr", 4, "3mPYwTTZ2fpc3F7XacoPyXW8CgCB64k8HkZ68Tqz7xDv3UNrCmiE4EkKysgE3ACZWWFA3wGmywoeBBTJzX3QVps6"],
-            ["2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX", 4, "3RQbmFyKsR5VS1GswdXJ7eAvik1dw2tDZMMts2Fg7yws8oYcw521nDRDD9SoerQXzE5DjxEj6mfo5yrjem2r7d9F"]
-        ],
-        "type": "10001",
-        "extra": None,
-        "outputs": [
-            ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 27]
+``` json
+    {
+    "ver": 1,
+    "utxos": 
+        [
+            {"address" : "pay:sov:217PRj6piK5G77AcxS9GAsk1FCfaZn54bYiHzmabyzKtBrWnUk", "seqno": 2, "amount": 10 }, 
+            {"address" : "pay:sov:2RKhX72u617CffvqrontubPRh7zBKqcgmT8reDEeBLemFLgYkr", "seqno": 5, "amount": 15 },
+            {"address" : "pay:sov:2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX", "seqno": 14, "amount": 5 },
         ]
-    },
-    "reqId": 1527711037434862
-}
+    }
 ```    
-    
+   
     outputs_json
-    
+``` json
+    {
+    "ver": 1,
+    "destinationAddresses": 
+        [
+            {"address" : "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "amount": 27 },
+            {"address" : "pay:sov:DhzPC0E3WNMdxP6PcdspMJpjwNI1tk4jKlXYNJNXzFNcpJce", "amount": 3 }, 
+        ]
+    }
+```    
     
 ### return:
 
     payment_req_json
+    note: output to ledger excludes address prefix "pay:sov"
+    note: any difference between the sum of the inputs and the sum of outputs is the fees amount
+``` json
+        {
+            "identifier": "F8s1tgmNmHpMq3noQTVNqP6axfE9ATD8s63KSyzThixT",
+            "operation": {
+                "inputs": [
+                    ["217PRj6piK5G77AcxS9GAsk1FCfaZn54bYiHzmabyzKtBrWnUk", 2, "3uhXG9gMQ5KeUCd3P4udoFuhZAy4fLCGzSjKNXtYiSp1tjYoY48Tq4EhrPmnqff7TebVFU8zqVpab7CQnNxD7NdT"],
+                    ["2RKhX72u617CffvqrontubPRh7zBKqcgmT8reDEeBLemFLgYkr", 5, "3mPYwTTZ2fpc3F7XacoPyXW8CgCB64k8HkZ68Tqz7xDv3UNrCmiE4EkKysgE3ACZWWFA3wGmywoeBBTJzX3QVps6"],
+                    ["2bVtdDaPET8u4dUVRbpiaK3honHYvpVGRudFdzkpe3VyMMWPmX", 14, "3RQbmFyKsR5VS1GswdXJ7eAvik1dw2tDZMMts2Fg7yws8oYcw521nDRDD9SoerQXzE5DjxEj6mfo5yrjem2r7d9F"]
+                ],
+                "type": "10001",
+                "extra": None,
+                "outputs": [
+                    ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 27],
+                    ["DhzPC0E3WNMdxP6PcdspMJpjwNI1tk4jKlXYNJNXzFNcpJce", 3 ]
+                ]
+            },
+            "reqId": 1527711037434862
+        }
+```     
+    
+    
+    
