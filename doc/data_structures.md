@@ -38,7 +38,10 @@ resp_json
         "address": "<pay:sov:{address}{checksum}>",
         "identifier": "6ouriXMZkLeHsuXrN1X1fd",
         "reqId": 23887,
-        "outputs": []
+        "outputs": [
+            ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, 10], 
+            ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 3, 3]
+        ],
     }
 }
 
@@ -47,3 +50,9 @@ resp_json
     
 ### return:
     utxo_json
+``` json
+    "outputs": [
+        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, 10], 
+        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 3, 3]
+    ],
+```
