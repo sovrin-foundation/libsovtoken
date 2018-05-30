@@ -51,7 +51,7 @@ resp_json
 ### return:
     utxo_json
     note: ver field is just in case the output format changes in the future
-``` json
+```json
     {
     "ver": 1,
     "utxos": 
@@ -68,7 +68,7 @@ resp_json
     wallet_handle
     submitter_did
     inputs_json
-``` json
+```json
     {
     "ver": 1,
     "utxos": 
@@ -81,7 +81,7 @@ resp_json
 ```    
    
     outputs_json
-``` json
+```json
     {
     "ver": 1,
     "destinationAddresses": 
@@ -120,7 +120,33 @@ resp_json
 ## method: parse_payment_response_handler
 ### inputs:
     resp_json
-    
+```json 
+        {
+            "op": "REPLY",
+            "result": {
+                "auditPath": ["Ca86JVfFnnRiKdsUCwkHjKXUhMcRCcuD44GoW8ChdJZU", "B9aBg94HJD68k3FS7Xik5VfwCA3vBXDSthr6eXhZDStG"],
+                "signatures": null,
+                "reqId": 1527712589780601,
+                "extra": null,
+                "seqNo": 4,
+                "inputs": [
+                    ["2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC", 3, "3RqpRBNrNEDjdH6SPEtHBz1SjzeySGCZRdCX5z5Vwc4DmCDkVgxAvc2jnZjkHwNJqbxKFT7cfbkkBfAbooGRwZMr"],
+                    ["knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL", 3, "PV5Pt1aep3ejrcFBq4VkfYcuJCkWNfSfC3zMckUPVpbKXAhQApH8rrxaChzbhdDXVXdiGjz1S1gkiUfbnjsqVux"],
+                    ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 3, "2a9gbMxZiV7CNacEmrvj4W36aeQC7XCHxzAcPrAsX7cmJMRnsNA4RmeRNW8Rwy2qs8GRcUBaFbmdAKpqsTLzaEYM"]
+                ],
+                "signature": null,
+                "identifier": "AT32EYyf4WTqbNfkGofQ7vFrXcbL24DoCZQK4WHWjMZM",
+                "rootHash": "ELouWgpqJrT6ENreQo6afXx9aBtuhnWtDKyriaM4fEgb",
+                "txnTime": 1527712991,
+                "outputs": [
+                    ["iu4wAP3TycMGCEh6tudajEwwSYspP9kBcgAkbBwqLQAxoyKHt", 17],
+                    ["2e6yD9dWwCbgMMdc59ZK5ikoZJFoLA2eBLfez65Next4vBW2pm", 7],
+                    ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 15]
+                ],
+                "type": "10001"
+            }
+        }
+```
     
 ### return:
     json
