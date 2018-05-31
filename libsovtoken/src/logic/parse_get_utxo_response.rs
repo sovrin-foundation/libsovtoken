@@ -43,7 +43,7 @@ pub struct TXO {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UTXOJson {
+pub struct UTXO {
     pub payment_address: String,
     pub txo: TXO,
     pub amount: u32,
