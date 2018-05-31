@@ -425,12 +425,13 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
         }
     };
 
-    let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(resp_json_string);
-    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+    let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
+    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(&response);
 
-    let reply_str = reply.serialize_to_cstring();
+    let reply_str = reply.to_json().unwrap();
+    let reply_str_ptr = reply_str.as_ptr();
     match cb {
-        Some(b) => b(command_handle, ErrorCode::Success, &reply_str),
+        Some(b) => b(command_handle, ErrorCode::Success, reply_str_ptr),
         None => {
             error!("cb is null even after check");
             return ErrorCode::CommonInvalidState;
