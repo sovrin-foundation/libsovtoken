@@ -11,5 +11,6 @@ pub mod indysdk_api;
 pub mod input;
 pub mod output;
 pub mod payments;
+pub mod parse_get_utxo_response;
 pub mod request;
 pub mod responses;
