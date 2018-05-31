@@ -28,7 +28,6 @@ use logic::config::{
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},
     get_fees_config::getFeesRequest,
-    // set_fees_config::{SetFeesRequest, FeesConfig},
 };
 
 use logic::request::Request;
