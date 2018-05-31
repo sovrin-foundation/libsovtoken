@@ -406,6 +406,18 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+    if cb.is_none() {
+        return ErrorCode::CommonInvalidStructure;
+    }
+
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure
+    }
+
+    
+
+
     return ErrorCode::Success;
 }
 
