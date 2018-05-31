@@ -9,6 +9,7 @@
 
 use std;
 use std::ffi::CString;
+use std::ptr;
 use std::thread;
 
 use libc::c_char;
@@ -27,6 +28,7 @@ use logic::config::{
     get_fees_config::getFeesRequest,
 };
 use logic::request::Request;
+use logic::responses::ResponseReadRequest;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
@@ -319,25 +321,41 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
     };
 }
 
-/// Description
-///
-///
+/// Parses input and returns only the uxtos
 ///
 /// from tokens-interface.md/ParseGetUTXOResponseCB
-/// #Params
-/// param1: description.
+/// # Params
+/// command_handle: number
+/// resp_json: see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
-/// #Returns
-/// description. example if json, etc...
+/// # Returns
+/// see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
-/// #Errors
-/// description of errors
+/// # Errors
+/// ErrorCode::CommonInvalidStructure if any of the input isn't understood
+///
 #[no_mangle]
 pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   resp_json: *const c_char,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
+
+    let json_str = match str_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => return ErrorCode::CommonInvalidStructure,
+    };
+
+    let response: ResponseReadRequest = match ResponseReadRequest::from_json(&json_str) {
+        Ok(r) => r,
+        Err(e) => return ErrorCode::CommonInvalidStructure,
+    };
+
+
+
+    cb(command_handle, ErrorCode::Success, ptr::null());
     return ErrorCode::Success;
 }
 

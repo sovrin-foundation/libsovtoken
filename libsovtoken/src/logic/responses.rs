@@ -1,18 +1,49 @@
 //! Contains the response types
 
-// use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
+use serde_json;
+
 use super::input::Input;
 use super::output::Output;
+use utils::json_conversion::JsonDeserialize;
 use utils::random::rand_req_id;
 
 /**
     enumeration matches values for the op field in json
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Copy)]
-pub enum ReponseOperations {
+pub enum ResponseOperations {
     REPLY,
     REJECT,
     REQNACK,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadRequestResult {
+    pub identifier : String,
+    pub outputs: Option<Vec<Output>>,
+    pub req_id : u32,
+    pub seq_no: u32,
+    pub txn_time: u32,
+    #[serde(rename = "type")]
+    pub txn_type : String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponseReadRequest {
+    pub op : ResponseOperations,
+    pub result: ReadRequestResult,
+}
+
+impl ResponseReadRequest {
+    /**
+    */
+    pub fn deserialize_from_cstring(json : &str) -> Result<ResponseReadRequest, serde_json::Error> {
+        let serialized = JsonDeserialize::from_json(json)?;
+        return Ok(serialized);
+    }
 }
 
 /**
@@ -21,10 +52,9 @@ pub enum ReponseOperations {
     We chose to separate success from error so that its easier to understand the resulting
     json
 */
-
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Result {
+pub struct ResponseSuccessResult {
     pub audit_path: Vec<String>,
     pub extra : String,
     pub identifier : String,
@@ -41,11 +71,11 @@ pub struct Result {
 
 }
 
-impl Result {
+impl ResponseSuccessResult {
     pub fn new (identifier: String) -> Self {
         let req_id = rand_req_id();
 
-        return Result {
+        return ResponseSuccessResult {
             audit_path: Vec::new(),
             extra: "".to_string(),
             identifier,
@@ -65,17 +95,17 @@ impl Result {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponseSuccess {
-    pub op : ReponseOperations,
-    pub result: Result,
+    pub op : ResponseOperations,
+    pub result: ResponseSuccessResult,
 }
 
 impl ResponseSuccess
 {
-    pub fn new(op : ReponseOperations, identifier: String) -> Self {
+    pub fn new(op : ResponseOperations, identifier: String) -> Self {
 
         return ResponseSuccess {
             op,
-            result : Result::new(identifier),
+            result : ResponseSuccessResult::new(identifier),
         };
     }
 }
@@ -87,15 +117,14 @@ impl ResponseSuccess
 #[serde(rename_all = "camelCase")]
 pub struct ResponseError {
     pub identifier : String,
-    pub op : ReponseOperations,
+    pub op : ResponseOperations,
     pub req_id : u32,
     pub reason : String
 }
 
-
 impl ResponseError
 {
-    pub fn new(op : ReponseOperations, identifier: String) -> Self {
+    pub fn new(op : ResponseOperations, identifier: String) -> Self {
         let req_id = rand_req_id();
         return ResponseError {
             op,
@@ -105,3 +134,4 @@ impl ResponseError
         }
     }
 }
+
