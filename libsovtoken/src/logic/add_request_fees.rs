@@ -1,8 +1,9 @@
 use indy::{ErrorCode};
 use libc::c_char;
-use logic::fees::{Inputs, Outputs, Fees, InputSigner};
+use logic::fees::{Inputs, Outputs, Fees};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
+use logic::payments::CreatePaymentSDK;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: ErrorCode, req_with_fees_json: *const c_char) -> ErrorCode;
@@ -96,13 +97,11 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
 } 
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<Fees, ErrorCode> {
-    let signed_inputs = Fees::sign_inputs(wallet_handle, &inputs, &outputs)?;
-    debug!("Signed inputs >>> {:?}", signed_inputs);
+    let fees = Fees::new(inputs, outputs);
+    let signed_fees = fees.sign(CreatePaymentSDK{}, wallet_handle)?;
+    debug!("Signed fees >>> {:?}", signed_fees);
 
-    let fees = Fees::new(signed_inputs, outputs);
-    trace!("Created fees structure.");
-
-    return Ok(fees);
+    return Ok(signed_fees);
 }
 
 
