@@ -1,15 +1,19 @@
 //!
 //!
-use serde::Serialize;
-use serde_json;
+
+use utils::json_conversion::JsonSerialize;
+
 use super::responses::ResponseOperations;
 
 /**
+    for parse_get_utxo_response_handler input parameter resp_json
 */
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ParseGetUtxoResponseResultOutput {
-    pub huh: String,
+pub struct ParseGetUtxoResponse {
+    pub op : ResponseOperations,
+    pub protocol_version: i32,
+    pub result : ParseGetUtxoResponseResult,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -25,15 +29,25 @@ pub struct ParseGetUtxoResponseResult {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ParseGetUtxoResponse {
-    pub op : ResponseOperations,
-    pub protocol_version: i32,
-    pub result : ParseGetUtxoResponseResult,
+pub struct ParseGetUtxoResponseResultOutput {
+    pub huh: String,
+}
+
+impl ParseGetUtxoResponse {
+    pub fn from_json(json: String) -> ParseGetUtxoResponse {
+        unimplemented!()
+    }
 }
 
 /**
-
+   for parse_get_utxo_response_handler output parameter utxo_json
 */
+#[derive(Serialize, Deserialize)]
+pub struct ParseGetUtxoReply {
+    pub ver : i32,
+    pub utxo_json : Vec<UTXO>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TXO {
@@ -50,8 +64,8 @@ pub struct UTXO {
     pub extra: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct ParseGetUtxoReply {
-    pub ver : i32,
-    pub utxo_json : Vec<UTXOJson>,
+impl ParseGetUtxoReply {
+    pub fn from_response(base : ParseGetUtxoResponse) -> ParseGetUtxoReply {
+        unimplemented!()
+    }
 }

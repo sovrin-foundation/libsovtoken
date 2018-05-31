@@ -30,6 +30,7 @@ use logic::config::{
     get_fees_config::getFeesRequest,
 };
 
+use logic::parse_get_utxo_response::*;
 use logic::request::Request;
 use serde_json;
 use serde::de::Error;
@@ -392,13 +393,15 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 ///
 /// from tokens-interface.md/ParseGetUTXOResponseCB
 /// #Params
-/// param1: description.
+/// command_handle: standard command handle
+/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// #Returns
-/// description. example if json, etc...
+/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// #Errors
-/// description of errors
+/// CommonInvalidStructure when any of the inputs are invalid
+/// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
 pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   resp_json: *const c_char,
@@ -414,8 +417,25 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
         return ErrorCode::CommonInvalidStructure
     }
 
-    
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
 
+    let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(resp_json_string);
+    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+
+    let reply_str = reply.serialize_to_cstring();
+    match cb {
+        Some(b) => b(command_handle, ErrorCode::Success, &reply_str),
+        None => {
+            error!("cb is null even after check");
+            return ErrorCode::CommonInvalidState;
+        }
+    };
 
     return ErrorCode::Success;
 }
