@@ -14,12 +14,11 @@ use indy::ErrorCode;
 use sovtoken::api::sovtoken_init;
 
 
-
 #[test]
 fn sovtoken_init_executes_successfully() {
 
-    let err : ErrorCode = sovtoken_init();
+   let err : ErrorCode = sovtoken_init();
 
-    assert_eq!(err, ErrorCode::Success, "sovtoken_init did not return ErrorCode::Success");
+   assert_eq!(err, ErrorCode::Success, "sovtoken_init did not return ErrorCode::Success");
 
 }

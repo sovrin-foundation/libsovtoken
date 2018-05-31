@@ -69,7 +69,7 @@ mod fees_req_input_config_test {
     #[test]
     fn serializing_fee_struct_output_config() {
 
-        let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
+        let input = Input::new(String::from("dakjhe238yad"), 30, Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
 
         let fee: InputConfig = InputConfig {
             inputs: vec![input],
@@ -90,7 +90,7 @@ mod fees_request_test {
     fn initial_fees_request() -> Request<PaymentRequest> {
         let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
+        let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
 
         let outputs = vec![output];
         let inputs = vec![input];
@@ -115,7 +115,7 @@ mod fees_request_test {
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let input = Input::new(String::from("dakjhe238yad"),30,String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
+        let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
 
         let outputs = vec![output];
         let inputs = vec![input];
@@ -144,5 +144,4 @@ mod fees_request_test {
             |_fees_req| {}
         )
     }
-
 }

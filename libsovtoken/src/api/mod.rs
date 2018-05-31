@@ -9,26 +9,31 @@
 
 use std;
 use std::ffi::CString;
-use std::ptr;
 use std::thread;
 
 use libc::c_char;
 use indy::payments::Payment;
 use indy::ledger::Ledger;
 use indy::ErrorCode;
+use logic::add_request_fees;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
+
+use logic::fees::{Fees, Inputs, Outputs, InputSigner};
 
 use logic::config::{
     payment_config::{PaymentRequest},
     general::{InputConfig, OutputConfig},
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
-    set_fees_config::{SetFeesRequest, Fees},
+    set_fees_config::{SetFeesRequest, SetFeesConfig},
     get_fees_config::getFeesRequest,
+    // set_fees_config::{SetFeesRequest, FeesConfig},
 };
+
 use logic::request::Request;
-use logic::responses::ResponseReadRequest;
+use serde_json;
+use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::JsonDeserialize;
 use utils::general::ResultExtension;
@@ -155,13 +160,42 @@ pub extern "C" fn list_payment_addresses_handler() -> ErrorCode {
 #[no_mangle]
 pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                            wallet_handle: i32,
-                                           submitter_did: *const c_char,
+                                           did: *const c_char, // TODO: Need to remove.
                                            req_json: *const c_char,
                                            inputs_json: *const c_char,
                                            outputs_json: *const c_char,
                                            cb: Option<extern fn(command_handle_: i32,
                                                                err: ErrorCode,
                                                                req_with_fees_json: *const c_char) -> ErrorCode>) -> ErrorCode {
+
+    let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
+        Ok(tup) => tup,
+        Err(error_code) => {
+            error!("Error in deserializing the add_request_fees_handler arguments.");
+            return error_code;
+        }
+    };
+
+    /*
+        Errors when the request is a XFER request becaause the 
+        fees should be implicit in the operation's inputs and
+        outputs.
+    */
+    if let Err(_) = add_request_fees::validate_type_not_transfer(&request_json_map) {
+        error!("Can't add fees to a transfer request");
+        return ErrorCode::CommonInvalidStructure;
+    }
+
+    let serialized_request_with_fees = match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map) {
+        Ok(map) => map,
+        Err(e) => {
+            error!("Received error adding fees to request_json'");
+            return e;
+        }
+    };
+
+    cb(command_handle, ErrorCode::Success, c_pointer_from_string(serialized_request_with_fees));
+
     return ErrorCode::Success;
 }
 
@@ -210,6 +244,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                                         payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
 
+    println!("move to new line {}", "yes");
+
+    println!("build_payment_req >>> wallet is {:?}", wallet_handle);
+
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
     if cb.is_none() {
@@ -219,26 +257,54 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
        return handle_result(Err(ErrorCode::CommonInvalidParam2));
     }
 
-    let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
-        Ok(c) => c,
-        Err(e) => return handle_result(Err(e))
-    };
-
-    let inputs_config = match deserialize_from_char_ptr::<InputConfig>(inputs_json) {
-        Ok(c) => c,
-        Err(e) => return handle_result(Err(e))
-    };
-    let submitter_did = match string_from_char_ptr(submitter_did) {
+    let inputs_json_string = match string_from_char_ptr(inputs_json) {
         Some(s) => s,
         None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure;
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidParam4;
         }
     };
-    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config, submitter_did);
-    let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    return handle_result(Ok(payment_request.as_ptr()));
+    println!("inputs_json_string = {:?}", inputs_json_string);
+
+    trace!("Converting request_json pointer to string");
+    let outputs_json_string = match string_from_char_ptr(outputs_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert outputs_json pointer to string.");
+            return ErrorCode::CommonInvalidParam5;
+        }
+    };
+
+    println!("outputs_json_string = {:?}", outputs_json_string);
+
+
+    // TODO: remove pay:sov: from the addresses before signing them.
+
+    let the_input: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
+
+    let the_outputs: Outputs = serde_json::from_str(&outputs_json_string).unwrap();
+
+    let signed = Fees::sign_inputs(wallet_handle, &the_input, &the_outputs);
+
+    println!("signed = {:?}", signed);
+
+
+
+
+
+
+//    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
+//    let payment_request = payment_request.serialize_to_cstring().unwrap();
+//
+//    println!("payment_request = {:?}", payment_request);
+//
+//    return handle_result(Ok(payment_request.as_ptr()));
+
+
+
+
+    return ErrorCode::Success;
 
 }
 
@@ -321,41 +387,25 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
     };
 }
 
-/// Parses input and returns only the uxtos
+/// Description
+///
+///
 ///
 /// from tokens-interface.md/ParseGetUTXOResponseCB
-/// # Params
-/// command_handle: number
-/// resp_json: see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// #Params
+/// param1: description.
 ///
-/// # Returns
-/// see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// #Returns
+/// description. example if json, etc...
 ///
-/// # Errors
-/// ErrorCode::CommonInvalidStructure if any of the input isn't understood
-///
+/// #Errors
+/// description of errors
 #[no_mangle]
 pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   resp_json: *const c_char,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
-
-    let json_str = match str_from_char_ptr(resp_json) {
-        Some(s) => s,
-        None => return ErrorCode::CommonInvalidStructure,
-    };
-
-    let response: ResponseReadRequest = match ResponseReadRequest::from_json(&json_str) {
-        Ok(r) => r,
-        Err(e) => return ErrorCode::CommonInvalidStructure,
-    };
-
-
-
-    cb(command_handle, ErrorCode::Success, ptr::null());
     return ErrorCode::Success;
 }
 
@@ -392,12 +442,11 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
     }
 
     let fees_json_str : &str = match str_from_char_ptr(fees_json) {
-
         Some(s) => s,
         None => return handle_result(Err(ErrorCode::CommonInvalidParam2))
     };
 
-    let fees_config: Fees = match Fees::from_json(fees_json_str) {
+    let fees_config: SetFeesConfig = match SetFeesConfig::from_json(fees_json_str) {
         Ok(c) => c,
         Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure))
     };
@@ -521,7 +570,7 @@ pub extern fn sovtoken_init() -> ErrorCode {
 
     debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "pay::sov",
+        "pay:sov:",
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,

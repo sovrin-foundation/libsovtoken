@@ -16,9 +16,12 @@ pub static SOVRIN_INDICATOR: &'static str = "sov";
 /// = ":"
 pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
 
-pub static CHECKSUM_LEN: usize = 4;
+pub const CHECKSUM_LEN: usize = 4;
 
-pub static VALID_ADDRESS_LEN: usize = 32;
+pub const VERKEY_LEN: usize = 44;
+
+// 8 is for the pay:sov:
+pub const ADDRESS_LEN: usize = VERKEY_LEN + CHECKSUM_LEN + 8;
 
 
 /**
@@ -27,14 +30,14 @@ pub static VALID_ADDRESS_LEN: usize = 32;
 
     ```
     use sovtoken::logic::address::verkey_from_address;
-    let address = String::from("pay:sov:tsnhvjruaskqncfyeponHJdkeuxAejdijdeA");
+    let address = String::from("pay:sov:XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ");
     let verkey = verkey_from_address(address).unwrap();
-    assert_eq!(verkey, String::from("tsnhvjruaskqncfyeponHJdkeuxAejdi"));
+    assert_eq!(verkey, String::from("XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLX"));
     ```
 */
 pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
     let address = validate_address(address)?;
-    let verkey = &address[8..40];
+    let verkey = &address[8..VERKEY_LEN+8];
     return Ok(String::from(verkey));
 }
 
@@ -79,8 +82,7 @@ pub fn validate_address(address: String) -> Result<String, ErrorCode> {
         return Err(ErrorCode::CommonInvalidStructure);
     }
 
-    // 44 is address length;
-    if address.len() != VALID_ADDRESS_LEN + CHECKSUM_LEN + indicator.len() {
+    if address.len() != ADDRESS_LEN {
         return Err(ErrorCode::CommonInvalidStructure)
     }
 
@@ -93,8 +95,8 @@ mod address_tests {
 
     use super::*;
 
-    fn verkey_invalid_address_length(length: usize) {
-        assert!(length != VALID_ADDRESS_LEN);
+    fn verkey_invalid_address_verkey_length(length: usize) {
+        assert!(length != VERKEY_LEN);
         let verkey = rand_string(length);
         let checksum = rand_string(CHECKSUM_LEN);
         let invalid_address = format!("pay:sov:{}{}", verkey, checksum);
@@ -105,13 +107,13 @@ mod address_tests {
 
     #[test]
     fn test_verkey_invalid_address_length_long_and_short() {
-        verkey_invalid_address_length(30);
-        verkey_invalid_address_length(40);
+        verkey_invalid_address_verkey_length(40);
+        verkey_invalid_address_verkey_length(50);
     }
 
     #[test]
     fn test_verkey_invalid_address_indicator() {
-        let verkey = rand_string(VALID_ADDRESS_LEN);
+        let verkey = rand_string(VERKEY_LEN);
         let checksum = rand_string(CHECKSUM_LEN);
         let invalid_address = format!("pat:sov:{}{}", verkey, checksum);
         let result = verkey_from_address(invalid_address);
@@ -121,7 +123,7 @@ mod address_tests {
 
     #[test]
     fn test_verkey_from_address() {
-        let verkey = rand_string(VALID_ADDRESS_LEN);
+        let verkey = rand_string(VERKEY_LEN);
         let checksum = rand_string(CHECKSUM_LEN);
         let valid_address = format!("pay:sov:{}{}", verkey, checksum);
         let result = verkey_from_address(valid_address);
@@ -131,7 +133,7 @@ mod address_tests {
 
     #[test]
     fn test_success_validate_create_formatted_address_with_checksum() {
-        let address = create_formatted_address_with_checksum(rand_string(32));
+        let address = create_formatted_address_with_checksum(rand_string(VERKEY_LEN));
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -141,7 +143,7 @@ mod address_tests {
         let first_separator = &address[3..4];
         let sov_indicator = &address[4..7];
         let second_indicator = &address[7..8];
-        let result_address = &address[8..40];
+        let result_address = &address[8..52];
 
         let checksum: String = get_checksum(&address).unwrap();
 
@@ -149,19 +151,19 @@ mod address_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
+        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 32 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
     }
 
     #[test]
     fn test_get_checksum_invalid() {
-        let address = String::from("pay:sov:tsnhvjruaskqncfyeonHJdkeuxAejdijdeA");
+        let address = String::from("pay:sov:r3JT61jXZf0jwlq0K10SVRMj5bIA0tkF5bvP3pFpso7q8Ha");
         assert_eq!(get_checksum(&address).unwrap_err(), ErrorCode::CommonInvalidStructure);
     }
 
     #[test]
     fn test_get_checksum() {
-        let address = String::from("pay:sov:tsnhvjruaskqncfyeponHJdkeuxAejdijdeA");
-        assert_eq!(get_checksum(&address).unwrap(), String::from("jdeA"));
+        let address = String::from("pay:sov:r3JT61jXZf0jwlq0K10SMVRMj5bIA0tkF5bvP3pFpso7q8Ha");
+        assert_eq!(get_checksum(&address).unwrap(), String::from("q8Ha"));
     }
 }
