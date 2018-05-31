@@ -104,3 +104,128 @@ fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<F
 
     return Ok(fees);
 }
+
+
+#[cfg(test)]
+mod test_deserialize_inputs {
+    use indy::ErrorCode;
+    use libc::c_char;
+    use std::ptr;
+    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
+
+    fn call_deserialize_inputs(
+        req_json: Option<*const c_char>,
+        inputs_json: Option<*const c_char>,
+        outputs_json: Option<*const c_char>,
+        cb: Option<Option<AddRequestFeesCb>>
+    ) -> Result<DeserializedArguments, ErrorCode> {
+        let son = json!({
+            "protocolVersion": 1,
+            "operation": {
+                "type": 2,
+            }
+        });
+        let default_req_json = c_pointer_from_string(son.to_string());
+
+        let default_inputs_json = c_pointer_from_string(json!([
+            {
+                "paymentAddress": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "sequenceNumber": 2
+            },
+            {
+                "paymentAddress": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
+                "sequenceNumber": 3
+            }
+        ]).to_string());
+
+        let default_outputs_json = c_pointer_from_string(json!([
+            {
+                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "amount": 10
+            }
+        ]).to_string());
+
+        extern fn default_callback(_: i32, _: ErrorCode, _: *const c_char) -> ErrorCode {ErrorCode::Success};
+        let req_json = req_json.unwrap_or(default_req_json);
+        let inputs_json = inputs_json.unwrap_or(default_inputs_json);
+        let outputs_json = outputs_json.unwrap_or(default_outputs_json);
+        let cb = cb.unwrap_or(Some(default_callback));
+
+        return deserialize_inputs(req_json, inputs_json, outputs_json, cb);
+    }
+
+    fn error_deserialize_inputs_inputs(inputs: *const c_char, error: ErrorCode) {
+        let result = call_deserialize_inputs(None, Some(inputs), None, None);
+        assert_eq!(error, result.unwrap_err());
+    }
+
+    fn error_deserialize_inputs_ouputs(outputs: *const c_char, error: ErrorCode) {
+        let result = call_deserialize_inputs(None, None, Some(outputs), None);
+        assert_eq!(error, result.unwrap_err());
+    }
+
+    fn error_deserialize_inputs_request(request: *const c_char, error: ErrorCode) {
+        let result = call_deserialize_inputs(Some(request), None, None, None);
+        assert_eq!(error, result.unwrap_err());
+    }
+
+    fn error_deserialize_inputs_cb(cb: Option<AddRequestFeesCb>, error: ErrorCode) {
+        let result = call_deserialize_inputs(None, None, None, Some(cb));
+        assert_eq!(error, result.unwrap_err());
+    }
+
+    #[test]
+    fn deserialize_inputs_empty_inputs() {
+        error_deserialize_inputs_inputs(ptr::null(), ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_empty_outputs() {
+        error_deserialize_inputs_ouputs(ptr::null(), ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_empty_request() {
+        error_deserialize_inputs_request(ptr::null(), ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_empty_callback() {
+        error_deserialize_inputs_cb(None, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_invalid_inputs_json() {
+        let invalid_json = c_pointer_from_string(json!([
+            {
+                "paymentAddre": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "sequenceNumber": 4
+            }
+        ]).to_string());
+        error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_invalid_outputs_json() {
+        let invalid_json = c_pointer_from_string(json!([
+            {
+                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "amount": "10"
+            }
+        ]).to_string());
+        error_deserialize_inputs_ouputs(invalid_json, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_invalid_request_json() {
+        let invalid_json = c_pointer_from_str("[]");
+        error_deserialize_inputs_request(invalid_json, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn deserialize_inputs_valid() {
+        let result = call_deserialize_inputs(None, None, None, None);
+        assert!(result.is_ok());
+    }
+}

@@ -43,10 +43,6 @@ impl SetFeesRequest {
         return SetFeesRequest::new(fee.fees, identifier);
     }
 
-   // pub fn from_fee_config(fee: FeesConfig) -> Request<SetFeesRequest> {
-   //     return SetFeesRequest::new(fee.fees);
-   // }
-
 }
 
 #[cfg(test)]
