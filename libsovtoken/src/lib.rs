@@ -11,14 +11,11 @@ extern crate serde;
 extern crate sodiumoxide;
 
 #[macro_use] extern crate lazy_static;
+
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_json;
 
-#[cfg(test)]
-#[macro_use]
-extern crate serde_json;
-#[cfg(not(test))]
-extern crate serde_json;
 
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
