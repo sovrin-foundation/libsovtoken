@@ -11,7 +11,7 @@ This API call is handled by LibSovToken create_payment_address_handler
 
     command_handle: command handle to map callback to context
     wallet_handle: wallet handle where to save new address
-    payment_method: Payment method to use (for example, 'sov')
+    payment_method: Payment method to use (for example, "sov")
     config: payment address config as json:
 ```json
 {
@@ -400,8 +400,8 @@ This API call is handled by LibSovToken parse_payment_response_handler
             "seqNo": <int>,             // the sequence number of the transaction
             "txnTime": <int>,           // the posix time the transaction was written to the ledger
             "signature": <str>,         // not used in this transaction
-            "extra": <str>,             // optional field
             "signatures": <str>,        // not used in this transaction
+            "extra": <str>,             // optional field
             "reqId": <int>,             // a random identifier
             "inputs": [
                 [<str: source payment address>, <int: sequence number>, <int: signature over source payment address, sequence number, and all outputs>],
@@ -418,47 +418,50 @@ This API call is handled by LibSovToken parse_payment_response_handler
 ```
 Example resp_json:
 ```json
-    {
-        "op": "REPLY",
-        "result": {
-            "identifier": "DiHngdSyNFVs1CRcLxVA84xuKZLNhVWzSkdsnwJveKtN",
-            "outputs": [
-                ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
-                ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
-                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
-            ],
-            "seqNo": 4,
-            "rootHash": "FRkqRd5jyNRK3SGSGNoR6xMmYQvLVnotGLGWYxR1dCN4",
-            "signature": null,
-            "extra": null,
-            "inputs": [
-                ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 3, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
-                ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 3, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
-                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 3, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
-            ],
-            "signatures": null,
-            "reqId": 1527714086374556,
-            "auditPath": [
-                "6QFFFVbio2q8viWBbuVfvQsv3Qgd3Ub64Qv41i5wH8Bo", "8vDzQmeYb8ecQ7Nyv5i6V8nUwT3fsebqTHMXqgzYi1NU"
-            ],
-            "type": "10001",
-            "txnTime": 1527714130
-        }
+{
+    "op": "REPLY",
+    "result": {
+        "identifier": "QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH",
+        "type": "10001",
+        "seqNo": 4,
+        "txnTime": 1527714130,
+        "signature": null,
+        "signatures": null,
+        "extra": null,
+        "reqId": 1527714086374556,
+        "inputs": [
+            ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 3, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
+            ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 3, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
+            ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 3, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
+        ],
+        "outputs": [
+            ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+            ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
+            ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
+        ],
+        "rootHash": "FRkqRd5jyNRK3SGSGNoR6xMmYQvLVnotGLGWYxR1dCN4",
+        "auditPath": [
+            "6QFFFVbio2q8viWBbuVfvQsv3Qgd3Ub64Qv41i5wH8Bo", "8vDzQmeYb8ecQ7Nyv5i6V8nUwT3fsebqTHMXqgzYi1NU"
+        ]
     }
+}
 ```
     
 ### return:
-    utxo_json - parsed utxo info as json:
+    utxo_json: parsed utxo info as json
 ```
 {
     "ver": <int>,                    // this field is included to allow for future backward compatability
-    "utxo_json":
-        [{
+    "utxo_json": [
+        {
             "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
             "txo": <str>,           // txo string: "{\"address\": \"pay:sov:<address>\", \"seqno\": <int>}"
             "amount": <int>,        // amount of tokens in this input
             "extra": <str>          // optional data from payment transaction
-        }]
+        },
+    ]
+}
+
 ```
 Example utxo_json:
 ```json
@@ -487,23 +490,217 @@ Example utxo_json:
     }
 ```
 
+
+## method: indy_build_mint_req
+This API call is handled by LibSovToken build_mint_txn_handlerr
+
+### inputs:
+    wallet_handle: wallet handle
+    submitter_did : DID of request sender
+    outputs_json: The list of UTXO outputs as json array:
+```
+    [
+        [<str: output payment address>, <int: amount to mint>],
+    ]
+```
+Example outputs_json:
+```json
+    [
+        ["sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC", 60],
+        ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 40]
+    ]
+```
+
+### return:
+    payment_method
+    mint_req_json: Indy request for minting tokens
+```
+{
+    "reqId": <int>,             // a random identifier
+    "protocolVersion": <int>,   // the version of the client/node communication protocol
+    "operation": {
+        "type": "10000",
+        "outputs": [
+            [<str: output payment address>, <int: amount to mint>],
+        ]
+    },
+    "signatures" {
+        <str: Trustee DID>: <str: Trustee Signature over operation>,
+    }
+}
+```
+Example mint_req_json:
+```json
+{
+    "reqId": 1527799618700635,
+    "protocolVersion": 1,
+    "operation": {
+        "type": "10000",
+        "outputs": [
+            ["sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC", 60],
+            ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 40]
+        ]
+    },
+    "signatures": {
+        "E7QRhdcnhAwA6E46k9EtZo": "j7kFGUmdmCjfuDFxotwKUZTCZ6veExaZTsqwxnTi2R6EsabUFQPR2VaAhaCKpR6bqHns2d2LUqG4czAkb1fNab3",
+        "CA4bVFDU4GLbX8xZju811o": "2KmN6kGKFCb9gDiCMvC6P2uXdFC95dHXsY2BYnetiasuq837zRiyVvLDyR8ud2dzXtaKvxFw7Jb6YWEzm4JWXnDS",
+        "B8fV7naUqLATYocqu7yZ8W": "4AwJ7pBJXUBeCDXQ7tveFCd96fhYhXUysLWYc6TWp9MK2ovCMgCienpZwkMsLX3p6u5pd2oHN3WuLhbJtU6BEcr2",
+        "M9BJDuS24bqbJNvBRsoGg3": "5j2DYSL8aa442pAKaaFZAhkUCdYX6UgioaLqGLXShMubgEX1EZhAmuPTnkgP7K36hRPXjTjSSYaWBJHQH48qqv55"
+    }
+}
+```
+
 ## method: indy_build_set_txn_fees_req
 This API call is handled by LibSovToken build_set_txn_fees_handler
 
 ### inputs:
+    command_handle
+    wallet_handle: wallet handle
+    submitter_did : DID of request sender
+    payment_method
+    fees_json
+```
+{
+    <str: txnType>: <int: amount>,
+}
+```
+Example fees_json:
+```json
+{
+    "1": 4,
+    "10001": 8
+}
+```
 
 ### return:
+    set_txn_fees_json - Indy request for setting fees for transactions in the ledger
+```
+{
+    "reqId": <int>,             //random identifier
+    "protocolVersion": <int>,   // the version of the client/node communication protocol
+    "operation": {
+        "type": "20000",
+        "fees": {
+            <str: txnType>: <int: amount>,
+        }
+    },
+    "signatures": {
+        <str: Trustee DID>: <str: Trustee Signature over operation>,
+    }
+}
+```
+
+Example set_txn_fees_json:
+```json
+{
+    "reqId": 1527801087197612,
+    "protocolVersion": 1,
+    "operation": {
+        "type": "20000",
+        "fees": {
+            "1": 4,
+            "10001": 8
+        }
+    },
+    "signatures": {
+        "CA4bVFDU4GLbX8xZju811o": "67p5SSwPAKg26WJGCNWr5vHVA5U9eiWfntLjViurm4z57qnUU9Hbo3K8SZT3Q6NKFPk2RC3BBBPhcggFjkFuwL69",
+        "B8fV7naUqLATYocqu7yZ8W": "dydGPoozPnbKRKVkSwidYNCrDN6FtswGoS9roMRaALtjDC49q1DZGSKKUyoLbd1jcn3sVEpCk9rZFpEMMCMGNMF",
+        "E7QRhdcnhAwA6E46k9EtZo": "2D2TFByP4b9pj9uzibSwAPCVchgRwFanAk82k1S25XaXHit7sLbwdyPxEN1AzkQU3qUNBx1ndr69La4QuAU6K1tx",
+        "M9BJDuS24bqbJNvBRsoGg3": "5Mn8D8JBSg7pA3dpRsC2e7Zi1XskMkrurJaShF3ziFv4tM3s32dvrhe9WKz59wGRKQPGeRP1NAngZuBEGdBVgC9E"
+    }
+}
+```
 
 ## method: indy_build_get_txn_fees_req
 This API call is handled by LibSovToken build_get_txn_fees_handler
 
 ### inputs:
+    command_handle
+    wallet_handle: wallet handle
+    submitter_did : DID of request sender
+    payment_method
 
 ### return:
+    get_txn_fees_json - Indy request for getting fees for transactions in the ledger
+```
+{
+    "identifier": <str>,        // the submitter DID
+    "reqId": <int>,             // a random identifier
+    "protocolVersion": <int>,   // the version of the client/node communication protocol
+    "operation": {
+        "type": "20001"
+    }
+}
+```
+Example get_txn_fees_json:
+```json
+{
+    "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+    "reqId": 47660,
+    "protocolVersion": 1,
+    "operation": {
+        "type": "20001"
+    }
+}
+```
 
 ## method: indy_parse_get_txn_fees_response
 This API call is handled by LibSovToken parse_get_txn_fees_response_handler
 
 ### inputs:
+    command_handle
+    payment_method
+    resp_json: response from the ledger for Indy request for getting fees
+```
+{
+    "op": "REPLY",
+    "result": {
+        "identifier": <str>,        // the submitter DID
+        "reqId": <int>,             // a random identifier
+        "type": "20001",
+        "fees": {
+            <str: txnType>: <int: amount>,
+        },
+        "state_proof": {
+            "rootHash": <str>,      // the root hash of the transaction
+            "proof_nodes": <str>,   // the hash of each node in the path
+        }
+    }
+}
+```
+
+Example resp_json:
+```json
+{
+    "op": "REPLY",
+    "result": {
+        "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+        "reqId": 47660,
+        "type": "20001",
+        "fees": {
+            "10001": 8,
+            "1": 4
+        },
+        "state_proof": {
+            "root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms",
+            "proof_nodes": "29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="
+        }
+    }
+}
+```
 
 ### return:
+    fees_json
+```
+{
+    <str: txnType>: <int: amount>,
+}
+```
+
+Example fees_json:
+```json
+{
+    "10001": 8,
+    "1": 4
+}
+```
