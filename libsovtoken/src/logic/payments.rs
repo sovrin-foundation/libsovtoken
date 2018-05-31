@@ -11,8 +11,14 @@ use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
 use logic::address;
-use logic::address::{PAY_INDICATOR, SOVRIN_INDICATOR, PAYMENT_ADDRESS_FIELD_SEP, CHECKSUM_LEN, VALID_ADDRESS_LEN};
-
+use logic::address::{
+    ADDRESS_LEN,
+    CHECKSUM_LEN,
+    PAY_INDICATOR,
+    PAYMENT_ADDRESS_FIELD_SEP,
+    SOVRIN_INDICATOR,
+    VERKEY_LEN,
+};
 
 
 // ------------------------------------------------------------------
@@ -98,7 +104,7 @@ mod payments_tests {
     struct CreatePaymentSDKMockHandler {}
     impl CryptoAPI for CreatePaymentSDKMockHandler {
         fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
-            return Ok(rand_string(32));
+            return Ok(rand_string(VERKEY_LEN));
         }
     }
 
@@ -128,7 +134,7 @@ mod payments_tests {
         let first_separator = &address[3..4];
         let sov_indicator = &address[4..7];
         let second_indicator = &address[7..8];
-        let result_address = &address[8..40];
+        let result_address = &address[8..52];
 
         let checksum: String = address::get_checksum(&address).unwrap();
 
@@ -136,7 +142,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
+        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
 
     }
@@ -163,7 +169,7 @@ mod payments_tests {
         let first_separator = &address[3..4];
         let sov_indicator = &address[4..7];
         let second_indicator = &address[7..8];
-        let result_address = &address[8..40];
+        let result_address = &address[8..52];
 
         let checksum: String = address::get_checksum(&address).unwrap();
 
@@ -171,7 +177,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VALID_ADDRESS_LEN, result_address.chars().count(), "address is not 32 bytes");
+        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
 
     }
