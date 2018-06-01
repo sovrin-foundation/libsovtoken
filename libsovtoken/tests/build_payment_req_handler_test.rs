@@ -142,11 +142,11 @@ fn success_signed_request() {
     let inputs = json!([
         {
             "address": payment_address_1,
-            "sequenceNumber": 1
+            "seqno": 1
         },
         {
             "address": payment_address_2,
-            "sequenceNumber": 1,
+            "seqno": 1,
             "extra": "extra data",
         }
      ]);

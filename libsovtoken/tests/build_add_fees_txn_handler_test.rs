@@ -51,7 +51,7 @@ fn test_add_fees_to_request_valid() {
     let inputs = json!([
        {
            "address": input_address,
-           "sequenceNumber": 1,
+           "seqno": 1,
        }
     ]);
     
