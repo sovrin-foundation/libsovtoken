@@ -1,8 +1,6 @@
 //!
 //!
 
-use utils::json_conversion::JsonSerialize;
-
 use super::responses::ResponseOperations;
 
 /**

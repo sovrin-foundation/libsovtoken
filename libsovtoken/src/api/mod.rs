@@ -35,7 +35,7 @@ use logic::request::Request;
 use serde_json;
 use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
-use utils::json_conversion::JsonDeserialize;
+use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::types::*;
 use utils::validation::{validate_did_len};
@@ -429,7 +429,8 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(&response);
 
     let reply_str = reply.to_json().unwrap();
-    let reply_str_ptr = reply_str.as_ptr();
+    let reply_cstring: CString = cstring_from_str(reply_str);
+    let reply_str_ptr = reply_cstring.as_ptr();
     match cb {
         Some(b) => b(command_handle, ErrorCode::Success, reply_str_ptr),
         None => {
