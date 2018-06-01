@@ -426,6 +426,9 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     };
 
     let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
+
+    // here is where the magic happens--conversion from input structure to output structure
+    // is handled in ParseGetUtxoReply::from_response
     let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
 
     let reply_str: String = reply.to_json().unwrap();

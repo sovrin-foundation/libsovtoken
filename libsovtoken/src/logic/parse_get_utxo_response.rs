@@ -22,7 +22,7 @@ pub struct ParseGetUtxoResponseResult {
     pub address : String,
     pub identifier: String,
     pub req_id: u32,
-    pub outputs : Vec<String>,
+    pub outputs : Vec<(String, i32, i32)>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
@@ -30,7 +30,7 @@ pub struct ParseGetUtxoResponseResult {
 pub struct ParseGetUtxoResponseResultOutput {
     pub address: String,
     pub seq_no: i32,
-    pub amount: u32,
+    pub amount: i32,
 }
 
 impl ParseGetUtxoResponseResultOutput {
@@ -41,12 +41,12 @@ impl ParseGetUtxoResponseResultOutput {
         this method converts the string into ParseGetUtxoResponseResultOutput so that its easier to
         work with
     */
-    pub fn from_string(string : String ) -> ParseGetUtxoResponseResultOutput {
+    pub fn from_string(string : String ) -> ParseGetUtxoResponseResultOutput  {
 
         let parts: Vec<&str> = string.split(",").collect::<Vec<&str>>();;
         let address: String = parts[0].to_string();
         let seq_no: i32 = parts[1].to_string().parse::<i32>().unwrap();
-        let amount: u32 = parts[3].to_string().parse::<u32>().unwrap();
+        let amount: i32 = parts[3].to_string().parse::<i32>().unwrap();
 
         return ParseGetUtxoResponseResultOutput {
             address,
@@ -70,7 +70,7 @@ pub struct ParseGetUtxoReply {
 pub struct UTXO {
     pub payment_address: String,
     pub txo: TXO,
-    pub amount: u32,
+    pub amount: i32,
     pub extra: String,
 }
 
@@ -92,10 +92,10 @@ impl ParseGetUtxoReply {
 
         for unspent_output in base.result.outputs {
 
-            let output :ParseGetUtxoResponseResultOutput = ParseGetUtxoResponseResultOutput::from_string(unspent_output);
+            let (address, seq_no, amount) = unspent_output;
 
-            let txo: TXO = TXO { address : base.result.address.to_string(), seq_no: output.seq_no };
-            let utxo: UTXO = UTXO { payment_address: base.result.address.to_string(), txo, amount: output.amount, extra: "".to_string() };
+            let txo: TXO = TXO { address : base.result.address.to_string(), seq_no };
+            let utxo: UTXO = UTXO { payment_address: base.result.address.to_string(), txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);
         }
@@ -103,4 +103,14 @@ impl ParseGetUtxoReply {
         let reply: ParseGetUtxoReply = ParseGetUtxoReply { ver : 1, utxo_json : utxos};
         return reply;
     }
+}
+
+#[cfg(test)]
+mod parse_get_uto_responses_tests {
+
+    #[test]
+    fn success_parse_get_utxo_response_result_output() {
+
+    }
+
 }
