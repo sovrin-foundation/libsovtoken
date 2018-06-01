@@ -1,5 +1,4 @@
-//!
-//!
+//! types used for parse_get_utxo_response_handler
 
 use logic::responses::ResponseOperations;
 
