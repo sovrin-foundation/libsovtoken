@@ -128,12 +128,23 @@ mod parse_payment_response_tests {
                 }
             }"#;
 
+    // the PARSE_PAYMENT_RESPONSE_JSON is valid per the documentation.   If serde correctly serializes it
+    // into ParsePaymentResponse then we know the ParsePaymentResponse structure matches
     #[test]
     fn success_parse_payment_response_from_json() {
 
-        let reply: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
+        let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
 
-        assert_eq!(reply.op, ResponseOperations::REPLY);
+        assert_eq!(response.op, ResponseOperations::REPLY);
     }
+
+    // this test passes when the valid JSON defined in PARSE_PAYMENT_RESPONSE_JSON is correctly serialized into
+    // ParsePaymentResponse which is then successfully converted to ParsePaymentReply and then into json
+    #[test]
+    fn success_response_json_to_reply_json() {
+        let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
+        let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+    }
+
 
 }

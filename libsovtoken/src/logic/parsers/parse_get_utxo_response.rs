@@ -169,11 +169,23 @@ mod parse_get_uto_responses_tests {
         assert_eq!(outputs_len, reply.utxo_json.len());
     }
 
+    // the PARSE_GET_UTXO_RESPONSE_JSON is valid per the documentation.   If serde correctly serializes it
+    // into ParseGetUtxoResponse then we know the ParseGetUtxoResponse structure matches
     #[test]
     fn success_parse_get_utxo_response_from_json() {
 
-        let reply: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
+        let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
 
-        assert_eq!(reply.op, ResponseOperations::REPLY);
+        assert_eq!(response.op, ResponseOperations::REPLY);
+    }
+
+    // this test passes when the valid JSON defined in PARSE_GET_UTXO_RESPONSE_JSON is correctly serialized into
+    // ParseGetUtxoResponse which is then successfully converted to ParseGetUtxoReply and then into json
+    #[test]
+    fn success_response_json_to_reply_json() {
+
+        let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+        let reply_json : String = reply.to_json().unwrap();
     }
 }
