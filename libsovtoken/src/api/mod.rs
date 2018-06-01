@@ -27,14 +27,16 @@ use logic::config::{
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},
-    get_fees_config::getFeesRequest,
+    get_fees_config::GetFeesRequest,
+    get_utxo_config::*,
 };
 
+use logic::parsers::parse_get_utxo_response::*;
 use logic::request::Request;
 use serde_json;
 use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
-use utils::json_conversion::JsonDeserialize;
+use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::types::*;
 use utils::validation::{validate_did_len};
@@ -338,8 +340,8 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: JsonCallback)-> ErrorCode {
 
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
-    // * C_CHAR to &str
+    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+
     let submitter_did = match str_from_char_ptr(submitter_did) {
         Some(s) => s,
         None => {
@@ -361,18 +363,10 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    if let Err(e) = validate_address(String::from(payment_address)) {
-        return e;
-    }
+    let utxo_request = GetUtxoRequest::new(String::from(payment_address), String::from(submitter_did));
+    let utxo_request = utxo_request.serialize_to_cstring().unwrap();
 
-    // start the CBs
-    return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
-        Ok((txn_req, ..)) => {
-            cb(command_handle, ErrorCode::Success, c_pointer_from_string(txn_req));
-            ErrorCode::Success
-        },
-        Err(e) => e
-    };
+    handle_result(Ok(utxo_request.as_ptr()))
 }
 
 /// Description
@@ -381,19 +375,46 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 ///
 /// from tokens-interface.md/ParseGetUTXOResponseCB
 /// #Params
-/// param1: description.
+/// command_handle: standard command handle
+/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// #Returns
-/// description. example if json, etc...
+/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// #Errors
-/// description of errors
+/// CommonInvalidStructure when any of the inputs are invalid
+/// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
 pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   resp_json: *const c_char,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
+
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure;
+    }
+
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
+
+    // here is where the magic happens--conversion from input structure to output structure
+    // is handled in ParseGetUtxoReply::from_response
+    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+
+    let reply_str: String = reply.to_json().unwrap();
+    let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
+
+    cb(command_handle, ErrorCode::Success, reply_str_ptr);
     return ErrorCode::Success;
 }
 
@@ -486,7 +507,7 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         }
     };
 
-    let get_txn_request = getFeesRequest::new(submitter_did);
+    let get_txn_request = GetFeesRequest::new(submitter_did);
 
     let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
 
