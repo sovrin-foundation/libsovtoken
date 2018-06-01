@@ -30,7 +30,7 @@ use logic::config::{
     get_fees_config::getFeesRequest,
 };
 
-use logic::parse_get_utxo_response::*;
+use logic::parsers::parse_get_utxo_response::*;
 use logic::request::Request;
 use serde_json;
 use serde::de::Error;
