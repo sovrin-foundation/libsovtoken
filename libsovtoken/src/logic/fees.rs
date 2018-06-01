@@ -10,11 +10,8 @@ use serde_json;
 use indy::ErrorCode;
 use logic::address;
 use logic::indysdk_api::CryptoAPI;
-use logic::input::Input;
-use logic::output::Output;
-
-pub type Inputs = Vec<Input>;
-pub type Outputs = Vec<Output>;
+use logic::input::{Input, Inputs};
+use logic::output::{Outputs};
 
 /**
  * Holds `inputs` and `outputs`
@@ -135,6 +132,7 @@ trait InputSigner<A: CryptoAPI> {
 mod test_fees {
     use super::*;
     use logic::config::payment_address_config::PaymentAddressConfig;
+    use logic::output::Output;
 
     struct CryptoApiHandler {}
     impl CryptoAPI for CryptoApiHandler {
@@ -142,7 +140,7 @@ mod test_fees {
             return Err(ErrorCode::CommonInvalidState);
         }
 
-        fn indy_crypto_sign(&self, _wallet_handle: IndyHandle, verkey: String, message: String) -> Result<String, ErrorCode> {
+        fn indy_crypto_sign(&self, _wallet_handle: IndyHandle, verkey: String, _message: String) -> Result<String, ErrorCode> {
             return Ok(verkey + "signed");
         } 
     }

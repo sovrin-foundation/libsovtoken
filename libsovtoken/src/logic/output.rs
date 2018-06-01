@@ -5,6 +5,20 @@
 use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use std::fmt;
 
+pub type Outputs = Vec<Output>;
+
+/**
+ * Config which holds a vec of [`Output`]s
+ * 
+ * Also has a version for backward compatability.
+ * 
+ * [`Outputs`]: Output
+ */
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub struct OutputConfig {
+    pub ver: u8,
+    pub outputs: Outputs,
+}
 
 /**
     Struct which holds a payment address, token amount, and extra data.

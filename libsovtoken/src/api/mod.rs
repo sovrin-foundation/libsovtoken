@@ -19,11 +19,12 @@ use logic::add_request_fees;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
-use logic::fees::{Fees, Inputs, Outputs};
+use logic::fees::Fees;
+use logic::input::{Inputs, InputConfig};
+use logic::output::{Outputs, OutputConfig};
 
 use logic::config::{
     payment_config::{PaymentRequest},
-    general::{InputConfig, OutputConfig},
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},

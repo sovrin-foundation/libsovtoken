@@ -5,6 +5,22 @@
 use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use std::fmt;
 
+pub type Inputs = Vec<Input>;
+
+/**
+ * Config which holds a vec of [`Input`]s
+ * 
+ * Also has a version for backward compatability.
+ * 
+ * [`Inputs`]: Input
+ */
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub struct InputConfig {
+    pub ver: u8,
+    pub inputs: Inputs,
+}
+
+
 /**
     Struct which holds a payment address, sequence_number, signature, and extra data.
 

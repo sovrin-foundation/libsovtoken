@@ -6,17 +6,16 @@
  */
 use logic::request::Request;
 
-use logic::input::Input;
-use logic::output::Output;
-use super::general::{InputConfig, OutputConfig};
+use logic::input::{Input, Inputs, InputConfig};
+use logic::output::{Output, Outputs, OutputConfig};
 
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct PaymentRequest {
     #[serde(rename = "type")]
     txn_type: &'static str,
-    inputs: Vec<(Input)>,
-    outputs: Vec<(Output)>,
+    inputs: Inputs,
+    outputs: Outputs,
 }
 
 /**
@@ -53,9 +52,10 @@ mod fees_req_output_config_test {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
 
         let fee: OutputConfig = OutputConfig {
+            ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
     }
 }
 
@@ -72,9 +72,10 @@ mod fees_req_input_config_test {
         let input = Input::new(String::from("dakjhe238yad"), 30, Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
 
         let fee: InputConfig = InputConfig {
+            ver: 1,
             inputs: vec![input],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"inputs":[["dakjhe238yad",30,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"inputs":[["dakjhe238yad",30,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
     }
 }
 
@@ -121,10 +122,12 @@ mod fees_request_test {
         let inputs = vec![input];
 
         let output_config = OutputConfig {
+            ver: 1,
             outputs: outputs.clone()
         };
 
         let input_config = InputConfig {
+            ver: 1,
             inputs: inputs.clone()
         };
 

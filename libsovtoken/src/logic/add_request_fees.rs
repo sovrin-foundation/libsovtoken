@@ -1,6 +1,8 @@
 use indy::{ErrorCode};
 use libc::c_char;
-use logic::fees::{Inputs, Outputs, Fees};
+use logic::fees::Fees;
+use logic::input::{InputConfig, Inputs};
+use logic::output::{OutputConfig, Outputs};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
 use logic::payments::CreatePaymentSDK;
@@ -30,11 +32,11 @@ pub fn deserialize_inputs (
     let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let inputs: Inputs = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized inputs >>> {:?}", inputs);
+    let input_config: InputConfig = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    debug!("Deserialized input_json >>> {:?}", input_config);
 
-    let outputs: Outputs = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized outputs >>> {:?}", outputs);
+    let output_config: OutputConfig = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    debug!("Deserialized output_json >>> {:?}", output_config);
 
     let request_json_object: serde_json::Value = serde_json::from_str(&request_json).or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Converted request_json to serde::json::Value");
@@ -43,8 +45,8 @@ pub fn deserialize_inputs (
     trace!("Converted request_json to hash_map");
 
     return Ok((
-        inputs,
-        outputs,
+        input_config.inputs,
+        output_config.outputs,
         request_json_map.to_owned(),
         cb,
     ));
@@ -126,23 +128,29 @@ mod test_deserialize_inputs {
         });
         let default_req_json = c_pointer_from_string(son.to_string());
 
-        let default_inputs_json = c_pointer_from_string(json!([
-            {
-                "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
-                "seqno": 2
-            },
-            {
-                "address": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
-                "seqno": 3
-            }
-        ]).to_string());
+        let default_inputs_json = c_pointer_from_string(json!({
+            "ver": 1,
+            "inputs": [
+                {
+                    "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                    "seqno": 2
+                },
+                {
+                    "address": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
+                    "seqno": 3
+                }
+            ]
+        }).to_string());
 
-        let default_outputs_json = c_pointer_from_string(json!([
-            {
-                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
-                "amount": 10
-            }
-        ]).to_string());
+        let default_outputs_json = c_pointer_from_string(json!({
+            "ver": 1,
+            "outputs": [
+                {
+                    "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                    "amount": 10
+                }
+            ]
+        }).to_string());
 
         extern fn default_callback(_: i32, _: ErrorCode, _: *const c_char) -> ErrorCode {ErrorCode::Success};
         let req_json = req_json.unwrap_or(default_req_json);

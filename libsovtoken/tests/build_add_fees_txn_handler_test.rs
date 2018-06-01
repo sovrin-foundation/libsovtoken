@@ -48,19 +48,21 @@ fn test_add_fees_to_request_valid() {
        }
     });
 
-    let inputs = json!([
-       {
-           "address": input_address,
-           "seqno": 1,
-       }
-    ]);
+    let inputs = json!({
+        "ver": 1,
+        "inputs": [{
+            "address": input_address,
+            "seqno": 1,
+        }]
+    });
     
-    let outputs = json!([
-       {
-           "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
-           "amount": 20,
-       }
-    ]);
+    let outputs = json!({
+        "ver": 1,
+        "outputs": [{
+            "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+            "amount": 20,
+        }]
+    });
 
     let expected_fees_request = json!({
        "fees": {
