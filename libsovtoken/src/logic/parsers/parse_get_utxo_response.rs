@@ -119,9 +119,35 @@ mod parse_get_uto_responses_tests {
         };
 
         let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
-        
+
         assert_eq!(outputs_len, reply.utxo_json.len());
 
     }
 
+    #[test]
+    fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
+        let address: String = rand_string(32);
+        let identifier: String = rand_req_id().to_string();
+        let mut outputs: Vec<(String, i32, i32)> = Vec::new();
+
+        let outputs_len: usize = outputs.len();
+
+        let result: ParseGetUtxoResponseResult = ParseGetUtxoResponseResult {
+            txn_type : "1002".to_string(),
+            address,
+            identifier,
+            req_id: 123457890,
+            outputs
+        };
+
+        let response: ParseGetUtxoResponse = ParseGetUtxoResponse {
+            op : ResponseOperations::REPLY,
+            protocol_version: 1,
+            result
+        };
+
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+
+        assert_eq!(outputs_len, reply.utxo_json.len());
+    }
 }
