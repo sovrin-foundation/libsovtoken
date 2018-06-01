@@ -133,11 +133,11 @@ mod test_deserialize_inputs {
             "inputs": [
                 {
                     "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
-                    "seqno": 2
+                    "seqNo": 2
                 },
                 {
                     "address": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
-                    "seqno": 3
+                    "seqNo": 3
                 }
             ]
         }).to_string());
@@ -206,7 +206,7 @@ mod test_deserialize_inputs {
         let invalid_json = c_pointer_from_string(json!([
             {
                 "addres": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
-                "seqno": 4
+                "seqNo": 4
             }
         ]).to_string());
         error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);

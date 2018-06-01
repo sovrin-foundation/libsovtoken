@@ -58,7 +58,7 @@ impl Fees {
     /** 
      * Signs [`Inputs`]
      * 
-     * Validates that inputs and outputs both have a valid `payment_address`.
+     * Validates that inputs and outputs both have a valid `address`.
      * Signs each [`Input`] with [`sign_input`]
      * 
      * [`Input`]: Input
@@ -66,16 +66,16 @@ impl Fees {
      */
     pub fn sign<A: CryptoAPI>(mut self, crypto_api: A, wallet_handle: IndyHandle) -> Result<Fees, ErrorCode> {
         for output in &mut self.outputs {
-            let address = address::verkey_checksum_from_address(output.payment_address.clone())?;
-            output.payment_address = address;
+            let address = address::verkey_checksum_from_address(output.address.clone())?;
+            output.address = address;
         }
         trace!("indicator stripped from outputs");
 
         self.inputs = Fees::sign_inputs(&crypto_api, wallet_handle, &self.inputs, &self.outputs)?;
 
         for input in &mut self.inputs {
-            let address = address::verkey_checksum_from_address(input.payment_address.clone())?;
-            input.payment_address = address;
+            let address = address::verkey_checksum_from_address(input.address.clone())?;
+            input.address = address;
         } 
         trace!("indicator stripped from inputs");
         return Ok(self);
@@ -97,9 +97,9 @@ trait InputSigner<A: CryptoAPI> {
     /**
      * Signs an [`Input`] with indy_crypto_sign
      * 
-     * Validates the `input`'s `payment_address`, but not the `outputs`.
+     * Validates the `input`'s `address`, but not the `outputs`.
      * The message that will be signed is
-     * `[[<payment_address>, <sequence_number>], [<Output>, <Output>, ...]]`
+     * `[[<address>, <seq_no>], [<Output>, <Output>, ...]]`
      * 
      * [`Input`]: Input
      */
@@ -110,10 +110,10 @@ trait InputSigner<A: CryptoAPI> {
             return Err(ErrorCode::CommonInvalidStructure);
         }
 
-        let verkey = address::verkey_from_address(input.payment_address.clone())?;
+        let verkey = address::verkey_from_address(input.address.clone())?;
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
-        let message_json_value = json!([[input.payment_address, input.sequence_number], outputs]);
+        let message_json_value = json!([[input.address, input.seq_no], outputs]);
         debug!("Message to sign >>> {:?}", message_json_value);
 
         let message = serde_json::to_string(&message_json_value)
@@ -173,7 +173,7 @@ mod test_fees {
         let wallet_handle = 1;
         let (mut inputs, outputs) = inputs_outputs_valid();
 
-        String::remove(&mut inputs[0].payment_address, 5);
+        String::remove(&mut inputs[0].address, 5);
 
         let signed_input = Fees::sign_input(&CryptoApiHandler{}, wallet_handle, &inputs[0], &outputs).unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
@@ -203,7 +203,7 @@ mod test_fees {
     fn sign_multi_input_invalid_input_address() {
         let wallet_handle = 1;
         let (mut inputs, outputs) = inputs_outputs_valid();
-        String::remove(&mut inputs[0].payment_address, 5);
+        String::remove(&mut inputs[0].address, 5);
 
         let signed_inputs = Fees::sign_inputs(&CryptoApiHandler{}, wallet_handle, &inputs, &outputs).unwrap_err();
 
@@ -228,7 +228,7 @@ mod test_fees {
     fn sign_fees_invalid_address_output() {
         let wallet_handle = 1;
         let (inputs, mut outputs) = inputs_outputs_valid();
-        String::remove(&mut outputs[0].payment_address, 5);
+        String::remove(&mut outputs[0].address, 5);
 
         let fees = Fees::new(inputs, outputs);
         let signed_fees = fees.sign(CryptoApiHandler{}, wallet_handle).unwrap_err();
@@ -240,7 +240,7 @@ mod test_fees {
     fn sign_address_inputs_invalid_addresss() {
         let wallet_handle = 1;
         let (mut inputs, outputs) = inputs_outputs_valid();
-        String::remove(&mut inputs[0].payment_address, 13);
+        String::remove(&mut inputs[0].address, 13);
 
         let signed_fees = Fees::new(inputs, outputs).sign(CryptoApiHandler{}, wallet_handle).unwrap_err();
 

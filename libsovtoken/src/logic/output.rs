@@ -24,7 +24,7 @@ pub struct OutputConfig {
     Struct which holds a payment address, token amount, and extra data.
 
     ```text
-    // (payment_address, token_amount)
+    // (address, token_amount)
     ("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5)
     ```
 
@@ -66,21 +66,21 @@ pub struct OutputConfig {
 */
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Output {
-    pub payment_address: String,
+    pub address: String,
     pub amount: u32,
     pub extra: Option<String>,
 }
 
 impl Output {
-    pub fn new(payment_address: String, amount: u32, extra: Option<String>) -> Output {
-        return Output { payment_address, amount, extra };
+    pub fn new(address: String, amount: u32, extra: Option<String>) -> Output {
+        return Output { address, amount, extra };
     }
 }
 
 impl Serialize for Output {
     fn serialize<S: ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_tuple(2)?;
-        seq.serialize_element(&self.payment_address)?;
+        seq.serialize_element(&self.address)?;
         seq.serialize_element(&self.amount)?;
         return seq.end();
     }
@@ -98,7 +98,7 @@ impl<'de> Deserialize<'de> for Output {
             }
 
             fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Output, V::Error> {
-                let payment_address = seq
+                let address = seq
                     .next_element()?
                     .ok_or(de::Error::invalid_length(0, &"2"))?;
 
@@ -108,27 +108,27 @@ impl<'de> Deserialize<'de> for Output {
 
                 let extra = None;
 
-                return Ok(Output::new(payment_address, amount, extra));
+                return Ok(Output::new(address, amount, extra));
             }
 
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Output, V::Error> {
-                let mut payment_address = None;
+                let mut address = None;
                 let mut amount = None;
                 let mut extra = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "address" => { payment_address = map.next_value()?; },
+                        "address" => { address = map.next_value()?; },
                         "amount" => { amount =  map.next_value()?; },
                         "extra" => { extra = map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let payment_address = payment_address.ok_or(de::Error::missing_field("address"))?;
+                let address = address.ok_or(de::Error::missing_field("address"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
-                return Ok(Output::new(payment_address, amount, extra));
+                return Ok(Output::new(address, amount, extra));
             }
         }
 

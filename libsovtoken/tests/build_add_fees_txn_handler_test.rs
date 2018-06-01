@@ -52,7 +52,7 @@ fn test_add_fees_to_request_valid() {
         "ver": 1,
         "inputs": [{
             "address": input_address,
-            "seqno": 1,
+            "seqNo": 1,
         }]
     });
     

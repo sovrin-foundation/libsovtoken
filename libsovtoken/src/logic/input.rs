@@ -22,13 +22,13 @@ pub struct InputConfig {
 
 
 /**
-    Struct which holds a payment address, sequence_number, signature, and extra data.
+    Struct which holds an address, seq_no, signature, and extra data.
 
     # Deserialization
     Input can be deserialized from an array or an object. Both are valid:
 
     ## From Array
-    An array with the format of `[address, seqno, signature]`.
+    An array with the format of `[address, seq_no, signature]`.
     When deserializing from an array, the signature is required.
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
@@ -40,7 +40,7 @@ pub struct InputConfig {
     ## From Object
     ### Required Fields
     * address
-    * seqno
+    * seq_no
 
     ### Optional Fields
     * signature
@@ -51,7 +51,7 @@ pub struct InputConfig {
     use sovtoken::logic::input::Input;
     let json = r#"{
         "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
-        "seqno": 30,
+        "seqNo": 30,
         "signature": "239asdkj3298uadkljasd98u234ijasdlkj"
     }"#;
     let input = Input::from_json(json);
@@ -74,29 +74,29 @@ pub struct InputConfig {
 */
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
-    pub payment_address: String,
-    pub sequence_number: u32,
+    pub address: String,
+    pub seq_no: u32,
     pub signature: Option<String>,
     pub extra: Option<String>,
 }
 
 impl Input {
-    pub fn new(payment_address: String, sequence_number: u32, signature: Option<String>) -> Input {
-        return Input { payment_address, sequence_number, signature, extra: None};
+    pub fn new(address: String, seq_no: u32, signature: Option<String>) -> Input {
+        return Input { address, seq_no, signature, extra: None};
     }
 
     pub fn new_with_extra(
-        payment_address: String,
-        sequence_number: u32,
+        address: String,
+        seq_no: u32,
         signature: Option<String>,
         extra: Option<String>
     ) -> Input
     {
-        return Input { payment_address, sequence_number, signature, extra }
+        return Input { address, seq_no, signature, extra }
     }
 
     pub fn sign_with(self, signature: String) -> Self {
-        return Input::new(self.payment_address, self.sequence_number, Some(signature));
+        return Input::new(self.address, self.seq_no, Some(signature));
     }
 }
 
@@ -107,8 +107,8 @@ impl Serialize for Input {
         }
 
         let mut seq = serializer.serialize_tuple(2)?;
-        seq.serialize_element(&self.payment_address)?;
-        seq.serialize_element(&self.sequence_number)?;
+        seq.serialize_element(&self.address)?;
+        seq.serialize_element(&self.seq_no)?;
         seq.serialize_element(&self.signature)?;
         return seq.end();
     }
@@ -122,15 +122,15 @@ impl<'de> Deserialize<'de> for Input {
             type Value = Input;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                return formatter.write_str("Expected an Input with address and sequence_number.");
+                return formatter.write_str("Expected an Input with address and seqNo.");
             }
 
             fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Input, V::Error> {
-                let payment_address = seq
+                let address = seq
                     .next_element()?
                     .ok_or(de::Error::invalid_length(0, &"3"))?;
 
-                let sequence_number = seq
+                let seq_no = seq
                     .next_element()?
                     .ok_or(de::Error::invalid_length(1, &"3"))?;
 
@@ -138,34 +138,34 @@ impl<'de> Deserialize<'de> for Input {
                     .next_element()?
                     .ok_or(de::Error::invalid_length(2, &"3"))?;
 
-                return Ok(Input::new(payment_address, sequence_number, signature));
+                return Ok(Input::new(address, seq_no, signature));
             }
 
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Input, V::Error> {
-                let mut payment_address = None;
-                let mut sequence_number = None;
+                let mut address = None;
+                let mut seq_no = None;
                 let mut signature = None;
                 let mut extra = None;
 
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "address" => { payment_address = map.next_value()?; },
-                        "seqno" => { sequence_number =  map.next_value()?; },
+                        "address" => { address = map.next_value()?; },
+                        "seqNo" => { seq_no =  map.next_value()?; },
                         "signature" => { signature = map.next_value()?; },
                         "extra" => { extra = map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let payment_address = payment_address.ok_or(de::Error::missing_field("address"))?;
-                let sequence_number = sequence_number.ok_or( de::Error::missing_field("seqno"))?;
+                let address = address.ok_or(de::Error::missing_field("address"))?;
+                let seq_no = seq_no.ok_or( de::Error::missing_field("seqNo"))?;
 
-                return Ok(Input::new_with_extra(payment_address, sequence_number, signature, extra));
+                return Ok(Input::new_with_extra(address, seq_no, signature, extra));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["address", "seqno", "signature"];
+        const FIELDS: &'static [&'static str] = &["address", "seqNo", "signature"];
         return deserializer.deserialize_struct("Input", FIELDS, InputVisitor);
     }
 }
@@ -206,11 +206,11 @@ mod input_tests {
     }
 
     fn input_with_extra() -> Input {
-        let payment_address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
-        let sequence_number = 30;
+        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        let seq_no = 30;
         let signature = Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj"));
         let extra = Some(String::from("This is an extra string."));
-        return Input::new_with_extra(payment_address, sequence_number, signature, extra);
+        return Input::new_with_extra(address, seq_no, signature, extra);
     }
 
     fn input_without_extra() -> Input {
@@ -249,14 +249,14 @@ mod input_tests {
             "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         });
-        assert_invalid_deserialize(json, "missing field `seqno`");
+        assert_invalid_deserialize(json, "missing field `seqNo`");
     }
 
     #[test]
     fn deserialize_input_object_without_signature_or_extra() {
         let json = json!({
             "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
-            "seqno": 30,
+            "seqNo": 30,
         });
         let input = input_without_extra_or_signature();
         assert_valid_deserialize(json, input);
@@ -267,7 +267,7 @@ mod input_tests {
     fn deserialize_input_object_without_extra() {
         let json = json!({
             "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
-            "seqno": 30,
+            "seqNo": 30,
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         });
         let input = input_without_extra();
@@ -278,7 +278,7 @@ mod input_tests {
     fn deserialize_input_object_with_extra() {
         let json = json!({
             "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
-            "seqno": 30,
+            "seqNo": 30,
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
             "extra": "This is an extra string.",
         });
@@ -310,8 +310,8 @@ mod input_tests {
     fn sign_input() {
         let input = Input::new(String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 30, None);
         let signed_input = input.sign_with(String::from("3aRkv0kyRjCYu7SazNpbOzJPhKWlQDFBU7Judz16nx6CzAUsp06q2PaPWmKh"));
-        assert_eq!(signed_input.payment_address, String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"));
-        assert_eq!(signed_input.sequence_number, 30);
+        assert_eq!(signed_input.address, String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"));
+        assert_eq!(signed_input.seq_no, 30);
         assert_eq!(signed_input.signature.unwrap(), String::from("3aRkv0kyRjCYu7SazNpbOzJPhKWlQDFBU7Judz16nx6CzAUsp06q2PaPWmKh"));
     }
 }
