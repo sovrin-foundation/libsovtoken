@@ -14,6 +14,10 @@ pub struct ParseGetUtxoResponse {
     pub result : ParseGetUtxoResponseResult,
 }
 
+/**
+    ParseGetUtxoResponseResult is the structure for the result
+    member of ParseGetUtxoResponse
+*/
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ParseGetUtxoResponseResult {
@@ -25,14 +29,6 @@ pub struct ParseGetUtxoResponseResult {
     pub outputs : Vec<(String, i32, i32)>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct ParseGetUtxoResponseResultOutput {
-    pub address: String,
-    pub seq_no: i32,
-    pub amount: i32,
-}
-
 /**
    for parse_get_utxo_response_handler output parameter utxo_json
 */
@@ -42,6 +38,10 @@ pub struct ParseGetUtxoReply {
     pub utxo_json : Vec<UTXO>,
 }
 
+/**
+    UTXO is the structure for the data member utxo_json for the
+    ParseGetUtxoReply type
+*/
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UTXO {
@@ -51,6 +51,9 @@ pub struct UTXO {
     pub extra: String,
 }
 
+/**
+   TXO is the structure for the data member txo of UTXO structure
+*/
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TXO {
@@ -71,7 +74,7 @@ impl ParseGetUtxoReply {
 
             let (address, seq_no, amount) = unspent_output;
 
-            let txo: TXO = TXO { address : base.result.address.to_string(), seq_no };
+            let txo: TXO = TXO { address, seq_no };
             let utxo: UTXO = UTXO { payment_address: base.result.address.to_string(), txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);
@@ -94,7 +97,7 @@ mod parse_get_uto_responses_tests {
 
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, i32, i32)> = vec![];
+        let mut outputs: Vec<(String, i32, i32)> = Vec::new();
 
         outputs.push((rand_string(32), 1, 10));
         outputs.push((rand_string(32), 2, 20));
@@ -116,8 +119,7 @@ mod parse_get_uto_responses_tests {
         };
 
         let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
-
-        println!("{:?}", reply);
+        
         assert_eq!(outputs_len, reply.utxo_json.len());
 
     }

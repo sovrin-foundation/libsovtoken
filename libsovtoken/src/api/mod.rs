@@ -335,7 +335,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  cb: JsonCallback)-> ErrorCode {
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-    // * C_CHAR to &str
+
     let submitter_did = match str_from_char_ptr(submitter_did) {
         Some(s) => s,
         None => {
@@ -385,12 +385,10 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
 
-    if cb.is_none() {
-        return ErrorCode::CommonInvalidStructure;
-    }
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
 
     if resp_json.is_null() {
-        return ErrorCode::CommonInvalidStructure
+        return ErrorCode::CommonInvalidStructure;
     }
 
     let resp_json_string = match string_from_char_ptr(resp_json) {
@@ -408,16 +406,9 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
 
     let reply_str: String = reply.to_json().unwrap();
-    let reply_cstring: CString = cstring_from_str(reply_str);
-    let reply_str_ptr: *const c_char = reply_cstring.as_ptr();
-    match cb {
-        Some(b) => b(command_handle, ErrorCode::Success, reply_str_ptr),
-        None => {
-            error!("cb is null even after check");
-            return ErrorCode::CommonInvalidState;
-        }
-    };
+    let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
+    cb(command_handle, ErrorCode::Success, reply_str_ptr);
     return ErrorCode::Success;
 }
 
