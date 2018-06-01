@@ -21,3 +21,7 @@ pub struct ParseGetTxnFeesResult {
     txn_type : String,
     fees : Vec<(String, i32)>
 }
+
+publ struct ParseFeesMap {
+    pub
+}
