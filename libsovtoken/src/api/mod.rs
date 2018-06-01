@@ -279,9 +279,6 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
     println!("outputs_json_string = {:?}", outputs_json_string);
 
-
-    // TODO: remove pay:sov: from the addresses before signing them.
-
     let the_input: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
 
     let the_outputs: Outputs = serde_json::from_str(&outputs_json_string).unwrap();
@@ -290,21 +287,6 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     let fees_signed = fees.sign(CreatePaymentSDK{}, wallet_handle).unwrap();
 
     println!("signed = {:?}", fees_signed);
-
-
-
-
-
-
-//    let payment_request = PaymentRequest::from_config(outputs_config,inputs_config);
-//    let payment_request = payment_request.serialize_to_cstring().unwrap();
-//
-//    println!("payment_request = {:?}", payment_request);
-//
-//    return handle_result(Ok(payment_request.as_ptr()));
-
-
-
 
     return ErrorCode::Success;
 
