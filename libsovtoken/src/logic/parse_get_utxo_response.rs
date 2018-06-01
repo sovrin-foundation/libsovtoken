@@ -33,29 +33,6 @@ pub struct ParseGetUtxoResponseResultOutput {
     pub amount: i32,
 }
 
-impl ParseGetUtxoResponseResultOutput {
-    /**
-        per https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
-        outputs is sent to libsovtoken as "<str: address>", <int: sequence number>, <int: amount>
-
-        this method converts the string into ParseGetUtxoResponseResultOutput so that its easier to
-        work with
-    */
-    pub fn from_string(string : String ) -> ParseGetUtxoResponseResultOutput  {
-
-        let parts: Vec<&str> = string.split(",").collect::<Vec<&str>>();;
-        let address: String = parts[0].to_string();
-        let seq_no: i32 = parts[1].to_string().parse::<i32>().unwrap();
-        let amount: i32 = parts[3].to_string().parse::<i32>().unwrap();
-
-        return ParseGetUtxoResponseResultOutput {
-            address,
-            seq_no,
-            amount
-        };
-    }
-}
-
 /**
    for parse_get_utxo_response_handler output parameter utxo_json
 */
@@ -107,10 +84,5 @@ impl ParseGetUtxoReply {
 
 #[cfg(test)]
 mod parse_get_uto_responses_tests {
-
-    #[test]
-    fn success_parse_get_utxo_response_result_output() {
-
-    }
 
 }
