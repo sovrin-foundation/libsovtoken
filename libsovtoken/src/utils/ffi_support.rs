@@ -47,11 +47,17 @@ pub fn cstring_from_str(string: String) -> CString {
 */
 pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_char) -> Result<S, ErrorCode> {
     let json_string = str_from_char_ptr(str_ptr).ok_or(ErrorCode::CommonInvalidStructure)?;
+    println!("deserializing = {:?}",json_string);
+
     let result = S::from_json(json_string).map_err(|_| ErrorCode::CommonInvalidStructure);
     return result;
 }
 
 pub fn c_pointer_from_string(string: String) -> *const c_char {
+    return c_pointer_from_str(&string);
+}
+
+pub fn c_pointer_from_str(string: &str) -> *const c_char {
     let cstring = CString::new(string).unwrap();
     return Box::new(cstring).into_raw();
 }
@@ -93,7 +99,7 @@ mod ffi_support_tests {
     use libc::c_char;
     use serde_json::Value;
     use utils::general::ResultExtension;
-    use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr};
+    use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr, c_pointer_from_string, string_from_char_ptr};
     use indy::ErrorCode;
 
     static VALID_DUMMY_JSON: &'static str = r#"{"field1":"data"}"#;
@@ -116,6 +122,14 @@ mod ffi_support_tests {
         let json: Option<&str> = str_from_char_ptr(ptr::null());
 
         assert_eq!(None, json, "str_from_char_ptr didn't return None as expected");
+    }
+
+    #[test]
+    fn test_c_pointer_from_string() {
+        let string = String::from("test1234");
+        let pointer = c_pointer_from_string(string.clone());
+        let string2 = string_from_char_ptr(pointer).unwrap();
+        assert_eq!(string2, string);
     }
 
     #[test]

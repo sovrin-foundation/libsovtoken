@@ -2,6 +2,7 @@
 //!  Implementations for Serde Json serialization/deserialization
 //!
 
+use indy::ErrorCode;
 use serde::{Serialize, Deserialize};
 use serde_json::{Error, from_str, to_string};
 
@@ -12,6 +13,14 @@ use serde_json::{Error, from_str, to_string};
 pub trait JsonDeserialize<'a>: Deserialize<'a> {
     fn from_json(json: &'a str) -> Result<Self, Error> {
         from_str(json)
+    }
+
+    /**
+     *  Deserializes and maps the serde error to `ErrorCode::CommonInvalidStructure`.
+     */
+    fn from_json_error_code(json: &'a str) -> Result<Self, ErrorCode> {
+        Self::from_json(json)
+            .map_err(|_| ErrorCode::CommonInvalidStructure)
     }
 }
 
@@ -43,6 +52,7 @@ impl<T:Serialize> JsonSerialize for T { }
 mod json_conversion_tests {
     
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+    use indy::ErrorCode;
 
     // helper structures and data
     #[derive(Debug, Serialize, Deserialize)]
@@ -92,6 +102,19 @@ mod json_conversion_tests {
 
         assert_eq!(FIELD1_VALUE, result.field1, "decoding default json failed");
         assert_eq!(instance.field1, result.field1, "comparison of objects failed");
+    }
+
+    #[test]
+    fn invalid_from_json_error_code() {
+        let bad_json = "{abc}";
+        let error_code = DummyJsonStruct::from_json_error_code(bad_json).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, error_code);
+    }
+
+    #[test]
+    fn valid_from_json_error_code() {
+        let dummy_struct = DummyJsonStruct::from_json(VALID_DUMMY_JSON).unwrap();
+        assert_eq!("data", dummy_struct.field1);
     }
 
 }
