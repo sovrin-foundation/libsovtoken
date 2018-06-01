@@ -306,7 +306,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    let utxo_request = getUtxoRequest::new(String::from(payment_address), String::from(submitter_did));
+    let utxo_request = GetUtxoRequest::new(String::from(payment_address), String::from(submitter_did));
     let utxo_request = utxo_request.serialize_to_cstring().unwrap();
 
     handle_result(Ok(utxo_request.as_ptr()))
