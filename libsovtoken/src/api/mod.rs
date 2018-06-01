@@ -426,11 +426,11 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     };
 
     let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
-    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(&response);
+    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
 
-    let reply_str = reply.to_json().unwrap();
+    let reply_str: String = reply.to_json().unwrap();
     let reply_cstring: CString = cstring_from_str(reply_str);
-    let reply_str_ptr = reply_cstring.as_ptr();
+    let reply_str_ptr: *const c_char = reply_cstring.as_ptr();
     match cb {
         Some(b) => b(command_handle, ErrorCode::Success, reply_str_ptr),
         None => {
