@@ -18,7 +18,7 @@ pub struct ParseGetUtxoResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ParseGetUtxoResponseResult {
     #[serde(rename = "type")]
-    pub tnx_type : String,
+    pub txn_type : String,
     pub address : String,
     pub identifier: String,
     pub req_id: u32,
@@ -102,7 +102,7 @@ mod parse_get_uto_responses_tests {
         let outputs_len: usize = outputs.len();
 
         let result: ParseGetUtxoResponseResult = ParseGetUtxoResponseResult {
-            tnx_type : "1002".to_string(),
+            txn_type : "1002".to_string(),
             address,
             identifier,
             req_id: 123457890,
