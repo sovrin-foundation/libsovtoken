@@ -37,8 +37,27 @@ pub const ADDRESS_LEN: usize = VERKEY_LEN + CHECKSUM_LEN + 8;
 */
 pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
     let address = validate_address(address)?;
-    let verkey = &address[8..VERKEY_LEN+8];
+    let indicator_length = ADDRESS_LEN - VERKEY_LEN - CHECKSUM_LEN;
+    let verkey = &address[indicator_length..VERKEY_LEN + indicator_length];
     return Ok(String::from(verkey));
+}
+
+/**
+    Removes the "pay:sov:".
+    Leaves the verkey with the checksum.
+
+    ```
+    use sovtoken::logic::address::verkey_checksum_from_address;
+    let address = String::from("pay:sov:XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ");
+    let verkey_checksum = verkey_checksum_from_address(address).unwrap();
+    assert_eq!(verkey_checksum, String::from("XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ"));
+    ```
+*/
+pub fn verkey_checksum_from_address(address: String) -> Result<String, ErrorCode> {
+    let address = validate_address(address)?;
+    let indicator_length = ADDRESS_LEN - VERKEY_LEN - CHECKSUM_LEN;
+    let verkey_with_checksum = &address[indicator_length..VERKEY_LEN + indicator_length + CHECKSUM_LEN];
+    return Ok(String::from(verkey_with_checksum));
 }
 
 /** computes a checksum based on an address */
@@ -129,6 +148,24 @@ mod address_tests {
         let result = verkey_from_address(valid_address);
         let verkey_extracted = result.unwrap();
         assert_eq!(verkey_extracted, verkey);
+    }
+
+    #[test]
+    fn test_verkey_checksum_from_address() {
+        let verkey = rand_string(VERKEY_LEN);
+        let checksum = rand_string(CHECKSUM_LEN);
+        let valid_address = format!("pay:sov:{}{}", verkey, checksum);
+        let verkey_checksum = verkey_checksum_from_address(valid_address).unwrap();
+        assert_eq!(verkey_checksum, format!("{}{}", verkey, checksum));
+    }
+
+    #[test]
+    fn test_verkey_checksum_invalid_address() {
+        let verkey = rand_string(VERKEY_LEN);
+        let checksum = rand_string(CHECKSUM_LEN);
+        let invalid_address = format!("pat:sov:{}{}", verkey, checksum);
+        let error = verkey_checksum_from_address(invalid_address).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
 
     #[test]
