@@ -30,11 +30,12 @@ use logic::config::{
     get_fees_config::getFeesRequest,
 };
 
+use logic::parse_get_utxo_response::*;
 use logic::request::Request;
 use serde_json;
 use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
-use utils::json_conversion::JsonDeserialize;
+use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::types::*;
 use utils::validation::{validate_did_len};
@@ -393,19 +394,55 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 ///
 /// from tokens-interface.md/ParseGetUTXOResponseCB
 /// #Params
-/// param1: description.
+/// command_handle: standard command handle
+/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// #Returns
-/// description. example if json, etc...
+/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// #Errors
-/// description of errors
+/// CommonInvalidStructure when any of the inputs are invalid
+/// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
 pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   resp_json: *const c_char,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: ErrorCode,
                                                                        utxo_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+    if cb.is_none() {
+        return ErrorCode::CommonInvalidStructure;
+    }
+
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure
+    }
+
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
+
+    // here is where the magic happens--conversion from input structure to output structure
+    // is handled in ParseGetUtxoReply::from_response
+    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+
+    let reply_str: String = reply.to_json().unwrap();
+    let reply_cstring: CString = cstring_from_str(reply_str);
+    let reply_str_ptr: *const c_char = reply_cstring.as_ptr();
+    match cb {
+        Some(b) => b(command_handle, ErrorCode::Success, reply_str_ptr),
+        None => {
+            error!("cb is null even after check");
+            return ErrorCode::CommonInvalidState;
+        }
+    };
+
     return ErrorCode::Success;
 }
 
