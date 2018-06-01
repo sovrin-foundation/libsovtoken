@@ -505,23 +505,32 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
 }
 
 /// Description
-///
-///
 /// from tokens-interface.md/ParseGetTxnFeesResponseCB
+///
 /// # Params
-/// param1: description.
+/// command_handle: a standard command handle
+/// resp_json: JSON String. Structure of JSON available in libsovtoken/docs/data_structures.md
 ///
 /// # Returns
-/// description. example if json, etc...
+/// fees_json: JSON String. Structure of JSON available in libsovtoken/docs/data_structures.md
 ///
 /// # Errors
-/// description of errors
+///
 #[no_mangle]
 pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                                                       resp_json: *const c_char,
                                                       cb: Option<extern fn(command_handle_: i32,
                                                                 err: ErrorCode,
                                                                 fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
+
+
+    if cb.is_none() {
+        return handle_result(Err(ErrorCode::CommonInvalidStructure));
+    }
+
+
+
+
     return ErrorCode::Success;
 }
 
