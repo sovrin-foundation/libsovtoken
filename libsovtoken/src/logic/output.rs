@@ -52,9 +52,9 @@ use std::fmt;
 */
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Output {
-    payment_address: String,
-    amount: u32,
-    extra: Option<String>,
+    pub payment_address: String,
+    pub amount: u32,
+    pub extra: Option<String>,
 }
 
 impl Output {
@@ -71,7 +71,6 @@ impl Serialize for Output {
         return seq.end();
     }
 }
-
 
 impl<'de> Deserialize<'de> for Output {
     fn deserialize<D: de::Deserializer<'de>>(deserializer: D) -> Result<Output, D::Error> {

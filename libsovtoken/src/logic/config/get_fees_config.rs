@@ -4,7 +4,6 @@
  *
  *  [`build_get_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
  */
-use std::collections::HashMap;
 use logic::request::Request;
 
 const GET_FEES : &str = "20001";
