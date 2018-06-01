@@ -19,7 +19,7 @@ use logic::add_request_fees;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
-use logic::fees::{Fees, Inputs, Outputs, InputSigner};
+use logic::fees::{Fees, Inputs, Outputs};
 
 use logic::config::{
     payment_config::{PaymentRequest},
@@ -285,9 +285,10 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
     let the_outputs: Outputs = serde_json::from_str(&outputs_json_string).unwrap();
 
-    let signed = Fees::sign_inputs(wallet_handle, &the_input, &the_outputs);
+    let fees = Fees::new(the_input, the_outputs);
+    let fees_signed = fees.sign(CreatePaymentSDK{}, wallet_handle).unwrap();
 
-    println!("signed = {:?}", signed);
+    println!("signed = {:?}", fees_signed);
 
 
 

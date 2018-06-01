@@ -1,8 +1,9 @@
 use indy::{ErrorCode};
 use libc::c_char;
-use logic::fees::{Inputs, Outputs, Fees, InputSigner};
+use logic::fees::{Inputs, Outputs, Fees};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
+use logic::payments::CreatePaymentSDK;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: ErrorCode, req_with_fees_json: *const c_char) -> ErrorCode;
@@ -52,7 +53,6 @@ pub fn deserialize_inputs (
 pub fn validate_type_not_transfer(request_json_map: &SerdeMap) -> Result<(), ErrorCode> {
     let key_operation = String::from("operation");
                                                               
-
     trace!("Getting type from request_json");
     let transaction_type = request_json_map
         .get(&key_operation)
@@ -96,13 +96,11 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
 } 
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<Fees, ErrorCode> {
-    let signed_inputs = Fees::sign_inputs(wallet_handle, &inputs, &outputs)?;
-    debug!("Signed inputs >>> {:?}", signed_inputs);
+    let fees = Fees::new(inputs, outputs);
+    let signed_fees = fees.sign(CreatePaymentSDK{}, wallet_handle)?;
+    debug!("Signed fees >>> {:?}", signed_fees);
 
-    let fees = Fees::new(signed_inputs, outputs);
-    trace!("Created fees structure.");
-
-    return Ok(fees);
+    return Ok(signed_fees);
 }
 
 
@@ -114,7 +112,7 @@ mod test_deserialize_inputs {
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
 
-    fn call_deserialize_inputs(
+    pub fn call_deserialize_inputs(
         req_json: Option<*const c_char>,
         inputs_json: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
@@ -227,5 +225,64 @@ mod test_deserialize_inputs {
     fn deserialize_inputs_valid() {
         let result = call_deserialize_inputs(None, None, None, None);
         assert!(result.is_ok());
+    }
+}
+
+#[cfg(test)]
+mod test_validate_type_not_transfer {
+    use indy::ErrorCode;
+    use serde_json;
+    use super::validate_type_not_transfer;
+    use super::test_deserialize_inputs::call_deserialize_inputs;
+    use utils::ffi_support::c_pointer_from_string;
+
+    fn deserialize_request_json(json: serde_json::value::Value) -> serde_json::Map<String, serde_json::value::Value> {
+        let request_c_pointer = c_pointer_from_string(json.to_string());
+        let (_, _, request, _) = call_deserialize_inputs(Some(request_c_pointer), None, None, None).unwrap();
+        return request;
+    }
+
+    #[test]
+    fn no_operation_in_request() {
+        let request = deserialize_request_json(json!({
+            "wise_advice": "When life gives you lemons, squeeze them in someone's eyes."
+        }));
+        let error = validate_type_not_transfer(&request).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
+
+    #[test]
+    fn no_txn_type_in_operation() {
+        let request = deserialize_request_json(json!({
+            "operation": {
+                "remove_wisdom_teeth": "painful"
+            }
+        }));
+        let error = validate_type_not_transfer(&request).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
+
+    #[test]
+    fn txn_type_is_transfer() {
+        let request = deserialize_request_json(json!({
+            "operation": {
+                "type": "10000",
+            }
+        }));
+        let error = validate_type_not_transfer(&request).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
+
+    #[test]
+    fn txn_type_not_transfer() {
+        let request = deserialize_request_json(json!({
+            "operation": {
+                "type": "10001"
+            },
+            "extra_field": "Doesn't check it is known request."
+        }));
+
+        let validated = validate_type_not_transfer(&request);
+        assert!(validated.is_ok());
     }
 }

@@ -4,12 +4,13 @@
 #[warn(unused_imports)]
 
 use indy::{ErrorCode, IndyHandle};
-use indy::crypto::Key;
+use indy::crypto::{Crypto, Key};
 use logic::indysdk_api::CryptoAPI;
 use super::config::payment_address_config::PaymentAddressConfig;
 use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
 use utils::general::some_or_none_option_u8;
 use utils::json_conversion::JsonSerialize;
+use utils::general::base58::serialize_bytes;
 use logic::address;
 use logic::address::{
     ADDRESS_LEN,
@@ -50,6 +51,11 @@ impl CryptoAPI for CreatePaymentSDK {
         }
 
         return Key::create(wallet_id, Some(&config_json));
+    }
+
+    fn indy_crypto_sign(&self, wallet_handle: IndyHandle, verkey: String, message: String) -> Result<String, ErrorCode> {
+         return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
+             .map(|vec| serialize_bytes(&vec));
     }
 }
 
@@ -106,6 +112,10 @@ mod payments_tests {
         fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
             return Ok(rand_string(VERKEY_LEN));
         }
+
+        fn indy_crypto_sign(&self, _: i32, _: String, _: String) -> Result<String, ErrorCode> {
+            return Err(ErrorCode::CommonInvalidState);
+        } 
     }
 
 
