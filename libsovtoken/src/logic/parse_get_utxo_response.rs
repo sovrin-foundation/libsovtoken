@@ -1,7 +1,7 @@
 //!
 //!
 
-use super::responses::ResponseOperations;
+use logic::responses::ResponseOperations;
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -84,5 +84,42 @@ impl ParseGetUtxoReply {
 
 #[cfg(test)]
 mod parse_get_uto_responses_tests {
+
+    use logic::responses::ResponseOperations;
+    use utils::random::{rand_req_id, rand_string};
+    use super::*;
+
+    #[test]
+    fn success_parse_get_utxo_reply_from_response() {
+
+        let address: String = rand_string(32);
+        let identifier: String = rand_req_id().to_string();
+        let mut outputs: Vec<(String, i32, i32)> = vec![];
+
+        outputs.push((rand_string(32), 1, 10));
+        outputs.push((rand_string(32), 2, 20));
+
+        let outputs_len: usize = outputs.len();
+
+        let result: ParseGetUtxoResponseResult = ParseGetUtxoResponseResult {
+            tnx_type : "1002".to_string(),
+            address,
+            identifier,
+            req_id: 123457890,
+            outputs
+        };
+
+        let response: ParseGetUtxoResponse = ParseGetUtxoResponse {
+            op : ResponseOperations::REPLY,
+            protocol_version: 1,
+            result
+        };
+
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+
+        println!("{:?}", reply);
+        assert_eq!(outputs_len, reply.utxo_json.len());
+
+    }
 
 }
