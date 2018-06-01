@@ -30,7 +30,7 @@ use std::fmt;
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::output::Output;
     let json = r#"{
-        "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+        "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
         "amount": 5,
         "extra": None
     }"#;
@@ -104,21 +104,21 @@ impl<'de> Deserialize<'de> for Output {
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "paymentAddress" => { payment_address = map.next_value()?; },
+                        "address" => { payment_address = map.next_value()?; },
                         "amount" => { amount =  map.next_value()?; },
                         "extra" => { extra = map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let payment_address = payment_address.ok_or(de::Error::missing_field("paymentAddress"))?;
+                let payment_address = payment_address.ok_or(de::Error::missing_field("address"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
                 return Ok(Output::new(payment_address, amount, extra));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["paymentAddress", "amount", "extra"];
+        const FIELDS: &'static [&'static str] = &["address", "amount", "extra"];
         return deserializer.deserialize_struct("Output", FIELDS, OutputVisitor);
     }
 }
@@ -180,7 +180,7 @@ mod output_tests {
     #[test]
     fn deserialize_invalid_output_object() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "extra": "eifjoaiandvskasn",
         });
         assert_invalid_deserialize(json, "missing field `amount`");
@@ -189,7 +189,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_object_without_extra() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "amount": 10,
         });
         let output = output_without_extra();
@@ -199,7 +199,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_object_with_extra() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "amount": 10,
             "extra": "ewt3eioSSDziqDGehdJLSEwanzZNsgaawqp",
         });

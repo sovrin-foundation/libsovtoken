@@ -12,7 +12,7 @@ use std::fmt;
     Input can be deserialized from an array or an object. Both are valid:
 
     ## From Array
-    An array with the format of `[paymentAddress, sequenceNumber, signature]`.
+    An array with the format of `[address, sequenceNumber, signature]`.
     When deserializing from an array, the signature is required.
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
@@ -23,7 +23,7 @@ use std::fmt;
 
     ## From Object
     ### Required Fields
-    * paymentAddress
+    * address
     * sequenceNumber
 
     ### Optional Fields
@@ -34,7 +34,7 @@ use std::fmt;
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
     let json = r#"{
-        "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+        "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
         "sequenceNumber": 30,
         "signature": "239asdkj3298uadkljasd98u234ijasdlkj"
     }"#;
@@ -134,7 +134,7 @@ impl<'de> Deserialize<'de> for Input {
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "paymentAddress" => { payment_address = map.next_value()?; },
+                        "address" => { payment_address = map.next_value()?; },
                         "sequenceNumber" => { sequence_number =  map.next_value()?; },
                         "signature" => { signature = map.next_value()?; },
                         "extra" => { extra = map.next_value()?; },
@@ -142,14 +142,14 @@ impl<'de> Deserialize<'de> for Input {
                     }
                 }
 
-                let payment_address = payment_address.ok_or(de::Error::missing_field("paymentAddress"))?;
+                let payment_address = payment_address.ok_or(de::Error::missing_field("address"))?;
                 let sequence_number = sequence_number.ok_or( de::Error::missing_field("sequenceNumber"))?;
 
                 return Ok(Input::new_with_extra(payment_address, sequence_number, signature, extra));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["paymentAddress", "sequenceNumber", "signature"];
+        const FIELDS: &'static [&'static str] = &["address", "sequenceNumber", "signature"];
         return deserializer.deserialize_struct("Input", FIELDS, InputVisitor);
     }
 }
@@ -230,7 +230,7 @@ mod input_tests {
     #[test]
     fn deserialize_invalid_input_object() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         });
         assert_invalid_deserialize(json, "missing field `sequenceNumber`");
@@ -239,7 +239,7 @@ mod input_tests {
     #[test]
     fn deserialize_input_object_without_signature_or_extra() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "sequenceNumber": 30,
         });
         let input = input_without_extra_or_signature();
@@ -250,7 +250,7 @@ mod input_tests {
     #[test]
     fn deserialize_input_object_without_extra() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "sequenceNumber": 30,
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
         });
@@ -261,7 +261,7 @@ mod input_tests {
     #[test]
     fn deserialize_input_object_with_extra() {
         let json = json!({
-            "paymentAddress": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
             "sequenceNumber": 30,
             "signature": "239asdkj3298uadkljasd98u234ijasdlkj",
             "extra": "This is an extra string.",

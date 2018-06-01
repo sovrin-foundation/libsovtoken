@@ -141,11 +141,11 @@ fn success_signed_request() {
 
     let inputs = json!([
         {
-            "paymentAddress": payment_address_1,
+            "address": payment_address_1,
             "sequenceNumber": 1
         },
         {
-            "paymentAddress": payment_address_2,
+            "address": payment_address_2,
             "sequenceNumber": 1,
             "extra": "extra data",
         }
@@ -153,11 +153,11 @@ fn success_signed_request() {
 
     let outputs = json!([
         {
-            "paymentAddress": payment_address_3,
+            "address": payment_address_3,
             "amount": 10
         },
         {
-            "paymentAddress": payment_address_4,
+            "address": payment_address_4,
             "amount": 22,
             "extra": "extra data"
         }

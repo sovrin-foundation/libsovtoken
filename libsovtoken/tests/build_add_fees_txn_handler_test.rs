@@ -50,14 +50,14 @@ fn test_add_fees_to_request_valid() {
 
     let inputs = json!([
        {
-           "paymentAddress": input_address,
+           "address": input_address,
            "sequenceNumber": 1,
        }
     ]);
     
     let outputs = json!([
        {
-           "paymentAddress": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+           "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
            "amount": 20,
        }
     ]);

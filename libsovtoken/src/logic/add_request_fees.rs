@@ -128,18 +128,18 @@ mod test_deserialize_inputs {
 
         let default_inputs_json = c_pointer_from_string(json!([
             {
-                "paymentAddress": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
                 "sequenceNumber": 2
             },
             {
-                "paymentAddress": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
+                "address": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
                 "sequenceNumber": 3
             }
         ]).to_string());
 
         let default_outputs_json = c_pointer_from_string(json!([
             {
-                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
                 "amount": 10
             }
         ]).to_string());
@@ -197,7 +197,7 @@ mod test_deserialize_inputs {
     fn deserialize_inputs_invalid_inputs_json() {
         let invalid_json = c_pointer_from_string(json!([
             {
-                "paymentAddre": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "addres": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
                 "sequenceNumber": 4
             }
         ]).to_string());
@@ -208,7 +208,7 @@ mod test_deserialize_inputs {
     fn deserialize_inputs_invalid_outputs_json() {
         let invalid_json = c_pointer_from_string(json!([
             {
-                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
                 "amount": "10"
             }
         ]).to_string());
