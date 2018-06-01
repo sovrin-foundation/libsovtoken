@@ -9,8 +9,6 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 extern crate serde_json;
 
 use indy::ErrorCode;
-//use indy::IndyHandle;
-//use indy::utils::results::ResultHandler;
 
 use libc::c_char;
 use std::ptr;
@@ -19,9 +17,6 @@ use std::ffi::CString;
 mod utils;
 use self::indy::wallet::Wallet;
 
-//use sovtoken::logic::fees::{Fees};
-//use sovtoken::logic::output::Output;
-//use sovtoken::logic::input::Input;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use indy::payments::Payment;
 
@@ -38,21 +33,6 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 const WALLET_HANDLE:i32 = 0;
 const CB : Option<extern fn(_command_handle_: i32, err: ErrorCode, payment_req_json: *const c_char) -> ErrorCode > = Some(empty_create_payment_callback);
 
-
-//fn call_build_req(wallet_handle: IndyHandle, inputs: String, outputs: String, did: String) -> Result<String, ErrorCode> {
-//    let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
-//
-//    let error_code = sovtoken::api::build_payment_req_handler(
-//        COMMAND_HANDLE,
-//        WALLET_HANDLE,
-//        c_pointer_from_string(did),
-//        c_pointer_from_string(inputs),
-//        c_pointer_from_string(outputs),
-//        CB
-//    );
-//
-//    return ResultHandler::one(error_code, receiver);
-//}
 
 // ***** UNIT TESTS ****
 
@@ -137,8 +117,6 @@ fn success_signed_request() {
     println!("payment_address_3 = {:?}", payment_address_3);
     println!("payment_address_4 = {:?}", payment_address_4);
 
-
-
     let inputs = json!([
         {
             "address": payment_address_1,
@@ -164,15 +142,6 @@ fn success_signed_request() {
     ]);
 
 
-
-    let _expected_request = json!({
-
-
-    });
-
-
-
-
     println!("Calling build_payment_req");
 
     let result = sovtoken::api::build_payment_req_handler(
@@ -186,23 +155,5 @@ fn success_signed_request() {
 
     println!("Received result {:?}", result);
 
-    assert!(true);
-   // assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
-}
-
-
-//#[test]
-fn create_a_new_wallet(){
-
-    let wallet_name = "new_wallet";
-
-    Wallet::create("pool_1", wallet_name, None, Some("{}"), None).unwrap();
-    let wallet_id: i32 = Wallet::open(wallet_name, None, None).unwrap();
-
-    println!("wallet_id = {:?}", wallet_id);
-
-//    let payment_address = create
-
-    assert!(true);
-
+    assert_eq!(result, ErrorCode::Success);
 }
