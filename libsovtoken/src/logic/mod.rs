@@ -8,6 +8,7 @@ pub mod config;
 pub mod indysdk_api;
 pub mod input;
 pub mod output;
+pub mod parsers;
 pub mod payments;
 pub mod request;
 pub mod responses;

@@ -24,7 +24,8 @@ use logic::config::{
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, Fees},
-    get_fees_config::getFeesRequest,
+    get_fees_config::GetFeesRequest,
+    get_utxo_config::*
 };
 use logic::request::Request;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
@@ -282,7 +283,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: JsonCallback)-> ErrorCode {
 
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidParam5);
+    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
     // * C_CHAR to &str
     let submitter_did = match str_from_char_ptr(submitter_did) {
         Some(s) => s,
@@ -305,18 +306,10 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         return ErrorCode::CommonInvalidParam3;
     }
 
-    if let Err(e) = validate_address(String::from(payment_address)) {
-        return e;
-    }
+    let utxo_request = getUtxoRequest::new(String::from(payment_address), String::from(submitter_did));
+    let utxo_request = utxo_request.serialize_to_cstring().unwrap();
 
-    // start the CBs
-    return match Payment::build_get_utxo_request(wallet_handle, submitter_did, payment_address) {
-        Ok((txn_req, ..)) => {
-            cb(command_handle, ErrorCode::Success, c_pointer_from_string(txn_req));
-            ErrorCode::Success
-        },
-        Err(e) => e
-    };
+    handle_result(Ok(utxo_request.as_ptr()))
 }
 
 /// Description
@@ -431,7 +424,7 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         }
     };
 
-    let get_txn_request = getFeesRequest::new(submitter_did);
+    let get_txn_request = GetFeesRequest::new(submitter_did);
 
     let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
 
