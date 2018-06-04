@@ -28,7 +28,7 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 #[test]
 fn errors_with_no_call_back() {
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam5, "Expecting Callback for 'build_mint_txn_handler'"); 
+    assert_eq!(return_error, ErrorCode::CommonInvalidParam5 as i32, "Expecting Callback for 'build_mint_txn_handler'");
 }
 
 // the build mint txn handler method requires an outputs_json parameter and this test ensures that 
@@ -36,14 +36,14 @@ fn errors_with_no_call_back() {
 #[test]
 fn errors_with_no_outputs_json() {
     static mut CALLBACK_CALLED: bool = false;
-    extern "C" fn cb_no_json(_: i32, error_code: ErrorCode, _: *const c_char) -> ErrorCode {
+    extern "C" fn cb_no_json(_: i32, error_code: i32, _: *const c_char) -> i32 {
         unsafe { CALLBACK_CALLED = true; }
-        assert_eq!(error_code, ErrorCode::CommonInvalidStructure);
-        return ErrorCode::Success;
+        assert_eq!(error_code, ErrorCode::CommonInvalidStructure as i32);
+        return ErrorCode::Success as i32;
     }
 
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), Some(cb_no_json));
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_mint_txn_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_mint_txn_handler'");
     unsafe { assert!(! CALLBACK_CALLED) }
 }
 
@@ -52,26 +52,26 @@ fn errors_with_no_outputs_json() {
 #[test]
 fn errors_with_invalid_outputs_json() {
     static mut CALLBACK_CALLED: bool = false;
-    extern "C" fn cb_invalid_json(_: i32, error_code: ErrorCode, _: *const c_char) -> ErrorCode {
+    extern "C" fn cb_invalid_json(_: i32, error_code: i32, _: *const c_char) -> i32 {
         unsafe { CALLBACK_CALLED = true; }
-        assert_eq!(error_code, ErrorCode::CommonInvalidStructure);
-        return ErrorCode::Success;
+        assert_eq!(error_code, ErrorCode::CommonInvalidStructure as i32);
+        return ErrorCode::Success as i32;
     }
 
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(cb_invalid_json));
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Valid JSON for 'build_mint_txn_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe { assert!(! CALLBACK_CALLED) }
 }
 
 #[test]
 fn valid_output_json() {
     static mut CALLBACK_CALLED: bool = false;
-    extern "C" fn valid_output_json_cb(command_handle: i32, error_code: ErrorCode, mint_request: *const c_char) -> ErrorCode {
+    extern "C" fn valid_output_json_cb(command_handle: i32, error_code: i32, mint_request: *const c_char) -> i32 {
         unsafe { CALLBACK_CALLED = true; }
         assert_eq!(command_handle, COMMAND_HANDLE);
-        assert_eq!(error_code, ErrorCode::Success);
+        assert_eq!(error_code, ErrorCode::Success as i32);
         let mint_request_json_string = str_from_char_ptr(mint_request).unwrap();
         let mint_request_json_value : serde_json::Value = serde_json::from_str(mint_request_json_string).unwrap();
         let mint_operation = mint_request_json_value
@@ -83,13 +83,13 @@ fn valid_output_json() {
             "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]
         });
         assert_eq!(mint_operation, &expected);
-        return ErrorCode::Success;
+        return ErrorCode::Success as i32;
     }
 
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(valid_output_json_cb));
-    assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
+    assert_eq!(return_error, ErrorCode::Success as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe {
         assert!(CALLBACK_CALLED);
     }

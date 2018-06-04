@@ -51,8 +51,8 @@ fn rand_string(length : usize) -> String {
     return s;
 }
 
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode {
-    return ErrorCode::Success;
+extern "C" fn empty_create_payment_callback(command_handle_: i32, err: i32, payment_address: *const c_char) -> i32 {
+    return ErrorCode::Success as i32;
 }
 
 
@@ -63,7 +63,7 @@ extern "C" fn empty_create_payment_callback(command_handle_: i32, err: ErrorCode
 #[test]
 fn errors_with_no_callback () {
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam4, "Expecting Callback for 'create_payment_address_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'create_payment_address_handler'");
 }
 
 
@@ -71,9 +71,9 @@ fn errors_with_no_callback () {
 // a error is returned when no config is provided
 #[test]
 fn errors_with_no_config() {
-    let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode> = Some(empty_create_payment_callback);
+    let cb : Option<extern fn(command_handle_: i32, err: i32, payment_address: *const c_char) -> i32> = Some(empty_create_payment_callback);
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), cb);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting Config for 'create_payment_address_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Config for 'create_payment_address_handler'");
 }
 
 
@@ -86,10 +86,10 @@ fn success_with_invalid_config_json() {
     let config_str = CString::new(INVALID_CONFIG_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let cb : Option<extern fn(command_handle_: i32, err: ErrorCode, payment_address: *const c_char) -> ErrorCode> = Some(empty_create_payment_callback);
+    let cb : Option<extern fn(command_handle_: i32, err: i32, payment_address: *const c_char) -> i32> = Some(empty_create_payment_callback);
     let return_error = sovtoken::api::create_payment_address_handler(COMMAND_HANDLE, WALLET_ID, config_str_ptr, cb);
 
-    assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'create_payment_address_handler'");
+    assert_eq!(return_error, ErrorCode::Success as i32, "Expecting Valid JSON for 'create_payment_address_handler'");
 }
 
 
@@ -110,13 +110,13 @@ fn successfully_creates_payment_address_with_no_seed() {
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
 
-    assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
+    assert_eq!(ErrorCode::Success as i32, return_error, "api call to create_payment_address_handler failed");
 
     let (err, payment_address) = receiver.recv_timeout(Duration::from_secs(TIMEOUT_SECONDS)).unwrap();
 
     debug!("******* got address of {}", payment_address);
     assert!(payment_address.len() == 56, "callback did not receive valid payment address");
-    assert_eq!(ErrorCode::Success, err, "Expected Success");
+    assert_eq!(ErrorCode::Success as i32, err, "Expected Success");
 }
 
 
@@ -139,12 +139,12 @@ fn success_callback_is_called() {
     let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_2);
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
-    assert_eq!(ErrorCode::Success, return_error, "api call to create_payment_address_handler failed");
+    assert_eq!(ErrorCode::Success as i32, return_error, "api call to create_payment_address_handler failed");
 
     let (err, payment_address) = receiver.recv_timeout(Duration::from_secs(TIMEOUT_SECONDS)).unwrap();
 
     println!("******* got address of {}", payment_address);
     assert!(payment_address.len() == 56, "callback did not receive valid payment address");
-    assert_eq!(ErrorCode::Success, err, "Expected Success");
+    assert_eq!(ErrorCode::Success as i32, err, "Expected Success");
 
 }
