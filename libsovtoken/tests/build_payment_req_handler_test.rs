@@ -43,7 +43,7 @@ fn errors_with_no_call_back() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam5, "Expecting Callback for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Callback for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an inputs_json parameter and this test ensures that
@@ -56,7 +56,7 @@ fn errors_with_no_inputs_json() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting inputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting inputs_json for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an outputs_json parameter and this test ensures that
@@ -71,7 +71,7 @@ fn errors_with_no_outputs_json() {
                                                                 input_json_ptr,
                                                                 ptr::null(),
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an submitter_did parameter and this test ensures that
@@ -89,7 +89,7 @@ fn errors_with_no_submitter_did_json() {
                                                                 input_json_ptr,
                                                                 output_json_ptr,
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 #[test]
@@ -112,29 +112,35 @@ fn success_signed_request() {
     debug!("payment_address_3 = {:?}", payment_address_3);
     debug!("payment_address_4 = {:?}", payment_address_4);
 
-    let inputs = json!([
-        {
-            "address": payment_address_1,
-            "seqNo": 1
-        },
-        {
-            "address": payment_address_2,
-            "seqNo": 1,
-            "extra": "extra data",
-        }
-     ]);
+    let inputs = json!({
+        "ver": 1,
+        "inputs": [
+            {
+                "address": payment_address_1,
+                "seqNo": 1
+            },
+            {
+                "address": payment_address_2,
+                "seqNo": 1,
+                "extra": "extra data",
+            }
+        ]
+    });
 
-    let outputs = json!([
-        {
-            "address": payment_address_3,
-            "amount": 10
-        },
-        {
-            "address": payment_address_4,
-            "amount": 22,
-            "extra": "extra data"
-        }
-    ]);
+    let outputs = json!({
+        "ver": 1,
+        "outputs": [
+            {
+                "address": payment_address_3,
+                "amount": 10
+            },
+            {
+                "address": payment_address_4,
+                "amount": 22,
+                "extra": "extra data"
+            }
+        ]
+    });
 
 
     trace!("Calling build_payment_req");
