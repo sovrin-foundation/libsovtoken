@@ -261,17 +261,15 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
     let fees = Fees::new(inputs, outputs);
     let fees_signed = fees.sign(CreatePaymentSDK {}, wallet_handle).unwrap();
-    trace!("signed = {:?}", fees_signed);
+    debug!("Signed fees >>> {:?}", fees_signed);
 
     let identifier = fees_signed.inputs[0].address.clone();
-    let signed_inputs = fees_signed.inputs;
-    let signed_outputs = fees_signed.outputs;
 
-    let payment_request = PaymentRequest::new(signed_outputs, signed_inputs, identifier);
+    let payment_request = PaymentRequest::new(fees_signed, identifier);
 
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    trace!("payment_request = {:?}", payment_request);
+    debug!("payment_request >>> {:?}", payment_request);
 
     cb(command_handle, ErrorCode::Success, payment_request.as_ptr());
     return ErrorCode::Success;

@@ -235,3 +235,21 @@ mod output_tests {
         assert_valid_serialize(output, json);
     }
 }
+
+#[cfg(test)]
+mod output_config_test {
+    use super::*;
+    use utils::json_conversion::JsonSerialize;
+
+    // this test ensures that the deserialized JSON is serialized correctly
+    #[test]
+    fn serializing_fee_struct_output_config() {
+        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+
+        let fee: OutputConfig = OutputConfig {
+            ver: 1,
+            outputs: vec![output],
+        };
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
+    }
+}
