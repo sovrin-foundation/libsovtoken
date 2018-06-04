@@ -6,16 +6,15 @@
  */
 use logic::request::Request;
 
-use logic::input::{Input, Inputs, InputConfig};
-use logic::output::{Output, Outputs, OutputConfig};
+use logic::fees::Fees;
 
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct PaymentRequest {
     #[serde(rename = "type")]
     txn_type: &'static str,
-    inputs: Inputs,
-    outputs: Outputs,
+    #[serde(flatten)]
+    signed_inputs_outputs: Fees
 }
 
 /**
@@ -26,62 +25,21 @@ impl PaymentRequest {
     /**
      * Creates a new `PaymentRequest` with `inputs` and `outputs`
      */
-    pub fn new(outputs: Vec<Output>, inputs: Vec<Input>, identifier : String) -> Request<PaymentRequest> {
+    pub fn new(signed_inputs_outputs: Fees, identifier: String) -> Request<PaymentRequest> {
         let fees = PaymentRequest {
             txn_type: "10000",
-            inputs,
-            outputs,
+            signed_inputs_outputs,
         };
 
         return Request::new(fees, identifier);
     }
-
-    pub fn from_config(fees_output_config: OutputConfig, fees_input_config: InputConfig, identifier : String) -> Request<PaymentRequest> {
-        return PaymentRequest::new(fees_output_config.outputs, fees_input_config.inputs, identifier);
-    }
-}
-
-// this test ensures that the deserialized JSON is serialized correctly
-#[cfg(test)]
-mod fees_req_output_config_test {
-    use super::*;
-    use utils::json_conversion::JsonSerialize;
-
-    #[test]
-    fn serializing_fee_struct_output_config() {
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-
-        let fee: OutputConfig = OutputConfig {
-            ver: 1,
-            outputs: vec![output],
-        };
-        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
-    }
-}
-
-// this test ensures that the deserialized JSON is serialized correctly
-#[cfg(test)]
-mod fees_req_input_config_test {
-    use super::InputConfig;
-    use super::*;
-    use utils::json_conversion::JsonSerialize;
-
-    #[test]
-    fn serializing_fee_struct_output_config() {
-
-        let input = Input::new(String::from("dakjhe238yad"), 30, Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
-
-        let fee: InputConfig = InputConfig {
-            ver: 1,
-            inputs: vec![input],
-        };
-        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"inputs":[["dakjhe238yad",30,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
-    }
 }
 
 #[cfg(test)]
-mod fees_request_test {
+mod payment_request_test {
     use super::*;
+    use logic::input::Input;
+    use logic::output::Output;
     use serde_json;
     use utils::ffi_support::str_from_char_ptr;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
@@ -92,10 +50,9 @@ mod fees_request_test {
         let identifier: String = rand_string(21);
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
-
-        let outputs = vec![output];
-        let inputs = vec![input];
-        return PaymentRequest::new(outputs, inputs, identifier);
+    
+        let fees = Fees::new(vec![input], vec![output]);
+        return PaymentRequest::new(fees, identifier);
     }
 
     fn assert_fees_request<F>(expected: serde_json::Value, f: F)
@@ -110,30 +67,6 @@ mod fees_request_test {
 
         let operation_json_value : serde_json::Value = serde_json::from_str(&deserialized_fees_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);
-    }
-
-    #[test]
-    fn create_request_with_fees_config() {
-        let identifier: String = rand_string(21);
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
-
-        let outputs = vec![output];
-        let inputs = vec![input];
-
-        let output_config = OutputConfig {
-            ver: 1,
-            outputs: outputs.clone()
-        };
-
-        let input_config = InputConfig {
-            ver: 1,
-            inputs: inputs.clone()
-        };
-
-        let request = PaymentRequest::from_config(output_config, input_config, identifier);
-        assert_eq!(request.operation.outputs, outputs);
-        assert_eq!(request.operation.inputs, inputs);
     }
 
     #[test]

@@ -111,6 +111,7 @@ mod test_deserialize_inputs {
     use indy::ErrorCode;
     use libc::c_char;
     use std::ptr;
+    use utils::default;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
 
@@ -120,43 +121,17 @@ mod test_deserialize_inputs {
         outputs_json: Option<*const c_char>,
         cb: Option<Option<AddRequestFeesCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
-        let son = json!({
+        let default_req_json = c_pointer_from_string(json!({
             "protocolVersion": 1,
             "operation": {
                 "type": 2,
             }
-        });
-        let default_req_json = c_pointer_from_string(son.to_string());
-
-        let default_inputs_json = c_pointer_from_string(json!({
-            "ver": 1,
-            "inputs": [
-                {
-                    "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
-                    "seqNo": 2
-                },
-                {
-                    "address": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
-                    "seqNo": 3
-                }
-            ]
         }).to_string());
 
-        let default_outputs_json = c_pointer_from_string(json!({
-            "ver": 1,
-            "outputs": [
-                {
-                    "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
-                    "amount": 10
-                }
-            ]
-        }).to_string());
-
-        extern fn default_callback(_: i32, _: ErrorCode, _: *const c_char) -> ErrorCode {ErrorCode::Success};
         let req_json = req_json.unwrap_or(default_req_json);
-        let inputs_json = inputs_json.unwrap_or(default_inputs_json);
-        let outputs_json = outputs_json.unwrap_or(default_outputs_json);
-        let cb = cb.unwrap_or(Some(default_callback));
+        let inputs_json = inputs_json.unwrap_or_else(default::inputs_json_pointer);
+        let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
         return deserialize_inputs(req_json, inputs_json, outputs_json, cb);
     }
