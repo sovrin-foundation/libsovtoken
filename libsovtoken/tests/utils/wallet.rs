@@ -17,7 +17,7 @@ use std::panic;
  */
 pub fn create_wallet(wallet_name : &str) -> i32 {
    let _ = panic::catch_unwind(| | {
-       Wallet::delete(wallet_name).unwrap();
+       Wallet::delete(wallet_name, None).unwrap();
    });
 
     Wallet::create("pool_1", wallet_name, None, Some("{}"), None).unwrap();
