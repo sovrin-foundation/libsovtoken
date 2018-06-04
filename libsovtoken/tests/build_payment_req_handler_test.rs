@@ -143,15 +143,6 @@ fn success_signed_request() {
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
 
-    // let payment_address_1 = Payment::create_payment_address(wallet_id,"pay:sov:", "{seed}").unwrap();
-    // let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    // let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    // let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    // let address_1 = address::verkey_checksum_from_address(payment_address_1.clone()).unwrap();
-    // let address_2 = address::verkey_checksum_from_address(payment_address_2.clone()).unwrap();
-    // let address_3 = address::verkey_checksum_from_address(payment_address_3.clone()).unwrap();
-    // let address_4 = address::verkey_checksum_from_address(payment_address_4.clone()).unwrap();
-
     let inputs = json!({
         "ver": 1,
         "inputs": [

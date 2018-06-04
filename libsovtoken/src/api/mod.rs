@@ -228,18 +228,58 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 }
 
 
-/// Description
-///
-///
-/// from tokens-interface.md/BuildPaymentReqCB
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
+/**
+ * Build a payment request.
+ * 
+ * Builds a payment request which can transfer funds from
+ * addresses to other addresses.
+ * 
+ * The amount in the output addresses needs to match the
+ * amount stored in input addresses.
+ * 
+ * ## Parameters
+ * 
+ * ### inputs_json
+ * ```JSON
+ * {
+ *     "ver": <int>
+ *     "inputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "seqNo": <int>
+ *          }
+ *     ]
+ * }
+ * ```
+ * 
+ * ### outputs_json
+ * ```JSON
+ * {
+ *      "ver": <int>
+ *      "outputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "amount": <int>
+ *              "extra": <str>
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * ## Returns
+ * Returns a json object of the payment request.
+ * ```JSON
+ * {
+ *      "identifier": <str>,
+ *      "reqId": <int>,
+ *      "operation" {
+ *          "type": "10001",
+ *          "inputs": [<str: payment_address>, <int: seq_no>, <str: signature>],
+ *          "outputs": [<str: payment_address>, <int: amount>]
+ *      }
+ * }
+ * ```
+ */
 #[no_mangle]
 pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             wallet_handle: i32,
