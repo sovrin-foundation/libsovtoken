@@ -258,12 +258,12 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         }
     };
 
-    let identifier = inputs[0].address.clone();
 
     let fees = Fees::new(inputs, outputs);
     let fees_signed = fees.sign(CreatePaymentSDK {}, wallet_handle).unwrap();
     trace!("signed = {:?}", fees_signed);
 
+    let identifier = fees_signed.inputs[0].address.clone();
     let signed_inputs = fees_signed.inputs;
     let signed_outputs = fees_signed.outputs;
 

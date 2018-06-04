@@ -9,12 +9,13 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 use indy::ErrorCode;
 use indy::payments::Payment;
+use indy::utils::results::ResultHandler;
 use libc::c_char;
+use sovtoken::logic::address;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use std::ptr;
 use std::ffi::CString;
 mod utils;
-use self::indy::wallet::Wallet;
 
 
 // ***** HELPER METHODS *****
@@ -30,6 +31,44 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 const WALLET_HANDLE:i32 = 0;
 const CB : Option<extern fn(_command_handle_: i32, err: ErrorCode, payment_req_json: *const c_char) -> ErrorCode > = Some(empty_create_payment_callback);
 
+
+fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
+    let seed_1 = json!({
+        "seed": str::repeat("1", 32),
+    }).to_string();
+
+    let seed_2 = json!({
+        "seed": str::repeat("2", 32),
+    }).to_string();
+
+    let seed_3 = json!({
+        "seed": str::repeat("3", 32),
+    }).to_string();
+
+    let seed_4 = json!({
+        "seed": str::repeat("4", 32),
+    }).to_string();
+
+
+    let payment_addresses = vec![
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_1).unwrap(),
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_2).unwrap(),
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_3).unwrap(),
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_4).unwrap(),
+    ];
+
+    payment_addresses
+        .iter()
+        .enumerate()
+        .for_each(|(idx, address)| debug!("payment_address[{:?}] = {:?}", idx, address));
+
+    let addresses = payment_addresses
+        .iter()
+        .map(|address| address::verkey_checksum_from_address(address.clone()).unwrap())
+        .collect();
+
+    return (payment_addresses, addresses);
+}
 
 // ***** UNIT TESTS ****
 
@@ -100,27 +139,28 @@ fn success_signed_request() {
     let did = String::from("287asdjkh2323kjnbakjs");
 
     let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
-
-    let payment_address_1 = Payment::create_payment_address(wallet_id,"pay:sov:", "{}").unwrap();
-    let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-
     debug!("wallet id = {:?}", wallet_id);
-    debug!("payment_address_1 = {:?}", payment_address_1);
-    debug!("payment_address_2 = {:?}", payment_address_2);
-    debug!("payment_address_3 = {:?}", payment_address_3);
-    debug!("payment_address_4 = {:?}", payment_address_4);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
+
+    // let payment_address_1 = Payment::create_payment_address(wallet_id,"pay:sov:", "{seed}").unwrap();
+    // let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
+    // let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
+    // let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
+    // let address_1 = address::verkey_checksum_from_address(payment_address_1.clone()).unwrap();
+    // let address_2 = address::verkey_checksum_from_address(payment_address_2.clone()).unwrap();
+    // let address_3 = address::verkey_checksum_from_address(payment_address_3.clone()).unwrap();
+    // let address_4 = address::verkey_checksum_from_address(payment_address_4.clone()).unwrap();
 
     let inputs = json!({
         "ver": 1,
         "inputs": [
             {
-                "address": payment_address_1,
+                "address": payment_addresses[0],
                 "seqNo": 1
             },
             {
-                "address": payment_address_2,
+                "address": payment_addresses[1],
                 "seqNo": 1,
                 "extra": "extra data",
             }
@@ -131,30 +171,48 @@ fn success_signed_request() {
         "ver": 1,
         "outputs": [
             {
-                "address": payment_address_3,
+                "address": payment_addresses[2],
                 "amount": 10
             },
             {
-                "address": payment_address_4,
+                "address": payment_addresses[3],
                 "amount": 22,
                 "extra": "extra data"
             }
         ]
     });
 
+    let expected_operation = json!({
+        "type": "10000",
+        "inputs": [
+            [addresses[0], 1, "57R59eV1mFJPejU34j9XBuEWvMK15KoXSVrTBENUTtYo33DbCmyfVya3pq2pLU4EuKxUBMmcYz9yP4HTw6S2pRQd"],
+            [addresses[1], 1, "WgJWvF4b4FPB5Z2CPVC7C1drDU4AWhAqdALAuQmwp4mgJwPFAHNmvqCDiLD2h4rYiYoJhKN6jnvHpBLkGuYHJeE"]
+        ],
+        "outputs": [[addresses[2], 10], [addresses[3], 22]],
+    });
+
+    let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
+
 
     trace!("Calling build_payment_req");
 
-    let result = sovtoken::api::build_payment_req_handler(
-        COMMAND_HANDLE,
+    let error_code = sovtoken::api::build_payment_req_handler(
+        command_handle,
         wallet_id,
         c_pointer_from_string(did),
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
-        CB
+        cb
     );
 
-    trace!("Received result {:?}", result);
+    assert_eq!(error_code, ErrorCode::Success);
 
-    assert_eq!(result, ErrorCode::Success);
+    let request_string = ResultHandler::one(error_code, receiver).unwrap();
+
+    let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
+    debug!("Received request {:?}", request);
+
+    assert_eq!(&expected_operation, request.get("operation").unwrap());
+    assert_eq!(&addresses[0], request.get("identifier").unwrap());
+    assert!(request.get("reqId").is_some());
 }
