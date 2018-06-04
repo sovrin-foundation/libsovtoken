@@ -11,6 +11,7 @@ pub struct ParseResponseWithFeesRequest {
     pub fees : (Vec<(String, i32, String)>, Vec<(String, i32)>, i32),
 }
 
+/*
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub payment_address: String,
@@ -23,6 +24,7 @@ pub struct Output {
     pub payment_address: String,
     pub amount: u32
 }
+*/
 
 #[cfg(test)]
 mod parse_response_with_fees_handler_tests {
