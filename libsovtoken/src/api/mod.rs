@@ -17,6 +17,7 @@ use indy::ledger::Ledger;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::address::*;
+use logic::build_payment;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
 use logic::fees::Fees;
@@ -227,18 +228,58 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 }
 
 
-/// Description
-///
-///
-/// from tokens-interface.md/BuildPaymentReqCB
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
+/**
+ * Build a payment request.
+ * 
+ * Builds a payment request which can transfer funds from
+ * addresses to other addresses.
+ * 
+ * The amount in the output addresses needs to match the
+ * amount stored in input addresses.
+ * 
+ * ## Parameters
+ * 
+ * ### inputs_json
+ * ```JSON
+ * {
+ *     "ver": <int>
+ *     "inputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "seqNo": <int>
+ *          }
+ *     ]
+ * }
+ * ```
+ * 
+ * ### outputs_json
+ * ```JSON
+ * {
+ *      "ver": <int>
+ *      "outputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "amount": <int>
+ *              "extra": <str>
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * ## Returns
+ * Returns a json object of the payment request.
+ * ```JSON
+ * {
+ *      "identifier": <str>,
+ *      "reqId": <int>,
+ *      "operation" {
+ *          "type": "10001",
+ *          "inputs": [<str: payment_address>, <int: seq_no>, <str: signature>],
+ *          "outputs": [<str: payment_address>, <int: amount>]
+ *      }
+ * }
+ * ```
+ */
 #[no_mangle]
 pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             wallet_handle: i32,
@@ -249,58 +290,29 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                                                  err: ErrorCode,
                                                                  payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
-    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-
-    if cb.is_none() {
-        return handle_result(Err(ErrorCode::CommonInvalidParam5));
-    }
-    if submitter_did.is_null() {
-        return handle_result(Err(ErrorCode::CommonInvalidParam2));
-    }
-
-    let inputs_json_string = match string_from_char_ptr(inputs_json) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert inputs_json pointer to string");
-            return ErrorCode::CommonInvalidParam4;
+    let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
+        Ok(tup) => tup,
+        Err(error_code) => {
+            error!("Error in deserializing the build_payment_req_handler arguments.");
+            return error_code;
         }
     };
 
-    trace!("Converting request_json pointer to string");
-    let outputs_json_string = match string_from_char_ptr(outputs_json) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert outputs_json pointer to string.");
-            return ErrorCode::CommonInvalidParam5;
-        }
-    };
 
-    let inc_did = match string_from_char_ptr(submitter_did) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert did pointer to string.");
-            return ErrorCode::CommonInvalidParam3;
-        }
-    };
-
-    let the_inputs: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
-    let the_outputs: Outputs = serde_json::from_str(&outputs_json_string).unwrap();
-
-    let fees = Fees::new(the_inputs, the_outputs);
+    let fees = Fees::new(inputs, outputs);
     let fees_signed = fees.sign(CreatePaymentSDK {}, wallet_handle).unwrap();
+    debug!("Signed fees >>> {:?}", fees_signed);
 
-    trace!("signed = {:?}", fees_signed);
+    let identifier = fees_signed.inputs[0].address.clone();
 
-    let signed_inputs = fees_signed.inputs;
-    let signed_outputs = fees_signed.outputs;
-
-    let payment_request = PaymentRequest::new(signed_outputs, signed_inputs, inc_did);
+    let payment_request = PaymentRequest::new(fees_signed, identifier);
 
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    trace!("payment_request = {:?}", payment_request);
+    debug!("payment_request >>> {:?}", payment_request);
 
-    return handle_result(Ok(payment_request.as_ptr()));
+    cb(command_handle, ErrorCode::Success, payment_request.as_ptr());
+    return ErrorCode::Success;
 }
 
 /// Description

@@ -315,3 +315,22 @@ mod input_tests {
         assert_eq!(signed_input.signature.unwrap(), String::from("3aRkv0kyRjCYu7SazNpbOzJPhKWlQDFBU7Judz16nx6CzAUsp06q2PaPWmKh"));
     }
 }
+
+#[cfg(test)]
+mod input_config_test {
+    use logic::input::{Input, InputConfig};
+    use utils::json_conversion::JsonSerialize;
+
+    // this test ensures that the deserialized JSON is serialized correctly
+    #[test]
+    fn serializing_fee_struct_output_config() {
+
+        let input = Input::new(String::from("dakjhe238yad"), 30, Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
+
+        let fee: InputConfig = InputConfig {
+            ver: 1,
+            inputs: vec![input],
+        };
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"inputs":[["dakjhe238yad",30,"239asdkj3298uadkljasd98u234ijasdlkj"]]}"#);
+    }
+}

@@ -5,6 +5,7 @@
 
 pub mod add_request_fees;
 pub mod address;
+pub mod build_payment;
 pub mod fees;
 pub mod config;
 pub mod indysdk_api;

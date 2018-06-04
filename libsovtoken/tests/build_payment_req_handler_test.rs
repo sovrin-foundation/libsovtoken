@@ -9,12 +9,13 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 use indy::ErrorCode;
 use indy::payments::Payment;
+use indy::utils::results::ResultHandler;
 use libc::c_char;
+use sovtoken::logic::address;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use std::ptr;
 use std::ffi::CString;
 mod utils;
-use self::indy::wallet::Wallet;
 
 
 // ***** HELPER METHODS *****
@@ -31,6 +32,44 @@ const WALLET_HANDLE:i32 = 0;
 const CB : Option<extern fn(_command_handle_: i32, err: ErrorCode, payment_req_json: *const c_char) -> ErrorCode > = Some(empty_create_payment_callback);
 
 
+fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
+    let seed_1 = json!({
+        "seed": str::repeat("1", 32),
+    }).to_string();
+
+    let seed_2 = json!({
+        "seed": str::repeat("2", 32),
+    }).to_string();
+
+    let seed_3 = json!({
+        "seed": str::repeat("3", 32),
+    }).to_string();
+
+    let seed_4 = json!({
+        "seed": str::repeat("4", 32),
+    }).to_string();
+
+
+    let payment_addresses = vec![
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_1).unwrap(),
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_2).unwrap(),
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_3).unwrap(),
+        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_4).unwrap(),
+    ];
+
+    payment_addresses
+        .iter()
+        .enumerate()
+        .for_each(|(idx, address)| debug!("payment_address[{:?}] = {:?}", idx, address));
+
+    let addresses = payment_addresses
+        .iter()
+        .map(|address| address::verkey_checksum_from_address(address.clone()).unwrap())
+        .collect();
+
+    return (payment_addresses, addresses);
+}
+
 // ***** UNIT TESTS ****
 
 // the build_mint_txn_handler requires a callback and this test ensures that we
@@ -43,7 +82,7 @@ fn errors_with_no_call_back() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam5, "Expecting Callback for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Callback for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an inputs_json parameter and this test ensures that
@@ -56,7 +95,7 @@ fn errors_with_no_inputs_json() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting inputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting inputs_json for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an outputs_json parameter and this test ensures that
@@ -71,7 +110,7 @@ fn errors_with_no_outputs_json() {
                                                                 input_json_ptr,
                                                                 ptr::null(),
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an submitter_did parameter and this test ensures that
@@ -89,7 +128,7 @@ fn errors_with_no_submitter_did_json() {
                                                                 input_json_ptr,
                                                                 output_json_ptr,
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2, "Expecting outputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 #[test]
@@ -100,55 +139,71 @@ fn success_signed_request() {
     let did = String::from("287asdjkh2323kjnbakjs");
 
     let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
-
-    let payment_address_1 = Payment::create_payment_address(wallet_id,"pay:sov:", "{}").unwrap();
-    let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-    let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-
     debug!("wallet id = {:?}", wallet_id);
-    debug!("payment_address_1 = {:?}", payment_address_1);
-    debug!("payment_address_2 = {:?}", payment_address_2);
-    debug!("payment_address_3 = {:?}", payment_address_3);
-    debug!("payment_address_4 = {:?}", payment_address_4);
 
-    let inputs = json!([
-        {
-            "address": payment_address_1,
-            "seqNo": 1
-        },
-        {
-            "address": payment_address_2,
-            "seqNo": 1,
-            "extra": "extra data",
-        }
-     ]);
+    let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
 
-    let outputs = json!([
-        {
-            "address": payment_address_3,
-            "amount": 10
-        },
-        {
-            "address": payment_address_4,
-            "amount": 22,
-            "extra": "extra data"
-        }
-    ]);
+    let inputs = json!({
+        "ver": 1,
+        "inputs": [
+            {
+                "address": payment_addresses[0],
+                "seqNo": 1
+            },
+            {
+                "address": payment_addresses[1],
+                "seqNo": 1,
+                "extra": "extra data",
+            }
+        ]
+    });
+
+    let outputs = json!({
+        "ver": 1,
+        "outputs": [
+            {
+                "address": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "address": payment_addresses[3],
+                "amount": 22,
+                "extra": "extra data"
+            }
+        ]
+    });
+
+    let expected_operation = json!({
+        "type": "10000",
+        "inputs": [
+            [addresses[0], 1, "57R59eV1mFJPejU34j9XBuEWvMK15KoXSVrTBENUTtYo33DbCmyfVya3pq2pLU4EuKxUBMmcYz9yP4HTw6S2pRQd"],
+            [addresses[1], 1, "WgJWvF4b4FPB5Z2CPVC7C1drDU4AWhAqdALAuQmwp4mgJwPFAHNmvqCDiLD2h4rYiYoJhKN6jnvHpBLkGuYHJeE"]
+        ],
+        "outputs": [[addresses[2], 10], [addresses[3], 22]],
+    });
+
+    let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
 
 
     trace!("Calling build_payment_req");
 
-    let result = sovtoken::api::build_payment_req_handler(
-        COMMAND_HANDLE,
+    let error_code = sovtoken::api::build_payment_req_handler(
+        command_handle,
         wallet_id,
         c_pointer_from_string(did),
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
-        CB
+        cb
     );
 
-    trace!("Received result {:?}", result);
+    assert_eq!(error_code, ErrorCode::Success);
 
-    assert_eq!(result, ErrorCode::Success);
+    let request_string = ResultHandler::one(error_code, receiver).unwrap();
+
+    let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
+    debug!("Received request {:?}", request);
+
+    assert_eq!(&expected_operation, request.get("operation").unwrap());
+    assert_eq!(&addresses[0], request.get("identifier").unwrap());
+    assert!(request.get("reqId").is_some());
 }

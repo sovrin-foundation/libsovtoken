@@ -42,7 +42,7 @@ use logic::output::{Outputs};
  *  # }
  * ```
  */
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Fees {
     pub outputs: Outputs,
     pub inputs: Inputs,
