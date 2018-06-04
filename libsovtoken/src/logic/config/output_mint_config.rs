@@ -7,8 +7,7 @@
 
 
 use logic::request::Request;
-use logic::output::Output;
-use logic::config::general::OutputConfig;
+use logic::output::{Output, OutputConfig};
 
 /**
  *  A struct which can be transformed into a mint JSON object for [`build_mint_txn_handler`]
@@ -54,10 +53,11 @@ mod output_mint_config_test {
     #[test]
     fn serializing_mint_struct_config() {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
-        let mint : OutputConfig = OutputConfig { 
+        let mint : OutputConfig = OutputConfig {
+            ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(mint.to_json().unwrap(), r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
+        assert_eq!(mint.to_json().unwrap(), r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
     }
 }
 
@@ -96,6 +96,7 @@ mod mint_request_test {
         let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
         let outputs = vec![output];
         let mint_config = OutputConfig {
+            ver: 1,
             outputs: outputs.clone()
         };
         let request = MintRequest::from_config(mint_config, identifier);
