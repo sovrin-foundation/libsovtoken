@@ -5,7 +5,7 @@ use logic::output::{Outputs, OutputConfig};
 use utils::ffi_support::string_from_char_ptr;
 use serde_json;
 
-type BuildPaymentRequestCb = extern fn(ch: i32, err: ErrorCode, request_json: *const c_char) -> ErrorCode;
+type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, BuildPaymentRequestCb);
 
 pub fn deserialize_inputs(

@@ -79,9 +79,9 @@ macro_rules ! api_result_handler {
         move |result: Result<$value_type, ErrorCode>| {
             let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
             if let (Some(cb), Ok(value)) = ($cb, result) {
-                cb($command_handle, result_error_code, value);
+                cb($command_handle, result_error_code as i32, value);
             }
-            return result_error_code;
+            return result_error_code as i32;
         }
     }
 }
