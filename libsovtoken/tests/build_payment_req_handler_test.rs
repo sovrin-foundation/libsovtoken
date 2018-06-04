@@ -1,24 +1,21 @@
+extern crate env_logger;
 extern crate libc;
-
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 #[macro_use] extern crate lazy_static;
-
-#[macro_use]
-extern crate serde_json;
+#[macro_use] extern crate log;
+#[macro_use] extern crate serde_json;
 
 use indy::ErrorCode;
-
+use indy::payments::Payment;
 use libc::c_char;
+use sovtoken::utils::ffi_support::c_pointer_from_string;
 use std::ptr;
 use std::ffi::CString;
-
 mod utils;
 use self::indy::wallet::Wallet;
 
-use sovtoken::utils::ffi_support::c_pointer_from_string;
-use indy::payments::Payment;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: ErrorCode, _payment_req: *const c_char) -> ErrorCode {
@@ -106,16 +103,14 @@ fn success_signed_request() {
 
     let payment_address_1 = Payment::create_payment_address(wallet_id,"pay:sov:", "{}").unwrap();
     let payment_address_2 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-
     let payment_address_3 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
-
     let payment_address_4 = Payment::create_payment_address(wallet_id, "pay:sov:", "{}").unwrap();
 
-    println!("wallet id = {:?}", wallet_id);
-    println!("payment_address_1 = {:?}", payment_address_1);
-    println!("payment_address_2 = {:?}", payment_address_2);
-    println!("payment_address_3 = {:?}", payment_address_3);
-    println!("payment_address_4 = {:?}", payment_address_4);
+    debug!("wallet id = {:?}", wallet_id);
+    debug!("payment_address_1 = {:?}", payment_address_1);
+    debug!("payment_address_2 = {:?}", payment_address_2);
+    debug!("payment_address_3 = {:?}", payment_address_3);
+    debug!("payment_address_4 = {:?}", payment_address_4);
 
     let inputs = json!([
         {
@@ -142,7 +137,7 @@ fn success_signed_request() {
     ]);
 
 
-    println!("Calling build_payment_req");
+    trace!("Calling build_payment_req");
 
     let result = sovtoken::api::build_payment_req_handler(
         COMMAND_HANDLE,
@@ -153,7 +148,7 @@ fn success_signed_request() {
         CB
     );
 
-    println!("Received result {:?}", result);
+    trace!("Received result {:?}", result);
 
     assert_eq!(result, ErrorCode::Success);
 }

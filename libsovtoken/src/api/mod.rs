@@ -289,7 +289,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     let fees = Fees::new(the_inputs, the_outputs);
     let fees_signed = fees.sign(CreatePaymentSDK {}, wallet_handle).unwrap();
 
-    println!("signed = {:?}", fees_signed);
+    trace!("signed = {:?}", fees_signed);
 
     let signed_inputs = fees_signed.inputs;
     let signed_outputs = fees_signed.outputs;
@@ -298,7 +298,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    println!("payment_request = {:?}", payment_request);
+    trace!("payment_request = {:?}", payment_request);
 
     return handle_result(Ok(payment_request.as_ptr()));
 }
