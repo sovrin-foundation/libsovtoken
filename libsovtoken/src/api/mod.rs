@@ -19,11 +19,12 @@ use logic::add_request_fees;
 use logic::address::*;
 use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
 
-use logic::fees::{Fees, Inputs, Outputs};
+use logic::fees::Fees;
+use logic::input::{Inputs, InputConfig};
+use logic::output::{Outputs, OutputConfig};
 
 use logic::config::{
     payment_config::{PaymentRequest},
-    general::{InputConfig, OutputConfig},
     output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},
@@ -280,13 +281,8 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             inputs_json: *const c_char,
                                             outputs_json: *const c_char,
                                             cb: Option<extern fn(command_handle_: i32,
-                                                        err: ErrorCode,
-                                                        payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
-
-
-    println!("move to new line {}", "yes");
-
-    println!("build_payment_req >>> wallet is {:?}", wallet_handle);
+                                                                 err: ErrorCode,
+                                                                 payment_req_json: *const c_char) -> ErrorCode>) -> ErrorCode {
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
@@ -294,7 +290,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         return handle_result(Err(ErrorCode::CommonInvalidParam5));
     }
     if submitter_did.is_null() {
-       return handle_result(Err(ErrorCode::CommonInvalidParam2));
+        return handle_result(Err(ErrorCode::CommonInvalidParam2));
     }
 
     let inputs_json_string = match string_from_char_ptr(inputs_json) {
@@ -305,8 +301,6 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         }
     };
 
-    println!("inputs_json_string = {:?}", inputs_json_string);
-
     trace!("Converting request_json pointer to string");
     let outputs_json_string = match string_from_char_ptr(outputs_json) {
         Some(s) => s,
@@ -316,19 +310,32 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         }
     };
 
-    println!("outputs_json_string = {:?}", outputs_json_string);
+    let inc_did = match string_from_char_ptr(submitter_did) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert did pointer to string.");
+            return ErrorCode::CommonInvalidParam3;
+        }
+    };
 
-    let the_input: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
-
+    let the_inputs: Inputs = serde_json::from_str(&inputs_json_string).unwrap();
     let the_outputs: Outputs = serde_json::from_str(&outputs_json_string).unwrap();
 
-    let fees = Fees::new(the_input, the_outputs);
-    let fees_signed = fees.sign(CreatePaymentSDK{}, wallet_handle).unwrap();
+    let fees = Fees::new(the_inputs, the_outputs);
+    let fees_signed = fees.sign(CreatePaymentSDK {}, wallet_handle).unwrap();
 
-    println!("signed = {:?}", fees_signed);
+    trace!("signed = {:?}", fees_signed);
 
-    return ErrorCode::Success;
+    let signed_inputs = fees_signed.inputs;
+    let signed_outputs = fees_signed.outputs;
 
+    let payment_request = PaymentRequest::new(signed_outputs, signed_inputs, inc_did);
+
+    let payment_request = payment_request.serialize_to_cstring().unwrap();
+
+    trace!("payment_request = {:?}", payment_request);
+
+    return handle_result(Ok(payment_request.as_ptr()));
 }
 
 /// Description
