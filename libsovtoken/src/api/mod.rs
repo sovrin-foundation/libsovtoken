@@ -35,7 +35,7 @@ use logic::config::{
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
-    parse_response_with_fees_handler::{ParseResponseWithFeesRequest}
+    parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply}
 };
 
 use logic::request::Request;
@@ -240,14 +240,14 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
         }
     };
 
-    let response: ParseResponseWithFeesRequest = match ParseResponseWithFeesRequest::from_json(&resp_json_string) {
+    let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string) {
         Ok(r) => r,
         Err(e) => return ErrorCode::CommonInvalidStructure,
     };
 
     // here is where the magic happens--conversion from input structure to output structure
-    // is handled in ParsePaymentReply::from_response
-    /*let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+    // is handled in ParseResponseWithFeesReply::from_response
+    let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
 
     let reply_str: String = match reply.to_json() {
         Ok(j) => j,
@@ -256,7 +256,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
-    cb(command_handle, ErrorCode::Success, reply_str_ptr);*/
+    cb(command_handle, ErrorCode::Success, reply_str_ptr);
 
     return ErrorCode::Success;
 }
