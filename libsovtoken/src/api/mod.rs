@@ -79,18 +79,18 @@ type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_p
 pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
-                                                 cb: JsonCallback) -> ErrorCode {
+                                                 cb: JsonCallback) -> i32 {
     if cb.is_none() {
-        return ErrorCode::CommonInvalidParam4;
+        return ErrorCodeToI32!(ErrorCode::CommonInvalidStructure);
     }
 
     if config_str.is_null() {
-        return ErrorCode::CommonInvalidParam2
+        return ErrorCodeToI32!(ErrorCode::CommonInvalidStructure);
     }
 
     let json_config_str: String = match string_from_char_ptr(config_str) {
         Some(s) => s,
-        None => return ErrorCode::CommonInvalidParam2
+        None => return ErrorCodeToI32!(ErrorCode::CommonInvalidStructure),
     };
 
     // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
@@ -133,7 +133,7 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     });
 
 
-    return ErrorCode::Success;
+    return ErrorCodeToI32!(ErrorCode::Success);
 }
 
 /// Description
