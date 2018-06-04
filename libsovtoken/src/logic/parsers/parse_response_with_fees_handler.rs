@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use logic::address::verkey_to_address;
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 /**
@@ -62,8 +63,10 @@ impl ParseResponseWithFeesReply {
 
         for output in outputs {
 
-            let txo: TXO = TXO { address: output.address.to_string(), seq_no };
-            let utxo: UTXO = UTXO { payment_address: output.address.to_string(), txo, amount : output.amount, extra: "".to_string()};
+            let address: String = verkey_to_address(&output.address);
+
+            let txo: TXO = TXO { address: address.to_string(), seq_no };
+            let utxo: UTXO = UTXO { payment_address: address.to_string(), txo, amount : output.amount, extra: "".to_string()};
 
             utxos.push(utxo);
         }
@@ -77,6 +80,7 @@ impl ParseResponseWithFeesReply {
 mod parse_response_with_fees_handler_tests {
     #[allow(unused_imports)]
 
+    use logic::address::{ADDRESS_LEN, VERKEY_LEN, CHECKSUM_LEN};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use super::*;
@@ -95,14 +99,66 @@ mod parse_response_with_fees_handler_tests {
                 ]
             }"#;
 
+    static PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON: &'static str = r#"{
+                "fees": [
+                    [
+                        ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
+                    ],
+                    [
+                        ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+                        ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 10]
+                    ],
+                    3
+                ]
+            }"#;
+
     #[test]
     fn success_json_to_parse_response_with_fees() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
+
+        let outputs: Outputs = response.fees.1;
+
+        assert_eq!(1, outputs.len());
+        assert_eq!(3, response.fees.2);
+    }
+
+    #[test]
+    fn success_json_to_parse_response_with_multiple_fees() {
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
+
+        let outputs: Outputs = response.fees.1;
+
+        assert_eq!(2, outputs.len());
+        assert_eq!(3, response.fees.2);
     }
 
     #[test]
     fn success_parse_response_with_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
+
+        assert_eq!(1, reply.utxo_json.len());
+
+        for utxo in reply.utxo_json {
+            let address: String = utxo.payment_address;
+
+
+        }
+
+    }
+
+    #[test]
+    fn success_parse_response_with_multiple_fees_to_reply() {
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
+        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
+
+        println!("reply {:?}", reply);
+
+        assert_eq!(2, reply.utxo_json.len());
+
+        for utxo in reply.utxo_json {
+            let address: String = utxo.payment_address;
+
+        }
     }
 }
