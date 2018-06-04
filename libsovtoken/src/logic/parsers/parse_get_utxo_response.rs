@@ -1,5 +1,6 @@
 //! types used for parse_get_utxo_response_handler
-
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 use logic::responses::ResponseOperations;
 
 /**
@@ -24,7 +25,7 @@ pub struct ParseGetUtxoResponseResult {
     pub txn_type : String,
     pub address : String,
     pub identifier: String,
-    pub req_id: u32,
+    pub req_id: i64,
     pub outputs : Vec<(String, i32, i32)>,
 }
 
@@ -86,10 +87,28 @@ impl ParseGetUtxoReply {
 
 #[cfg(test)]
 mod parse_get_uto_responses_tests {
+    #[allow(unused_imports)]
 
     use logic::responses::ResponseOperations;
+    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use super::*;
+
+    static PARSE_GET_UTXO_RESPONSE_JSON: &'static str = r#"{
+                        "op": "REPLY",
+                        "protocolVersion": 1,
+                        "result": {
+                            "type": "10002",
+                            "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                            "identifier": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                            "reqId": 23887,
+                            "outputs": [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, 10],
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 3, 3]
+                            ]
+                        }
+                    }"#;
+
 
     #[test]
     fn success_parse_get_utxo_reply_from_response() {
@@ -148,5 +167,25 @@ mod parse_get_uto_responses_tests {
         let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
 
         assert_eq!(outputs_len, reply.utxo_json.len());
+    }
+
+    // the PARSE_GET_UTXO_RESPONSE_JSON is valid per the documentation.   If serde correctly serializes it
+    // into ParseGetUtxoResponse then we know the ParseGetUtxoResponse structure matches
+    #[test]
+    fn success_parse_get_utxo_response_from_json() {
+
+        let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
+
+        assert_eq!(response.op, ResponseOperations::REPLY);
+    }
+
+    // this test passes when the valid JSON defined in PARSE_GET_UTXO_RESPONSE_JSON is correctly serialized into
+    // ParseGetUtxoResponse which is then successfully converted to ParseGetUtxoReply and then into json
+    #[test]
+    fn success_response_json_to_reply_json() {
+
+        let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+        let reply_json : String = reply.to_json().unwrap();
     }
 }
