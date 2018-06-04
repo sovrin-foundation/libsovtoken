@@ -13,7 +13,6 @@ pub struct ParseResponseWithFees {
     pub fees: (Inputs, Outputs, i32),
 }
 
-
 /**
     for parse_response_with_fees_handler output utxo_json
 */
@@ -49,19 +48,19 @@ pub struct TXO {
 
 impl ParseResponseWithFeesReply {
     /**
-        Converts ParsePaymentReply (which should be input via indy-sdk) to ParsePaymentReply
-        please note:  use of this function moves ParsePaymentResponse and it cannot be used again
+        Converts ParseResponseWithFees (which should be input via indy-sdk) to ParseResponseWithFeesReply
+        please note:  use of this function moves ParseResponseWithFees and it cannot be used again
         after this call
     */
     pub fn from_response(base : ParseResponseWithFees) -> ParseResponseWithFeesReply {
         let mut utxos: Vec<UTXO> = vec![];
 
+        // according to the documentation, don't need the inputs.  Only the outputs
+        // and seq_no which are part 2 and 3 of the tuple
         let outputs: Outputs = base.fees.1;
         let seq_no: i32 = base.fees.2;
 
         for output in outputs {
-
-            println!("output -> {:?}", output);
 
             let txo: TXO = TXO { address: output.address.to_string(), seq_no };
             let utxo: UTXO = UTXO { payment_address: output.address.to_string(), txo, amount : output.amount, extra: "".to_string()};

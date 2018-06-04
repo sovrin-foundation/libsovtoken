@@ -206,7 +206,8 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     return ErrorCode::Success;
 }
 
-/// Description
+
+/// Parses inputted output fees section and returns it in utxo format
 ///
 ///
 /// from tokens-interface.md/ParseResponseWithFeesCB
