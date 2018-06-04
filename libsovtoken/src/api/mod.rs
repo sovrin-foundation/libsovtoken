@@ -32,7 +32,11 @@ use logic::config::{
     get_utxo_config::*,
 };
 
-use logic::parsers::parse_get_utxo_response::*;
+use logic::parsers::{
+    parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
+    parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
+};
+
 use logic::request::Request;
 use serde_json;
 use serde::de::Error;
@@ -303,20 +307,54 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 ///
 ///
 /// from tokens-interface.md/ParsePaymentResponseCB
-/// #Params
-/// param1: description.
+/// # Params
+/// command_handle: standard command handle
+/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
-/// #Returns
-/// description. example if json, etc...
+/// # Returns
+/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
-/// #Errors
-/// description of errors
+/// # Errors
+/// CommonInvalidStructure when any of the inputs are invalid
+/// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
 pub extern "C" fn parse_payment_response_handler(command_handle: i32,
                                                  resp_json: *const c_char,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                              err: ErrorCode,
                                                              utxo_json: *const c_char) -> ErrorCode>) -> ErrorCode {
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
+
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure;
+    }
+
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+
+    let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string) {
+        Ok(r) => r,
+        Err(e) => return ErrorCode::CommonInvalidStructure,
+    };
+
+    // here is where the magic happens--conversion from input structure to output structure
+    // is handled in ParsePaymentReply::from_response
+    let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+
+    let reply_str: String = match reply.to_json() {
+        Ok(j) => j,
+        Err(e) => return ErrorCode::CommonInvalidState,
+    };
+
+    let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
+
+    cb(command_handle, ErrorCode::Success, reply_str_ptr);
 
     return ErrorCode::Success;
 }
@@ -375,14 +413,14 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 ///
 ///
 /// from tokens-interface.md/ParseGetUTXOResponseCB
-/// #Params
+/// # Params
 /// command_handle: standard command handle
 /// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
-/// #Returns
+/// # Returns
 /// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
 ///
-/// #Errors
+/// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
 /// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
@@ -406,13 +444,20 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
         }
     };
 
-    let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
+    let response: ParseGetUtxoResponse = match ParseGetUtxoResponse::from_json(&resp_json_string) {
+        Ok(r) => r,
+        Err(e) => return ErrorCode::CommonInvalidStructure,
+    };
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseGetUtxoReply::from_response
     let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
 
-    let reply_str: String = reply.to_json().unwrap();
+    let reply_str: String = match reply.to_json() {
+        Ok(j) => j,
+        Err(e) => return ErrorCode::CommonInvalidState,
+    };
+
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
     cb(command_handle, ErrorCode::Success, reply_str_ptr);

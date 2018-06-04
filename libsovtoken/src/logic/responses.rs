@@ -1,4 +1,5 @@
 //! Contains the response types
+//! TODO:  do we need these types any more?   ResponseOperations is used.  nothing else
 
 use serde_json;
 

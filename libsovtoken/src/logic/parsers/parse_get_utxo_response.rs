@@ -1,5 +1,4 @@
-//!
-//!
+//! types used for parse_get_utxo_response_handler
 
 use logic::responses::ResponseOperations;
 
@@ -128,7 +127,7 @@ mod parse_get_uto_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, i32, i32)> = Vec::new();
+        let outputs: Vec<(String, i32, i32)> = Vec::new();
 
         let outputs_len: usize = outputs.len();
 
