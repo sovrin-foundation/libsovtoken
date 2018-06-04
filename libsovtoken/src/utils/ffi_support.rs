@@ -165,7 +165,7 @@ mod ffi_support_tests {
     #[test]
     fn api_result_handler_callback_on_ok() {
         static mut CALLBACK_CALLED: bool = false;
-        extern fn callback(ch: i32, ec: ErrorCode, val: u32) {
+        extern fn callback(ch: i32, ec: i32, val: u32) {
             assert_eq!(val, 2);
             unsafe { CALLBACK_CALLED = true }
         }
@@ -174,12 +174,12 @@ mod ffi_support_tests {
         let cb = Some(callback);
         let result_handler = api_result_handler!(<u32>, ch, cb);
         let result = result_handler(Ok(2));
-        assert_eq!(result, ErrorCode::Success);
+        assert_eq!(result, ErrorCode::Success as i32);
         assert!(unsafe { CALLBACK_CALLED });
 
         unsafe { CALLBACK_CALLED = false }
         let result = result_handler(Err(ErrorCode::CommonInvalidParam1));
-        assert_eq!(result, ErrorCode::CommonInvalidParam1);
+        assert_eq!(result, ErrorCode::CommonInvalidParam1 as i32);
         assert!(! unsafe { CALLBACK_CALLED });
     }
 

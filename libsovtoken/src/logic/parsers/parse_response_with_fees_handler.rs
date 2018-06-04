@@ -46,7 +46,6 @@ pub struct TXO {
     pub seq_no: i32,
 }
 
-
 impl ParseResponseWithFeesReply {
     /**
         Converts ParseResponseWithFees (which should be input via indy-sdk) to ParseResponseWithFeesReply
@@ -116,6 +115,7 @@ mod parse_response_with_fees_handler_tests {
     fn success_json_to_parse_response_with_fees() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
+        // only going to test outputs since we don't use inputs
         let outputs: Outputs = response.fees.1;
 
         assert_eq!(1, outputs.len());
@@ -126,6 +126,7 @@ mod parse_response_with_fees_handler_tests {
     fn success_json_to_parse_response_with_multiple_fees() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
 
+        // only going to test outputs since we don't use inputs
         let outputs: Outputs = response.fees.1;
 
         assert_eq!(2, outputs.len());

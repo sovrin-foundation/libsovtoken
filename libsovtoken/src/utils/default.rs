@@ -42,8 +42,8 @@ pub fn outputs_json_pointer() -> *const c_char {
 
 pub extern fn empty_callback_string(
     _: i32,
-    e: ErrorCode,
+    e: i32,
     _: *const c_char
-) -> ErrorCode {
+) -> i32 {
     return e;
 }

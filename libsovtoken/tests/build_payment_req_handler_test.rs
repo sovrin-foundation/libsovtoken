@@ -19,8 +19,8 @@ mod utils;
 
 
 // ***** HELPER METHODS *****
-extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: ErrorCode, _payment_req: *const c_char) -> ErrorCode {
-    return ErrorCode::Success;
+extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: i32, _payment_req: *const c_char) -> i32 {
+    return ErrorCode::Success as i32;
 }
 
 // ***** HELPER TEST DATA  *****
@@ -29,7 +29,7 @@ const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
 const WALLET_HANDLE:i32 = 0;
-const CB : Option<extern fn(_command_handle_: i32, err: ErrorCode, payment_req_json: *const c_char) -> ErrorCode > = Some(empty_create_payment_callback);
+const CB : Option<extern fn(_command_handle_: i32, err: i32, payment_req_json: *const c_char) -> i32 > = Some(empty_create_payment_callback);
 
 
 fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
@@ -82,7 +82,7 @@ fn errors_with_no_call_back() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting Callback for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an inputs_json parameter and this test ensures that
@@ -95,7 +95,7 @@ fn errors_with_no_inputs_json() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting inputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting inputs_json for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an outputs_json parameter and this test ensures that
@@ -110,7 +110,7 @@ fn errors_with_no_outputs_json() {
                                                                 input_json_ptr,
                                                                 ptr::null(),
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 // the build payment req handler method requires an submitter_did parameter and this test ensures that
@@ -128,7 +128,7 @@ fn errors_with_no_submitter_did_json() {
                                                                 input_json_ptr,
                                                                 output_json_ptr,
                                                                 CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidStructure, "Expecting outputs_json for 'build_payment_req_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_payment_req_handler'");
 }
 
 #[test]
@@ -196,9 +196,9 @@ fn success_signed_request() {
         cb
     );
 
-    assert_eq!(error_code, ErrorCode::Success);
+    assert_eq!(error_code, ErrorCode::Success as i32);
 
-    let request_string = ResultHandler::one(error_code, receiver).unwrap();
+    let request_string = ResultHandler::one(ErrorCode::Success, receiver).unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);

@@ -11,7 +11,7 @@ use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
 
 
-fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {
+fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, i32> {
     let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
     let did = "mydid1";
     let error_code = sovtoken::api::add_request_fees_handler(
