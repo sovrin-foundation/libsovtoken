@@ -1,6 +1,7 @@
 //! types used for parse_payment_response_handler
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+use logic::address::verkey_to_address;
 use logic::responses::ResponseOperations;
 
 /**
@@ -77,7 +78,9 @@ impl ParsePaymentReply {
 
         for unspent_output in base.result.outputs {
 
-            let (address, amount) = unspent_output;
+            let (verkey, amount) = unspent_output;
+
+            let address: String = verkey_to_address(&verkey);
 
             let txo: TXO = TXO { address: address.to_string(), seq_no: 1 };
             let utxo: UTXO = UTXO { payment_address: address, txo, amount, extra: "".to_string() };

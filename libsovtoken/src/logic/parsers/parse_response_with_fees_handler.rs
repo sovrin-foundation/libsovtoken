@@ -104,13 +104,24 @@ mod parse_response_with_fees_handler_tests {
                         ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
                     ],
                     [
-                        ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+                        ["1mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
                         ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 10]
                     ],
                     3
                 ]
             }"#;
 
+    // helper method to remove pay:sov from an address.  expectation is input
+    // has pay:sov: prefixed.  there is no check that the actual address is valid
+    // since the data above is what is used
+    fn strip_pay_sov_indicator_from_address(address : &String ) -> String {
+        let len = address.chars().count();
+        let result: String = address[8..len].to_string();
+
+        return result.to_string();
+    }
+
+    // Tests that valid json with one element in the "output section" is serialized to ParseResponseWithFees tyoe
     #[test]
     fn success_json_to_parse_response_with_fees() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
@@ -122,6 +133,7 @@ mod parse_response_with_fees_handler_tests {
         assert_eq!(3, response.fees.2);
     }
 
+    // Tests that valid json with multiple elements in the "output section" is serialized to ParseResponseWithFees tyoe
     #[test]
     fn success_json_to_parse_response_with_multiple_fees() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
@@ -133,33 +145,62 @@ mod parse_response_with_fees_handler_tests {
         assert_eq!(3, response.fees.2);
     }
 
+    // Tests that valid json with one element in the "output section" is correctly converted to ParseResponseWithFeesReply
+    // through the ParseResponseWithFeesReply::from_response method
     #[test]
     fn success_parse_response_with_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
+
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
 
         assert_eq!(1, reply.utxo_json.len());
 
         for utxo in reply.utxo_json {
-            let address: String = utxo.payment_address;
+            let address: String = strip_pay_sov_indicator_from_address(&utxo.payment_address);
+            let amount: u32 = utxo.amount;
+            let mut found_address: bool = false;
 
+            // if this next statement is outside the prior for, there is a move error.
+            // yes this is a cheat but its a unit test function...
+            let outputs: Vec<Output> = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap().fees.1.to_vec();
 
+            for output in outputs {
+                if address == output.address {
+                    found_address = true;
+                    assert_eq!(amount, output.amount, "amounts did not match in reply (ParseResponseWithFeesReply)");
+                }
+            }
+            assert_eq!(true, found_address, "did not find address reply (ParseResponseWithFeesReply)");
         }
 
     }
 
+    // Tests that valid json with many elements in the "output section" is correctly converted to ParseResponseWithFeesReply
+    // through the ParseResponseWithFeesReply::from_response method
     #[test]
     fn success_parse_response_with_multiple_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
 
-        println!("reply {:?}", reply);
-
         assert_eq!(2, reply.utxo_json.len());
 
         for utxo in reply.utxo_json {
-            let address: String = utxo.payment_address;
+            let address: String = strip_pay_sov_indicator_from_address(&utxo.payment_address);
+            let amount: u32 = utxo.amount;
+            let mut found_address: bool = false;
 
+            // if this next statement is outside the prior for, there is a move error.
+            // yes this is a cheat but its a unit test function...
+            let outputs: Vec<Output> = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap().fees.1.to_vec();
+
+            for output in outputs {
+                if address == output.address {
+                    found_address = true;
+                    assert_eq!(amount, output.amount, "amounts did not match in reply (ParseResponseWithFeesReply)");
+                }
+            }
+
+            assert_eq!(true, found_address, "did not find address reply (ParseResponseWithFeesReply)");
         }
     }
 }

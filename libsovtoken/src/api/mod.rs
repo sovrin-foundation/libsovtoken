@@ -351,7 +351,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     return ErrorCode::Success as i32;
 }
 
-/// Description
+/// Parses inputted payment data and returns formatted UTXOs
 ///
 ///
 /// from tokens-interface.md/ParsePaymentResponseCB
