@@ -140,8 +140,9 @@ mod test_fees {
             return Err(ErrorCode::CommonInvalidState);
         }
 
-        fn indy_crypto_sign(&self, _wallet_handle: IndyHandle, verkey: String, _message: String) -> Result<String, ErrorCode> {
-            return Ok(verkey + "signed");
+        fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, _wallet_handle: IndyHandle, verkey: String, _message: String, cb: F) -> ErrorCode {
+            cb(Ok(verkey + "signed"));
+            return ErrorCode::Success;
         } 
     }
 

@@ -10,5 +10,5 @@ use super::config::payment_address_config::PaymentAddressConfig;
 */
 pub trait CryptoAPI {
     fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode>;
-    fn indy_crypto_sign(&self, wallet_handle: i32, verkey: String, message: String) -> Result<String, ErrorCode>;
+    fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, wallet_handle: i32, verkey: String, message: String, cb: F) -> ErrorCode;
 }

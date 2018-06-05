@@ -53,9 +53,20 @@ impl CryptoAPI for CreatePaymentSDK {
         return Key::create(wallet_id, Some(&config_json));
     }
 
-    fn indy_crypto_sign(&self, wallet_handle: IndyHandle, verkey: String, message: String) -> Result<String, ErrorCode> {
-         return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
-             .map(|vec| serialize_bytes(&vec));
+    fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(
+        &self,
+        wallet_handle: IndyHandle,
+        verkey: String,
+        message: String,
+        cb: F
+    ) -> ErrorCode {
+        return Crypto::sign_async(wallet_handle, &verkey, message.as_bytes(), move |error_code, vec| {
+            if error_code == ErrorCode::Success {
+                cb(Ok(serialize_bytes(&vec)));
+            } else {
+                cb(Err(error_code));
+            }
+        });
     }
 }
 
@@ -113,8 +124,8 @@ mod payments_tests {
             return Ok(rand_string(VERKEY_LEN));
         }
 
-        fn indy_crypto_sign(&self, _: i32, _: String, _: String) -> Result<String, ErrorCode> {
-            return Err(ErrorCode::CommonInvalidState);
+        fn indy_crypto_sign<F>(&self, _: i32, _: String, _: String, _: F) -> ErrorCode {
+            return ErrorCode::CommonInvalidState;
         } 
     }
 
