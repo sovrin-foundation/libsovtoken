@@ -6,12 +6,13 @@
  */
 
 use indy::IndyHandle;
-use serde_json;
 use indy::ErrorCode;
 use logic::address;
 use logic::indysdk_api::CryptoAPI;
 use logic::input::{Input, Inputs};
 use logic::output::{Outputs};
+use serde_json;
+use std::sync;
 
 /**
  * Holds `inputs` and `outputs`
@@ -87,11 +88,12 @@ trait InputSigner<A: CryptoAPI> {
     fn sign_inputs(crypto_api: &A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
         -> Result<Inputs, ErrorCode>
     {
-        let signed_inputs: Result<Inputs, ErrorCode> = inputs.iter()
-            .map(|input| Self::sign_input(crypto_api, wallet_handle, input, outputs))
-            .collect();
+        return Err(ErrorCode::CommonInvalidState);
+        // let signed_inputs: Result<Inputs, ErrorCode> = inputs.iter()
+        //     .map(|input| Self::sign_input(crypto_api, wallet_handle, input, outputs))
+        //     .collect();
 
-        return signed_inputs;
+        // return signed_inputs;
     }
 
     /**
@@ -103,7 +105,7 @@ trait InputSigner<A: CryptoAPI> {
      * 
      * [`Input`]: Input
      */
-    fn sign_input(crypto_api: &A, wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode>
+    fn sign_input<F: Fn(Result<Input, ErrorCode>) + Sync + Send + 'static>(crypto_api: &'static A, wallet_handle: IndyHandle, input: &Input, outputs: &Outputs) -> Result<Box<FnOnce(Box<F>)>, ErrorCode>
     {
         if outputs.len() < 1 {
             error!("No outputs found.");
@@ -120,11 +122,27 @@ trait InputSigner<A: CryptoAPI> {
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
 
-        return crypto_api.indy_crypto_sign(wallet_handle, verkey, message)
-            .map(|signed_string| {
+        // return crypto_api.indy_crypto_sign(wallet_handle, verkey, message)
+        //     .map(|signed_string| {
+        //         debug!("Received encoded signature >>> {:?}", signed_string);
+        //         input.clone().sign_with(signed_string)
+        //     });
+
+
+
+        let input_clone = input.clone();
+        let cb = move |func: Box<F>| {
+            // this needs to be a mutatable function
+            let ca = move |signed_string: Result<String, ErrorCode>| {
                 debug!("Received encoded signature >>> {:?}", signed_string);
-                input.clone().sign_with(signed_string)
-            });
+                let signed_input = signed_string.map(|sig| input_clone.clone().sign_with(sig));
+                func(signed_input);
+            };
+
+            crypto_api.indy_crypto_sign(wallet_handle, verkey, message, ca);
+        };
+
+        return Ok(Box::new(cb));
     }
 }
 
@@ -160,12 +178,26 @@ mod test_fees {
         return (inputs, outputs);
     }
 
+    // fn sign_input_sync(input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode> {
+    //     let wallet_handle = 1;
+    //     let crypto_api = CryptoApiHandler{};
+    //     let (sender, receiver) = sync::mpsc::channel();
+    //     let cb = Fees::sign_input(
+    //         &crypto_api,
+    //         input,
+    //         outputs
+    //     );
+    //     cb(Box::new(|result| sender.send(result)));
+    //     let result = receiver.recv();
+    //     return result;
+    // }
+
     #[test]
     fn sign_input_invalid_empty_outputs() {
         let (inputs, _) = inputs_outputs_valid();
-        let wallet_handle = 1;
 
-        let signed_input = Fees::sign_input(&CryptoApiHandler{}, wallet_handle, &inputs[0], &Vec::new()).unwrap_err();
+        // let signed_input = Fees::sign_input(&CryptoApiHandler{}, wallet_handle, &inputs[0], &Vec::new()).unwrap_err();
+        let signed_input = sign_input_sync(&inputs[0], &Vec::new()).unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_input);
     }
 

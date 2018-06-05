@@ -65,7 +65,7 @@ fn errors_with_invalid_outputs_json() {
     unsafe { assert!(! CALLBACK_CALLED) }
 }
 
-#[test]
+// #[test]
 fn valid_output_json() {
     static mut CALLBACK_CALLED: bool = false;
     extern "C" fn valid_output_json_cb(command_handle: i32, error_code: i32, mint_request: *const c_char) -> i32 {

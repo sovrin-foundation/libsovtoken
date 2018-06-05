@@ -58,7 +58,7 @@ impl CryptoAPI for CreatePaymentSDK {
         wallet_handle: IndyHandle,
         verkey: String,
         message: String,
-        cb: F
+        mut cb: F
     ) -> ErrorCode {
         return Crypto::sign_async(wallet_handle, &verkey, message.as_bytes(), move |error_code, vec| {
             if error_code == ErrorCode::Success {
