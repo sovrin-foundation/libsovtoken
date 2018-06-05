@@ -18,7 +18,7 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::address::*;
 use logic::build_payment;
-use logic::payments::{CreatePaymentSDK, CreatePaymentHandler};
+use logic::payments::{CryptoSdk, CreatePaymentHandler};
 
 use logic::fees::Fees;
 use logic::input::{Inputs, InputConfig};
@@ -103,7 +103,7 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     thread::spawn(move || {
         // to return both payment address and private key pair so that we can write the private
         // key into the ledger
-        let handler = CreatePaymentHandler::new(CreatePaymentSDK {} );
+        let handler = CreatePaymentHandler::new(CryptoSdk {} );
         match handler.create_payment_address(wallet_handle, config) {
             Ok(payment_address) => {
                 debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
@@ -336,7 +336,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
 
     let fees = Fees::new(inputs, outputs);
-    let fees_signed = fees.sign(&CreatePaymentSDK {}, wallet_handle).unwrap();
+    let fees_signed = fees.sign(&CryptoSdk {}, wallet_handle).unwrap();
     debug!("Signed fees >>> {:?}", fees_signed);
 
     let identifier = fees_signed.inputs[0].address.clone();

@@ -29,9 +29,9 @@ use logic::address::{
    Implementation of CryptoAPI for use in productions environment
    This implementation calls Indy SDK indy_create_key(...)
 */
-pub struct CreatePaymentSDK{}
+pub struct CryptoSdk{}
 
-impl CryptoAPI for CreatePaymentSDK {
+impl CryptoAPI for CryptoSdk {
 
     /**
        creates fully formatted address based on inputted seed.  If seed is empty
@@ -77,7 +77,7 @@ impl CryptoAPI for CreatePaymentSDK {
     CreatePaymentHandler contains methods for creating a fully formatted address based on inputted
     seed.  If seed is empty then a randomly generated seed is used by libsodium
 
-    In production runtime environment, the expectation is T is CreatePaymentSDK
+    In production runtime environment, the expectation is T is CryptoSdk
     and in testing environments its anything else as long as it implements CryptoAPI
 
 */

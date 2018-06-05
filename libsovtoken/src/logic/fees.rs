@@ -29,7 +29,7 @@ use std::sync;
  *      use sovtoken::logic::input::Input;
  *      use sovtoken::logic::output::Output;
  *      use sovtoken::logic::fees::Fees;
- *      use sovtoken::logic::payments::CreatePaymentSDK;
+ *      use sovtoken::logic::payments::CryptoSdk;
  *  
  *      // Need an actual wallet_handle
  *      let wallet_handle = 1;
@@ -39,7 +39,7 @@ use std::sync;
  *      let outputs = vec![Output::new(address_output, 20, None)];
  * 
  *      let fees = Fees::new(inputs, outputs);
- *      let signed_fees = fees.sign(&CreatePaymentSDK{}, wallet_handle);
+ *      let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle);
  *  # }
  * ```
  */
