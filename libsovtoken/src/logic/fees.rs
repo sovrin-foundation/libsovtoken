@@ -39,7 +39,7 @@ use std::sync;
  *      let outputs = vec![Output::new(address_output, 20, None)];
  * 
  *      let fees = Fees::new(inputs, outputs);
- *      let signed_fees = fees.sign(CreatePaymentSDK{}, wallet_handle);
+ *      let signed_fees = fees.sign(&CreatePaymentSDK{}, wallet_handle);
  *  # }
  * ```
  */
@@ -74,7 +74,7 @@ impl Fees {
             let address = address::verkey_checksum_from_address(output.address.clone())?;
             output.address = address;
         }
-        trace!("indicator stripped from outputs");
+        trace!("Indicator stripped from outputs");
 
         self.inputs = Fees::sign_inputs(crypto_api, wallet_handle, &self.inputs, &self.outputs)?;
 
@@ -82,7 +82,8 @@ impl Fees {
             let address = address::verkey_checksum_from_address(input.address.clone())?;
             input.address = address;
         } 
-        trace!("indicator stripped from inputs");
+        trace!("Indicator stripped from inputs");
+
         return Ok(self);
     }
 }
