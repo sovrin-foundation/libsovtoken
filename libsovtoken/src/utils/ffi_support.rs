@@ -68,12 +68,6 @@ pub fn c_pointer_from_str(string: &str) -> *const c_char {
     Returns an `ErrorCode`
 */
 
-macro_rules ! ErrorCodeToI32 {
-   ($ec:expr) => {
-        $ec as i32;
-   }
-}
-
 macro_rules ! api_result_handler {
     ( <$value_type:ty>, $command_handle:ident, $cb:ident ) => {
         move |result: Result<$value_type, ErrorCode>| {
