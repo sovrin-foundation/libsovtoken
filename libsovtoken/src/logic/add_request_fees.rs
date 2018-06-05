@@ -99,7 +99,7 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<Fees, ErrorCode> {
     let fees = Fees::new(inputs, outputs);
-    let signed_fees = fees.sign(CreatePaymentSDK{}, wallet_handle)?;
+    let signed_fees = fees.sign(&CreatePaymentSDK{}, wallet_handle)?;
     debug!("Signed fees >>> {:?}", signed_fees);
 
     return Ok(signed_fees);
