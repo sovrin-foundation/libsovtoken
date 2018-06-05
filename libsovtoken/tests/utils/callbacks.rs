@@ -6,6 +6,7 @@
 
 extern crate rust_indy_sdk as indy;
 
+use indy::ErrorCode;
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver};
@@ -41,7 +42,7 @@ macro_rules! closure_cb {
 }
 
 
-pub fn closure_to_cb_ec_string() -> (Receiver<(i32, String)>, i32,
+pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
                                      Option<extern fn(command_handle: i32,
                                                       err: i32,
                                                       c_str: *const c_char) -> i32>) {
@@ -49,7 +50,7 @@ pub fn closure_to_cb_ec_string() -> (Receiver<(i32, String)>, i32,
 
     let closure = Box::new(move|error_code, c_str| {
         let string = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
-        sender.send((error_code, string)).unwrap();
+        sender.send((ErrorCode::from(error_code), string)).unwrap();
     });
 
     let (command_handle, callback) = closure_cb!(closure, char_value: *const c_char);

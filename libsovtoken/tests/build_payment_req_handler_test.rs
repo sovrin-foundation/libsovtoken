@@ -196,7 +196,7 @@ fn success_signed_request() {
         cb
     );
 
-    assert_eq!(error_code, ErrorCode::Success as i32);
+    assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);
 
     let request_string = ResultHandler::one(ErrorCode::Success, receiver).unwrap();
 
