@@ -181,7 +181,7 @@ mod test_fees {
             return ErrorCode::Success;
         } 
     }
-
+ 
     fn inputs_outputs_valid() -> (Inputs, Outputs) {
         let outputs = vec![
             Output::new(String::from("pay:sov:Va8VcAE9CDnDEXSDQlbluWBRO5hFpTEqbSzK1UgnpbUabg9Q"), 10, None),
@@ -211,6 +211,11 @@ mod test_fees {
         return result;
     }
 
+    fn sign_inputs_sync(inputs: &Inputs, outputs: &Outputs) -> Result<Inputs, ErrorCode> {
+        let wallet_handle = 1;
+        return Fees::sign_inputs(&CryptoApiHandler{}, wallet_handle, inputs, outputs);
+    }
+
     #[test]
     fn sign_input_invalid_address_input() {
         let (mut inputs, outputs) = inputs_outputs_valid();
@@ -232,26 +237,21 @@ mod test_fees {
     #[test]
     fn sign_multi_input_valid_empty_inputs() {
         let (_, outputs) = inputs_outputs_valid();
-        let wallet_handle = 1;
-
-        let signed_inputs = Fees::sign_inputs(&CryptoApiHandler{}, wallet_handle, &Vec::new(), &outputs).unwrap();
+        let signed_inputs = sign_inputs_sync(&Vec::new(), &outputs).unwrap();
         assert!(signed_inputs.is_empty());
     }
 
     #[test]
     fn sign_multi_input_invalid_input_address() {
-        let wallet_handle = 1;
         let (mut inputs, outputs) = inputs_outputs_valid();
         String::remove(&mut inputs[0].address, 5);
-
-        let signed_inputs = Fees::sign_inputs(&CryptoApiHandler{}, wallet_handle, &inputs, &outputs).unwrap_err();
-
+    
+        let signed_inputs = sign_inputs_sync(&inputs, &outputs).unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_inputs);
     }
 
     #[test]
     fn sign_multi_input() {
-        let wallet_handle = 1;
         let (inputs, outputs) = inputs_outputs_valid();
         
         let expected_signed_inputs = vec![
@@ -259,7 +259,7 @@ mod test_fees {
             Input::new(String::from("pay:sov:hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMSGfg"), 1, Some(String::from("hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMsigned"))),
         ];
         
-        let signed_inputs = Fees::sign_inputs(&CryptoApiHandler{}, wallet_handle, &inputs, &outputs).unwrap();
+        let signed_inputs = sign_inputs_sync(&inputs, &outputs).unwrap();
         assert_eq!(expected_signed_inputs, signed_inputs);
     }
 
