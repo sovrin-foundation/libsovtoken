@@ -5,31 +5,31 @@
     # description
     This is the transaction type used for Minting
 */
-const MINT_PUBLIC : String = "10000";
+pub const MINT_PUBLIC : &'static str = "10000";
 
 /**
     #description
     A transaction type for transferring tokens from one address to a different address
 */
 
-const XFER_PUBLIC: String = "10001";
+pub const XFER_PUBLIC: &'static str = "10001";
 
 /**
     # description
     This is the transaction type for getting a list of UTXOs associated with an address
 */
-const GET_UTXO: String = "10002";
+pub const GET_UTXO: &'static str = "10002";
 
 /**
     #description
     A transaction type submitted by Sovrin Trustees to set the Fees to process a transaction
 */
 
-const SET_FEES: String = "20000";
+pub const SET_FEES: &'static str = "20000";
 
 /**
     #description
     A transaction type submitted by anyone to get the current Fees costs of every transaction
 */
 
-const GET_FEES: String = "20000";
+pub const GET_FEES: &'static str = "20000";
