@@ -64,7 +64,7 @@ pub struct StateProof {
 pub fn parse_fees_from_get_txn_fees_response(response : String) -> Result<String, Error> {
     let fees_response : ParseGetTxnFeesResponse =
             ParseGetTxnFeesResponse::from_json(&response)?;
-    serde_json::to_string(&fees_response.result.fees)
+    return serde_json::to_string(&fees_response.result.fees);
 }
 
 #[cfg(test)]
@@ -101,6 +101,9 @@ mod parse_fees_responses_test {
         //define and setup expected output from the function
         let expected_json : Value = serde_json::from_str(
             r#"{"1":1,"100":1,"101":3,"102":50,"10000":5,"10001":10}"#).unwrap();
+
+        println!("{:?}", expected_json);
+        println!("{:?}", parsed_fees_json);
 
         //comparison
         assert_eq!(parsed_fees_json, expected_json, "The json objects don't match");

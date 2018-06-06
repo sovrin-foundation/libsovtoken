@@ -36,7 +36,7 @@ use logic::config::{
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
-    parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply}
+    parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::{ParseGetTxnFeesResponse, ParseGetTxnFeesResult, parse_fees_from_get_txn_fees_response}
 };
 
@@ -717,17 +717,17 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
 pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                                                       resp_json: *const c_char,
                                                       cb: Option<extern fn(command_handle_: i32,
-                                                                err: ErrorCode,
-                                                                fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
+                                                                err: i32,
+                                                                fees_json: *const c_char) -> i32>)-> i32{
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
     if resp_json.is_null() {
-        return ErrorCode::CommonInvalidStructure;
+        return ErrorCode::CommonInvalidStructure as i32;
     }
     let resp_json_string = match string_from_char_ptr(resp_json) {
         Some(s) => s,
         None => {
             error!("Failed to convert inputs_json pointer to string");
-            return ErrorCode::CommonInvalidStructure;
+            return ErrorCode::CommonInvalidStructure as i32;
         }
     };
     let fees_json_obj =
@@ -736,12 +736,12 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                 s
             },
             Err(_) => {
-                return ErrorCode::CommonInvalidStructure;
+                return ErrorCode::CommonInvalidStructure as i32;
             }
         };
     let fees_json_ptr : *const c_char = c_pointer_from_string(fees_json_obj);
-    cb(command_handle, ErrorCode::Success, fees_json_ptr);
-    return ErrorCode::Success;
+    cb(command_handle, ErrorCode::Success as i32, fees_json_ptr);
+    return ErrorCode::Success as i32;
 }
 
 
