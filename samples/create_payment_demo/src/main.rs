@@ -147,6 +147,7 @@ fn create_payment(wallet_handle: i32) -> String {
     let config = CString::new(json_seed).unwrap();
 
     unsafe {
+        println!("\t\t\t{}", Color::RGB(125, 125, 125).paint("calling indy_create_payment_address(...)"));
         let err = indy_create_payment_address(command_handle, wallet_handle, payment_method.as_ptr(), config.as_ptr(), cb);
         assert_eq!(ErrorCode::Success, err);
     };
@@ -170,6 +171,7 @@ fn create_payment_no_seed(wallet_handle: i32) -> String {
     let config = CString::new(r#"{}"#).unwrap();
 
     unsafe {
+        println!("\t\t\t{}", Color::RGB(125, 125, 125).paint("calling indy_create_payment_address(...)"));
         let err = indy_create_payment_address(command_handle, wallet_handle, payment_method.as_ptr(), config.as_ptr(), cb);
         assert_eq!(ErrorCode::Success, err);
     };
