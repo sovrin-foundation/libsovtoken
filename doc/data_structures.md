@@ -366,7 +366,7 @@ Example outputs_json:
 Example payment_req_json:
     note: output to ledger excludes address prefix "pay:sov"
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
-``` json
+```
     {
         "identifier": "QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH",
         "reqId": 1527714086374556,
