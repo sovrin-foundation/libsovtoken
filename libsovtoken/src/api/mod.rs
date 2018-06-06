@@ -153,18 +153,110 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
     return ErrorCode::Success as i32;
 }
 
-/// Description
-///
-///
-/// from tokens-interface.md/AddRequestFeesCB
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
+/**
+ * Add fees to a request.
+ * 
+ * Adds the inputs and outputs to fees for a **non transfer ("10000")** request.
+ * If you are building a transfer request, fees should be included in the 
+ * `inputs_json` and `outputs_json` of the [`build_payment_req_handler`].
+ * 
+ * 
+ * ## Parameters
+ * 
+ * ### request_json
+ * Request json needs to contain an operation field. The operation needs to
+ * contain a type field. The type can not be "10000".
+ * 
+ * Here is the minimal version that could work.
+ * ```JSON
+ * {
+ *      "operation": {
+ *          "type:": "3"
+ *      }
+ * }
+ * ```
+ * 
+ * ### inputs_json
+ * ```JSON
+ * {
+ *     "ver": <int>
+ *     "inputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "seqNo": <int>
+ *          }
+ *     ]
+ * }
+ * ```
+ * 
+ * ### outputs_json
+ * ```JSON
+ * {
+ *      "ver": <int>
+ *      "outputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "amount": <int>
+ *              "extra": <str>
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * ## Example
+ * 
+ * ### Parameters
+ * 
+ * #### request_json
+ * ```JSON
+ * {
+ *      "operation": {
+ *          "type": "3"
+ *      }
+ * }
+ * ```
+ * 
+ * #### inputs_json
+ * ```JSON
+ * {
+ *      "ver": 1,
+ *      "inputs": [
+ *          {
+ *              "address": "pay:sov:7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM",
+ *              "seqNo": 1
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * #### outputs_json
+ * ```JSON
+ * {
+ *      "ver": 1,
+ *      "outputs": [
+ *          {
+ *              "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+ *              "amount": "10"
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * ### Return
+ * 
+ * #### Expected req_with_fees_json
+ * ```JSON
+ * {
+ *      "operation": {
+ *          "type": 3
+ *      },
+ *      "fees": {
+ *          "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
+ *          "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 10]]
+ *      }
+ * }
+ * ```
+ */
 #[no_mangle]
 pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                            wallet_handle: i32,
