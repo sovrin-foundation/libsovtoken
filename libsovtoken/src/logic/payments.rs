@@ -29,9 +29,9 @@ use logic::address::{
    Implementation of CryptoAPI for use in productions environment
    This implementation calls Indy SDK indy_create_key(...)
 */
-pub struct CreatePaymentSDK{}
+pub struct CryptoSdk{}
 
-impl CryptoAPI for CreatePaymentSDK {
+impl CryptoAPI for CryptoSdk {
 
     /**
        creates fully formatted address based on inputted seed.  If seed is empty
@@ -53,9 +53,20 @@ impl CryptoAPI for CreatePaymentSDK {
         return Key::create(wallet_id, Some(&config_json));
     }
 
-    fn indy_crypto_sign(&self, wallet_handle: IndyHandle, verkey: String, message: String) -> Result<String, ErrorCode> {
-         return Crypto::sign(wallet_handle, &verkey, message.as_bytes())
-             .map(|vec| serialize_bytes(&vec));
+    fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(
+        &self,
+        wallet_handle: IndyHandle,
+        verkey: String,
+        message: String,
+        mut cb: F
+    ) -> ErrorCode {
+        return Crypto::sign_async(wallet_handle, &verkey, message.as_bytes(), move |error_code, vec| {
+            if error_code == ErrorCode::Success {
+                cb(Ok(serialize_bytes(&vec)));
+            } else {
+                cb(Err(error_code));
+            }
+        });
     }
 }
 
@@ -66,7 +77,7 @@ impl CryptoAPI for CreatePaymentSDK {
     CreatePaymentHandler contains methods for creating a fully formatted address based on inputted
     seed.  If seed is empty then a randomly generated seed is used by libsodium
 
-    In production runtime environment, the expectation is T is CreatePaymentSDK
+    In production runtime environment, the expectation is T is CryptoSdk
     and in testing environments its anything else as long as it implements CryptoAPI
 
 */
@@ -113,8 +124,8 @@ mod payments_tests {
             return Ok(rand_string(VERKEY_LEN));
         }
 
-        fn indy_crypto_sign(&self, _: i32, _: String, _: String) -> Result<String, ErrorCode> {
-            return Err(ErrorCode::CommonInvalidState);
+        fn indy_crypto_sign<F>(&self, _: i32, _: String, _: String, _: F) -> ErrorCode {
+            return ErrorCode::CommonInvalidState;
         } 
     }
 

@@ -5,7 +5,7 @@ use logic::input::{InputConfig, Inputs};
 use logic::output::{OutputConfig, Outputs};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
-use logic::payments::CreatePaymentSDK;
+use logic::payments::CryptoSdk;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
@@ -99,7 +99,7 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<Fees, ErrorCode> {
     let fees = Fees::new(inputs, outputs);
-    let signed_fees = fees.sign(CreatePaymentSDK{}, wallet_handle)?;
+    let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle)?;
     debug!("Signed fees >>> {:?}", signed_fees);
 
     return Ok(signed_fees);
