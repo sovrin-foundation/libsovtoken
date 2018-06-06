@@ -67,14 +67,15 @@ pub fn c_pointer_from_str(string: &str) -> *const c_char {
 
     Returns an `ErrorCode`
 */
+
 macro_rules ! api_result_handler {
     ( <$value_type:ty>, $command_handle:ident, $cb:ident ) => {
         move |result: Result<$value_type, ErrorCode>| {
             let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
             if let (Some(cb), Ok(value)) = ($cb, result) {
-                cb($command_handle, result_error_code, value);
+                cb($command_handle, result_error_code as i32, value);
             }
-            return result_error_code;
+            return result_error_code as i32;
         }
     }
 }
@@ -158,7 +159,7 @@ mod ffi_support_tests {
     #[test]
     fn api_result_handler_callback_on_ok() {
         static mut CALLBACK_CALLED: bool = false;
-        extern fn callback(ch: i32, ec: ErrorCode, val: u32) {
+        extern fn callback(ch: i32, ec: i32, val: u32) {
             assert_eq!(val, 2);
             unsafe { CALLBACK_CALLED = true }
         }
@@ -167,12 +168,12 @@ mod ffi_support_tests {
         let cb = Some(callback);
         let result_handler = api_result_handler!(<u32>, ch, cb);
         let result = result_handler(Ok(2));
-        assert_eq!(result, ErrorCode::Success);
+        assert_eq!(result, ErrorCode::Success as i32);
         assert!(unsafe { CALLBACK_CALLED });
 
         unsafe { CALLBACK_CALLED = false }
         let result = result_handler(Err(ErrorCode::CommonInvalidParam1));
-        assert_eq!(result, ErrorCode::CommonInvalidParam1);
+        assert_eq!(result, ErrorCode::CommonInvalidParam1 as i32);
         assert!(! unsafe { CALLBACK_CALLED });
     }
 

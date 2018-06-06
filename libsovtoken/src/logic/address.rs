@@ -23,6 +23,19 @@ pub const VERKEY_LEN: usize = 44;
 // 8 is for the pay:sov:
 pub const ADDRESS_LEN: usize = VERKEY_LEN + CHECKSUM_LEN + 8;
 
+/**
+    Prefixes a verkey with "pay:sov" using the format and static data defined in this module. it does
+    not check for, nor add, checksum
+
+    Note:  this method is similar to [`verkey_checksum_from_address`] but not the same since it does
+    not add the checksum
+
+    returns fully formatted address
+*/
+pub fn verkey_to_address(verkey : &String) -> String {
+    let indicator = sovrin_indicator();
+    return format!("{}{}", indicator, verkey);
+}
 
 /**
     Extracts the verkey from an address.
@@ -77,20 +90,15 @@ pub fn create_formatted_address_with_checksum(verkey: String) -> String {
     );
 }
 
+/**
+    returns checksum field from address.  address must be a valid sovrin address
+*/
 pub fn get_checksum(address: &str) -> Result<String, ErrorCode> {
     validate_address(String::from(address))?;
     let checksum = address.from_right(CHECKSUM_LEN);
     return Ok(String::from(checksum));
 }
 
-fn sovrin_indicator() -> String {
-    return format!(
-        "{}{separator}{}{separator}",
-        PAY_INDICATOR,
-        SOVRIN_INDICATOR,
-        separator = PAYMENT_ADDRESS_FIELD_SEP,
-    );
-}
 /**
    `validate_address` simply checks that an address is formatted
    as the following pay:sov:<address><checksum>
@@ -108,6 +116,21 @@ pub fn validate_address(address: String) -> Result<String, ErrorCode> {
     return Ok(address);
 }
 
+/*
+    Methods "private" (aka not exported from this module)
+
+    KEEP all public methods above
+*/
+
+fn sovrin_indicator() -> String {
+    return format!(
+        "{}{separator}{}{separator}",
+        PAY_INDICATOR,
+        SOVRIN_INDICATOR,
+        separator = PAYMENT_ADDRESS_FIELD_SEP,
+    );
+}
+
 #[cfg(test)]
 mod address_tests {
     use utils::random::rand_string;
@@ -122,6 +145,17 @@ mod address_tests {
         let result = verkey_from_address(invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
+
+    #[test]
+    fn test_verkey_to_address_success() {
+        let verkey = rand_string(VERKEY_LEN);
+        let address = verkey_to_address(&verkey);
+
+        let verkey_len = verkey.chars().count();
+        let address_len = address.chars().count();
+
+        assert_eq!(8, address_len - verkey_len);
     }
 
     #[test]

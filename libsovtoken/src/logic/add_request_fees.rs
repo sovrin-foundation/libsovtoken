@@ -1,12 +1,14 @@
 use indy::{ErrorCode};
 use libc::c_char;
-use logic::fees::{Inputs, Outputs, Fees};
+use logic::fees::Fees;
+use logic::input::{InputConfig, Inputs};
+use logic::output::{OutputConfig, Outputs};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
-use logic::payments::CreatePaymentSDK;
+use logic::payments::CryptoSdk;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
-type AddRequestFeesCb = extern fn(command_handle_: i32, err: ErrorCode, req_with_fees_json: *const c_char) -> ErrorCode;
+type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, SerdeMap, AddRequestFeesCb);
 
 /**
@@ -30,11 +32,11 @@ pub fn deserialize_inputs (
     let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let inputs: Inputs = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized inputs >>> {:?}", inputs);
+    let input_config: InputConfig = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    debug!("Deserialized input_json >>> {:?}", input_config);
 
-    let outputs: Outputs = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized outputs >>> {:?}", outputs);
+    let output_config: OutputConfig = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    debug!("Deserialized output_json >>> {:?}", output_config);
 
     let request_json_object: serde_json::Value = serde_json::from_str(&request_json).or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Converted request_json to serde::json::Value");
@@ -43,8 +45,8 @@ pub fn deserialize_inputs (
     trace!("Converted request_json to hash_map");
 
     return Ok((
-        inputs,
-        outputs,
+        input_config.inputs,
+        output_config.outputs,
         request_json_map.to_owned(),
         cb,
     ));
@@ -97,7 +99,7 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<Fees, ErrorCode> {
     let fees = Fees::new(inputs, outputs);
-    let signed_fees = fees.sign(CreatePaymentSDK{}, wallet_handle)?;
+    let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle)?;
     debug!("Signed fees >>> {:?}", signed_fees);
 
     return Ok(signed_fees);
@@ -109,6 +111,7 @@ mod test_deserialize_inputs {
     use indy::ErrorCode;
     use libc::c_char;
     use std::ptr;
+    use utils::default;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
 
@@ -118,37 +121,17 @@ mod test_deserialize_inputs {
         outputs_json: Option<*const c_char>,
         cb: Option<Option<AddRequestFeesCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
-        let son = json!({
+        let default_req_json = c_pointer_from_string(json!({
             "protocolVersion": 1,
             "operation": {
                 "type": 2,
             }
-        });
-        let default_req_json = c_pointer_from_string(son.to_string());
+        }).to_string());
 
-        let default_inputs_json = c_pointer_from_string(json!([
-            {
-                "paymentAddress": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
-                "sequenceNumber": 2
-            },
-            {
-                "paymentAddress": "pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy",
-                "sequenceNumber": 3
-            }
-        ]).to_string());
-
-        let default_outputs_json = c_pointer_from_string(json!([
-            {
-                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
-                "amount": 10
-            }
-        ]).to_string());
-
-        extern fn default_callback(_: i32, _: ErrorCode, _: *const c_char) -> ErrorCode {ErrorCode::Success};
         let req_json = req_json.unwrap_or(default_req_json);
-        let inputs_json = inputs_json.unwrap_or(default_inputs_json);
-        let outputs_json = outputs_json.unwrap_or(default_outputs_json);
-        let cb = cb.unwrap_or(Some(default_callback));
+        let inputs_json = inputs_json.unwrap_or_else(default::inputs_json_pointer);
+        let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
         return deserialize_inputs(req_json, inputs_json, outputs_json, cb);
     }
@@ -197,8 +180,8 @@ mod test_deserialize_inputs {
     fn deserialize_inputs_invalid_inputs_json() {
         let invalid_json = c_pointer_from_string(json!([
             {
-                "paymentAddre": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
-                "sequenceNumber": 4
+                "addres": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "seqNo": 4
             }
         ]).to_string());
         error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);
@@ -208,7 +191,7 @@ mod test_deserialize_inputs {
     fn deserialize_inputs_invalid_outputs_json() {
         let invalid_json = c_pointer_from_string(json!([
             {
-                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
                 "amount": "10"
             }
         ]).to_string());

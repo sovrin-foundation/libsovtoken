@@ -23,7 +23,8 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, req
         c_pointer_from_string(outputs),
         cb
     );
-    return ResultHandler::one(error_code, receiver); 
+
+    return ResultHandler::one(ErrorCode::from(error_code), receiver); 
 }
 
 fn init_wallet_with_address() -> (IndyHandle, String) {
@@ -48,19 +49,21 @@ fn test_add_fees_to_request_valid() {
        }
     });
 
-    let inputs = json!([
-       {
-           "paymentAddress": input_address,
-           "sequenceNumber": 1,
-       }
-    ]);
+    let inputs = json!({
+        "ver": 1,
+        "inputs": [{
+            "address": input_address,
+            "seqNo": 1,
+        }]
+    });
     
-    let outputs = json!([
-       {
-           "paymentAddress": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
-           "amount": 20,
-       }
-    ]);
+    let outputs = json!({
+        "ver": 1,
+        "outputs": [{
+            "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+            "amount": 20,
+        }]
+    });
 
     let expected_fees_request = json!({
        "fees": {
