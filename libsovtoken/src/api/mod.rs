@@ -32,6 +32,7 @@ use logic::config::{
 };
 
 use logic::parsers::parse_get_utxo_response::*;
+use logic::parsers::parse_get_txn_fees::*;
 use logic::request::Request;
 use serde_json;
 use serde::de::Error;
@@ -44,7 +45,7 @@ use utils::validation::{validate_did_len};
 type JsonCallback = Option<extern fn(command_handle: i32, err: ErrorCode, json_pointer: *const c_char) -> ErrorCode>;
 
 
-/// # Description
+/// #Description
 /// This method generates private part of payment address
 /// and stores it in a secure place. Ideally it should be
 /// secret in libindy wallet (see crypto module).
@@ -398,7 +399,6 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
             return ErrorCode::CommonInvalidStructure;
         }
     };
-
     let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(&resp_json_string).unwrap();
 
     // here is where the magic happens--conversion from input structure to output structure
@@ -526,15 +526,28 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                                                       cb: Option<extern fn(command_handle_: i32,
                                                                 err: ErrorCode,
                                                                 fees_json: *const c_char) -> ErrorCode>)-> ErrorCode {
-
-
-    if cb.is_none() {
-        return handle_result(Err(ErrorCode::CommonInvalidStructure));
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure);
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure;
     }
-
-
-
-
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidStructure;
+        }
+    };
+    let fees_json_obj =
+        match parse_fees_from_get_txn_fees_response(resp_json_string){
+            Ok(s) => {
+                s
+            },
+            Err(_) => {
+                return ErrorCode::CommonInvalidStructure;
+            }
+        };
+    let fees_json_ptr : *const c_char = c_pointer_from_string(fees_json_obj);
+    cb(command_handle, ErrorCode::Success, fees_json_ptr);
     return ErrorCode::Success;
 }
 
