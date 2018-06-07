@@ -52,6 +52,7 @@ mod payments_tests {
     use utils::general::StringUtils;
     use utils::logger::ConsoleLogger;
     use utils::random::rand_string;
+    use logic::address::*;
 
     use super::*;
 
