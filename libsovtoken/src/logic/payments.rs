@@ -1,74 +1,12 @@
 //! Payments module contains functions for working with payments.  :D
 #![allow(unused_variables)]
-#![allow(unused_imports)]
 #[warn(unused_imports)]
 
-use indy::{ErrorCode, IndyHandle};
-use indy::crypto::{Crypto, Key};
-use logic::indysdk_api::CryptoAPI;
-use super::config::payment_address_config::PaymentAddressConfig;
-use utils::ffi_support::{string_from_char_ptr, cstring_from_str};
-use utils::general::some_or_none_option_u8;
-use utils::json_conversion::JsonSerialize;
-use utils::general::base58::serialize_bytes;
+use indy::ErrorCode;
+use logic::config::payment_address_config::PaymentAddressConfig;
+use logic::indy_sdk_api::crypto_api::{CryptoAPI};
 use logic::address;
-use logic::address::{
-    ADDRESS_LEN,
-    CHECKSUM_LEN,
-    PAY_INDICATOR,
-    PAYMENT_ADDRESS_FIELD_SEP,
-    SOVRIN_INDICATOR,
-    VERKEY_LEN,
-};
 
-
-// ------------------------------------------------------------------
-// CryptoAPI implementation using INDY SDK
-// ------------------------------------------------------------------
-/**
-   Implementation of CryptoAPI for use in productions environment
-   This implementation calls Indy SDK indy_create_key(...)
-*/
-pub struct CryptoSdk{}
-
-impl CryptoAPI for CryptoSdk {
-
-    /**
-       creates fully formatted address based on inputted seed.  If seed is empty
-       then a randomly generated seed is used by libsodium
-       the format of the return is:
-           pay:sov:{32 byte address}{4 byte checksum}
-    */
-    fn indy_create_key(&self, wallet_id: IndyHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
-
-        debug!("create_payment_address calling indy_create_key");
-        let mut config_json: String = config.to_json().unwrap();
-
-        // indy-sdk expects a valid but empty input to be this below
-        // so if no seed was provided, create the json to look like this instead
-        if 0 == config.seed.chars().count() {
-            config_json = r#"{ }"#.to_string();
-        }
-
-        return Key::create(wallet_id, Some(&config_json));
-    }
-
-    fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(
-        &self,
-        wallet_handle: IndyHandle,
-        verkey: String,
-        message: String,
-        mut cb: F
-    ) -> ErrorCode {
-        return Crypto::sign_async(wallet_handle, &verkey, message.as_bytes(), move |error_code, vec| {
-            if error_code == ErrorCode::Success {
-                cb(Ok(serialize_bytes(&vec)));
-            } else {
-                cb(Err(error_code));
-            }
-        });
-    }
-}
 
 // ------------------------------------------------------------------
 // CreatePaymentHandler

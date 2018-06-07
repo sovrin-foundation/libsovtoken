@@ -8,7 +8,7 @@
 use indy::IndyHandle;
 use indy::ErrorCode;
 use logic::address;
-use logic::indysdk_api::CryptoAPI;
+use logic::indy_sdk_api::crypto_api::CryptoAPI;
 use logic::input::{Input, Inputs};
 use logic::output::{Outputs};
 use serde_json;
