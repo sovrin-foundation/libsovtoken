@@ -18,7 +18,8 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::address::*;
 use logic::build_payment;
-use logic::payments::{CryptoSdk, CreatePaymentHandler};
+use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::payments::{CreatePaymentHandler};
 
 use logic::fees::Fees;
 use logic::input::{Inputs, InputConfig};

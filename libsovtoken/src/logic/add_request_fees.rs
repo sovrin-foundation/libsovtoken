@@ -1,11 +1,13 @@
-use indy::{ErrorCode};
+//! TODO ???
+
+use indy::ErrorCode;
 use libc::c_char;
 use logic::fees::Fees;
 use logic::input::{InputConfig, Inputs};
 use logic::output::{OutputConfig, Outputs};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
-use logic::payments::CryptoSdk;
+use logic::indy_sdk_api::crypto_api::CryptoSdk;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;

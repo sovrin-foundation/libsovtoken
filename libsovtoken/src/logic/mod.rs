@@ -8,7 +8,7 @@ pub mod address;
 pub mod build_payment;
 pub mod fees;
 pub mod config;
-pub mod indysdk_api;
+pub mod indy_sdk_api;
 pub mod input;
 pub mod output;
 pub mod payments;
