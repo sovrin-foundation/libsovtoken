@@ -35,7 +35,7 @@ static USEFUL_CREDENTIALS : &'static str = r#"
    }
 "#;
 
-static SOVRIN_PAYMENT_ADDRESS : &'static str = "pay:sov:";
+static SOVRIN_PAYMENT_ADDRESS : &'static str = "sov";
 
 
 /**

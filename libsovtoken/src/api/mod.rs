@@ -788,7 +788,7 @@ pub extern fn sovtoken_init() -> i32 {
 
     debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "pay:sov:",
+        "sov",
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,
