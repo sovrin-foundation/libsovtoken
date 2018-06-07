@@ -81,6 +81,13 @@ pub fn add_fees_to_request_and_serialize(
     return serialize_request_with_fees(request_json_map_with_fees);
 }
 
+
+/*
+    Methods "private" (aka not exported from this module)
+
+    KEEP all public methods above
+*/
+
 fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, mut request_json_map: SerdeMap) -> Result<SerdeMap, ErrorCode> {
     let key_fees = String::from("fees");
     let fees = signed_fees(wallet_handle, inputs, outputs)?;
