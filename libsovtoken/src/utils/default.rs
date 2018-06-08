@@ -3,7 +3,6 @@
  * 
 */
 
-use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::c_pointer_from_string;
 

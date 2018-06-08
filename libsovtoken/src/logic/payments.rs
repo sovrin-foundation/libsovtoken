@@ -46,11 +46,8 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 #[cfg(test)]
 mod payments_tests {
     extern crate log;
-    
-    use log::*;
-    use std::panic;
+
     use utils::general::StringUtils;
-    use utils::logger::ConsoleLogger;
     use utils::random::rand_string;
     use logic::address::*;
 
