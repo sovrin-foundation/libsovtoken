@@ -69,13 +69,11 @@ impl<'a> StringUtils for &'a str {
 */
 pub fn validate_did_len (submitter_did :&str) -> bool {
     let did_len = submitter_did.len();
-    if did_len != 22 || did_len != 21 {
+    if did_len != 22 && did_len != 21 {
         return false;
     }
     true
 }
-
-
 
 
 /*
@@ -86,8 +84,9 @@ pub fn validate_did_len (submitter_did :&str) -> bool {
 #[cfg(test)]
 mod general_tests {
 
-    use utils::general::StringUtils;
-    use utils::general::some_or_none_option_u8;
+    use super::validate_did_len;
+    use utils::general::{StringUtils, some_or_none_option_u8};
+    use utils::random::rand_string;
 
 
     #[test]
@@ -130,5 +129,47 @@ mod general_tests {
         let result = copy.from_right(75);
 
         assert_eq!(data, result, "from_right test failed");
+    }
+
+    #[test]
+    fn success_validate_did_len_22() {
+        let did: String = rand_string(22);
+
+        assert_eq!(true, validate_did_len(&did), "DID of len 22 should have passed");
+    }
+
+    #[test]
+    fn success_validate_did_len_21() {
+        let did: String = rand_string(21);
+
+        assert_eq!(true, validate_did_len(&did), "DID of len 21 should have passed");
+    }
+
+    #[test]
+    fn fails_validate_did_len_23() {
+        let did: String = rand_string(23);
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 23 should have failed");
+    }
+
+    #[test]
+    fn fails_validate_did_len_18() {
+        let did: String = rand_string(18);
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 18 should have failed");
+    }
+
+    #[test]
+    fn fails_validate_did_len_1() {
+        let did: String = rand_string(1);
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 1 should have failed");
+    }
+
+    #[test]
+    fn fails_validate_did_len_0() {
+        let did: String = "".to_string();
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 0 should have failed");
     }
 }
