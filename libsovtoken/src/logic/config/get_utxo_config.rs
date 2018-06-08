@@ -4,7 +4,6 @@
  *
  *  [`build_get_utxo_txn_handler`]: ../../../api/fn.build_utxo_txn_handler.html
  */
-use std::collections::HashMap;
 use logic::request::Request;
 
 const GET_UTXO : &str = "10002";
