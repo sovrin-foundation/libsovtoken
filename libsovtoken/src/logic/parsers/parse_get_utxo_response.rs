@@ -2,8 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use logic::parsers::common::{UTXO, TXO};
-use logic::responses::ResponseOperations;
+use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -70,7 +69,7 @@ impl ParseGetUtxoReply {
 mod parse_get_uto_responses_tests {
     #[allow(unused_imports)]
 
-    use logic::responses::ResponseOperations;
+    use logic::parsers::common::{ResponseOperations, UTXO, TXO};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use super::*;

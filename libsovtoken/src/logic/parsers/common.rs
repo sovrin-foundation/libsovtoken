@@ -1,8 +1,20 @@
 //!
 
+/**
+    enumeration matches values for the op field in json
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Copy)]
+pub enum ResponseOperations {
+    REPLY,
+    REJECT,
+    REQNACK,
+}
+
 
 /**
     UTXO is the structure for the data member utxo_json
+
+    used by [`ParsePaymentReply`], [`ParseGetUtxoReply`], [`ParseResponseWithFeesReply`]
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
