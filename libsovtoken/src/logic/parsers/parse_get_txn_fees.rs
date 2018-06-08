@@ -72,11 +72,8 @@ pub fn parse_fees_from_get_txn_fees_response(response : String) -> Result<String
 #[cfg(test)]
 mod parse_fees_responses_test {
     use super::{parse_fees_from_get_txn_fees_response};
-    use utils::ffi_support::c_pointer_from_str;
-    use libc::c_char;
     use serde_json::{Value, Error};
     use serde_json;
-    use std::panic;
 
     #[test]
     fn success_parse_fees_from_reply_response() {

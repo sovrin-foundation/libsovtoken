@@ -47,11 +47,9 @@ use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use utils::types::*;
-use utils::validation::{validate_did_len};
+use utils::general::{validate_did_len};
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32>;
-
 
 /// #Description
 /// This method generates private part of payment address
