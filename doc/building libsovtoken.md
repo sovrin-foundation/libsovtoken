@@ -20,16 +20,16 @@ LIBINDY_DIR="/Users/my.home/src/hyperledger/indy-sdk/master/libindy/target/debug
 1) get latest from master at https://github.com/evernym/libsovtoken.git
 2) the source code is in a sub-directory called libsovtoken
 3) run the following commands
-   3.1) cargo update
-   3.2) cargo build
+   a) cargo update
+   b) cargo build
 4) run the tests
-   4.1) cargo test
+   a) cargo test
 
 Please keep in mind, at the time this document was written, some of the cargo crates are github repositories.
 If you update libsovtoken code from github you need to run build command as follows
-   cargo clean
-   cargo update
-   cargo build
+   a) cargo clean
+   b) cargo update
+   c) cargo build
 
 The cargo update command is necessary to make sure you get latest from the cargo crates in github
 
