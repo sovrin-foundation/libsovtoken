@@ -25,7 +25,7 @@ LIBINDY_DIR="/Users/my.home/src/hyperledger/indy-sdk/master/libindy/target/debug
 4) run the tests
    a) cargo test
 
-Please keep in mind, at the time this document was written, some of the cargo crates are github repositories.
+*Please keep in mind* (at the time this document was written) some of the cargo crates are github repositories.
 If you update libsovtoken code from github you need to run build command as follows
    a) cargo clean
    b) cargo update
