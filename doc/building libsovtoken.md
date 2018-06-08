@@ -13,7 +13,7 @@ You need to do one of the following.
 create an environment variable LIBINDY_DIR.   Have it point the directory containing indy-sdk binaries.
 
 eg:  assuming you built indy-sdk from source, you might set the environment variable as such
-LIBINDY_DIR="/Users/my.home/src/hyperledger/indy-sdk/master/libindy/target/debug"
+```LIBINDY_DIR="/Users/my.home/src/hyperledger/indy-sdk/master/libindy/target/debug"```
 
 
 ## building libsovtoken
