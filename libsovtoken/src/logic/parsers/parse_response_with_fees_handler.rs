@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use logic::parsers::common::{UTXO, TXO};
 use logic::address::verkey_to_address;
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
@@ -23,28 +24,6 @@ pub struct ParseResponseWithFeesReply {
     pub utxo_json : Vec<UTXO>,
 }
 
-/**
-    UTXO is the structure for the data member utxo_json for the
-    ParsePaymentReply type
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct UTXO {
-    pub payment_address: String,
-    pub txo: TXO,
-    pub amount: u32,
-    pub extra: String,
-}
-
-/**
-   TXO is the structure for the data member txo of UTXO structure
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct TXO {
-    pub address: String,
-    pub seq_no: i32,
-}
 
 impl ParseResponseWithFeesReply {
     /**

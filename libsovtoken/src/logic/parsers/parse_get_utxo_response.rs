@@ -1,6 +1,8 @@
 //! types used for parse_get_utxo_response_handler
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+
+use logic::parsers::common::{UTXO, TXO};
 use logic::responses::ResponseOperations;
 
 /**
@@ -26,7 +28,7 @@ pub struct ParseGetUtxoResponseResult {
     pub address : String,
     pub identifier: String,
     pub req_id: i64,
-    pub outputs : Vec<(String, i32, i32)>,
+    pub outputs : Vec<(String, i32, u32)>,
 }
 
 /**
@@ -38,28 +40,7 @@ pub struct ParseGetUtxoReply {
     pub utxo_json : Vec<UTXO>,
 }
 
-/**
-    UTXO is the structure for the data member utxo_json for the
-    ParseGetUtxoReply type
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct UTXO {
-    pub payment_address: String,
-    pub txo: TXO,
-    pub amount: i32,
-    pub extra: String,
-}
 
-/**
-   TXO is the structure for the data member txo of UTXO structure
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct TXO {
-    pub address: String,
-    pub seq_no: i32,
-}
 
 impl ParseGetUtxoReply {
     /**
@@ -115,7 +96,7 @@ mod parse_get_uto_responses_tests {
 
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, i32, i32)> = Vec::new();
+        let mut outputs: Vec<(String, i32, u32)> = Vec::new();
 
         outputs.push((rand_string(32), 1, 10));
         outputs.push((rand_string(32), 2, 20));
@@ -146,7 +127,7 @@ mod parse_get_uto_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let outputs: Vec<(String, i32, i32)> = Vec::new();
+        let outputs: Vec<(String, i32, u32)> = Vec::new();
 
         let outputs_len: usize = outputs.len();
 
