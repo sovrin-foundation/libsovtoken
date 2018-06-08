@@ -1,8 +1,8 @@
-use utils::ffi_support::c_pointer_from_string;
+//!
+
 use utils::json_conversion::JsonDeserialize;
 use logic::responses::ResponseOperations;
 use std::collections::HashMap;
-use libc::c_char;
 use serde_json;
 use serde_json::{Error};
 /**
