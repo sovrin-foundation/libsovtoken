@@ -3,6 +3,8 @@
 
 /**
     UTXO is the structure for the data member utxo_json
+
+    used by [`ParsePaymentReply`], [`ParseGetUtxoReply`], [`ParseResponseWithFeesReply`]
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
