@@ -28,7 +28,7 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 #[test]
 fn errors_with_no_call_back() {
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam5 as i32, "Expecting Callback for 'build_mint_txn_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_mint_txn_handler'");
 }
 
 // the build mint txn handler method requires an outputs_json parameter and this test ensures that 

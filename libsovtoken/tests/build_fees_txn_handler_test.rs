@@ -33,7 +33,7 @@ const CB : Option<extern fn(command_handle_: i32, err: i32, mint_req_json: *cons
 #[test]
 fn errors_with_no_call_back() {
     let return_error = sovtoken::api::build_set_txn_fees_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(),ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam3 as i32, "Expecting Callback for 'build_fees_txn_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_fees_txn_handler'");
 }
 
 // the build fees txn handler method requires an outputs_json parameter and this test ensures that 
@@ -41,7 +41,7 @@ fn errors_with_no_call_back() {
 #[test]
 fn errors_with_no_fees_json() {
     let return_error = sovtoken::api::build_set_txn_fees_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(),ptr::null(), CB);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam2 as i32, "Expecting outputs_json for 'build_fees_txn_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_fees_txn_handler'");
 }
 
 #[test]

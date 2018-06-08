@@ -47,7 +47,6 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 mod payments_tests {
     extern crate log;
 
-    use utils::general::StringUtils;
     use utils::random::rand_string;
     use logic::address::*;
 
