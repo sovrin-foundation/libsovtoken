@@ -1,4 +1,4 @@
-//! types used for parse_payment_response_handler
+//! types used for parse_response_with_fees_handler
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
@@ -6,8 +6,11 @@ use logic::parsers::common::{UTXO, TXO};
 use logic::address::verkey_to_address;
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
+
 /**
     for parse_response_with_fees_handler input resp_json
+
+    used in ['parse_response_with_fees_handler']
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]

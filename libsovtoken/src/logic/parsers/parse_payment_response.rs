@@ -3,8 +3,7 @@
 #![allow(unused_imports)]
 
 use logic::address::verkey_to_address;
-use logic::parsers::common::{UTXO, TXO};
-use logic::responses::ResponseOperations;
+use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**
     for parse_payment_response_handler input resp_json
@@ -76,7 +75,7 @@ impl ParsePaymentReply {
 mod parse_payment_response_tests {
     #[allow(unused_imports)]
 
-    use logic::responses::ResponseOperations;
+    use logic::parsers::common::{ResponseOperations, UTXO, TXO};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use super::*;

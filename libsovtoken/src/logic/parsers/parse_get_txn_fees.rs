@@ -1,10 +1,12 @@
 //!
 
-use utils::json_conversion::JsonDeserialize;
-use logic::responses::ResponseOperations;
 use std::collections::HashMap;
 use serde_json;
-use serde_json::{Error};
+use serde_json::Error;
+
+use logic::parsers::common::ResponseOperations;
+use utils::json_conversion::JsonDeserialize;
+
 /**
     #description
     Structure for parsing GET_FEES request
