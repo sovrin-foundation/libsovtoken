@@ -4,6 +4,7 @@
  * [`Inputs`]: Inputs
  * [`Outputs`]: Outputs
  */
+#![allow(unused_must_use)]
 
 use indy::IndyHandle;
 use indy::ErrorCode;
@@ -13,6 +14,7 @@ use logic::input::{Input, Inputs};
 use logic::output::{Outputs};
 use serde_json;
 use std::sync;
+
 
 /**
  * Holds `inputs` and `outputs`
