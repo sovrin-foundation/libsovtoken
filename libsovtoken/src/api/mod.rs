@@ -39,11 +39,18 @@ use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::general::{validate_did_len};
 
+/**
+    Defines a callback to communicate results to Indy-sdk as type
+
+    # Params
+    command_handle : should be the same value as the API inputted command handle
+    err:  results.
+    json_pointer: results data.  format is defined by the API
+*/
 type JsonCallback = Option<extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32>;
 
-/// #Description
 /// This method generates private part of payment address
-/// and stores it in a secure place. Ideally it should be
+/// and stores it in a secure place. It should be a
 /// secret in libindy wallet (see crypto module).
 ///
 /// Note that payment method should be able to resolve this
