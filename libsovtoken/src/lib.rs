@@ -1,7 +1,7 @@
-
-//
-// Pull in all external dependencies
-//
+//!
+//! Module for pulling in all the crates and defining Libsovtoken high level modules.
+//! no code is allowed here.
+//!
 extern crate base64;
 extern crate env_logger;
 extern crate libc;
@@ -10,7 +10,7 @@ extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
 
-#[macro_use] extern crate lazy_static;
+
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_derive;

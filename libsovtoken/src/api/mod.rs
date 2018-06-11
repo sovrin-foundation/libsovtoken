@@ -1,29 +1,22 @@
-//
-// export public methods
-//
-//
-//
+//! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
+//!
+
 #![allow(unused_variables)]
-#![allow(unused_imports)]
-#[warn(unused_imports)]
 
 use std;
-use std::ffi::CString;
 use std::thread;
 
 use libc::c_char;
+
 use indy::payments::Payment;
-use indy::ledger::Ledger;
 use indy::ErrorCode;
 use logic::add_request_fees;
-use logic::address::*;
 use logic::build_payment;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::payments::{CreatePaymentHandler};
 
 use logic::fees::Fees;
-use logic::input::{Inputs, InputConfig};
-use logic::output::{Outputs, OutputConfig};
+use logic::output::OutputConfig;
 
 use logic::config::{
     payment_config::{PaymentRequest},
@@ -38,12 +31,9 @@ use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
-    parse_get_txn_fees::{ParseGetTxnFeesResponse, ParseGetTxnFeesResult, parse_fees_from_get_txn_fees_response}
+    parse_get_txn_fees::parse_fees_from_get_txn_fees_response
 };
 
-use logic::request::Request;
-use serde_json;
-use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;

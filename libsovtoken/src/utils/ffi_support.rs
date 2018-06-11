@@ -1,14 +1,9 @@
-//
-// this module contains functions that assist with std::ffi related behaviors
-// such as: converting const char * to str
-//
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-#[warn(unused_imports)]
+//!
+//! this module contains functions that assist with std::ffi related behaviors
+//! such as: converting const char * to str
 
-use std::ffi::{CString, CStr};
-use std::str::Utf8Error;
 use libc::c_char;
+use std::ffi::{CString, CStr};
 use indy::ErrorCode;
 use utils::json_conversion::JsonDeserialize;
 
@@ -36,9 +31,26 @@ pub fn string_from_char_ptr(str_ptr: *const c_char) -> Option<String> {
     };
 }
 
-
+/**
+    method for converting String to CString with no error checking.
+*/
 pub fn cstring_from_str(string: String) -> CString {
     return CString::new(string).unwrap();
+}
+
+/**
+    method for converting String to *const c_char
+*/
+pub fn c_pointer_from_string(string: String) -> *const c_char {
+    return c_pointer_from_str(&string);
+}
+
+/**
+    method for converting &str to *const c_char
+*/
+pub fn c_pointer_from_str(string: &str) -> *const c_char {
+    let cstring = CString::new(string).unwrap();
+    return Box::new(cstring).into_raw();
 }
 
 
@@ -51,15 +63,6 @@ pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_c
 
     let result = S::from_json(json_string).map_err(|_| ErrorCode::CommonInvalidStructure);
     return result;
-}
-
-pub fn c_pointer_from_string(string: String) -> *const c_char {
-    return c_pointer_from_str(&string);
-}
-
-pub fn c_pointer_from_str(string: &str) -> *const c_char {
-    let cstring = CString::new(string).unwrap();
-    return Box::new(cstring).into_raw();
 }
 
 /**
@@ -94,10 +97,9 @@ macro_rules! check_useful_c_callback {
 
 #[cfg(test)]
 mod ffi_support_tests {
+
     use std::ptr;
-    use std::ffi;
     use std::ffi::CString;
-    use libc::c_char;
     use serde_json::Value;
     use utils::general::ResultExtension;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr, c_pointer_from_string, string_from_char_ptr};
