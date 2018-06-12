@@ -10,7 +10,7 @@ use indy::ErrorCode;
 use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
-use sovtoken::utils::ffi_support::str_from_char_ptr;
+use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 
 
 // ***** HELPER METHODS *****
@@ -19,7 +19,7 @@ use sovtoken::utils::ffi_support::str_from_char_ptr;
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
+static VALID_OUTPUT_JSON: &'static str = r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
 
 // ***** UNIT TESTS ****
 
@@ -28,7 +28,7 @@ static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARea
 #[test]
 fn errors_with_no_call_back() {
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), None);
-    assert_eq!(return_error, ErrorCode::CommonInvalidParam5 as i32, "Expecting Callback for 'build_mint_txn_handler'");
+    assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_mint_txn_handler'");
 }
 
 // the build mint txn handler method requires an outputs_json parameter and this test ensures that 
@@ -85,10 +85,15 @@ fn valid_output_json() {
         assert_eq!(mint_operation, &expected);
         return ErrorCode::Success as i32;
     }
-
+    let did = r#"857297582y4672jdsjk822323242342332"#;
+    let did = c_pointer_from_str(did);
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(valid_output_json_cb));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE,
+                                                             1,
+                                                             did,
+                                                             outputs_str_ptr,
+                                                             Some(valid_output_json_cb));
     assert_eq!(return_error, ErrorCode::Success as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe {
         assert!(CALLBACK_CALLED);
