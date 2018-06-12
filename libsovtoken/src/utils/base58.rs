@@ -1,4 +1,4 @@
-//!
+//!  Base58 helper functions
 
 
 use indy::ErrorCode;

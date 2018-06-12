@@ -51,10 +51,10 @@ fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
 
 
     let payment_addresses = vec![
-        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_1).unwrap(),
-        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_2).unwrap(),
-        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_3).unwrap(),
-        Payment::create_payment_address(wallet_id, "pay:sov:", &seed_4).unwrap(),
+        Payment::create_payment_address(wallet_id, "sov", &seed_1).unwrap(),
+        Payment::create_payment_address(wallet_id, "sov", &seed_2).unwrap(),
+        Payment::create_payment_address(wallet_id, "sov", &seed_3).unwrap(),
+        Payment::create_payment_address(wallet_id, "sov", &seed_4).unwrap(),
     ];
 
     payment_addresses
