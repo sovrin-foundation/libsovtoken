@@ -30,7 +30,7 @@ pub struct InputConfig {
     ## From Array
     An array with the format of `[address, seq_no, signature]`.
     When deserializing from an array, the signature is required.
-    ```
+    ```ignore
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
     let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]"#;

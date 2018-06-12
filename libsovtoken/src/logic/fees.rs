@@ -25,6 +25,25 @@ use std::sync;
  * 
  * ## Example
  *
+ * ```
+ *  # extern crate sovtoken;
+ *  # fn main() {
+ *      use sovtoken::logic::input::Input;
+ *      use sovtoken::logic::output::Output;
+ *      use sovtoken::logic::fees::Fees;
+ *      use sovtoken::logic::indy_sdk_api::crypto_api::CryptoSdk;
+ *
+ *      // Need an actual wallet_handle
+ *      let wallet_handle = 1;
+ *      let address_input = String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121");
+ *      let address_output = String::from("pay:sov:FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp");
+ *      let inputs = vec![Input::new(address_input, 1, None)];
+ *      let outputs = vec![Output::new(address_output, 20, None)];
+ *
+ *      let fees = Fees::new(inputs, outputs);
+ *      let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle);
+ *  # }
+ * ```
  */
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Fees {

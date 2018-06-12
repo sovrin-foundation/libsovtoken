@@ -12,7 +12,6 @@ use std::ptr;
 use std::ffi::CString;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 
-
 // ***** HELPER METHODS *****
 
 // ***** HELPER TEST DATA  *****
