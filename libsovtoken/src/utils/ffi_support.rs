@@ -172,8 +172,8 @@ mod ffi_support_tests {
         assert!(unsafe { CALLBACK_CALLED });
 
         unsafe { CALLBACK_CALLED = false }
-        let result = result_handler(Err(ErrorCode::CommonInvalidParam1));
-        assert_eq!(result, ErrorCode::CommonInvalidParam1 as i32);
+        let result = result_handler(Err(ErrorCode::CommonInvalidStructure));
+        assert_eq!(result, ErrorCode::CommonInvalidStructure as i32);
         assert!(! unsafe { CALLBACK_CALLED });
     }
 

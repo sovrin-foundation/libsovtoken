@@ -541,12 +541,12 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
     };
 
     if cb.is_some() == false {
-        return ErrorCode::CommonInvalidParam3 as i32;
+        return ErrorCode::CommonInvalidStructure as i32;
     }
 
     let fees_json_str : &str = match str_from_char_ptr(fees_json) {
         Some(s) => s,
-        None => return handle_result(Err(ErrorCode::CommonInvalidParam2)) as i32
+        None => return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32
     };
 
     let fees_config: SetFeesConfig = match SetFeesConfig::from_json(fees_json_str) {
@@ -643,7 +643,7 @@ pub extern "C" fn build_mint_txn_handler(
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
     let submitter_did = string_from_char_ptr(submitter_did);
     if cb.is_none() {
-        return handle_result(Err(ErrorCode::CommonInvalidParam5)) as i32;
+        return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32;
     }
 
     let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
