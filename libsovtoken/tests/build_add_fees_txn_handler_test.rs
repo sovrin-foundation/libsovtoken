@@ -35,7 +35,7 @@ fn init_wallet_with_address() -> (IndyHandle, String) {
         "seed": str::repeat("2", 32),
     });
 
-    let input_address = Payment::create_payment_address(wallet_handle, "pay:sov:", &key_config.to_string()).unwrap();
+    let input_address = Payment::create_payment_address(wallet_handle, "sov", &key_config.to_string()).unwrap();
     return (wallet_handle, input_address);
 }
 

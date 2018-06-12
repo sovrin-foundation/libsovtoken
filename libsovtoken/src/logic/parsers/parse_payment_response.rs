@@ -1,8 +1,9 @@
 //! types used for parse_payment_response_handler
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+
 use logic::address::verkey_to_address;
-use logic::responses::ResponseOperations;
+use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**
     for parse_payment_response_handler input resp_json
@@ -29,11 +30,10 @@ pub struct ParsePaymentResponseResult {
     pub extra: Option<String>,
     pub req_id: i64,
     pub inputs: Vec<(String, i32, String)>,
-    pub outputs: Vec<(String, i32)>,
+    pub outputs: Vec<(String, u32)>,
     pub root_hash: String,
     pub audit_path: Vec<String>
 }
-
 
 /**
     for parse_payment_response_handler output utxo_json
@@ -42,29 +42,6 @@ pub struct ParsePaymentResponseResult {
 pub struct ParsePaymentReply {
     pub ver : i32,
     pub utxo_json : Vec<UTXO>,
-}
-
-/**
-    UTXO is the structure for the data member utxo_json for the
-    ParsePaymentReply type
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct UTXO {
-    pub payment_address: String,
-    pub txo: TXO,
-    pub amount: i32,
-    pub extra: String,
-}
-
-/**
-   TXO is the structure for the data member txo of UTXO structure
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct TXO {
-    pub address: String,
-    pub seq_no: i32,
 }
 
 impl ParsePaymentReply {
@@ -98,7 +75,7 @@ impl ParsePaymentReply {
 mod parse_payment_response_tests {
     #[allow(unused_imports)]
 
-    use logic::responses::ResponseOperations;
+    use logic::parsers::common::{ResponseOperations, UTXO, TXO};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use super::*;

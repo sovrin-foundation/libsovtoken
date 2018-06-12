@@ -1,11 +1,13 @@
-use indy::{ErrorCode};
+//! TODO ???
+
+use indy::ErrorCode;
 use libc::c_char;
 use logic::fees::Fees;
 use logic::input::{InputConfig, Inputs};
 use logic::output::{OutputConfig, Outputs};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
-use logic::payments::CryptoSdk;
+use logic::indy_sdk_api::crypto_api::CryptoSdk;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
@@ -78,6 +80,13 @@ pub fn add_fees_to_request_and_serialize(
     let request_json_map_with_fees = add_fees(wallet_handle, inputs, outputs, request_json_map)?;
     return serialize_request_with_fees(request_json_map_with_fees);
 }
+
+
+/*
+    Methods "private" (aka not exported from this module)
+
+    KEEP all public methods above
+*/
 
 fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, mut request_json_map: SerdeMap) -> Result<SerdeMap, ErrorCode> {
     let key_fees = String::from("fees");

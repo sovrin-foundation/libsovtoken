@@ -63,28 +63,16 @@ impl<'a> StringUtils for &'a str {
 
 }
 
-
-pub mod base58 {
-    use indy::ErrorCode;
-    use rust_base58::{FromBase58, ToBase58};
-
-    /**
-        Deserializes a base58 String object with checksum.
-
-        Errors: `ErrorCode::CommonInvalidStructure`.
-    */
-    pub fn deserialize_string(s: String) -> Result<String, ErrorCode> {
-        let deserialized_bytes = s
-            .into_bytes()
-            .from_base58_check()
-            .map_err(|_| ErrorCode::CommonInvalidStructure)?;
-        return String::from_utf8(deserialized_bytes)
-            .map_err(|_| ErrorCode::CommonInvalidStructure);
+/**
+    `validate_did_len` expects a did and then validates that
+    it is the correct length
+*/
+pub fn validate_did_len (submitter_did :&str) -> bool {
+    let did_len = submitter_did.len();
+    if did_len != 22 && did_len != 21 {
+        return false;
     }
-
-    pub fn serialize_bytes(bytes: &[u8]) -> String {
-        return bytes.to_base58()
-    }
+    true
 }
 
 
@@ -96,10 +84,10 @@ pub mod base58 {
 #[cfg(test)]
 mod general_tests {
 
-    use indy::ErrorCode;
-    use utils::general::StringUtils;
-    use utils::general::some_or_none_option_u8;
-    use super::base58;
+    use super::validate_did_len;
+    use utils::general::{StringUtils, some_or_none_option_u8};
+    use utils::random::rand_string;
+
 
     #[test]
     fn success_empty_u8_array_becomes_option_none() {
@@ -143,24 +131,45 @@ mod general_tests {
         assert_eq!(data, result, "from_right test failed");
     }
 
-    fn deserialize_base58_string(serialized: &str, expected: Result<&str, ErrorCode>) {
-        let serialized = String::from(serialized);
-        let expected = expected.map(|deserialized| String::from(deserialized));
-        assert_eq!(base58::deserialize_string(serialized), expected);
+    #[test]
+    fn success_validate_did_len_22() {
+        let did: String = rand_string(22);
+
+        assert_eq!(true, validate_did_len(&did), "DID of len 22 should have passed");
     }
 
     #[test]
-    fn deserialize_invalid_base58_string() {
-        deserialize_base58_string("3NbSEAfMyPeDTppHLeehRonkVwi537H9YFCvV", Err(ErrorCode::CommonInvalidStructure));
+    fn success_validate_did_len_21() {
+        let did: String = rand_string(21);
+
+        assert_eq!(true, validate_did_len(&did), "DID of len 21 should have passed");
     }
 
     #[test]
-    fn deserialize_valid_base58_string_invalid_checksum() {
-        deserialize_base58_string("3NbSEAfMyPeDeKn6mTppHLkVwi537H9YFdeV", Err(ErrorCode::CommonInvalidStructure));
+    fn fails_validate_did_len_23() {
+        let did: String = rand_string(23);
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 23 should have failed");
     }
 
     #[test]
-    fn deserialize_valid_base58_string_valid_checksum() {
-        deserialize_base58_string("3NbSEAfMyPeDeKn6mTppHLkVwi537H9YFCvV", Ok("My base58 test string."));
+    fn fails_validate_did_len_18() {
+        let did: String = rand_string(18);
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 18 should have failed");
+    }
+
+    #[test]
+    fn fails_validate_did_len_1() {
+        let did: String = rand_string(1);
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 1 should have failed");
+    }
+
+    #[test]
+    fn fails_validate_did_len_0() {
+        let did: String = "".to_string();
+
+        assert_eq!(false, validate_did_len(&did), "DID of len 0 should have failed");
     }
 }

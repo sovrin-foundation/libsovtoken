@@ -18,7 +18,8 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::address::*;
 use logic::build_payment;
-use logic::payments::{CryptoSdk, CreatePaymentHandler};
+use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::payments::{CreatePaymentHandler};
 
 use logic::fees::Fees;
 use logic::input::{Inputs, InputConfig};
@@ -36,7 +37,8 @@ use logic::config::{
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
-    parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply}
+    parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
+    parse_get_txn_fees::{ParseGetTxnFeesResponse, ParseGetTxnFeesResult, parse_fees_from_get_txn_fees_response}
 };
 
 use logic::request::Request;
@@ -45,13 +47,11 @@ use serde::de::Error;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use utils::types::*;
-use utils::validation::{validate_did_len};
+use utils::general::{validate_did_len};
 
 type JsonCallback = Option<extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32>;
 
-
-/// # Description
+/// #Description
 /// This method generates private part of payment address
 /// and stores it in a secure place. Ideally it should be
 /// secret in libindy wallet (see crypto module).
@@ -153,18 +153,110 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
     return ErrorCode::Success as i32;
 }
 
-/// Description
-///
-///
-/// from tokens-interface.md/AddRequestFeesCB
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
+/**
+ * Add fees to a request.
+ * 
+ * Adds the inputs and outputs to fees for a **non transfer ("10000")** request.
+ * If you are building a transfer request, fees should be included in the 
+ * `inputs_json` and `outputs_json` of the [`build_payment_req_handler`].
+ * 
+ * 
+ * ## Parameters
+ * 
+ * ### request_json
+ * Request json needs to contain an operation field. The operation needs to
+ * contain a type field. The type can not be "10000".
+ * 
+ * Here is the minimal version that could work.
+ * ```JSON
+ * {
+ *      "operation": {
+ *          "type:": "3"
+ *      }
+ * }
+ * ```
+ * 
+ * ### inputs_json
+ * ```JSON
+ * {
+ *     "ver": <int>
+ *     "inputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "seqNo": <int>
+ *          }
+ *     ]
+ * }
+ * ```
+ * 
+ * ### outputs_json
+ * ```JSON
+ * {
+ *      "ver": <int>
+ *      "outputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "amount": <int>
+ *              "extra": <str>
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * ## Example
+ * 
+ * ### Parameters
+ * 
+ * #### request_json
+ * ```JSON
+ * {
+ *      "operation": {
+ *          "type": "3"
+ *      }
+ * }
+ * ```
+ * 
+ * #### inputs_json
+ * ```JSON
+ * {
+ *      "ver": 1,
+ *      "inputs": [
+ *          {
+ *              "address": "pay:sov:7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM",
+ *              "seqNo": 1
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * #### outputs_json
+ * ```JSON
+ * {
+ *      "ver": 1,
+ *      "outputs": [
+ *          {
+ *              "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+ *              "amount": "10"
+ *          }
+ *      ]
+ * }
+ * ```
+ * 
+ * ### Return
+ * 
+ * #### Expected req_with_fees_json
+ * ```JSON
+ * {
+ *      "operation": {
+ *          "type": 3
+ *      },
+ *      "fees": {
+ *          "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
+ *          "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 10]]
+ *      }
+ * }
+ * ```
+ */
 #[no_mangle]
 pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                            wallet_handle: i32,
@@ -609,23 +701,45 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
 }
 
 /// Description
-///
-///
 /// from tokens-interface.md/ParseGetTxnFeesResponseCB
+///
 /// # Params
-/// param1: description.
+/// command_handle: a standard command handle
+/// resp_json: JSON String. Structure of JSON available in libsovtoken/docs/data_structures.md
 ///
 /// # Returns
-/// description. example if json, etc...
+/// fees_json: JSON String. Structure of JSON available in libsovtoken/docs/data_structures.md
 ///
 /// # Errors
-/// description of errors
+///
 #[no_mangle]
 pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                                                       resp_json: *const c_char,
                                                       cb: Option<extern fn(command_handle_: i32,
                                                                 err: i32,
-                                                                fees_json: *const c_char) -> i32>)-> i32 {
+                                                                fees_json: *const c_char) -> i32>)-> i32{
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure as i32;
+    }
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert inputs_json pointer to string");
+            return ErrorCode::CommonInvalidStructure as i32;
+        }
+    };
+    let fees_json_obj =
+        match parse_fees_from_get_txn_fees_response(resp_json_string){
+            Ok(s) => {
+                s
+            },
+            Err(_) => {
+                return ErrorCode::CommonInvalidStructure as i32;
+            }
+        };
+    let fees_json_ptr : *const c_char = c_pointer_from_string(fees_json_obj);
+    cb(command_handle, ErrorCode::Success as i32, fees_json_ptr);
     return ErrorCode::Success as i32;
 }
 
@@ -673,7 +787,7 @@ pub extern fn sovtoken_init() -> i32 {
 
     debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "pay:sov:",
+        "sov",
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,
