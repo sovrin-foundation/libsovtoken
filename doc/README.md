@@ -23,6 +23,7 @@ Create an environment variable LIBINDY_DIR.   Have it point the directory contai
 eg:  assuming you built indy-sdk from source, you will set the environment variable as such
 ```LIBINDY_DIR="/Users/my.home/src/hyperledger/indy-sdk/master/libindy/target/debug"```
 
+**Note** anytime you get latest for indy-sdk, you must rebuild the libraries before building libsovtoken, as the libsovtoken build does not compile indy-sdk.
 
 ### Compiling libsovtoken and running tests
 1) Make sure you meet the requirements above, including building the projects, if you elect to use source code.
