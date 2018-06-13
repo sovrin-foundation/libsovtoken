@@ -4,7 +4,6 @@
 #![allow(unused_variables)]
 
 use std;
-use std::thread;
 
 use libc::c_char;
 
@@ -96,26 +95,23 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
 
-    thread::spawn(move || {
-        // CreatePaymentHandler is where the magic happens.  By injecting CryptoSDK instance into the handler
-        // indy-sdk will be called and verykey returned.  The return is then prefixed with "pay:sov:"
-        // and a base58 checksum added.  This result is returned to indy-sdk.
-        let handler = CreatePaymentHandler::new(CryptoSdk {} );
-        match handler.create_payment_address(wallet_handle, config) {
-            Ok(payment_address) => {
-                debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
-                let payment_address_cstring = cstring_from_str(payment_address);
-                let payment_address_ptr = payment_address_cstring.as_ptr();
+    let payment_closure = move | payment_address : String, err: ErrorCode | {
 
-                cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);
-            },
-            Err(e) => {
-                cb(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null());
-            },
-        };
-    });
+        if err != ErrorCode::Success {
+            error!("create payment address failed ErrorCode={:?}", err);
+            cb(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null());
+            return;
+        }
 
-    return ErrorCode::Success as i32;
+        debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
+        let payment_address_cstring = cstring_from_str(payment_address);
+        let payment_address_ptr = payment_address_cstring.as_ptr();
+
+        cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);
+    };
+
+    let handler = CreatePaymentHandler::new(CryptoSdk {} );
+    return handler.create_payment_address_async(wallet_handle, config, payment_closure) as i32;
 }
 
 /// Description
