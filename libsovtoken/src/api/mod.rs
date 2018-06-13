@@ -77,9 +77,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: JsonCallback) -> i32 {
-    if cb.is_none() {
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if config_str.is_null() {
         return ErrorCode::CommonInvalidStructure as i32;
@@ -98,8 +97,9 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     };
 
     thread::spawn(move || {
-        // to return both payment address and private key pair so that we can write the private
-        // key into the ledger
+        // CreatePaymentHandler is where the magic happens.  By injecting CryptoSDK instance into the handler
+        // indy-sdk will be called and verykey returned.  The return is then prefixed with "pay:sov:"
+        // and a base58 checksum added.  This result is returned to indy-sdk.
         let handler = CreatePaymentHandler::new(CryptoSdk {} );
         match handler.create_payment_address(wallet_handle, config) {
             Ok(payment_address) => {
@@ -107,28 +107,13 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                 let payment_address_cstring = cstring_from_str(payment_address);
                 let payment_address_ptr = payment_address_cstring.as_ptr();
 
-                match cb {
-                    Some(f) => f(command_handle, ErrorCode::Success as i32, payment_address_ptr),
-                    None => {
-                        error!("cb was null even after check");
-                        ErrorCode::CommonInvalidState as i32
-                    },
-                };
-
+                cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);
             },
             Err(e) => {
-                match cb {
-                    Some(f) => f(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null()),
-                    None => {
-                        error!("cb was null even after check");
-                        ErrorCode::CommonInvalidState as i32
-                    },
-                };
-
+                cb(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null());
             },
         };
     });
-
 
     return ErrorCode::Success as i32;
 }

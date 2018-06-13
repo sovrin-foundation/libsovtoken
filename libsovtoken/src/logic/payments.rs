@@ -29,27 +29,43 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
     }
 
     /**
-       the format of the return is:
-           pay:sov:{32 byte address}{4 byte checksum}
+        To get a sovrin address
+        the format of the return is:
+            pay:sov:{32 byte address}{4 byte checksum}
     */
     pub fn create_payment_address(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+        trace!("calling self.injected_api.indy_create_key");
         let address = self.injected_api.indy_create_key(wallet_id, config)?;
+
+        trace!("got address from self.injected_api.indy_create_key {}", address);
         return Ok(address::create_formatted_address_with_checksum(address));
     }
 
     /**
-
+        To get a sovrin address asynchronously.
+        the format of the return is:
+            pay:sov:{32 byte address}{4 byte checksum}
     */
-    pub fn create_payment_address_cb(&self,
+    pub fn create_payment_address_async<F: 'static>(&self,
                                      wallet_id: i32,
                                      config: PaymentAddressConfig,
-                                     cb : Box<Fn(Result<String, ErrorCode>)>) -> Result<String, ErrorCode> {
+                                     mut cb : F) -> ErrorCode where F: FnMut(String, ErrorCode) + Send {
 
+        let cb_closure = move | err: ErrorCode, address : String | {
+            if err == ErrorCode::Success {
+                trace!("got address from self.injected_api.indy_create_key_async {}", address);
+                cb(address::create_formatted_address_with_checksum(address), err);
+                return;
+            }
 
-        let address_result: Result<String, ErrorCode> = self.create_payment_address(wallet_id, config);
-        let address: String = address_result.unwrap();
-        cb(Ok(address.to_string()));
-        return Ok(address);
+            error!("got error {:?} from self.injected_api.indy_create_key_async", err);
+            cb("".to_string(), err);
+        };
+
+        trace!("calling injected_api.indy_create_key_async");
+        let result_code = self.injected_api.indy_create_key_async(wallet_id, config, cb_closure);
+
+        return result_code;
     }
 }
 
@@ -80,7 +96,12 @@ mod payments_tests {
 
         fn indy_crypto_sign<F>(&self, _: i32, _: String, _: String, _: F) -> ErrorCode {
             return ErrorCode::CommonInvalidState;
-        } 
+        }
+
+        fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+            closure(ErrorCode::Success, rand_string(VERKEY_LEN));
+            return ErrorCode::Success;
+        }
     }
 
 
@@ -180,7 +201,7 @@ mod payments_tests {
 
     // Happy path test assumes the CB is valid and it is successfully called
     #[test]
-    fn success_create_payment_with_cb() {
+    fn success_create_payment_async() {
         let seed = String::new();
         let config: PaymentAddressConfig = PaymentAddressConfig { seed };
 
@@ -189,18 +210,18 @@ mod payments_tests {
         let mut got_good_result: bool = false;
         let (sender, receiver) = channel();
 
-        let cb_closure = Box::new( move| result : Result<String, ErrorCode> | {
-            match result {
-                Ok(s) => {
-                    validate_address(s.to_string());
-                    sender.send(true);
-                },
-                Err(e) => assert_eq!(e, ErrorCode::Success),
-            };
+        let cb_closure = move | address : String, err: ErrorCode | {
 
-        });
+            if err != ErrorCode::Success {
+                sender.send(false);
+                return;
+            }
 
-        let result: Result<String, ErrorCode> = handler.create_payment_address_cb(WALLET_ID, config, cb_closure);
+            validate_address(address.to_string());
+            sender.send(true);
+        };
+
+        let error_code: ErrorCode = handler.create_payment_address_async(WALLET_ID, config, cb_closure);
 
         got_good_result = receiver.recv_timeout(Duration::from_secs(10)).unwrap();
         assert_eq!(got_good_result, true);

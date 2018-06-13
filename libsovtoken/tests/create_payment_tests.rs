@@ -143,7 +143,7 @@ fn success_callback_is_called() {
 
     let (err, payment_address) = receiver.recv_timeout(Duration::from_secs(TIMEOUT_SECONDS)).unwrap();
 
-    println!("******* got address of {}", payment_address);
+    debug!("******* got address of {}", payment_address);
     assert!(payment_address.len() == 56, "callback did not receive valid payment address");
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 
