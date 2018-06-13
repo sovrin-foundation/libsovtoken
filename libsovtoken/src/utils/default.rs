@@ -5,6 +5,7 @@
 
 use libc::c_char;
 use utils::ffi_support::c_pointer_from_string;
+use utils::random::rand_string;
 
 pub fn inputs_json_pointer() -> *const c_char {
     let json = json!({
@@ -45,4 +46,9 @@ pub extern fn empty_callback_string(
     _: *const c_char
 ) -> i32 {
     return e;
+}
+
+pub fn did() -> *const c_char {
+    let did = rand_string(21);
+    return c_pointer_from_string(did);
 }
