@@ -11,6 +11,7 @@ pub mod config;
 pub mod indy_sdk_api;
 pub mod input;
 pub mod output;
+pub mod minting;
 pub mod payments;
 pub mod parsers;
 pub mod request;

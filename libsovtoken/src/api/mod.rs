@@ -12,14 +12,13 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::minting;
 use logic::payments::{CreatePaymentHandler};
 
 use logic::fees::Fees;
-use logic::output::OutputConfig;
 
 use logic::config::{
     payment_config::{PaymentRequest},
-    output_mint_config::{MintRequest},
     payment_address_config::{PaymentAddressConfig},
     set_fees_config::{SetFeesRequest, SetFeesConfig},
     get_fees_config::GetFeesRequest,
@@ -33,7 +32,7 @@ use logic::parsers::{
     parse_get_txn_fees::parse_fees_from_get_txn_fees_response
 };
 
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, deserialize_from_char_ptr, c_pointer_from_string};
+use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::general::{validate_did_len};
@@ -46,7 +45,8 @@ use utils::general::{validate_did_len};
     err:  results.
     json_pointer: results data.  format is defined by the API
 */
-type JsonCallback = Option<extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32>;
+pub type JsonCallback = Option<JsonCallbackUnwrapped>;
+pub type JsonCallbackUnwrapped =  extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -722,7 +722,30 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
 }
 
 
-/// Builds a Mint Request to mint tokens
+/**
+ * Build a mint transaction request.
+ * 
+ * A mint transaction will need to be signed by a quorum of trustees.
+ * 
+ * The mint transaction can only be used once.
+ * 
+ * ## Parameters
+ * 
+ * ### DID (Decentralized Identifier)
+ * 
+ * ### outputs_json
+ * ```JSON
+ * {
+ *      "ver": <int>
+ *      "outputs": [
+ *          {
+ *              "address": <str: payment_address>,
+ *              "amount": <int>
+ *              "extra": <str>
+ *          }
+ *      ]
+ * }
+ */
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(
     command_handle:i32,
@@ -731,22 +754,24 @@ pub extern "C" fn build_mint_txn_handler(
     outputs_json: *const c_char,
     cb: JsonCallback) -> i32
 {
-
-    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-    let submitter_did = string_from_char_ptr(submitter_did);
-    if cb.is_none() {
-        return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32;
-    }
-
-    let outputs_config = match deserialize_from_char_ptr::<OutputConfig>(outputs_json) {
-        Ok(c) => c,
-        Err(e) => return handle_result(Err(e)) as i32
+    let (did, outputs, cb) = match minting::deserialize_inputs(
+        submitter_did,
+        outputs_json,
+        cb
+    ) {
+        Ok(tup) => tup,
+        Err(e) => return e as i32,
     };
+    trace!("Deserialized build_mint_txn_handler arguments.");
 
-    let mint_request = MintRequest::from_config(outputs_config, submitter_did.unwrap());
-    let mint_request = mint_request.serialize_to_cstring().unwrap();
+    let mint_request = match minting::build_mint_request(did, outputs) {
+        Ok(json) => json,
+        Err(e) => return e as i32
+    };
+    trace!("Serialized mint request as pointer.");
 
-    return handle_result(Ok(mint_request.as_ptr())) as i32;
+    cb(command_handle, ErrorCode::Success as i32, mint_request);
+    return ErrorCode::Success as i32;
 }
 
 /**

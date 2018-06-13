@@ -1,11 +1,12 @@
 use std::ffi::CString;
-use utils::ffi_support::cstring_from_str;
+use libc::c_char;
+use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::random::rand_req_id;
 use serde::Serialize;
 use serde_json;
 use utils::json_conversion::JsonSerialize;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Request<T>
     where T: Serialize
@@ -30,7 +31,16 @@ impl<T> Request<T>
     }
 
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
-        let serialized = JsonSerialize::to_json(&self)?;
-        return Ok(cstring_from_str(serialized));
+        return self.serialize_to_string()
+            .map(|string| cstring_from_str(string));
+    }
+
+    pub fn serialize_to_string(&self) -> Result<String, serde_json::Error> {
+        return JsonSerialize::to_json(&self);
+    }
+
+    pub fn serialize_to_pointer(&self) -> Result<*const c_char, serde_json::Error> {
+        return self.serialize_to_string()
+            .map(|string| c_pointer_from_string(string));
     }
 }
