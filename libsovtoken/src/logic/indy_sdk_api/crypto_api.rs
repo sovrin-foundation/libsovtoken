@@ -20,8 +20,8 @@ pub trait CryptoAPI {
 // CryptoAPI implementation using INDY SDK
 // ------------------------------------------------------------------
 /**
-   This is the "default" implementation of CryptoAPI for use in productions environment
-   This implementation calls Indy SDK indy_create_key(...)
+   This is the "production" implementation of CryptoAPI as
+   this implementation calls Indy SDK indy_create_key(...)
 */
 pub struct CryptoSdk{}
 

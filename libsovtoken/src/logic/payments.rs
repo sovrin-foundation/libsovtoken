@@ -36,6 +36,21 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
         let address = self.injected_api.indy_create_key(wallet_id, config)?;
         return Ok(address::create_formatted_address_with_checksum(address));
     }
+
+    /**
+
+    */
+    pub fn create_payment_address_cb(&self,
+                                     wallet_id: i32,
+                                     config: PaymentAddressConfig,
+                                     cb : Box<Fn(Result<String, ErrorCode>)>) -> Result<String, ErrorCode> {
+
+
+        let address_result: Result<String, ErrorCode> = self.create_payment_address(wallet_id, config);
+        let address: String = address_result.unwrap();
+        cb(Ok(address.to_string()));
+        return Ok(address);
+    }
 }
 
 
@@ -45,8 +60,12 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 
 #[cfg(test)]
 mod payments_tests {
+    #![allow(unused_assignments)]
+    #![allow(unused_must_use)]
     extern crate log;
 
+    use std::sync::mpsc::{channel};
+    use std::time::Duration;
     use utils::random::rand_string;
     use logic::address::*;
 
@@ -67,7 +86,28 @@ mod payments_tests {
 
     static VALID_SEED_LEN: usize = 32;
     static WALLET_ID: i32 = 10;
-    
+
+    fn validate_address(address : String) {
+        // got our result, if its correct, it will look something like this:
+        // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
+        // break it up into the individual parts we expect to find and
+        // test the validity of the parts
+        let pay_indicator = &address[0..3];
+        let first_separator = &address[3..4];
+        let sov_indicator = &address[4..7];
+        let second_indicator = &address[7..8];
+        let result_address = &address[8..52];
+
+        let checksum: String = address::get_checksum(&address).unwrap();
+
+        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
+        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
+        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
+        assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+    }
+
     // This is the happy path test.  Config contains a seed and
     // a fully formatted address is returned.
     #[test]
@@ -135,6 +175,35 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+
+    }
+
+    // Happy path test assumes the CB is valid and it is successfully called
+    #[test]
+    fn success_create_payment_with_cb() {
+        let seed = String::new();
+        let config: PaymentAddressConfig = PaymentAddressConfig { seed };
+
+        let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
+
+        let mut got_good_result: bool = false;
+        let (sender, receiver) = channel();
+
+        let cb_closure = Box::new( move| result : Result<String, ErrorCode> | {
+            match result {
+                Ok(s) => {
+                    validate_address(s.to_string());
+                    sender.send(true);
+                },
+                Err(e) => assert_eq!(e, ErrorCode::Success),
+            };
+
+        });
+
+        let result: Result<String, ErrorCode> = handler.create_payment_address_cb(WALLET_ID, config, cb_closure);
+
+        got_good_result = receiver.recv_timeout(Duration::from_secs(10)).unwrap();
+        assert_eq!(got_good_result, true);
 
     }
 }
