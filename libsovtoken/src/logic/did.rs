@@ -41,9 +41,9 @@ impl<'a> Did<'a> {
     }
 }
 
-impl<'a> Into<String> for Did<'a> {
-    fn into(self) -> String {
-        return String::from(self.0);
+impl<'a> From<Did<'a>> for String {
+    fn from(did: Did<'a>) -> String {
+        return String::from(did.0);
     }
 }
 
