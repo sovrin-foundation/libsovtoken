@@ -13,6 +13,7 @@ use utils::json_conversion::JsonSerialize;
 */
 pub trait CryptoAPI {
     fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode>;
+    fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send;
     fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, wallet_handle: i32, verkey: String, message: String, cb: F) -> ErrorCode;
 }
 
@@ -20,8 +21,8 @@ pub trait CryptoAPI {
 // CryptoAPI implementation using INDY SDK
 // ------------------------------------------------------------------
 /**
-   This is the "default" implementation of CryptoAPI for use in productions environment
-   This implementation calls Indy SDK indy_create_key(...)
+   This is the "production" implementation of CryptoAPI as
+   this implementation calls Indy SDK indy_create_key(...)
 */
 pub struct CryptoSdk{}
 
@@ -35,7 +36,7 @@ impl CryptoAPI for CryptoSdk {
     */
     fn indy_create_key(&self, wallet_id: IndyHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
 
-        debug!("create_payment_address calling indy_create_key");
+        trace!("create_payment_address calling indy_create_key");
         let mut config_json: String = config.to_json().unwrap();
 
         // indy-sdk expects a valid but empty input to be this below
@@ -45,6 +46,23 @@ impl CryptoAPI for CryptoSdk {
         }
 
         return Key::create(wallet_id, Some(&config_json));
+    }
+
+    /**
+        for consumers that cannot have blocking calls, this method indy_create_key asynchronously
+    */
+    fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+
+        trace!("create_payment_address calling indy_create_key");
+        let mut config_json: String = config.to_json().unwrap();
+
+        // indy-sdk expects a valid but empty input to be this below
+        // so if no seed was provided, create the json to look like this instead
+        if 0 == config.seed.chars().count() {
+            config_json = r#"{ }"#.to_string();
+        }
+
+        return Key::create_async(wallet_id, Some(&config_json), closure);
     }
 
     fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(

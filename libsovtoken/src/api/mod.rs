@@ -4,7 +4,6 @@
 #![allow(unused_variables)]
 
 use std;
-use std::thread;
 
 use libc::c_char;
 
@@ -77,9 +76,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: JsonCallback) -> i32 {
-    if cb.is_none() {
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
+
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if config_str.is_null() {
         return ErrorCode::CommonInvalidStructure as i32;
@@ -97,40 +95,23 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
         Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
 
-    thread::spawn(move || {
-        // to return both payment address and private key pair so that we can write the private
-        // key into the ledger
-        let handler = CreatePaymentHandler::new(CryptoSdk {} );
-        match handler.create_payment_address(wallet_handle, config) {
-            Ok(payment_address) => {
-                debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
-                let payment_address_cstring = cstring_from_str(payment_address);
-                let payment_address_ptr = payment_address_cstring.as_ptr();
+    let payment_closure = move | payment_address : String, err: ErrorCode | {
 
-                match cb {
-                    Some(f) => f(command_handle, ErrorCode::Success as i32, payment_address_ptr),
-                    None => {
-                        error!("cb was null even after check");
-                        ErrorCode::CommonInvalidState as i32
-                    },
-                };
+        if err != ErrorCode::Success {
+            error!("create payment address failed ErrorCode={:?}", err);
+            cb(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null());
+            return;
+        }
 
-            },
-            Err(e) => {
-                match cb {
-                    Some(f) => f(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null()),
-                    None => {
-                        error!("cb was null even after check");
-                        ErrorCode::CommonInvalidState as i32
-                    },
-                };
+        debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
+        let payment_address_cstring = cstring_from_str(payment_address);
+        let payment_address_ptr = payment_address_cstring.as_ptr();
 
-            },
-        };
-    });
+        cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);
+    };
 
-
-    return ErrorCode::Success as i32;
+    let handler = CreatePaymentHandler::new(CryptoSdk {} );
+    return handler.create_payment_address_async(wallet_handle, config, payment_closure) as i32;
 }
 
 /// Description

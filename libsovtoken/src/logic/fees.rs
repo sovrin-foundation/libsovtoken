@@ -168,6 +168,7 @@ trait InputSigner<A: CryptoAPI> {
 
 #[cfg(test)]
 mod test_fees {
+    #![allow(unused_variables)]
     use super::*;
     use logic::config::payment_address_config::PaymentAddressConfig;
     use logic::output::Output;
@@ -181,7 +182,11 @@ mod test_fees {
         fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, _wallet_handle: IndyHandle, verkey: String, _message: String, mut cb: F) -> ErrorCode {
             cb(Ok(verkey + "signed"));
             return ErrorCode::Success;
-        } 
+        }
+
+        fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+            return ErrorCode::CommonInvalidState;
+        }
     }
  
     fn inputs_outputs_valid() -> (Inputs, Outputs) {

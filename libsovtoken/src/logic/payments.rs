@@ -29,12 +29,43 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
     }
 
     /**
-       the format of the return is:
-           pay:sov:{32 byte address}{4 byte checksum}
+        To get a sovrin address
+        the format of the return is:
+            pay:sov:{32 byte address}{4 byte checksum}
     */
     pub fn create_payment_address(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+        trace!("calling self.injected_api.indy_create_key");
         let address = self.injected_api.indy_create_key(wallet_id, config)?;
+
+        trace!("got address from self.injected_api.indy_create_key {}", address);
         return Ok(address::create_formatted_address_with_checksum(address));
+    }
+
+    /**
+        To get a sovrin address asynchronously.
+        the format of the string sent via the callback is:
+            pay:sov:{32 byte address}{4 byte checksum}
+    */
+    pub fn create_payment_address_async<F: 'static>(&self,
+                                     wallet_id: i32,
+                                     config: PaymentAddressConfig,
+                                     mut cb : F) -> ErrorCode where F: FnMut(String, ErrorCode) + Send {
+
+        let cb_closure = move | err: ErrorCode, address : String | {
+            if err == ErrorCode::Success {
+                trace!("got address from self.injected_api.indy_create_key_async {}", address);
+                cb(address::create_formatted_address_with_checksum(address), err);
+                return;
+            }
+
+            error!("got error {:?} from self.injected_api.indy_create_key_async", err);
+            cb("".to_string(), err);
+        };
+
+        trace!("calling injected_api.indy_create_key_async");
+        let result_code = self.injected_api.indy_create_key_async(wallet_id, config, cb_closure);
+
+        return result_code;
     }
 }
 
@@ -47,6 +78,8 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 mod payments_tests {
     extern crate log;
 
+    use std::sync::mpsc::{channel};
+    use std::time::Duration;
     use utils::random::rand_string;
     use logic::address::*;
 
@@ -61,13 +94,39 @@ mod payments_tests {
 
         fn indy_crypto_sign<F>(&self, _: i32, _: String, _: String, _: F) -> ErrorCode {
             return ErrorCode::CommonInvalidState;
-        } 
+        }
+
+        fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+            closure(ErrorCode::Success, rand_string(VERKEY_LEN));
+            return ErrorCode::Success;
+        }
     }
 
 
     static VALID_SEED_LEN: usize = 32;
     static WALLET_ID: i32 = 10;
-    
+
+    fn validate_address(address : String) {
+        // got our result, if its correct, it will look something like this:
+        // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
+        // break it up into the individual parts we expect to find and
+        // test the validity of the parts
+        let pay_indicator = &address[0..3];
+        let first_separator = &address[3..4];
+        let sov_indicator = &address[4..7];
+        let second_indicator = &address[7..8];
+        let result_address = &address[8..52];
+
+        let checksum: String = address::get_checksum(&address).unwrap();
+
+        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
+        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
+        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
+        assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+    }
+
     // This is the happy path test.  Config contains a seed and
     // a fully formatted address is returned.
     #[test]
@@ -135,6 +194,35 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
         assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+
+    }
+
+    // Happy path test assumes the CB is valid and it is successfully called
+    #[test]
+    fn success_create_payment_async() {
+        let seed = String::new();
+        let config: PaymentAddressConfig = PaymentAddressConfig { seed };
+
+        let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
+
+        let mut got_good_result: bool = false;
+        let (sender, receiver) = channel();
+
+        let cb_closure = move | address : String, err: ErrorCode | {
+
+            if err != ErrorCode::Success {
+                sender.send(false).unwrap();
+                return;
+            }
+
+            validate_address(address.to_string());
+            sender.send(true).unwrap();
+        };
+
+        let error_code: ErrorCode = handler.create_payment_address_async(WALLET_ID, config, cb_closure);
+
+        got_good_result = receiver.recv_timeout(Duration::from_secs(10)).unwrap();
+        assert_eq!(got_good_result, true);
 
     }
 }
