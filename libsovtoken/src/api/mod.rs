@@ -11,16 +11,17 @@ use indy::payments::Payment;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
+use logic::did::Did;
+use logic::fees::Fees;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::payments::{CreatePaymentHandler};
-
-use logic::fees::Fees;
+use logic::set_fees;
 
 use logic::config::{
     payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
-    set_fees_config::{SetFeesRequest, SetFeesConfig},
+    set_fees_config::{SetFeesRequest},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
@@ -35,7 +36,6 @@ use logic::parsers::{
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use utils::general::{validate_did_len};
 
 /**
     Defines a callback to communicate results to Indy-sdk as type
@@ -499,14 +499,6 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
-    let submitter_did = match str_from_char_ptr(submitter_did) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure as i32;
-        }
-    };
-
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
         None => {
@@ -515,12 +507,17 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         }
     };
 
-    // validation
-    if !validate_did_len(submitter_did) {
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
+    let did = match Did::from_pointer(submitter_did) {
+        Some(did) => did,
+        None => return ErrorCode::CommonInvalidStructure as i32
+    };
 
-    let utxo_request = GetUtxoRequest::new(String::from(payment_address), String::from(submitter_did));
+    let did = match did.validate() {
+        Ok(did_valid) => did_valid,
+        Err(_) => return ErrorCode::CommonInvalidStructure as i32
+    };
+
+    let utxo_request = GetUtxoRequest::new(String::from(payment_address), did.into());
     let utxo_request = utxo_request.serialize_to_cstring().unwrap();
 
     handle_result(Ok(utxo_request.as_ptr())) as i32
@@ -601,42 +598,28 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
                                          fees_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: i32, set_txn_fees_json: *const c_char) -> i32>) -> i32 {
 
-    let handle_result = |result: Result<*const c_char, ErrorCode>| {
-        let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
-        if cb.is_some() {
-            let json_pointer = result.unwrap_or(std::ptr::null());
-            cb.unwrap()(command_handle, result_error_code as i32, json_pointer);
-        }
-        return result_error_code;
+    let (did, fees_config, cb) = match set_fees::deserialize_inputs(
+        submitter_did,
+        fees_json,
+        cb
+    ) {
+        Ok(tup) => tup,
+        Err(e) => return e as i32
     };
 
-    if cb.is_some() == false {
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
+    let fees_request = SetFeesRequest::from_fee_config(fees_config, did.into());
 
-    let fees_json_str : &str = match str_from_char_ptr(fees_json) {
-        Some(s) => s,
-        None => return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32
+    let fees_request_pointer_option = fees_request.serialize_to_pointer()
+        .or(Err(ErrorCode::CommonInvalidStructure));
+
+    let fees_request_pointer = match fees_request_pointer_option {
+        Ok(ptr) => ptr,
+        Err(e) => return e as i32,
     };
 
-    let fees_config: SetFeesConfig = match SetFeesConfig::from_json(fees_json_str) {
-        Ok(c) => c,
-        Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32
-    };
+    cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
 
-    let submitter_did = match string_from_char_ptr(submitter_did) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure as i32;
-        }
-    };
-
-    let fees_request = SetFeesRequest::from_fee_config(fees_config, submitter_did);
-
-    let fees_request = fees_request.serialize_to_cstring().unwrap();
-
-    return handle_result(Ok(fees_request.as_ptr())) as i32;
+    return ErrorCode::Success as i32;
 }
 
 /// Description
@@ -764,7 +747,7 @@ pub extern "C" fn build_mint_txn_handler(
     };
     trace!("Deserialized build_mint_txn_handler arguments.");
 
-    let mint_request = match minting::build_mint_request(did, outputs) {
+    let mint_request = match minting::build_mint_request(did.into(), outputs) {
         Ok(json) => json,
         Err(e) => return e as i32
     };

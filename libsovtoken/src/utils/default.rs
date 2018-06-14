@@ -6,6 +6,7 @@
 use libc::c_char;
 use utils::ffi_support::c_pointer_from_string;
 use utils::random::rand_string;
+use utils::constants::txn_types;
 
 pub fn inputs_json_pointer() -> *const c_char {
     let json = json!({
@@ -51,4 +52,15 @@ pub extern fn empty_callback_string(
 pub fn did() -> *const c_char {
     let did = rand_string(21);
     return c_pointer_from_string(did);
+}
+
+pub fn set_fees_json() -> *const c_char {
+    let json = json!({
+        "fees": {
+            txn_types::XFER_PUBLIC: 3,
+            "3": 5
+        }
+    });
+
+    return c_pointer_from_string(json.to_string());
 }

@@ -14,7 +14,7 @@ const SET_FEES: &str = "20000";
  *
  *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
  */
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct SetFeesConfig {
    pub fees: HashMap<String, u64>,
 }
