@@ -91,8 +91,8 @@ impl fmt::Display for DidError {
 impl Error for DidError {
     fn description(&self) -> &str {
         match self {
-            DidError::InvalidLength(_) => "Invalid did length.",
-            DidError::InvalidChar(_) => "Invalid char in did.",
+            &DidError::InvalidLength(_) => "Invalid did length.",
+            &DidError::InvalidChar(_) => "Invalid char in did.",
         }
     }
 }
