@@ -76,7 +76,6 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 
 #[cfg(test)]
 mod payments_tests {
-    #![allow(unused_must_use)]
     extern crate log;
 
     use std::sync::mpsc::{channel};
@@ -212,12 +211,12 @@ mod payments_tests {
         let cb_closure = move | address : String, err: ErrorCode | {
 
             if err != ErrorCode::Success {
-                sender.send(false);
+                sender.send(false).unwrap();
                 return;
             }
 
             validate_address(address.to_string());
-            sender.send(true);
+            sender.send(true).unwrap();
         };
 
         let error_code: ErrorCode = handler.create_payment_address_async(WALLET_ID, config, cb_closure);
