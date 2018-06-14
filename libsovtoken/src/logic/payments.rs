@@ -43,7 +43,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 
     /**
         To get a sovrin address asynchronously.
-        the format of the return is:
+        the format of the string sent via the callback is:
             pay:sov:{32 byte address}{4 byte checksum}
     */
     pub fn create_payment_address_async<F: 'static>(&self,
@@ -76,7 +76,6 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 
 #[cfg(test)]
 mod payments_tests {
-    #![allow(unused_assignments)]
     #![allow(unused_must_use)]
     extern crate log;
 
