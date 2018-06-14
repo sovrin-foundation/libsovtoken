@@ -2,30 +2,27 @@ use api::{JsonCallback, JsonCallbackUnwrapped};
 use indy::ErrorCode;
 use libc::c_char;
 use logic::address;
-use logic::output::{OutputConfig};
 use logic::config::output_mint_config::MintRequest;
+use logic::did::Did;
+use logic::output::{OutputConfig};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
-use utils::general::validate_did_len;
 
-type DeserializedArguments = (String, OutputConfig, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Did<'a>, OutputConfig, JsonCallbackUnwrapped);
 
-pub fn deserialize_inputs(
+pub fn deserialize_inputs<'a>(
     did: *const c_char,
     outputs_json: *const c_char,
     cb: JsonCallback
-) -> Result<DeserializedArguments, ErrorCode> {
+) -> Result<DeserializedArguments<'a>, ErrorCode> {
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
-    let did = string_from_char_ptr(did)
-        .ok_or(ErrorCode::CommonInvalidStructure)?;
+    let did = Did::from_pointer(did)
+        .ok_or(ErrorCode::CommonInvalidStructure)?
+        .validate()
+        .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Converted did pointer to string >>> {:?}", did);
-
-    if ! validate_did_len(&did) {
-        return Err(ErrorCode::CommonInvalidStructure);
-    }
-    trace!("Validated did length.");
 
     let outputs_json = string_from_char_ptr(outputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure)?;
@@ -94,7 +91,7 @@ mod test_build_mint_request {
             None
         ).unwrap();
 
-        let result = build_mint_request(did, output_config).unwrap();
+        let result = build_mint_request(did.into(), output_config).unwrap();
         let mint_request_json = string_from_char_ptr(result).unwrap();
         let mint_value: serde_json::value::Value = serde_json::from_str(&mint_request_json).unwrap();
 
@@ -121,11 +118,11 @@ mod test_deserialize_inputs {
     use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
 
 
-    pub fn call_deserialize_inputs(
+    pub fn call_deserialize_inputs<'a>(
         did: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
         cb: Option<JsonCallback>
-    ) -> Result<DeserializedArguments, ErrorCode> {
+    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
         let req_json = did.unwrap_or_else(default::did);
         let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
         let cb = cb.unwrap_or(Some(default::empty_callback_string));

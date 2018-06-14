@@ -12,12 +12,12 @@ use indy::payments::Payment;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
+use logic::did::Did;
+use logic::fees::Fees;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
-
-use logic::fees::Fees;
 
 use logic::config::{
     payment_config::{PaymentRequest},
@@ -37,7 +37,6 @@ use logic::parsers::{
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use utils::general::{validate_did_len};
 
 /**
     Defines a callback to communicate results to Indy-sdk as type
@@ -519,14 +518,6 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
-    let submitter_did = match str_from_char_ptr(submitter_did) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure as i32;
-        }
-    };
-
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
         None => {
@@ -535,12 +526,17 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         }
     };
 
-    // validation
-    if !validate_did_len(submitter_did) {
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
+    let did = match Did::from_pointer(submitter_did) {
+        Some(did) => did,
+        None => return ErrorCode::CommonInvalidStructure as i32
+    };
 
-    let utxo_request = GetUtxoRequest::new(String::from(payment_address), String::from(submitter_did));
+    let did = match did.validate() {
+        Ok(did_valid) => did_valid,
+        Err(_) => return ErrorCode::CommonInvalidStructure as i32
+    };
+
+    let utxo_request = GetUtxoRequest::new(String::from(payment_address), did.into());
     let utxo_request = utxo_request.serialize_to_cstring().unwrap();
 
     handle_result(Ok(utxo_request.as_ptr())) as i32
@@ -770,7 +766,7 @@ pub extern "C" fn build_mint_txn_handler(
     };
     trace!("Deserialized build_mint_txn_handler arguments.");
 
-    let mint_request = match minting::build_mint_request(did, outputs) {
+    let mint_request = match minting::build_mint_request(did.into(), outputs) {
         Ok(json) => json,
         Err(e) => return e as i32
     };

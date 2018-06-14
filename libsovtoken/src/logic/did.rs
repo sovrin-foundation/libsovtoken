@@ -19,6 +19,12 @@ impl<'a> Did<'a> {
         return str_from_char_ptr(pointer).map(Self::new);
     }
 
+    /**
+    * Validate did
+    *
+    * Validates that the did is a length of 20 to 21 and that it only contains
+    * alphanumeric characters.
+    */
     pub fn validate(self) -> Result<Self, DidErrors> {
         let Did(did_string) = self;
         let did_length = did_string.len();
@@ -85,7 +91,12 @@ mod test_did_validation {
     }
 
     #[test]
-    fn did_valid() {
+    fn did_valid_length_20() {
+        assert!(Did::new("0123456789abcdefghij").validate().is_ok());
+    }
+
+    #[test]
+    fn did_valid_length_21() {
         assert!(Did::new("0123456789abcdefghijk").validate().is_ok());
     }
 

@@ -63,19 +63,6 @@ impl<'a> StringUtils for &'a str {
 
 }
 
-/**
-    `validate_did_len` expects a did and then validates that
-    it is the correct length
-*/
-pub fn validate_did_len(submitter_did : &str) -> bool {
-    let did_len = submitter_did.len();
-    if did_len != 22 && did_len != 21 {
-        return false;
-    }
-    true
-}
-
-
 /*
          UNIT TESTS BELOW
          (and only unit tests---do not add more functions below this mod)
@@ -84,10 +71,7 @@ pub fn validate_did_len(submitter_did : &str) -> bool {
 #[cfg(test)]
 mod general_tests {
 
-    use super::validate_did_len;
     use utils::general::{StringUtils, some_or_none_option_u8};
-    use utils::random::rand_string;
-
 
     #[test]
     fn success_empty_u8_array_becomes_option_none() {
@@ -129,47 +113,5 @@ mod general_tests {
         let result = copy.from_right(75);
 
         assert_eq!(data, result, "from_right test failed");
-    }
-
-    #[test]
-    fn success_validate_did_len_22() {
-        let did: String = rand_string(22);
-
-        assert_eq!(true, validate_did_len(&did), "DID of len 22 should have passed");
-    }
-
-    #[test]
-    fn success_validate_did_len_21() {
-        let did: String = rand_string(21);
-
-        assert_eq!(true, validate_did_len(&did), "DID of len 21 should have passed");
-    }
-
-    #[test]
-    fn fails_validate_did_len_23() {
-        let did: String = rand_string(23);
-
-        assert_eq!(false, validate_did_len(&did), "DID of len 23 should have failed");
-    }
-
-    #[test]
-    fn fails_validate_did_len_18() {
-        let did: String = rand_string(18);
-
-        assert_eq!(false, validate_did_len(&did), "DID of len 18 should have failed");
-    }
-
-    #[test]
-    fn fails_validate_did_len_1() {
-        let did: String = rand_string(1);
-
-        assert_eq!(false, validate_did_len(&did), "DID of len 1 should have failed");
-    }
-
-    #[test]
-    fn fails_validate_did_len_0() {
-        let did: String = "".to_string();
-
-        assert_eq!(false, validate_did_len(&did), "DID of len 0 should have failed");
     }
 }
