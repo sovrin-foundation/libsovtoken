@@ -15,13 +15,14 @@ use logic::build_payment;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::payments::{CreatePaymentHandler};
+use logic::set_fees;
 
 use logic::fees::Fees;
 
 use logic::config::{
     payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
-    set_fees_config::{SetFeesRequest, SetFeesConfig},
+    set_fees_config::{SetFeesRequest},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
@@ -620,42 +621,28 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
                                          fees_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: i32, set_txn_fees_json: *const c_char) -> i32>) -> i32 {
 
-    let handle_result = |result: Result<*const c_char, ErrorCode>| {
-        let result_error_code = result.and(Ok(ErrorCode::Success)).ok_or_err();
-        if cb.is_some() {
-            let json_pointer = result.unwrap_or(std::ptr::null());
-            cb.unwrap()(command_handle, result_error_code as i32, json_pointer);
-        }
-        return result_error_code;
+    let (did, fees_config, cb) = match set_fees::deserialize_inputs(
+        submitter_did,
+        fees_json,
+        cb
+    ) {
+        Ok(tup) => tup,
+        Err(e) => return e as i32
     };
 
-    if cb.is_some() == false {
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
+    let fees_request = SetFeesRequest::from_fee_config(fees_config, did.into());
 
-    let fees_json_str : &str = match str_from_char_ptr(fees_json) {
-        Some(s) => s,
-        None => return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32
+    let fees_request_pointer_option = fees_request.serialize_to_pointer()
+        .or(Err(ErrorCode::CommonInvalidStructure));
+
+    let fees_request_pointer = match fees_request_pointer_option {
+        Ok(ptr) => ptr,
+        Err(e) => return e as i32,
     };
 
-    let fees_config: SetFeesConfig = match SetFeesConfig::from_json(fees_json_str) {
-        Ok(c) => c,
-        Err(_) => return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32
-    };
+    cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
 
-    let submitter_did = match string_from_char_ptr(submitter_did) {
-        Some(s) => s,
-        None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure as i32;
-        }
-    };
-
-    let fees_request = SetFeesRequest::from_fee_config(fees_config, submitter_did);
-
-    let fees_request = fees_request.serialize_to_cstring().unwrap();
-
-    return handle_result(Ok(fees_request.as_ptr())) as i32;
+    return ErrorCode::Success as i32;
 }
 
 /// Description

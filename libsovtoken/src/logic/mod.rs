@@ -6,6 +6,7 @@
 pub mod add_request_fees;
 pub mod address;
 pub mod build_payment;
+pub mod did;
 pub mod fees;
 pub mod config;
 pub mod indy_sdk_api;
@@ -15,3 +16,4 @@ pub mod minting;
 pub mod payments;
 pub mod parsers;
 pub mod request;
+pub mod set_fees;
