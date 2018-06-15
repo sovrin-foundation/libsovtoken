@@ -8,6 +8,8 @@ Libindy executes all handlers in its command thread. Right now in handler we try
 
 We need to avoid synchronous calls and use callbacks so that we can send the next command to libindy and the execution will continue in callback.
 
+**NB:** We do really need to test such cases with calls from libindy, because it will be executed that way.
+
 ### How it can be done
 
 In build_payment_req_handler we need signed inputs to build a payment request. So we should cover logic that works with signed inputs in callbacks and pass it to libindy. Example:
@@ -83,7 +85,7 @@ impl Fees {
 }
 //...
 
-// InputSigner needs a total 
+// InputSigner needs a rework to be asynchronous 
 
 trait InputSigner<A: CryptoAPI> {
     fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, cb: Box<Fn(Result<Inputs, ErrorCode>) + 'static + Send + Sync>)
