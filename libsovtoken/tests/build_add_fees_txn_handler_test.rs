@@ -9,6 +9,8 @@ use indy::{IndyHandle, ErrorCode};
 use indy::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
+use std::sync::mpsc::channel;
+use std::time::Duration;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {
@@ -77,4 +79,59 @@ fn test_add_fees_to_request_valid() {
 
     let result = call_add_fees(wallet_handle, inputs.to_string(), outputs.to_string(), fake_request.to_string()).unwrap();
     assert_eq!(expected_fees_request.to_string(), result);
+}
+
+#[test]
+fn test_add_fees_to_request_valid_from_libindy() {
+    let (wallet_handle, input_address) = init_wallet_with_address();
+    let did = "Th7MpTaRZVRYnPiabds81Y";
+
+    let fake_request = json!({
+       "operation": {
+           "type": "3"
+       }
+    });
+
+    let inputs = json!({
+        "ver": 1,
+        "inputs": [{
+            "address": input_address,
+            "seqNo": 1,
+        }]
+    });
+
+    let outputs = json!({
+        "ver": 1,
+        "outputs": [{
+            "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+            "amount": 20,
+        }]
+    });
+
+    let expected_fees_request = json!({
+       "fees": {
+           "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
+           "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 20]]
+       },
+       "operation": {
+           "type": "3"
+       }
+    });
+
+    let (sender, receiver) = channel();
+
+    let cb = move |ec, req, method| {
+        sender.send((ec, req, method));
+    };
+
+    let return_error = indy::payments::Payment::add_request_fees_async(wallet_handle,
+                                                    did,
+                                                    &fake_request.to_string(),
+                                                    &inputs.to_string(),
+                                                    &outputs.to_string(),
+                                                    cb);
+
+    let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
+
+    assert_eq!(expected_fees_request.to_string(), req);
 }
