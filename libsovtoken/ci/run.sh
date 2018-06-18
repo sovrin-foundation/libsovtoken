@@ -33,7 +33,7 @@ __usage() {
         -f  Dockerfile to use to for building docker instance. Default: '${DOCKERFILE}'
         -g  Use git to clone libindy from this URL and compile from source.
             Example: https://github.com/hyperledger/indy-sdk.git.
-        -i  Compile libindy from local source directory.
+        -i  Compile libindy from local source directory. This is root folder to indy-sdk.
         -m  The mode to run cargo inside docker. Default: '${MODE}'.
             Valid options are 'build|release|test'.
         -n  Name to give the built docker image. Default: '${DOCKERIMAGE}'
@@ -157,14 +157,24 @@ echo "Using libsovtoken in ${BUILD_DIR}"
 if [ -z "${DOCKER_IMAGE_ID}" ] ; then
     echo "Docker image ${DOCKERIMAGE} does not exist"
     echo "Docker image will be built with ${DOCKERFILE}"
-    APT_CMD=""
-    INDY_PKG=""
+    INDY_INSTALL="${PWD}/indy_install.sh"
     if [ "${INDY_INSTALL_METHOD}" == "package" ] ; then
-        APT_CMD="apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 && add-apt-repository -y \"deb https://repo.sovrin.org/sdk/deb xenial ${apt_install}\" &&"
-        INDY_PKG="libindy"
+        cat > "${INDY_INSTALL}" << EOT
+#!/bin/bash
+set -xv
+apt-get -qq update -y
+apt-get -qq install -y software-properties-common 2>&1 > /dev/null
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
+add-apt-repository -y "deb https://repo.sovrin.org/sdk/deb xenial ${APT_INSTALL}"
+apt-get -qq update -y
+apt-get -qq install -y indy 2>&1 > /dev/null
+EOT
+    else
+        echo "" > "${INDY_INSTALL}"
     fi
     echo "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci --build-arg apt_cmd=${APT_CMD} --build-arg indy_pkg=${INDY_PKG}"
-    docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci --build-arg apt_cmd=${APT_CMD} --build-arg indy_pkg=${INDY_PKG}
+    docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci --build-arg indy_install=indy_install.sh
+    rm -f indy_install.sh
 else
     echo "Using existing docker image ${DOCKERIMAGE}:latest"
 fi
