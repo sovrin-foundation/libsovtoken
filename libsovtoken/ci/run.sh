@@ -79,7 +79,7 @@ __echocmd() {
 }
 
 
-while getopts ':a:b:c:d:D:f:g:hi:m:n:orRs' opt
+while getopts ':a:b:c:d:D:f:g:hi:j:m:n:orRs' opt
 do
     case "${opt}" in
         a) APT_INSTALL="${OPTARG}" ;;
@@ -91,6 +91,7 @@ do
         g) INDY_CHECKOUT_URL="${OPTARG}" ;;
         h) __usage; exit 0 ;;
         i) INDY_LOCAL_DIR="${OPTARG}" ;;
+        j) CPUS=${OPTARG} ;;
         m) MODE="${OPTARG}" ;;
         n) DOCKERIMAGE="${OPTARG}" ;;
         o) INDY_GIT_CHECKOUT_OVERWRITE=1 ;;
