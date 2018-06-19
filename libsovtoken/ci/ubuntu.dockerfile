@@ -17,21 +17,12 @@ RUN tar xf /tmp/libsodium-1.0.14.tar.gz
 RUN rm -f libsodium-1.0.14.tar.gz
 WORKDIR /tmp/libsodium-1.0.14
 RUN ./autogen.sh
-RUN ./configure --prefix=/tmp/libsodium
+RUN ./configure
 RUN make
 RUN make install
-
-WORKDIR /tmp
-RUN rm -rf libsodium-1.0.14
-WORKDIR /tmp/libsodium
-RUN cp -R include /usr
-RUN cp lib/libsodium.a /usr/lib/x86_64-linux-gnu/
-RUN cp lib/libsodium.so.18.4.0 /usr/lib/x86_64-linux-gnu/libsodium.so
-RUN cp lib/pkgconfig/libsodium.pc /usr/lib/x86_64-linux-gnu/pkgconfig/
-WORKDIR /tmp
-RUN rm -rf libsodium
 
 USER token_user
 WORKDIR /home/token_user
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+
 RUN echo "libsovtoken configured successful"
