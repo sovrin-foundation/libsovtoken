@@ -24,7 +24,7 @@ Libsovtoken depends on the libindy library.
 * **-d** - Directory to find libsovtoken/src/Cargo.toml. Default is '..'.
 * **-D** - Local directory where to clone libindy. Default is '/var/tmp/indy-sdk'.
             This option will be selected over -g if both are used.
-* **-f** - Dockerfile to use to for building docker instance. Default is 'ubuntu.dockerfile'
+* **-f** - Dockerfile to use to for building docker instance. Default is 'Dockerfile'
 * **-g** - Use git to clone libindy from this URL and compile from source.
             Example: https://github.com/hyperledger/indy-sdk.git.
 * **-i** - Compile libindy from local source directory. This is root folder to indy-sdk.
