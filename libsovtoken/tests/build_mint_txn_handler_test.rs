@@ -4,6 +4,8 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate lazy_static;
 
 use indy::ErrorCode;
 
@@ -11,6 +13,11 @@ use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
+use std::sync::mpsc::channel;
+use indy::utils::results::ResultHandler;
+use std::time::Duration;
+
+mod utils;
 
 // ***** HELPER METHODS *****
 
@@ -100,5 +107,40 @@ fn valid_output_json() {
     unsafe {
         assert!(CALLBACK_CALLED);
     }
+}
+
+#[test]
+#[ignore]
+fn valid_output_json_from_libindy() {
+    let did = "Th7MpTaRZVRYnPiabds81Y";
+    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
+    let outputs_str = VALID_OUTPUT_JSON;
+    let outputs_str_ptr = outputs_str.as_ptr();
+    let (sender, receiver) = channel();
+
+    let cb = move |ec, req, payment_method| {
+        sender.send((ec, req, payment_method));
+    };
+
+    let return_error = indy::payments::Payment::build_mint_req_async(wallet_id,
+                                                                     did,
+                                                                     outputs_str,
+                                                                     cb
+    );
+
+    assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
+
+    let (req, payment_method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
+
+    let mint_request_json_value : serde_json::Value = serde_json::from_str(&req).unwrap();
+    let mint_operation = mint_request_json_value
+        .get("operation")
+        .unwrap();
+
+    let expected = json!({
+            "type": "10000",
+            "outputs": [["ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",10]]
+        });
+    assert_eq!(mint_operation, &expected);
 }
 
