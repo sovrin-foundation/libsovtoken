@@ -1,8 +1,8 @@
 #!/bin/bash
 
-RUST_DIR=".."
+RUST_DIR="../.."
 MODE="build"
-DOCKERFILE="ubuntu.dockerfile"
+DOCKERFILE="Dockerfile"
 DOCKERIMAGE="libsovtoken"
 APT_INSTALL="stable"
 INDY_CHECKOUT_URL=""
@@ -193,7 +193,7 @@ echo "Using libsovtoken in ${BUILD_DIR}"
 if [ -z "${DOCKER_IMAGE_ID}" ] ; then
     echo "Docker image ${DOCKERIMAGE} does not exist"
     echo "Docker image will be built with ${DOCKERFILE}"
-    INDY_INSTALL="${PWD}/indy_install.sh"
+    INDY_INSTALL="indy_install.sh"
     if [ "${INDY_INSTALL_METHOD}" == "package" ] ; then
         cat > "${INDY_INSTALL}" << EOT
 #!/bin/bash
@@ -208,8 +208,8 @@ EOT
     else
         echo "" > "${INDY_INSTALL}"
     fi
-    __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci --build-arg indy_install=indy_install.sh"
-    rm -f indy_install.sh
+    __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci/ubuntu --build-arg indy_install=indy_install.sh"
+    rm -f "${INDY_INSTALL}"
 else
     echo "Using existing docker image ${DOCKERIMAGE}:latest"
 fi
