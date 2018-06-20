@@ -213,6 +213,7 @@ fn success_signed_request() {
 }
 
 #[test]
+#[ignore]
 fn success_signed_request_from_libindy() {
 
     sovtoken::api::sovtoken_init();

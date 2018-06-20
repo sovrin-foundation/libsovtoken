@@ -110,6 +110,7 @@ fn valid_output_json() {
 }
 
 #[test]
+#[ignore]
 fn valid_output_json_from_libindy() {
     let did = "Th7MpTaRZVRYnPiabds81Y";
     let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");

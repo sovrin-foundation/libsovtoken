@@ -82,6 +82,7 @@ fn test_add_fees_to_request_valid() {
 }
 
 #[test]
+#[ignore]
 fn test_add_fees_to_request_valid_from_libindy() {
     let (wallet_handle, input_address) = init_wallet_with_address();
     let did = "Th7MpTaRZVRYnPiabds81Y";
