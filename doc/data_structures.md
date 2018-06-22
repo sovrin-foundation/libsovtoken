@@ -4,9 +4,11 @@ This document exists for multiple purposes:
 * To assist the LibSovToken team and give them the information they need to write the payment handler methods
 * To document the inputs and outputs of exposed functions for users of Indy-SDK when payments are handled by LibSovToken.
 ## Methods:
-* [indy_create_payment_address](#method:-indy_create_payment_address)
-* [indy_add_request_fees](#method:-indy_add_request_fees)
-* [indy_parse_response_with_fees](#method:-indy_parse_response_with_fees)
+* [indy_create_payment_address](#method-indy_create_payment_address)
+* [indy_add_request_fees](#method-indy_add_request_fees)
+* [indy_parse_response_with_fees](#method-indy_parse_response_with_fees)
+* [indy_build_payment_req](#method-indy_build_payment_req)
+* [indy_parse_payment_response](#method-indy_parse_payment_response)
 
 ## method: indy_create_payment_address
 This API call is handled by LibSovToken create_payment_address_handler
