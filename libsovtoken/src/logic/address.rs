@@ -125,7 +125,7 @@ pub mod address_tests {
         assert_ne!(length, VERKEY_LEN);
         let verkey = rand_string(length);
         let checksum = rand_string(CHECKSUM_LEN);
-        let invalid_address = format!("pay:sov:{}{}", verkey, checksum);
+        let invalid_address = format!("{}{}{}", PAYMENT_ADDRESS_QUALIFIER, verkey, checksum);
         let result = verkey_from_address(invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
@@ -139,6 +139,15 @@ pub mod address_tests {
     pub fn gen_random_base58_address() -> String {
         let verkey = gen_random_base58_verkey();
         compute_unqual_address_from_verkey(&verkey)
+    }
+
+    fn replace_char_at(s: &str, idx: usize, c: char) -> String {
+        // Taken from https://stackoverflow.com/a/27320653
+        let mut r = String::with_capacity(s.len());
+        for (i, d) in s.char_indices() {
+            r.push(if i == idx { c } else { d });
+        }
+        r
     }
 
     #[test]
@@ -171,7 +180,7 @@ pub mod address_tests {
     fn test_verkey_from_address() {
         let verkey = gen_random_base58_verkey();
         let address = compute_unqual_address_from_verkey(&verkey);
-        let valid_fq_address = format!("pay:sov:{}", address);
+        let valid_fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
         let result = verkey_from_address(valid_fq_address);
         let verkey_extracted = result.unwrap();
         assert_eq!(verkey_extracted, verkey);
@@ -182,7 +191,7 @@ pub mod address_tests {
         let vk_bytes = rand_bytes(VERKEY_LEN+1);
         let verkey = vk_bytes.to_base58();
         let address = compute_unqual_address_from_verkey(&verkey);
-        let fq_address = format!("pay:sov:{}", address);
+        let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
         let result = verkey_from_address(fq_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
@@ -191,21 +200,26 @@ pub mod address_tests {
     #[test]
     fn test_strip_qualifier() {
         let address = gen_random_base58_address();
-        let valid_fq_address = format!("pay:sov:{}", address);
+        let valid_fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
         assert_eq!(strip_qualifier_from_address(&valid_fq_address), address);
     }
 
-    /*#[test]
-    fn test_verkey_checksum_from_address() {
-        let verkey = rand_string(VERKEY_LEN);
-        let checksum = rand_string(CHECKSUM_LEN);
-        let valid_address = format!("pay:sov:{}{}", verkey, checksum);
-        let verkey_checksum = verkey_checksum_from_address(valid_address).unwrap();
-        assert_eq!(verkey_checksum, format!("{}{}", verkey, checksum));
-    }*/
+    #[test]
+    fn test_invalid_checksum_in_address() {
+        let verkey = gen_random_base58_verkey();
+        let address = compute_unqual_address_from_verkey(&verkey);
+        let addr_len = address.len();
+        // Mess up the checksum
+        let mut bad_addr = replace_char_at(&address, addr_len-1, 'a');
+        bad_addr = replace_char_at(&bad_addr, addr_len-2, 'b');
+
+        let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, bad_addr);
+        let error = validate_address(&fq_address).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
 
     #[test]
-    fn test_verkey_checksum_invalid_address() {
+    fn test_verkey_checksum_invalid_qualifier() {
         let address = gen_random_base58_address();
         let invalid_address = format!("pat:sov:{}", address);
         let error = verkey_checksum_from_address(invalid_address).unwrap_err();
