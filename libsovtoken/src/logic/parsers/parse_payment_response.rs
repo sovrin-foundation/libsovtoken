@@ -55,10 +55,7 @@ pub struct ParsePaymentReply {
 
         for unspent_output in base.result.outputs {
 
-                let (address, amount) = unspent_output;
-
-//            let address: String = verkey_to_address(&verkey);
-
+            let (address, amount) = unspent_output;
             let txo: TXO = TXO { address: address.to_string(), seq_no: 1 };
             let utxo: UTXO = UTXO { payment_address: address, txo, amount, extra: "".to_string() };
 

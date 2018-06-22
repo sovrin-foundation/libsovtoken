@@ -80,17 +80,19 @@ mod payments_tests {
 
     use std::sync::mpsc::{channel};
     use std::time::Duration;
-    use utils::random::rand_string;
+    use utils::random::{rand_string};
     use logic::address::*;
+    use logic::address::address_tests::gen_random_base58_verkey;
     use rust_base58::{ToBase58, FromBase58};
 
     use super::*;
 
     // mock SDK api calls with a call that will generate a random 32 byte string
     struct CreatePaymentSDKMockHandler {}
+
     impl CryptoAPI for CreatePaymentSDKMockHandler {
         fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
-            return Ok(rand_string(VERKEY_LEN));
+            return Ok(gen_random_base58_verkey());
         }
 
         fn indy_crypto_sign<F>(&self, _: i32, _: String, _: String, _: F) -> ErrorCode {
@@ -98,7 +100,7 @@ mod payments_tests {
         }
 
         fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
-            closure(ErrorCode::Success, rand_string(VERKEY_LEN));
+            closure(ErrorCode::Success, gen_random_base58_verkey());
             return ErrorCode::Success;
         }
     }
@@ -181,7 +183,7 @@ mod payments_tests {
         let first_separator = &address[3..4];
         let sov_indicator = &address[4..7];
         let second_indicator = &address[7..8];
-        let result_address = &address[8..52];
+        let result_address = &address[8..];
 
         assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");

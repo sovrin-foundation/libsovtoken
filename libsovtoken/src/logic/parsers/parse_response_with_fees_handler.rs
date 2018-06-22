@@ -43,9 +43,6 @@ impl ParseResponseWithFeesReply {
         let seq_no: i32 = base.fees.2;
 
         for output in outputs {
-
-//            let address: String = verkey_to_address(&output.address);
-
             let txo: TXO = TXO { address: output.address.to_string(), seq_no };
             let utxo: UTXO = UTXO { payment_address: output.address.to_string(), txo, amount : output.amount, extra: "".to_string()};
 
@@ -71,10 +68,10 @@ mod parse_response_with_fees_handler_tests {
     static PARSE_RESPONSE_WITH_FEES_JSON: &'static str = r#"{
                 "fees": [
                     [
-                        ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
+                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
                     ],
                     [
-                        ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11]
+                        ["2s6tmsmPaZG2pXgD7AG7YCyXtfFd5s6Ro2MXCcKhAC94JFYaq1", 11]
                     ],
                     3
                 ]
@@ -83,25 +80,15 @@ mod parse_response_with_fees_handler_tests {
     static PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON: &'static str = r#"{
                 "fees": [
                     [
-                        ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
+                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
                     ],
                     [
-                        ["1mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
-                        ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 10]
+                        ["2s6tmsmPaZG2pXgD7AG7YCyXtfFd5s6Ro2MXCcKhAC94JFYaq1", 11],
+                        ["H4NWNV3GutBRcxgkGoomhwnFtqiiMG1HF45avHtJXyspCwQMb", 10]
                     ],
                     3
                 ]
             }"#;
-
-    // helper method to remove pay:sov from an address.  expectation is input
-    // has pay:sov: prefixed.  there is no check that the actual address is valid
-    // since the data above is what is used
-    fn strip_pay_sov_indicator_from_address(address : &String ) -> String {
-        let len = address.chars().count();
-        let result: String = address[8..len].to_string();
-
-        return result.to_string();
-    }
 
     // Tests that valid json with one element in the "output section" is serialized to ParseResponseWithFees tyoe
     #[test]
@@ -138,7 +125,7 @@ mod parse_response_with_fees_handler_tests {
         assert_eq!(1, reply.utxo_json.len());
 
         for utxo in reply.utxo_json {
-            let address: String = strip_pay_sov_indicator_from_address(&utxo.payment_address);
+            let address: String = utxo.payment_address.to_string();
             let amount: u32 = utxo.amount;
             let mut found_address: bool = false;
 
@@ -167,7 +154,7 @@ mod parse_response_with_fees_handler_tests {
         assert_eq!(2, reply.utxo_json.len());
 
         for utxo in reply.utxo_json {
-            let address: String = strip_pay_sov_indicator_from_address(&utxo.payment_address);
+            let address: String = utxo.payment_address.to_string();
             let amount: u32 = utxo.amount;
             let mut found_address: bool = false;
 

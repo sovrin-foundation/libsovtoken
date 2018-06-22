@@ -147,7 +147,7 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
 
 
 #[cfg(test)]
-mod address_tests {
+pub mod address_tests {
     use utils::random::{rand_string, rand_bytes};
 
     use super::*;
@@ -162,12 +162,12 @@ mod address_tests {
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
 
-    fn gen_random_base58_verkey() -> String {
+    pub fn gen_random_base58_verkey() -> String {
         let vk_bytes = rand_bytes(VERKEY_LEN);
         vk_bytes.to_base58()
     }
 
-    fn gen_random_base58_address() -> String {
+    pub fn gen_random_base58_address() -> String {
         let verkey = gen_random_base58_verkey();
         compute_unqual_address_from_verkey(&verkey)
     }
