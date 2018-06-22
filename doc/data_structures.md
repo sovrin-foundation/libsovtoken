@@ -3,6 +3,10 @@
 This document exists for multiple purposes:
 * To assist the LibSovToken team and give them the information they need to write the payment handler methods
 * To document the inputs and outputs of exposed functions for users of Indy-SDK when payments are handled by LibSovToken.
+## Methods:
+* [indy_create_payment_address](#method:-indy_create_payment_address)
+* [indy_add_request_fees](#method:-indy_add_request_fees)
+* [indy_parse_response_with_fees](#method:-indy_parse_response_with_fees)
 
 ## method: indy_create_payment_address
 This API call is handled by LibSovToken create_payment_address_handler
@@ -33,10 +37,10 @@ This API call is handled by LibSovToken add_request_fees_handler.
     inputs_json: The list of UTXO inputs as json array:
 ```
 {
-    "inputs_json": [<str: txo_string>, ] 
+    "inputs_json": [<str: txo_string>, ]
     // Each txo string is of the format: "
     {"address": "pay:sov:<address>", "seqNo": <int>}"
-       
+
 }
 ```
     outputs_json: The list of UTXO outputs as json array:
@@ -80,34 +84,36 @@ Example outputs_json:
 ```
 {
     <req_json>    //initial transaction request
-    "fees": [
+    "fees":
+    [
         [
             [<str: source payment address1>, <int: sequence number>],
         ],
         [
             [<str: change payment address1>, <int: amount of change>],
         ],
-	[<str: signature over source payment address1, sequence number, and all outputs>, ]
-    ],
+	    [<str: signature over source payment address1, sequence number, and all outputs>, ]
+    ]
 }
 ```
 Example req_with_fees_json:
 ```
 {
     <req_json>    //initial transaction request
-    'fees': [
+    "fees":
+    [
         [
-	    ['2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es', 2]
-	],
-	[
-	    ['2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es', 9]
+	        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+	    ],
+	    [
+	        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
     	],
-	['5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox']
-    ],
+	    ["5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
+    ]
 }
 ```
 
-## method: indy_parse_response_with_fees 
+## method: indy_parse_response_with_fees
 This API call is handled by LibSovToken parse_response_with_fees_handler. *Note This is version 2 updated as of 6/20/18*
 
 ### inputs:
@@ -116,113 +122,163 @@ This API call is handled by LibSovToken parse_response_with_fees_handler. *Note 
     resp_json: the JSON formatted response from the ledger
 ```
 {
-    "op" : <String>, // //type of operation returned
-    "ver": <int>, // the version of the transaction response data structure
-    "txn": {
-        "type": <String>, //the transaction type based upon the request submitted
-        "protocolVersion": <int>, // the version of the transaction data structure
-        "data": {
-            "ver": <int>, //version of payload data structure
-            "dest":<String>, // 
-            "verkey":<String>, // verification key of the DID associated with the transaction
-            "role":<int>, //role of DID associated with the transaction
+    "op": <str>,                //type of operation returned
+    "protocol_version":  <int>, // the version of the transaction response data structure
+    "request":
+    {
+        "txn":
+        {
+            "data":
+            {
+                "alias": <str>,
+                "dest": <str>,
+                "verkey": <str>
+            },
+            "metadata":
+            {
+                "digest": <str>,
+                "reqId": <str>
+            },
+            "protocolVersion": <int>,
+            "type": "1"
         },
-        “fees”: {
-            'inputs':[
-                        [<String>, <int>], // [first payment address that sent payment, seqNo used to send payment], 
-                        [<String>, <int>], // [second payment address that sent payment, seqNo used to send payment], 
-                        [<String>, <int>], // [third payment address that sent payment, seqNo used to send payment]
-                     ],
-            'outputs':[
-                        [<String>, <int>], // [first payment address that received payment, amount being received],
-                        [<String>, <int>], // [second payment address that received payment, amount being received],
-                        [<String>, <int>], // [third payment address that received payment, amount being received]
-                     ],
+        "ver": <int>,
+        "txnMetadata":
+        {
+            "seqNo": <int>,
+            "txnTime": <int>
         },
-        "metadata": {
-            "reqId":<int>,  // random nonce submitted used by the nodes to track the request
-            "from": <String>, // the did associated with the submitted transaction
+        "reqSignature":
+        {
+            "type": <str>,
+            "values":
+            [
+                {
+                    "from": <str: DID that sent txn>,
+                    "value": <str: signature of DID on txn>
+                }
+            ]
+        },
+        "rootHash": <str: root hash of ledger>,
+        "auditPath":    // a list of strings
+        [
+            <str: hash of node in ledger>,
+        ],
+        "fees":
+        {
+            "inputs":   // a list of inputs
+            [
+                [<str: payment address>, <int: sequence number>],
+            ],
+            "outputs":
+            [
+                [<str: payment address>, <int: amount>]
+            ],
+            "fees": <int: amount>,
+            "ref": <str: reference to txn for which fees were paid>,
+            "reqSignature":
+            {
+                "type": <str: signature type>,
+                "values":   // a list of signatures
+                [
+                    {
+                        "from": <str: first input payment address>,
+                        "value": <str: signature of payment address on outputs>
+                    },
+                ]
+            },
+            "txnMetadata":
+            {
+                "seqNo": <int: sequence number>,
+                "txnTime": <int: seconds since the unix epoch>
+            },
+            "rootHash": <str: root hash of ledger>,
+            "auditPath":    // a list of strings
+            [
+                <str: hash of node in ledger>,
+            ]
         }
-    },
-    "txnMetadata": {
-        "txnTime": <int>, // time of request creation in UNIX epoch time format
-        "seqNo": <int>, // the seqNo of the transaction (on which ledger? payment ledger or Domain ledger)
-        "txnId": <String> // Txn ID as State Trie key (address or descriptive data). It must be unique within the ledger. (again which ledger?)
-    },
-     "reqSignature": {
-        "type": <string> //the type of key used for signatures,
-        "values": [
-            {
-                "from": <str>, // first payment address that sent payment
-                "Value": <integer>, // signature of inputs[0] and 
-            },
-            {
-                “from” : <payment address with type str from inputs[1]>,
-                “Value” :  <associated signature of inputs[1] and all outputs>
-            },
-            { 
-                “from” : <payment address with type str from inputs[2]>,
-                “Value” :  <associated signature of inputs[2] and all outputs>
-            }
-        ]
     }
-    'rootHash': <String>, // the root hash used to validate that the transaction exists on the ledger
-    'auditPath': [<String>, <String>], //a list of hashes used to verify that the transaction exists on the ledger
 }
 ```
 Example resp_with_fees_json:
 ```
 {
-    "op" : "REPLY",
-    "ver": 2,
-    "txn": {
-        "type":1,
-        "protocolVersion":2,
-        "data": {
-            "ver": 1,
-            "dest":"GEzcdDLhCpGCYRHW82kjHd",
-            "verkey":"~HmUWn928bnFT6Ephf65YXv",
-            "role": None,
-        },
-        “Fees”: {
-            'inputs':[
-                        ['2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC', 3], 
-                        ['knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL', 3], 
-                        ['24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb', 3]
-                     ],
-            'outputs':[
-                        ['iu4wAP3TycMGCEh6tudajEwwSYspP9kBcgAkbBwqLQAxoyKHt', 17],
-                        ['2e6yD9dWwCbgMMdc59ZK5ikoZJFoLA2eBLfez65Next4vBW2pm', 7],
-                        ['24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb', 15]
-                     ],
-        },
-        "metadata": {
-            "reqId":1513945121191691,
-            "from":"L5AD5g65TDQr1PPHHRoiGf",
-        }
-    },
-    "txnMetadata": {
-        "txnTime":1513945121,
-        "seqNo": 10,
-        "txnId": "N22KY2Dyvmuu2PyyqSFKue|01"
-    },
-    "reqSignature": {
-        "type": "ED25519",
-        "values": [
-	        {
-                "from": "2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC",
-                "Value": "3RqpRBNrNEDjdH6SPEtHBz1SjzeySGCZRdCX5z5Vwc4DmCDkVgxAvc2jnZjkHwNJqbxKFT7cfbkkBfAbooGRwZMr"
-            },
+    "op": "REPLY",
+    "protocol_version": 1,
+    "request":
+    {
+        "txn":
+        {
+            "data":
             {
-                “from” : 'knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL',
-                “Value” :  'PV5Pt1aep3ejrcFBq4VkfYcuJCkWNfSfC3zMckUPVpbKXAhQApH8rrxaChzbhdDXVXdiGjz1S1gkiUfbnjsqVux'
-            }, 
-                “from” : '24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb',
-                “Value” :  '2a9gbMxZiV7CNacEmrvj4W36aeQC7XCHxzAcPrAsX7cmJMRnsNA4RmeRNW8Rwy2qs8GRcUBaFbmdAKpqsTLzaEYM'
-            }
-        ]
-    'rootHash': '5ecipNPSztrk6X77fYPdepzFRUvLdqBuSqv4M9Mcv2Vn',
-    'auditPath': ['Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA', '3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt'],
+                "alias": "508867",
+                "dest": "8Wv7NMbsMiNSmNa3iC6fG7",
+                "verkey": "56b9wim9b3dYXzzc8wnm8RZePbyuMoWw5XUXxL4Y9gFZ"
+            },
+            "metadata":
+            {
+                "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                "reqId": 1529697827844532830
+            },
+            "protocolVersion": 2,
+            "type": "1"
+        },
+        "ver": "1",
+        "txnMetadata":
+        {
+            "seqNo": 13,
+            "txnTime": 1529697829
+        },
+        "reqSignature":
+        {
+            "type": "ED25519",
+            "values":
+            [
+                {
+                    "from": "MSjKTWkPLtYoPEaTF1TUDb",
+                    "value": "5Ngg5fQ4NtqdzgN3kSjdRKo6ffeq5sP264TmzxvGGQX3ieJzP9hCeUCu7RkmAhLjzqZ2Z5y8FLSptWxetS8FCmcs"
+                }
+            ]
+        },
+        "rootHash": "FePFuqEX6iJ1SP5DkYn9WTXQrThxqevEkxYXyCxyX4Fd",
+        "auditPath":
+        [
+            "CWQ9keGzhBqyMRLvp7XbMr7da7yUbEU4qGTfJ2KNxMM6",
+            "2S9HAxKukY2hxUoEC718fhywF3KRfwPnEQvRsoN168EV"
+        ],
+        "fees":
+        {
+            "inputs":
+            [
+                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+            ],
+            "outputs":
+            [
+                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
+            ],
+            "fees": 4,
+            "ref": "1:13",
+            "reqSignature":
+            {
+                "type": "ED25519",
+                "values":
+                [
+                    {
+                        "from": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                        "value": "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"
+                    }
+                ]
+            },
+            "txnMetadata":
+            {
+                "seqNo": 2,
+                "txnTime": 1529697829
+            },
+            "rootHash": "A8qwQKyKUMd3PnJTKe4bXRzajCUVgSd1J1A7jdahhNW6",
+            "auditPath": ["Gyw5iBPPs4KSiEoAXQcjv8jw1VWsFjTVyCkm1Zp9E3Pa"]
+        }
+    }
 }
 ```
 
@@ -258,7 +314,7 @@ This API call is handled by LibSovToken build_get_utxo_request_handler
     wallet_handle: wallet handle
     submitter_did : DID of request sender
     payment_address: "pay:sov:<address><checksum>"  //target payment address
-    
+
 ### return:
     get_utxo_txn_json: Indy request for getting UTXO list for payment address
 ```
@@ -288,8 +344,8 @@ Example get_utxo_txn_json:
 }
 
 ```
-    
-## method: indy_parse_get_utxo_response 
+
+## method: indy_parse_get_utxo_response
 This API call is handled by LibSovToken parse_get_utxo_response_handler *Note this should not change because it is parsing a read request. It should stay at version 1*
 ### inputs:
     resp_json: the JSON formatted response from the ledger
@@ -327,8 +383,8 @@ Example resp_json from the ledger:
 }
 
 ```
-    
-    
+
+
 ### return:
     utxo_json - parsed utxo info as json:
 ```
@@ -425,7 +481,7 @@ Example outputs_json:
         ]
     }
 ```
-    
+
 ### return:
 
     payment_req_json
@@ -469,8 +525,8 @@ Example payment_req_json:
         }
     }
 ```
-    
-## method: indy_parse_payment_response 
+
+## method: indy_parse_payment_response
 This API call is handled by LibSovToken parse_payment_response_handler. *This is version 2, it is parsing the response for a write request It is updated as of 6/20/18*
 ### inputs:
     resp_json: This is an example of the JSON that will be returned from the ledger after submitting a payment request.
@@ -479,19 +535,19 @@ resp_json
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
 {
-    'op': 'REPLY', //type of operation returned
+    "op": "REPLY", //type of operation returned
     "ver": <int>, // the version of the transaction response data structure
     "txn": { // the payload containing the specific transaction data relevant to the request
         "type": <String>, //the transaction type based upon the request submitted
         "protocolVersion": <int>, // the version of the transaction data structure
         "data": {
             "ver": <int>, //the version number of the payload data structure
-            'inputs':[
-                        [<String>, <int>], // [first payment address that sent payment, seqNo used to send payment], 
-                        [<String>, <int>], // [second payment address that sent payment, seqNo used to send payment], 
+            "inputs":[
+                        [<String>, <int>], // [first payment address that sent payment, seqNo used to send payment],
+                        [<String>, <int>], // [second payment address that sent payment, seqNo used to send payment],
                         [<String>, <int>], // [third payment address that sent payment, seqNo used to send payment]
                         ],
-            'outputs': [
+            "outputs": [
                         [<String>, <int>], // [first payment address that received payment, amount being received] ,
                         [<String>, <int>], // [second payment address that received payment, amount being received],
                         [<String>, <int>], // [third payment address that received payment, amount being received]
@@ -504,27 +560,27 @@ resp_json
     },
     "txnMetadata": {
         "creationTime": <int>, // time of request creation in UNIX epoch time format
-        "seqNo": <int>, // the seq_no of the transaction on the payment ledger  
+        "seqNo": <int>, // the seq_no of the transaction on the payment ledger
     },
     "reqSignature": {
         "type": <string> //the type of key used for signatures,
         "values": [
             {
                 "from": <str>, // first payment address that sent payment
-                "Value": <integer>, // signature of inputs[0] and 
+                "Value": <integer>, // signature of inputs[0] and
             },
             {
                 “from” : <payment address with type str from inputs[1]>,
                 “Value” :  <associated signature of inputs[1] and all outputs>
             },
-            { 
+            {
                 “from” : <payment address with type str from inputs[2]>,
                 “Value” :  <associated signature of inputs[2] and all outputs>
             }
         ]
     }
-    'rootHash': <String>, // the root hash used to validate that the transaction exists on the ledger
-    'auditPath': [<String>, <String>], //a list of hashes used to verify that the transaction exists on the ledger
+    "rootHash": <String>, // the root hash used to validate that the transaction exists on the ledger
+    "auditPath": [<String>, <String>], //a list of hashes used to verify that the transaction exists on the ledger
 }
 ```
 
@@ -533,32 +589,32 @@ Example resp_json:
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
 {
-    'op': 'REPLY', 
+    "op": "REPLY",
     "ver": 2,
     "txn": {
             "type": 10001,
             "protocolVersion": 2,
             "data": {
              	"ver": 2,
-             	'inputs':[
-                            ['2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC', 3], 
-                            ['knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL', 3], 
-                            ['24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb', 3]
+             	"inputs":[
+                            ["2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC", 3],
+                            ["knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL", 3],
+                            ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 3]
                          ],
-               'outputs': [
-                            ['iu4wAP3TycMGCEh6tudajEwwSYspP9kBcgAkbBwqLQAxoyKHt', 17],
-                            ['2e6yD9dWwCbgMMdc59ZK5ikoZJFoLA2eBLfez65Next4vBW2pm', 7],
-                            ['24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb', 15]
-                       ], 
-            },   
+               "outputs": [
+                            ["iu4wAP3TycMGCEh6tudajEwwSYspP9kBcgAkbBwqLQAxoyKHt", 17],
+                            ["2e6yD9dWwCbgMMdc59ZK5ikoZJFoLA2eBLfez65Next4vBW2pm", 7],
+                            ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 15]
+                       ],
+            },
             "metadata": {
                 "reqId": 1527712589780601,
-                "from": '2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC'
+                "from": "2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC"
             }
     },
     "txnMetadata": {
         "creationTime": 1527712991,
-        "seqNo": 4,  
+        "seqNo": 4,
     },
     "reqSignature": {
         "type": "ED25519",
@@ -568,17 +624,17 @@ Example resp_json:
                 "Value": "3RqpRBNrNEDjdH6SPEtHBz1SjzeySGCZRdCX5z5Vwc4DmCDkVgxAvc2jnZjkHwNJqbxKFT7cfbkkBfAbooGRwZMr"
             },
             {
-                “from” : 'knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL',
-                “Value” :  'PV5Pt1aep3ejrcFBq4VkfYcuJCkWNfSfC3zMckUPVpbKXAhQApH8rrxaChzbhdDXVXdiGjz1S1gkiUfbnjsqVux'
+                “from” : "knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL",
+                “Value” :  "PV5Pt1aep3ejrcFBq4VkfYcuJCkWNfSfC3zMckUPVpbKXAhQApH8rrxaChzbhdDXVXdiGjz1S1gkiUfbnjsqVux"
             },
-            { 
-                “from” : '24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb',
-                “Value” :  '2a9gbMxZiV7CNacEmrvj4W36aeQC7XCHxzAcPrAsX7cmJMRnsNA4RmeRNW8Rwy2qs8GRcUBaFbmdAKpqsTLzaEYM'
+            {
+                “from” : "24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb",
+                “Value” :  "2a9gbMxZiV7CNacEmrvj4W36aeQC7XCHxzAcPrAsX7cmJMRnsNA4RmeRNW8Rwy2qs8GRcUBaFbmdAKpqsTLzaEYM"
             }
         ]
     }
-    'rootHash': '5ecipNPSztrk6X77fYPdepzFRUvLdqBuSqv4M9Mcv2Vn',
-    'auditPath': ['Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA', '3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt'],
+    "rootHash": "5ecipNPSztrk6X77fYPdepzFRUvLdqBuSqv4M9Mcv2Vn",
+    "auditPath": ["Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA", "3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt"],
 }
 ```
 
@@ -607,7 +663,7 @@ Example resp_json:
         }
     }
 ```
-    
+
 ### return:
     utxo_json: parsed utxo info as json
 ```
@@ -806,7 +862,7 @@ Example get_txn_fees_json:
 ```
 
 ## method: indy_parse_get_txn_fees_response
-This API call is handled by LibSovToken parse_get_txn_fees_response_handler. *Note: this transaction format will not change because it's a read request and not a write request.*
+This API call is handled by LibSovToken parse_get_txn_fees_response_handler. *Note: this transaction format will not change because it"s a read request and not a write request.*
 
 ### inputs:
     command_handle
