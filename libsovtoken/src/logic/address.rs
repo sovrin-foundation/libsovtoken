@@ -3,17 +3,6 @@
 use rust_base58::{ToBase58, FromBase58, CHECKSUM_LEN};
 use indy::ErrorCode;
 
-
-// ------------------------------------------------------------------
-// statics that make up parts of the payment address
-// ------------------------------------------------------------------
-/// = "pay"
-pub static PAY_INDICATOR: &'static str = "pay";
-/// = "sov"
-pub static SOVRIN_INDICATOR: &'static str = "sov";
-/// = ":"
-pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
-
 pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
 
 // Following lengths are in bytes
@@ -22,17 +11,17 @@ pub const VERKEY_LEN: usize = 32;
 // ASSUMPTION: Qualifier is always considered as ASCII, when this assumption becomes false,
 // the following logic will break since byte size changes.
 // TODO: It is better to have a lazy_static
-pub const ADDR_QUAL_LEN: usize = 8;
+pub const ADDRESS_QUAL_LEN: usize = 8;
 
 pub const ADDRESS_CHECKSUM_LEN: usize = CHECKSUM_LEN;
 
-pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDR_QUAL_LEN;
+pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDRESS_QUAL_LEN;
 
 /**
 Takes a fully qualified address and returns the unqualified address (qualifier is stripped)
 */
 pub fn strip_qualifier_from_address(address : &str) -> String {
-    return address.clone()[ADDR_QUAL_LEN..].to_string();
+    return address.clone()[ADDRESS_QUAL_LEN..].to_string();
 }
 
 /**
@@ -232,16 +221,10 @@ pub mod address_tests {
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
         // break it up into the individual parts we expect to find and
         // test the validity of the parts
-        let pay_indicator = &address[0..3];
-        let first_separator = &address[3..4];
-        let sov_indicator = &address[4..7];
-        let second_indicator = &address[7..8];
-        let result_address = &address[8..];
+        let qualifer = &address[0..ADDRESS_QUAL_LEN];
+        let result_address = &address[ADDRESS_QUAL_LEN..];
 
-        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(PAYMENT_ADDRESS_QUALIFIER, qualifer, "PAYMENT_ADDRESS_QUALIFIER not found");
         assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
     }

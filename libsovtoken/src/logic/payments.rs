@@ -78,6 +78,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 mod payments_tests {
     extern crate log;
 
+    use self::address::{PAYMENT_ADDRESS_QUALIFIER, ADDRESS_QUAL_LEN};
     use std::sync::mpsc::{channel};
     use std::time::Duration;
     use utils::random::rand_string;
@@ -114,16 +115,10 @@ mod payments_tests {
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
         // break it up into the individual parts we expect to find and
         // test the validity of the parts
-        let pay_indicator = &address[0..3];
-        let first_separator = &address[3..4];
-        let sov_indicator = &address[4..7];
-        let second_indicator = &address[7..8];
-        let result_address = &address[8..];
+        let qualifier = &address[..ADDRESS_QUAL_LEN];
+        let result_address = &address[ADDRESS_QUAL_LEN..];
 
-        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(PAYMENT_ADDRESS_QUALIFIER, qualifier, "PAYMENT_ADDRESS_QUALIFIER, not found");
         assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
     }
@@ -146,16 +141,10 @@ mod payments_tests {
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
         // break it up into the individual parts we expect to find and
         // test the validity of the parts
-        let pay_indicator = &address[0..3];
-        let first_separator = &address[3..4];
-        let sov_indicator = &address[4..7];
-        let second_indicator = &address[7..8];
-        let result_address = &address[8..];
+        let qualifer = &address[..ADDRESS_QUAL_LEN];
+        let result_address = &address[ADDRESS_QUAL_LEN..];
 
-        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(PAYMENT_ADDRESS_QUALIFIER, qualifer, "PAYMENT_ADDRESS_QUALIFIER, not found");
         assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
 
@@ -179,16 +168,10 @@ mod payments_tests {
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
         // break it up into the individual parts we expect to find and
         // test the validity of the parts
-        let pay_indicator = &address[0..3];
-        let first_separator = &address[3..4];
-        let sov_indicator = &address[4..7];
-        let second_indicator = &address[7..8];
-        let result_address = &address[8..];
+        let qualifer = &address[..ADDRESS_QUAL_LEN];
+        let result_address = &address[ADDRESS_QUAL_LEN..];
 
-        assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
-        assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
+        assert_eq!(PAYMENT_ADDRESS_QUALIFIER, qualifer, "PAYMENT_ADDRESS_QUALIFIER, not found");
         assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
 
