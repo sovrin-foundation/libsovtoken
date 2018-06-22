@@ -2,7 +2,6 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use logic::address::verkey_to_address;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**

@@ -31,20 +31,6 @@ pub const ADDR_QUAL_LEN: usize = 8;
 pub const ADDRESS_LEN: usize = VERKEY_LEN + CHECKSUM_LEN + ADDR_QUAL_LEN;
 
 /**
-    Prefixes a verkey with "pay:sov" using the format and static data defined in this module. it does
-    not check for, nor add, checksum
-
-    Note:  this method is similar to [`verkey_checksum_from_address`] but not the same since it does
-    not add the checksum
-
-    returns fully formatted address
-*/
-// QUESTION: Why is this needed? Address without a checksum is not an address
-pub fn verkey_to_address(verkey : &String) -> String {
-    return format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, verkey);
-}
-
-/**
 Takes a fully qualified address and returns the unqualified address (qualifier is stripped)
 */
 pub fn strip_qualifier_from_address(address : &str) -> String {
@@ -57,17 +43,14 @@ pub fn strip_qualifier_from_address(address : &str) -> String {
 
     ```
     use sovtoken::logic::address::verkey_from_address;
-    let address = String::from("pay:sov:XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ");
+    let address = String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
     let verkey = verkey_from_address(address).unwrap();
-    assert_eq!(verkey, String::from("XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLX"));
+    assert_eq!(verkey, String::from("5ZTeJT5ykaWmZErwkM6qdF3RYN7gVXRTmVn4QdpzZ7BJ"));
     ```
 */
 // QUESTION: Why is this needed?
 pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
     validate_address(&address)
-    /*let indicator_length = ADDRESS_LEN - VERKEY_LEN - CHECKSUM_LEN;
-    let verkey = &address[indicator_length..VERKEY_LEN + indicator_length];
-    return Ok(String::from(verkey));*/
 }
 
 /**
@@ -76,16 +59,14 @@ pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
 
     ```
     use sovtoken::logic::address::verkey_checksum_from_address;
-    let address = String::from("pay:sov:XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ");
+    let address = String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
     let verkey_checksum = verkey_checksum_from_address(address).unwrap();
-    assert_eq!(verkey_checksum, String::from("XrVf57oUam71eOOY1vjL1ZUm2czNV8UPekhTst9kJYLXj2yZ"));
+    assert_eq!(verkey_checksum, String::from("WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2"));
     ```
 */
 // TODO Fix function name
 pub fn verkey_checksum_from_address(fq_address: String) -> Result<String, ErrorCode> {
     validate_address(&fq_address)?;
-    /*let indicator_length = ADDRESS_LEN - VERKEY_LEN - CHECKSUM_LEN;
-    let verkey_with_checksum = &address[indicator_length..VERKEY_LEN + indicator_length + CHECKSUM_LEN];*/
     return Ok(strip_qualifier_from_address(&fq_address).to_string());
 }
 
@@ -104,16 +85,6 @@ pub fn create_formatted_address_with_checksum(verkey: &str) -> String {
     );
 }
 
-/**
-    returns checksum field from address.  address must be a valid sovrin address
-*/
-// QUESTION: Why is this needed?
-// TODO: Remove this method
-/*pub fn get_checksum(address: &str) -> Result<String, ErrorCode> {
-    validate_address(&String::from(address))?;
-    let checksum = address.from_right(CHECKSUM_LEN);
-    return Ok(String::from(checksum));
-}*/
 
 /**
    `validate_address` checks that an address is formatted
@@ -284,16 +255,4 @@ pub mod address_tests {
             assert_eq!(verkey_from_address(fa).unwrap(), verkeys[i])
         }
     }
-
-    /*#[test]
-    fn test_get_checksum_invalid() {
-        let address = String::from("pay:sov:r3JT61jXZf0jwlq0K10SVRMj5bIA0tkF5bvP3pFpso7q8Ha");
-        assert_eq!(get_checksum(&address).unwrap_err(), ErrorCode::CommonInvalidStructure);
-    }
-
-    #[test]
-    fn test_get_checksum() {
-        let address = String::from("pay:sov:r3JT61jXZf0jwlq0K10SMVRMj5bIA0tkF5bvP3pFpso7q8Ha");
-        assert_eq!(get_checksum(&address).unwrap(), String::from("q8Ha"));
-    }*/
 }

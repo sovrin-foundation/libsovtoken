@@ -3,7 +3,6 @@
 #![allow(unused_imports)]
 
 use logic::parsers::common::{UTXO, TXO};
-use logic::address::verkey_to_address;
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 
