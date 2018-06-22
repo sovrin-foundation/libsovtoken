@@ -104,8 +104,8 @@ Example req_with_fees_json:
 }
 ```
 
-## method: indy_parse_response_with_fees
-This API call is handled by LibSovToken parse_response_with_fees_handler.
+## method: indy_parse_response_with_fees 
+This API call is handled by LibSovToken parse_response_with_fees_handler. *Note This is version 2 updated as of 6/20/18*
 
 ### inputs:
     command_handle
@@ -124,7 +124,7 @@ This API call is handled by LibSovToken parse_response_with_fees_handler.
             "verkey":<String>, // verification key of the DID associated with the transaction
             "role":<int>, //role of DID associated with the transaction
         },
-        “Fees”: {
+        “fees”: {
             'inputs':[
                         [<String>, <int>], // [first payment address that sent payment, seqNo used to send payment], 
                         [<String>, <int>], // [second payment address that sent payment, seqNo used to send payment], 
@@ -286,8 +286,8 @@ Example get_utxo_txn_json:
 
 ```
     
-## method: indy_parse_get_utxo_response
-This API call is handled by LibSovToken parse_get_utxo_response_handler
+## method: indy_parse_get_utxo_response 
+This API call is handled by LibSovToken parse_get_utxo_response_handler *Note this should not change because it is parsing a read request. It should stay at version 1*
 ### inputs:
     resp_json: the JSON formatted response from the ledger
 ```
@@ -361,7 +361,7 @@ Example utxo_json:
 ```
 
 ## method: indy_build_payment_req
-This API call is handled by LibSovToken build_payment_req_handler
+This API call is handled by LibSovToken build_payment_req_handler. *Note this has been changed back after a commit error. This is up to date as of 6/20/18*
 ### inputs:
     wallet_handle: wallet handle
     submitter_did : DID of request sender
@@ -392,9 +392,9 @@ Example inputs_json:
     "ver": 1,
     "inputs_json":
         [
-            {"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2 },
-            {"address": "pay:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", "seqNo": 5 },
-            {"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo": 14 },
+            "{"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2 }",
+            "{"address": "pay:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", "seqNo": 5 }",
+            "{"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo": 14 }",
         ]
     }
 ```
@@ -422,12 +422,57 @@ Example outputs_json:
         ]
     }
 ```
-
-
     
 ### return:
 
     payment_req_json
+    note: any difference between the sum of the inputs and the sum of outputs is the fees amount
+```
+    {
+        "identifier": <str>,    // first <source payment address>
+        "reqId": <int>,         //a random identifier
+        "operation": {
+            "type": "10001",
+            "extra": <str>,     // optional field
+            "inputs": [
+                [<str: source payment address>, <int: sequence number>, <int: signature over source payment address, sequence number, and all outputs>],
+            ],
+            "outputs": [
+                [<str: change payment address>, <int: amount of change>],
+            ]
+        }
+    }
+```
+Example payment_req_json:
+    note: output to ledger excludes address prefix "pay:sov"
+    note: any difference between the sum of the inputs and the sum of outputs is the fees amount
+```
+    {
+        "identifier": "QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH",
+        "reqId": 1527714086374556,
+        "operation": {
+            "type": "10001",
+            "extra": null,
+            "inputs": [
+                ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
+                ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 5, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 14, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
+            ],
+            "outputs": [
+                ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
+                ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
+                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
+            ]
+        }
+    }
+```
+    
+## method: indy_parse_payment_response 
+This API call is handled by LibSovToken parse_payment_response_handler. *This is version 2, it is parsing the response for a write request It is updated as of 6/20/18*
+### inputs:
+    resp_json: This is an example of the JSON that will be returned from the ledger after submitting a payment request.
+
+resp_json
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
 {
@@ -480,7 +525,7 @@ Example outputs_json:
 }
 ```
 
-Example payment_req_json:
+Example resp_json:
     note: output to ledger excludes address prefix "pay:sov"
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
@@ -533,11 +578,7 @@ Example payment_req_json:
     'auditPath': ['Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA', '3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt'],
 }
 ```
-    
-## method: indy_parse_payment_response
-This API call is handled by LibSovToken parse_payment_response_handler. *Note: this transaction format will not change because it's a read request and not a write request.*
-### inputs:
-    resp_json: This is an example of the JSON that will be returned from the ledger after submitting a payment request.
+
 ```
     {
         "op": "REPLY",
@@ -562,36 +603,6 @@ This API call is handled by LibSovToken parse_payment_response_handler. *Note: t
             ]
         }
     }
-```
-Example resp_json:
-```
-{
-    "op": "REPLY",
-    "result": {
-        "identifier": "QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH",
-        "type": "10001",
-        "seqNo": 4,
-        "txnTime": 1527714130,
-        "signature": null,
-        "signatures": null,
-        "extra": null,
-        "reqId": 1527714086374556,
-        "inputs": [
-            ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 3, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
-            ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 3, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
-            ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 3, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
-        ],
-        "outputs": [
-            ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
-            ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
-            ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
-        ],
-        "rootHash": "FRkqRd5jyNRK3SGSGNoR6xMmYQvLVnotGLGWYxR1dCN4",
-        "auditPath": [
-            "6QFFFVbio2q8viWBbuVfvQsv3Qgd3Ub64Qv41i5wH8Bo", "8vDzQmeYb8ecQ7Nyv5i6V8nUwT3fsebqTHMXqgzYi1NU"
-        ]
-    }
-}
 ```
     
 ### return:
