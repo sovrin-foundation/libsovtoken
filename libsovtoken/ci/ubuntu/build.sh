@@ -23,6 +23,8 @@ case "${HOST}" in
 esac
 CPUS=$((CPUS / 2))
 RUST_FLUSH_CACHE=0
+PUBLISH_URL="https://kraken.corp.evernym.com/repo/agency_dev/upload"
+PUBLISH_USER="jenkins:jenkins"
 
 __usage() {
     cat <<EOT
@@ -48,10 +50,11 @@ __usage() {
         -i  Compile libindy from local source directory. This is root folder to indy-sdk.
         -j  The number of cpus to give docker to run. Default: ${CPUS}. 0.000 means no limit.
         -m  The mode to run cargo inside docker. Default: '${MODE}'.
-            Valid options are 'build|release|test|check'.
+            Valid options are 'build|release|test|check|package|publish'.
         -n  Name to give the built docker image. Default: '${DOCKERIMAGE}'
         -o  When combined with -g, force git clone in existing directory overwriting existing contents.
             Default: '${INDY_GIT_CHECKOUT_OVERWRITE}'
+        -p  When mode is set to 'publish', this is the credentials to use to publish the deb file. Default: '${PUBLISH_USER}'
         -r  Combined with -i or -g, will force rebuilding of libindy. Default: '${REBUILD}'
         -R  Force reloading of cargo registries. Default: '${RUST_FLUSH_CACHE}'
         -s  Shallow cloning libindy git installations
@@ -79,7 +82,7 @@ __echocmd() {
 }
 
 
-while getopts ':a:b:c:d:D:f:g:hi:j:m:n:orRs' opt
+while getopts ':a:b:c:d:D:f:g:hi:j:m:n:op:rRs' opt
 do
     case "${opt}" in
         a) APT_INSTALL="${OPTARG}" ;;
@@ -95,6 +98,7 @@ do
         m) MODE="${OPTARG}" ;;
         n) DOCKERIMAGE="${OPTARG}" ;;
         o) INDY_GIT_CHECKOUT_OVERWRITE=1 ;;
+        p) PUBLISH_URL=${OPTARG} ;;
         r) REBUILD=1 ;;
         R) RUST_FLUSH_CACHE=1 ;;
         s) GIT_SHALLOW_CLONE=1 ;;
@@ -114,6 +118,13 @@ else
         build) CMD="cargo build --color=always" ;;
         release) CMD="cargo build --color=always --release" ;;
         check) CMD="cargo check --color=always" ;;
+        package) CMD="cargo build --color=always --release && cargo deb --no-build" ;;
+        publish) CMD="cargo build --color=always --release && cargo deb --no-build"
+            if [ -z "${PUBLISH_USER}" ] ; then
+                echo STDERR "The publish user cannot be blank"
+                exit 1
+            fi
+            ;;
         \?) echo STDERR "Unknown MODE specified"
             exit 1
             ;;
@@ -264,3 +275,13 @@ DK_CMD="${DK_CMD} -v \"${BUILD_DIR}:/data\" -t ${DOCKERIMAGE}:latest bash build.
 __echocmd "${DK_CMD}"
 
 rm -f "${BUILD_DIR}/build.sh"
+
+if [ "${MODE}" = "publish" ] ; then
+    DEB_FILE=$(ls ${BUILD_DIR}/target/debian | grep '\.deb$')
+    if [ ! -r "${DEB_FILE}" ] ; then
+        echo STDERR "Cannot publish deb file. It is not readable or doesn't exist."
+        exit 1
+    fi
+
+    __echocmd "curl -v -u ${PUBLISH_USER} -X POST -F file=@\"${DEB_FILE}\" ${PUBLISH_URL}"
+fi
