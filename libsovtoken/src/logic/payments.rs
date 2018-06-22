@@ -35,10 +35,10 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
     */
     pub fn create_payment_address(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
         trace!("calling self.injected_api.indy_create_key");
-        let address = self.injected_api.indy_create_key(wallet_id, config)?;
+        let verkey = self.injected_api.indy_create_key(wallet_id, config)?;
 
-        trace!("got address from self.injected_api.indy_create_key {}", address);
-        return Ok(address::create_formatted_address_with_checksum(address));
+        trace!("got verkey from self.injected_api.indy_create_key {}", verkey);
+        return Ok(address::create_formatted_address_with_checksum(&verkey));
     }
 
     /**
@@ -51,10 +51,10 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
                                      config: PaymentAddressConfig,
                                      mut cb : F) -> ErrorCode where F: FnMut(String, ErrorCode) + Send {
 
-        let cb_closure = move | err: ErrorCode, address : String | {
+        let cb_closure = move | err: ErrorCode, verkey : String | {
             if err == ErrorCode::Success {
-                trace!("got address from self.injected_api.indy_create_key_async {}", address);
-                cb(address::create_formatted_address_with_checksum(address), err);
+                trace!("got verkey from self.injected_api.indy_create_key_async {}", verkey);
+                cb(address::create_formatted_address_with_checksum(&verkey), err);
                 return;
             }
 
@@ -82,6 +82,7 @@ mod payments_tests {
     use std::time::Duration;
     use utils::random::rand_string;
     use logic::address::*;
+    use rust_base58::{ToBase58, FromBase58};
 
     use super::*;
 
@@ -115,16 +116,14 @@ mod payments_tests {
         let first_separator = &address[3..4];
         let sov_indicator = &address[4..7];
         let second_indicator = &address[7..8];
-        let result_address = &address[8..52];
-
-        let checksum: String = address::get_checksum(&address).unwrap();
+        let result_address = &address[8..];
 
         assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
-        assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
     }
 
     // This is the happy path test.  Config contains a seed and
@@ -149,16 +148,14 @@ mod payments_tests {
         let first_separator = &address[3..4];
         let sov_indicator = &address[4..7];
         let second_indicator = &address[7..8];
-        let result_address = &address[8..52];
-
-        let checksum: String = address::get_checksum(&address).unwrap();
+        let result_address = &address[8..];
 
         assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
-        assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
 
     }
 
@@ -186,14 +183,12 @@ mod payments_tests {
         let second_indicator = &address[7..8];
         let result_address = &address[8..52];
 
-        let checksum: String = address::get_checksum(&address).unwrap();
-
         assert_eq!(PAY_INDICATOR, pay_indicator, "PAY_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN, result_address.chars().count(), "address is not 44 bytes");
-        assert_eq!(CHECKSUM_LEN, checksum.len(), "checksum is not 4 bytes");
+        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
 
     }
 

@@ -44,10 +44,10 @@ impl ParseResponseWithFeesReply {
 
         for output in outputs {
 
-            let address: String = verkey_to_address(&output.address);
+//            let address: String = verkey_to_address(&output.address);
 
-            let txo: TXO = TXO { address: address.to_string(), seq_no };
-            let utxo: UTXO = UTXO { payment_address: address.to_string(), txo, amount : output.amount, extra: "".to_string()};
+            let txo: TXO = TXO { address: output.address.to_string(), seq_no };
+            let utxo: UTXO = UTXO { payment_address: output.address.to_string(), txo, amount : output.amount, extra: "".to_string()};
 
             utxos.push(utxo);
         }
