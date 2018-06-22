@@ -1,4 +1,20 @@
-/// Methods for dealing with addresses, pub keys and private keys
+/*!
+    Methods for dealing with addresses, pub keys and private keys.
+
+    ## Terms
+    ### qualifier
+    specifies which payment handler the address belongs too.
+    e.g. `"pay:sov:"`
+
+    ### unqualified address
+    `<verkey><checksum>`
+    e.g. `"WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2"`
+
+    ### qualified address
+    `<qualifier><verkey><checksum>`
+    e.g. `"pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2"`
+
+*/
 
 use rust_base58::{ToBase58, FromBase58, CHECKSUM_LEN};
 use indy::ErrorCode;
@@ -73,7 +89,7 @@ pub fn qualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> 
 
 
 /**
-    `validate_address` checks that an address is formatted
+    `validate_address` checks that a qualified address is formatted
     as `pay:sov:<verkey><checksum>` and the verkey is valid. Returns
     the verkey.
    
@@ -123,14 +139,11 @@ pub mod address_tests {
 
     use super::*;
 
-    fn verkey_invalid_address_verkey_length(length: usize) {
+    fn validate_address_invalid_verkey_len(length: usize) {
         assert_ne!(length, VERKEY_LEN);
         let verkey = rand_string(length);
-        let checksum = rand_string(ADDRESS_CHECKSUM_LEN);
-        let invalid_address = format!("{}{}{}", PAYMENT_ADDRESS_QUALIFIER, verkey, checksum);
-        let result = validate_address(&invalid_address);
-        let error = result.unwrap_err();
-        assert_eq!(ErrorCode::CommonInvalidStructure, error);
+        let invalid_address = qualified_address_from_verkey(&verkey);
+        assert!(invalid_address.is_err())
     }
 
     pub fn gen_random_base58_verkey() -> String {
@@ -157,7 +170,7 @@ pub mod address_tests {
     }
 
     #[test]
-    fn test_verkey_to_address_success() {
+    fn test_unqualified_address_from_verkey_success() {
         let vk_bytes = rand_bytes(VERKEY_LEN);
         let verkey = vk_bytes.to_base58();
         let address = unqualified_address_from_verkey(&verkey).unwrap();
@@ -169,12 +182,13 @@ pub mod address_tests {
 
     #[test]
     fn test_verkey_invalid_address_length_long_and_short() {
-        verkey_invalid_address_verkey_length(40);
-        verkey_invalid_address_verkey_length(55);
+        validate_address_invalid_verkey_len(30);
+        validate_address_invalid_verkey_len(40);
+        validate_address_invalid_verkey_len(55);
     }
 
     #[test]
-    fn test_verkey_invalid_address_indicator() {
+    fn test_address_invalid_qualifier() {
         let address = gen_random_base58_address();
         let invalid_address = format!("pat:sov:{}", address);
         let result = validate_address(&invalid_address);
@@ -183,22 +197,20 @@ pub mod address_tests {
     }
 
     #[test]
-    fn test_verkey_from_address() {
+    fn test_verkey_from_qualified_address() {
         let verkey = gen_random_base58_verkey();
-        let address = unqualified_address_from_verkey(&verkey).unwrap();
-        let valid_fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
-        let result = validate_address(&valid_fq_address);
+        let address = qualified_address_from_verkey(&verkey).unwrap();
+        let result = validate_address(&address);
         let verkey_extracted = result.unwrap();
         assert_eq!(verkey_extracted, verkey);
     }
 
     #[test]
-    fn test_invalid_length_verkey() {
+    fn test_qualified_address_invalid_length_verkey() {
         let vk_bytes = rand_bytes(VERKEY_LEN+1);
         let verkey = vk_bytes.to_base58();
-        let address = unqualified_address_from_verkey(&verkey).unwrap();
-        let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
-        let result = validate_address(&fq_address);
+        let address = qualified_address_from_verkey(&verkey).unwrap();
+        let result = validate_address(&address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -225,7 +237,7 @@ pub mod address_tests {
     }
 
     #[test]
-    fn test_verkey_checksum_invalid_qualifier() {
+    fn test_unqualified_address_invalid_qualifier() {
         let address = gen_random_base58_address();
         let invalid_address = format!("pat:sov:{}", address);
         let error = unqualified_address_from_address(invalid_address).unwrap_err();
@@ -250,16 +262,21 @@ pub mod address_tests {
 
     #[test]
     fn test_to_and_fro() {
-        let addresses = vec!["2Viu9qrpqM48PSw3vdoQoFKP5AvYTChUZhwWtCydfW9iu7ftRt",
-                                        "C1iM7fr4cT32J3DuwKDQDPLbNhN7NaEk9ex2ictk86Lg1ZKC9",
-                                        "zivqx63btpvxCM2Aj7hqVMBkbB84v7aJ5xDC6MNQj7MSPFJN1",
-                                        "28dLM4uKiPa2cyLuUsEpKDa8HyvcTMTmg6ji5X23eLA8jZCJAv",
-                                        "TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"];
-        let verkeys = vec!["EFfodscoymgdJDuM885uEWmgCcA25P6VR6TjVqsYZLW3",
-                                    "2gcGb3qbTGNc5zkdcBq9Kq4nQutptt7ofoFVRTmxAnJc",
-                                    "9pdZM4dWas2WsQkiD1H57yT8qwME6T38fS2M6AwmDR2v",
-                                    "B2gfDbd9EBh7Acs3x3cqgWebTApqZvuSKKhSocKzM4Cq",
-                                    "52JU5iD4ryAkjpYLb58qwY48sGQZGYq3gQs1uqY3o1oz"];
+        let addresses = vec![
+            "2Viu9qrpqM48PSw3vdoQoFKP5AvYTChUZhwWtCydfW9iu7ftRt",
+            "C1iM7fr4cT32J3DuwKDQDPLbNhN7NaEk9ex2ictk86Lg1ZKC9",
+            "zivqx63btpvxCM2Aj7hqVMBkbB84v7aJ5xDC6MNQj7MSPFJN1",
+            "28dLM4uKiPa2cyLuUsEpKDa8HyvcTMTmg6ji5X23eLA8jZCJAv",
+            "TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"
+        ];
+        let verkeys = vec![
+            "EFfodscoymgdJDuM885uEWmgCcA25P6VR6TjVqsYZLW3",
+            "2gcGb3qbTGNc5zkdcBq9Kq4nQutptt7ofoFVRTmxAnJc",
+            "9pdZM4dWas2WsQkiD1H57yT8qwME6T38fS2M6AwmDR2v",
+            "B2gfDbd9EBh7Acs3x3cqgWebTApqZvuSKKhSocKzM4Cq",
+            "52JU5iD4ryAkjpYLb58qwY48sGQZGYq3gQs1uqY3o1oz"
+        ];
+    
         for i in 0..5 {
             let a = unqualified_address_from_verkey(verkeys[i]).unwrap();
             assert_eq!(&a, &addresses[i]);
