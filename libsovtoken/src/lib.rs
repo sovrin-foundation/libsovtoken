@@ -16,7 +16,6 @@ extern crate sodiumoxide;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 
-
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 

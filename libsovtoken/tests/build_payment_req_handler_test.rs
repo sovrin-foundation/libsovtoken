@@ -15,6 +15,10 @@ use sovtoken::logic::address;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use std::ptr;
 use std::ffi::CString;
+use std::time::Duration;
+use std::ffi::CStr;
+use std::sync::mpsc::channel;
+
 mod utils;
 
 
@@ -176,8 +180,8 @@ fn success_signed_request() {
     let expected_operation = json!({
         "type": "10000",
         "inputs": [
-            [addresses[0], 1, "57R59eV1mFJPejU34j9XBuEWvMK15KoXSVrTBENUTtYo33DbCmyfVya3pq2pLU4EuKxUBMmcYz9yP4HTw6S2pRQd"],
-            [addresses[1], 1, "WgJWvF4b4FPB5Z2CPVC7C1drDU4AWhAqdALAuQmwp4mgJwPFAHNmvqCDiLD2h4rYiYoJhKN6jnvHpBLkGuYHJeE"]
+            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
+            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
     });
@@ -199,6 +203,83 @@ fn success_signed_request() {
     assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);
 
     let request_string = ResultHandler::one(ErrorCode::Success, receiver).unwrap();
+
+    let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
+    debug!("Received request {:?}", request);
+
+    assert_eq!(&expected_operation, request.get("operation").unwrap());
+    assert_eq!(&addresses[0], request.get("identifier").unwrap());
+    assert!(request.get("reqId").is_some());
+}
+
+#[test]
+#[ignore]
+fn success_signed_request_from_libindy() {
+
+    sovtoken::api::sovtoken_init();
+
+    let did = String::from("Th7MpTaRZVRYnPiabds81Y");
+
+    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
+    debug!("wallet id = {:?}", wallet_id);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
+
+    let inputs = json!({
+        "ver": 1,
+        "inputs": [
+            {
+                "address": payment_addresses[0],
+                "seqNo": 1
+            },
+            {
+                "address": payment_addresses[1],
+                "seqNo": 1,
+                "extra": "extra data",
+            }
+        ]
+    });
+
+    let outputs = json!({
+        "ver": 1,
+        "outputs": [
+            {
+                "address": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "address": payment_addresses[3],
+                "amount": 22,
+                "extra": "extra data"
+            }
+        ]
+    });
+
+    let expected_operation = json!({
+        "type": "10000",
+        "inputs": [
+            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
+            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
+        ],
+        "outputs": [[addresses[2], 10], [addresses[3], 22]],
+    });
+
+    let (sender, receiver) = channel();
+
+    let closure = move|error_code, req, payment_method| {
+        sender.send((error_code, req)).unwrap();
+    };
+
+
+    trace!("Calling build_payment_req");
+
+    let error_code = indy::payments::Payment::build_payment_req_async(wallet_id,
+                                                                                &did,
+                                                                                &inputs.to_string(),
+                                                                                &outputs.to_string(),
+                                                                                closure);
+
+    let request_string = ResultHandler::one_timeout(ErrorCode::Success, receiver, Duration::from_secs(5)).unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);

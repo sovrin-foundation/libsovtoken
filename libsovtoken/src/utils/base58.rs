@@ -9,7 +9,8 @@ use rust_base58::{FromBase58, ToBase58};
 
     Errors: `ErrorCode::CommonInvalidStructure`.
 */
-pub fn deserialize_string(s: String) -> Result<String, ErrorCode> {
+// Question: Why dont we use this?
+pub fn deserialize_b58_check_string(s: String) -> Result<String, ErrorCode> {
     let deserialized_bytes = s
         .into_bytes()
         .from_base58_check()
@@ -40,7 +41,7 @@ mod base58_tests {
     fn deserialize_base58_string(serialized: &str, expected: Result<&str, ErrorCode>) {
         let serialized = String::from(serialized);
         let expected = expected.map(|deserialized| String::from(deserialized));
-        assert_eq!(deserialize_string(serialized), expected);
+        assert_eq!(deserialize_b58_check_string(serialized), expected);
     }
 
     #[test]

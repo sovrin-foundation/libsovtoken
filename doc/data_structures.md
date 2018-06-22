@@ -33,9 +33,10 @@ This API call is handled by LibSovToken add_request_fees_handler.
     inputs_json: The list of UTXO inputs as json array:
 ```
 {
-    "ver": <int>,   // this field is included to allow for future backward compatability
-    "inputs_json":    // Each txo string is of the format: "{"address": "pay:sov:<address>", "seqNo": <int>}"
-        [<str: txo_string>, ]
+    "inputs_json": [<str: txo_string>, ] 
+    // Each txo string is of the format: "
+    {"address": "pay:sov:<address>", "seqNo": <int>}"
+       
 }
 ```
     outputs_json: The list of UTXO outputs as json array:
@@ -81,11 +82,12 @@ Example outputs_json:
     <req_json>    //initial transaction request
     "fees": [
         [
-            [<str: source payment address>, <int: sequence number>, <str: signature over source payment address, sequence number, and all outputs>],
+            [<str: source payment address1>, <int: sequence number>],
         ],
         [
-            [<str: change payment address>, <int: amount of change>],
-        ]
+            [<str: change payment address1>, <int: amount of change>],
+        ],
+	[<str: signature over source payment address1, sequence number, and all outputs>, ]
     ],
 }
 ```
@@ -93,13 +95,14 @@ Example req_with_fees_json:
 ```
 {
     <req_json>    //initial transaction request
-    "fees": [
+    'fees': [
         [
-            ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"]
-        ],
-        [
-            ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11]
-        ]
+	    ['2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es', 2]
+	],
+	[
+	    ['2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es', 9]
+    	],
+	['5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox']
     ],
 }
 ```
