@@ -80,7 +80,7 @@ mod payments_tests {
 
     use std::sync::mpsc::{channel};
     use std::time::Duration;
-    use utils::random::{rand_string};
+    use utils::random::rand_string;
     use logic::address::*;
     use logic::address::address_tests::gen_random_base58_verkey;
     use rust_base58::FromBase58;
