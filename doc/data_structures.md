@@ -87,7 +87,7 @@ Example outputs_json:
         [
             [<str: change payment address1>, <int: amount of change>],
         ],
-	[, <str: signature over source payment address1, sequence number, and all outputs>, ]
+	[<str: signature over source payment address1, sequence number, and all outputs>, ]
     ],
 }
 ```
