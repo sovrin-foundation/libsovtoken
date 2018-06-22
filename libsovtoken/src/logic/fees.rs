@@ -73,7 +73,7 @@ impl Fees {
         }
 
         for output in &mut self.outputs {
-            let address = address::verkey_checksum_from_address(output.address.clone())?;
+            let address = address::unqualified_address_from_address(output.address.clone())?;
             output.address = address;
         }
         trace!("Indicator stripped from outputs");
@@ -81,7 +81,7 @@ impl Fees {
         self.inputs = Fees::sign_inputs(crypto_api, wallet_handle, &self.inputs, &self.outputs)?;
 
         for input in &mut self.inputs {
-            let address = address::verkey_checksum_from_address(input.address.clone())?;
+            let address = address::unqualified_address_from_address(input.address.clone())?;
             input.address = address;
         } 
         trace!("Indicator stripped from inputs");
