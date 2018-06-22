@@ -123,7 +123,7 @@ This API call is handled by LibSovToken parse_response_with_fees_handler. *Note 
 ```
 {
     "op": <str>,                //type of operation returned
-    "protocol_version":  <int>, // the version of the transaction response data structure
+    "protocolVersion":  <int>, // the version of the transaction response data structure
     "request":
     {
         "txn":
@@ -205,7 +205,7 @@ Example resp_with_fees_json:
 ```
 {
     "op": "REPLY",
-    "protocol_version": 1,
+    "protocolVersion": 1,
     "request":
     {
         "txn":
@@ -370,7 +370,8 @@ Example resp_json from the ledger:
 {
     "op": "REPLY",
     "protocolVersion": 1,
-    "result": {
+    "result":
+    {
         "type": "10002",
         "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
         "identifier": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
@@ -506,24 +507,28 @@ Example payment_req_json:
     note: output to ledger excludes address prefix "pay:sov"
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
+{
+    "identifier": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
+    "reqId": 1529682415342024,
+    "protocolVersion": 2,
+    "operation": 
     {
-        "identifier": "QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH",
-        "reqId": 1527714086374556,
-        "operation": {
-            "type": "10001",
-            "extra": null,
-            "inputs": [
-                ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 2, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
-                ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 5, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
-                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 14, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
-            ],
-            "outputs": [
-                ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
-                ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
-                ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
-            ]
-        }
+        "type": "10001",
+        "inputs": 
+        [
+            ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+        ],
+        "outputs": 
+        [
+            ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
+            ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
+            ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
+            ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+        ],
+        "extra": None,
+        "signatures": ["4fFVD1HSVLaVdMpjHU168eviqWDxKrWYx1fRxw4DDLjg4XZXwya7UdcvVty81pYFcng244tS36WbshCeznC8ZN5Z"]
     }
+}
 ```
 
 ## method: indy_parse_payment_response
