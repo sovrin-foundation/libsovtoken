@@ -3,8 +3,6 @@
 use rust_base58::{ToBase58, FromBase58};
 use indy::ErrorCode;
 
-use utils::general::StringUtils;
-
 
 // ------------------------------------------------------------------
 // statics that make up parts of the payment address

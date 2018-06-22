@@ -83,7 +83,7 @@ mod payments_tests {
     use utils::random::{rand_string};
     use logic::address::*;
     use logic::address::address_tests::gen_random_base58_verkey;
-    use rust_base58::{ToBase58, FromBase58};
+    use rust_base58::FromBase58;
 
     use super::*;
 
@@ -202,7 +202,6 @@ mod payments_tests {
 
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
 
-        let mut got_good_result: bool = false;
         let (sender, receiver) = channel();
 
         let cb_closure = move | address : String, err: ErrorCode | {
@@ -218,7 +217,7 @@ mod payments_tests {
 
         let error_code: ErrorCode = handler.create_payment_address_async(WALLET_ID, config, cb_closure);
 
-        got_good_result = receiver.recv_timeout(Duration::from_secs(10)).unwrap();
+        let got_good_result = receiver.recv_timeout(Duration::from_secs(10)).unwrap();
         assert_eq!(got_good_result, true);
 
     }
