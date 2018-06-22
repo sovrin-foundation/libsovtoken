@@ -65,7 +65,7 @@ pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
 // TODO Fix function name
 pub fn verkey_checksum_from_address(fq_address: String) -> Result<String, ErrorCode> {
     validate_address(&fq_address)?;
-    return Ok(strip_qualifier_from_address(&fq_address).to_string());
+    return Ok(strip_qualifier_from_address(&fq_address));
 }
 
 /** computes an unqualified (verkey+checksum) based from a verkey */

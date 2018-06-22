@@ -124,7 +124,6 @@ mod parse_response_with_fees_handler_tests {
         assert_eq!(1, reply.utxo_json.len());
 
         for utxo in reply.utxo_json {
-            let address: String = utxo.payment_address.to_string();
             let amount: u32 = utxo.amount;
             let mut found_address: bool = false;
 
@@ -133,7 +132,7 @@ mod parse_response_with_fees_handler_tests {
             let outputs: Vec<Output> = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap().fees.1.to_vec();
 
             for output in outputs {
-                if address == output.address {
+                if utxo.payment_address == output.address {
                     found_address = true;
                     assert_eq!(amount, output.amount, "amounts did not match in reply (ParseResponseWithFeesReply)");
                 }
@@ -153,7 +152,6 @@ mod parse_response_with_fees_handler_tests {
         assert_eq!(2, reply.utxo_json.len());
 
         for utxo in reply.utxo_json {
-            let address: String = utxo.payment_address.to_string();
             let amount: u32 = utxo.amount;
             let mut found_address: bool = false;
 
@@ -162,7 +160,7 @@ mod parse_response_with_fees_handler_tests {
             let outputs: Vec<Output> = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap().fees.1.to_vec();
 
             for output in outputs {
-                if address == output.address {
+                if utxo.payment_address == output.address {
                     found_address = true;
                     assert_eq!(amount, output.amount, "amounts did not match in reply (ParseResponseWithFeesReply)");
                 }
