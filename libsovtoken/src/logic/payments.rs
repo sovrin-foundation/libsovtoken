@@ -124,7 +124,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
     }
 
@@ -156,7 +156,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
 
     }
@@ -189,7 +189,7 @@ mod payments_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
 
     }

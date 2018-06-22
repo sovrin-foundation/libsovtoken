@@ -57,7 +57,7 @@ impl ParseResponseWithFeesReply {
 mod parse_response_with_fees_handler_tests {
     #[allow(unused_imports)]
 
-    use logic::address::{ADDRESS_LEN, VERKEY_LEN, CHECKSUM_LEN};
+    use logic::address::{ADDRESS_LEN, VERKEY_LEN, ADDRESS_CHECKSUM_LEN};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use super::*;

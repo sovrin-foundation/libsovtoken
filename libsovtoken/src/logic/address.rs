@@ -1,6 +1,6 @@
 /// Methods for dealing with addresses, pub keys and private keys
 
-use rust_base58::{ToBase58, FromBase58};
+use rust_base58::{ToBase58, FromBase58, CHECKSUM_LEN};
 use indy::ErrorCode;
 
 
@@ -17,8 +17,6 @@ pub static PAYMENT_ADDRESS_FIELD_SEP: &'static str = ":";
 pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
 
 // Following lengths are in bytes
-pub const CHECKSUM_LEN: usize = 4;
-
 pub const VERKEY_LEN: usize = 32;
 
 // ASSUMPTION: Qualifier is always considered as ASCII, when this assumption becomes false,
@@ -26,7 +24,9 @@ pub const VERKEY_LEN: usize = 32;
 // TODO: It is better to have a lazy_static
 pub const ADDR_QUAL_LEN: usize = 8;
 
-pub const ADDRESS_LEN: usize = VERKEY_LEN + CHECKSUM_LEN + ADDR_QUAL_LEN;
+pub const ADDRESS_CHECKSUM_LEN: usize = CHECKSUM_LEN;
+
+pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDR_QUAL_LEN;
 
 /**
 Takes a fully qualified address and returns the unqualified address (qualifier is stripped)
@@ -42,12 +42,12 @@ pub fn strip_qualifier_from_address(address : &str) -> String {
     ```
     use sovtoken::logic::address::verkey_from_address;
     let address = String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
-    let verkey = verkey_from_address(address).unwrap();
+    let verkey = verkey_from_address(&address).unwrap();
     assert_eq!(verkey, String::from("5ZTeJT5ykaWmZErwkM6qdF3RYN7gVXRTmVn4QdpzZ7BJ"));
     ```
 */
 // QUESTION: Why is this needed?
-pub fn verkey_from_address(address: String) -> Result<String, ErrorCode> {
+pub fn verkey_from_address(address: &str) -> Result<String, ErrorCode> {
     validate_address(&address)
 }
 
@@ -97,8 +97,6 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
     match address.from_base58_check() {
         Ok(vk) => {
           if vk.len() != VERKEY_LEN {
-              // TODO: Assumes checksum is 4 bytes but the base58 lib should declare a constant
-              // for checksum size and this code should import that constant
               return Err(ErrorCode::CommonInvalidStructure)
           } else {
               return Ok(vk.to_base58());
@@ -124,9 +122,9 @@ pub mod address_tests {
     fn verkey_invalid_address_verkey_length(length: usize) {
         assert_ne!(length, VERKEY_LEN);
         let verkey = rand_string(length);
-        let checksum = rand_string(CHECKSUM_LEN);
+        let checksum = rand_string(ADDRESS_CHECKSUM_LEN);
         let invalid_address = format!("{}{}{}", PAYMENT_ADDRESS_QUALIFIER, verkey, checksum);
-        let result = verkey_from_address(invalid_address);
+        let result = verkey_from_address(&invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -158,7 +156,7 @@ pub mod address_tests {
         let address_bytes = address.from_base58().unwrap();
 
         assert!(address.len() > verkey.len());
-        assert_eq!(address_bytes.len() - vk_bytes.len(), CHECKSUM_LEN);
+        assert_eq!(address_bytes.len() - vk_bytes.len(), ADDRESS_CHECKSUM_LEN);
     }
 
     #[test]
@@ -171,7 +169,7 @@ pub mod address_tests {
     fn test_verkey_invalid_address_indicator() {
         let address = gen_random_base58_address();
         let invalid_address = format!("pat:sov:{}", address);
-        let result = verkey_from_address(invalid_address);
+        let result = verkey_from_address(&invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -181,7 +179,7 @@ pub mod address_tests {
         let verkey = gen_random_base58_verkey();
         let address = compute_unqual_address_from_verkey(&verkey);
         let valid_fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
-        let result = verkey_from_address(valid_fq_address);
+        let result = verkey_from_address(&valid_fq_address);
         let verkey_extracted = result.unwrap();
         assert_eq!(verkey_extracted, verkey);
     }
@@ -192,7 +190,7 @@ pub mod address_tests {
         let verkey = vk_bytes.to_base58();
         let address = compute_unqual_address_from_verkey(&verkey);
         let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
-        let result = verkey_from_address(fq_address);
+        let result = verkey_from_address(&fq_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -244,7 +242,7 @@ pub mod address_tests {
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, first_separator, "first PAYMENT_ADDRESS_FIELD_SEP not found");
         assert_eq!(SOVRIN_INDICATOR, sov_indicator, "SOVRIN_INDICATOR not found");
         assert_eq!(PAYMENT_ADDRESS_FIELD_SEP, second_indicator, "second PAYMENT_ADDRESS_FIELD_SEP not found");
-        assert_eq!(VERKEY_LEN + CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
+        assert_eq!(VERKEY_LEN + ADDRESS_CHECKSUM_LEN, result_address.from_base58().unwrap().len(), "address is not 36 bytes");
         assert_eq!(VERKEY_LEN, result_address.from_base58_check().unwrap().len(), "verkey is not 32 bytes");
     }
 
@@ -263,8 +261,8 @@ pub mod address_tests {
         for i in 0..5 {
             let a = compute_unqual_address_from_verkey(verkeys[i]);
             assert_eq!(&a, &addresses[i]);
-            let fa = format!("pay:sov:{}", &addresses[i]);
-            assert_eq!(verkey_from_address(fa).unwrap(), verkeys[i])
+            let fa = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, &addresses[i]);
+            assert_eq!(verkey_from_address(&fa).unwrap(), verkeys[i])
         }
     }
 }

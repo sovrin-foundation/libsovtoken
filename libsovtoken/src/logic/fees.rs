@@ -136,7 +136,7 @@ trait InputSigner<A: CryptoAPI> {
         outputs: &Outputs
     ) -> Result<Box<Fn(Box<F>)>, ErrorCode>
     {
-        let verkey = address::verkey_from_address(input.address.clone())?;
+        let verkey = address::verkey_from_address(&input.address)?;
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.address, input.seq_no], outputs]);
