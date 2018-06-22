@@ -21,24 +21,9 @@ pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDRESS_QUAL_
 Takes a fully qualified address and returns the unqualified address (qualifier is stripped)
 */
 pub fn strip_qualifier_from_address(address : &str) -> String {
-    return address.clone()[ADDRESS_QUAL_LEN..].to_string();
+    return address[ADDRESS_QUAL_LEN..].to_string();
 }
 
-/**
-    Extracts the verkey from an address.
-    Removes the "pay:sov:" indicator and the checksum.
-
-    ```
-    use sovtoken::logic::address::verkey_from_address;
-    let address = String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
-    let verkey = verkey_from_address(&address).unwrap();
-    assert_eq!(verkey, String::from("5ZTeJT5ykaWmZErwkM6qdF3RYN7gVXRTmVn4QdpzZ7BJ"));
-    ```
-*/
-// QUESTION: Why is this needed?
-pub fn verkey_from_address(address: &str) -> Result<String, ErrorCode> {
-    validate_address(&address)
-}
 
 /**
     Removes the "pay:sov:".
@@ -74,8 +59,16 @@ pub fn create_formatted_address_with_checksum(verkey: &str) -> String {
 
 
 /**
-   `validate_address` checks that an address is formatted
-   as the following pay:sov:<verkey><checksum>, that the verkey is valid (lengthwise) and return the verkey
+    `validate_address` checks that an address is formatted
+    as `pay:sov:<verkey><checksum>` and the verkey is valid. Returns
+    the verkey.
+   
+    ```
+    use sovtoken::logic::address::validate_address;
+    let address = String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
+    let verkey = validate_address(&address).unwrap();
+    assert_eq!(verkey, String::from("5ZTeJT5ykaWmZErwkM6qdF3RYN7gVXRTmVn4QdpzZ7BJ"));
+    ```
 */
 pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCode> {
     if !fully_qualified_address.starts_with(&PAYMENT_ADDRESS_QUALIFIER) {
@@ -113,7 +106,7 @@ pub mod address_tests {
         let verkey = rand_string(length);
         let checksum = rand_string(ADDRESS_CHECKSUM_LEN);
         let invalid_address = format!("{}{}{}", PAYMENT_ADDRESS_QUALIFIER, verkey, checksum);
-        let result = verkey_from_address(&invalid_address);
+        let result = validate_address(&invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -158,7 +151,7 @@ pub mod address_tests {
     fn test_verkey_invalid_address_indicator() {
         let address = gen_random_base58_address();
         let invalid_address = format!("pat:sov:{}", address);
-        let result = verkey_from_address(&invalid_address);
+        let result = validate_address(&invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -168,7 +161,7 @@ pub mod address_tests {
         let verkey = gen_random_base58_verkey();
         let address = compute_unqual_address_from_verkey(&verkey);
         let valid_fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
-        let result = verkey_from_address(&valid_fq_address);
+        let result = validate_address(&valid_fq_address);
         let verkey_extracted = result.unwrap();
         assert_eq!(verkey_extracted, verkey);
     }
@@ -179,7 +172,7 @@ pub mod address_tests {
         let verkey = vk_bytes.to_base58();
         let address = compute_unqual_address_from_verkey(&verkey);
         let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
-        let result = verkey_from_address(&fq_address);
+        let result = validate_address(&fq_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
@@ -245,7 +238,7 @@ pub mod address_tests {
             let a = compute_unqual_address_from_verkey(verkeys[i]);
             assert_eq!(&a, &addresses[i]);
             let fa = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, &addresses[i]);
-            assert_eq!(verkey_from_address(&fa).unwrap(), verkeys[i])
+            assert_eq!(validate_address(&fa).unwrap(), verkeys[i])
         }
     }
 }
