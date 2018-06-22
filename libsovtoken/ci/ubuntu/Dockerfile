@@ -24,5 +24,6 @@ RUN make install
 USER token_user
 WORKDIR /home/token_user
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+RUN cargo install cargo-deb
 
 RUN echo "libsovtoken configured successful"
