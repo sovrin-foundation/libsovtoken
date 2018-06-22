@@ -18,6 +18,11 @@ pub fn rand_string(length : usize) -> String {
     return s;
 }
 
+pub fn rand_bytes(length : usize) -> Vec<u8> {
+    rand::thread_rng()
+        .gen_iter::<u8>().take(length).collect::<Vec<u8>>()
+}
+
 /**
     `request` requires a req_id which is random number that can not be duplicate
     to any current request . This function simply calls and returns rand's

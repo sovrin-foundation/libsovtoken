@@ -180,8 +180,8 @@ fn success_signed_request() {
     let expected_operation = json!({
         "type": "10000",
         "inputs": [
-            [addresses[0], 1, "57R59eV1mFJPejU34j9XBuEWvMK15KoXSVrTBENUTtYo33DbCmyfVya3pq2pLU4EuKxUBMmcYz9yP4HTw6S2pRQd"],
-            [addresses[1], 1, "WgJWvF4b4FPB5Z2CPVC7C1drDU4AWhAqdALAuQmwp4mgJwPFAHNmvqCDiLD2h4rYiYoJhKN6jnvHpBLkGuYHJeE"]
+            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
+            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
     });
@@ -258,8 +258,8 @@ fn success_signed_request_from_libindy() {
     let expected_operation = json!({
         "type": "10000",
         "inputs": [
-            [addresses[0], 1, "57R59eV1mFJPejU34j9XBuEWvMK15KoXSVrTBENUTtYo33DbCmyfVya3pq2pLU4EuKxUBMmcYz9yP4HTw6S2pRQd"],
-            [addresses[1], 1, "WgJWvF4b4FPB5Z2CPVC7C1drDU4AWhAqdALAuQmwp4mgJwPFAHNmvqCDiLD2h4rYiYoJhKN6jnvHpBLkGuYHJeE"]
+            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
+            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
     });

@@ -25,7 +25,7 @@ mod utils;
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-static VALID_OUTPUT_JSON: &'static str = r#"{"ver":1,"outputs":[["pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",10]]}"#;
+static VALID_OUTPUT_JSON: &'static str = r#"{"ver":1,"outputs":[["pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]}"#;
 
 // ***** UNIT TESTS ****
 
@@ -72,7 +72,7 @@ fn errors_with_invalid_outputs_json() {
 }
 
 #[test]
-fn valid_output_json() {
+fn  valid_output_json() {
     static mut CALLBACK_CALLED: bool = false;
     extern "C" fn valid_output_json_cb(command_handle: i32, error_code: i32, mint_request: *const c_char) -> i32 {
         unsafe { CALLBACK_CALLED = true; }
@@ -86,7 +86,7 @@ fn valid_output_json() {
 
         let expected = json!({
             "type": "10000",
-            "outputs": [["ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",10]]
+            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
         });
         assert_eq!(mint_operation, &expected);
         return ErrorCode::Success as i32;
@@ -139,7 +139,7 @@ fn valid_output_json_from_libindy() {
 
     let expected = json!({
             "type": "10000",
-            "outputs": [["ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",10]]
+            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
         });
     assert_eq!(mint_operation, &expected);
 }

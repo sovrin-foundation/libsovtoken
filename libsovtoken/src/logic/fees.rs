@@ -174,6 +174,7 @@ mod test_fees {
     use logic::output::Output;
 
     struct CryptoApiHandler {}
+
     impl CryptoAPI for CryptoApiHandler {
         fn indy_create_key(&self, _: IndyHandle, _: PaymentAddressConfig) -> Result<String, ErrorCode> {
             return Err(ErrorCode::CommonInvalidState);
@@ -191,13 +192,13 @@ mod test_fees {
  
     fn inputs_outputs_valid() -> (Inputs, Outputs) {
         let outputs = vec![
-            Output::new(String::from("pay:sov:Va8VcAE9CDnDEXSDQlbluWBRO5hFpTEqbSzK1UgnpbUabg9Q"), 10, None),
-            Output::new(String::from("pay:sov:FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp"), 22, None),
+            Output::new(String::from("pay:sov:TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"), 10, None),
+            Output::new(String::from("pay:sov:2FKYJkgXRZtjhFpTMHhuyfc17BHZWcFPyF2MWy2SZMBaSo64fb"), 22, None),
         ];
 
         let inputs = vec![
-            Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, None),
-            Input::new(String::from("pay:sov:hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMSGfg"), 1, None),
+            Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, None),
+            Input::new(String::from("pay:sov:2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1, None),
         ]; 
 
         return (inputs, outputs);
@@ -236,8 +237,9 @@ mod test_fees {
     fn sign_input_valid() {
         let (inputs, outputs) = inputs_outputs_valid();
 
+        // Question: Why are signatures dummy values?
         let signed_input = sign_input_sync(&inputs[0], &outputs).unwrap();
-        let expected = Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, Some(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIsigned")));
+        let expected = Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, Some(String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned")));
         assert_eq!(expected, signed_input);
     }
 
@@ -260,10 +262,11 @@ mod test_fees {
     #[test]
     fn sign_multi_input() {
         let (inputs, outputs) = inputs_outputs_valid();
-        
+
+        // Question: Why are signatures dummy values?
         let expected_signed_inputs = vec![
-            Input::new(String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, Some(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIsigned"))),
-            Input::new(String::from("pay:sov:hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMSGfg"), 1, Some(String::from("hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMsigned"))),
+            Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, Some(String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"))),
+            Input::new(String::from("pay:sov:2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1, Some(String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned"))),
         ];
         
         let signed_inputs = sign_inputs_sync(&inputs, &outputs).unwrap();
@@ -318,14 +321,15 @@ mod test_fees {
         let wallet_handle = 1;
         let (inputs, outputs) = inputs_outputs_valid();
 
+        // Question: Why are signatures dummy values?
         let expected_inputs = vec![
-            Input::new(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121"), 1, Some(String::from("SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIsigned"))),
-            Input::new(String::from("hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMSGfg"), 1, Some(String::from("hhX4LejW7N23hPwC2yLKdor1ppXy3RhJ38TeXCZLgoBMsigned"))),
+            Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, Some(String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"))),
+            Input::new(String::from("2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1, Some(String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned"))),
         ];
 
         let expected_outputs = vec![
-            Output::new(String::from("Va8VcAE9CDnDEXSDQlbluWBRO5hFpTEqbSzK1UgnpbUabg9Q"), 10, None),
-            Output::new(String::from("FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp"), 22, None),
+            Output::new(String::from("TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"), 10, None),
+            Output::new(String::from("2FKYJkgXRZtjhFpTMHhuyfc17BHZWcFPyF2MWy2SZMBaSo64fb"), 22, None),
         ];  
 
         let signed_fees = Fees::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap();

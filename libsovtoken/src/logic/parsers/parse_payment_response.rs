@@ -2,7 +2,6 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use logic::address::verkey_to_address;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**
@@ -44,7 +43,7 @@ pub struct ParsePaymentReply {
     pub utxo_json : Vec<UTXO>,
 }
 
-impl ParsePaymentReply {
+    impl ParsePaymentReply {
     /**
         Converts ParsePaymentReply (which should be input via indy-sdk) to ParsePaymentReply
         please note:  use of this function moves ParsePaymentResponse and it cannot be used again
@@ -55,10 +54,7 @@ impl ParsePaymentReply {
 
         for unspent_output in base.result.outputs {
 
-            let (verkey, amount) = unspent_output;
-
-            let address: String = verkey_to_address(&verkey);
-
+            let (address, amount) = unspent_output;
             let txo: TXO = TXO { address: address.to_string(), seq_no: 1 };
             let utxo: UTXO = UTXO { payment_address: address, txo, amount, extra: "".to_string() };
 
