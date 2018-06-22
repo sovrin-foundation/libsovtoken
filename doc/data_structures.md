@@ -123,7 +123,7 @@ This API call is handled by LibSovToken parse_response_with_fees_handler. *Note 
 ```
 {
     "op": <str>,                //type of operation returned
-    "protocolVersion":  <int>, // the version of the transaction response data structure
+    "protocolVersion":  <int>, // (optional) the version of the transaction response data structure
     "request":
     {
         "txn":
@@ -326,7 +326,7 @@ This API call is handled by LibSovToken build_get_utxo_request_handler
         "type": 10002
     },
     "reqId": <int>,             // a random identifier
-    "protocolVersion": <int>    // the version of the client/node communication protocol
+    "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
 }
 
 ```
@@ -352,7 +352,7 @@ This API call is handled by LibSovToken parse_get_utxo_response_handler *Note th
 ```
 {
     "op": "REPLY",
-    "protocolVersion": <int>    // the version of the client/node communication protocol
+    "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
     "result": {
         "type": "10002",
         "address": <str>,       // the payment address
@@ -490,8 +490,8 @@ Example outputs_json:
 ```
 {
     "identifier": <str>,        // first <source payment address>
-    "reqId": <int>,             //a random identifier
-    "protocolVersion": <int>,   //the protocol version
+    "reqId": <int>,             // a random identifier
+    "protocolVersion": <int>,   // (optional) the protocol version
     "operation": {
         "type": "10001",
         "inputs": [
@@ -544,13 +544,13 @@ resp_json
 ```
 {
     "op": <str>,        //type of operation returned
-    "protocolVersion": <int>,
-    "result": 
+    "protocolVersion": <int>,   // (optional) the protocol version
+    "result":
     {
-        "txn": 
+        "txn":
         {
-            "data": 
-            {   
+            "data":
+            {
                 "inputs": [
                     [<str: source payment address>, <int: sequence number>],
                 ],
@@ -559,13 +559,13 @@ resp_json
                 ],
                 "extra": <str>,     // optional field
             },
-            "metadata": 
+            "metadata":
             {
-                "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
-                "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
-                "reqId": 1529682415342024
+                "digest": <str>,    //
+                "from": <str>,      // one of the input payment addresses
+                "reqId": <int>      // a random identifier
             },
-            "protocolVersion": 2,
+            "protocolVersion": <int>,
             "type": "10001"
         },
         "ver": <int>,
@@ -599,18 +599,18 @@ Example resp_json:
 {
     "op": "REPLY",
     "protocolVersion": 2,
-    "result": 
+    "result":
     {
-        "txn": 
+        "txn":
         {
-            "data": 
-            {   
+            "data":
+            {
                 "extra": None,
-                "inputs": 
+                "inputs":
                 [
                     ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
                 ],
-                "outputs": 
+                "outputs":
                 [
                     ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
                     ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
@@ -618,7 +618,7 @@ Example resp_json:
                     ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
                 ]
             },
-            "metadata": 
+            "metadata":
             {
                 "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
                 "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
@@ -627,10 +627,10 @@ Example resp_json:
             "protocolVersion": 2,
             "type": "10001"
         },
-        "reqSignature": 
+        "reqSignature":
         {
             "type": "ED25519",
-            "values": 
+            "values":
             [
                 {
                     "from": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
@@ -638,9 +638,9 @@ Example resp_json:
                 }
             ]
         },
-        "txnMetadata": 
+        "txnMetadata":
         {
-            "seqNo": 2, 
+            "seqNo": 2,
             "txnTime": 1529682415
         },
         "ver": "1",
