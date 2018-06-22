@@ -62,15 +62,15 @@ fn test_add_fees_to_request_valid() {
     let outputs = json!({
         "ver": 1,
         "outputs": [{
-            "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+            "address": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
             "amount": 20,
         }]
     });
 
     let expected_fees_request = json!({
        "fees": {
-           "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
-           "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 20]]
+           "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1, "DCpUnecETDT45aMWVGLnd8H9dTFied8ZbsHHZH5zbngQxifnfjHj5S2YtjP4xvub6y6ytqPoJTeTMTVYn4hxwb2"]],
+           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]]
        },
        "operation": {
            "type": "3"
@@ -104,7 +104,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
     let outputs = json!({
         "ver": 1,
         "outputs": [{
-            "address": "pay:sov:2s6tmsmPaZG2pXgD7AG7YCyXtfFd5s6Ro2MXCcKhAC94JFYaq1",
+            "address": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
             "amount": 20,
         }]
     });
@@ -112,7 +112,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
     let expected_fees_request = json!({
        "fees": {
            "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
-           "outputs": [["2s6tmsmPaZG2pXgD7AG7YCyXtfFd5s6Ro2MXCcKhAC94JFYaq1", 20]]
+           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]]
        },
        "operation": {
            "type": "3"
