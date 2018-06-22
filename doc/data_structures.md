@@ -224,7 +224,7 @@ Example resp_with_fees_json:
             "protocolVersion": 2,
             "type": "1"
         },
-        "ver": "1",
+        "ver": 1,
         "txnMetadata":
         {
             "seqNo": 13,
@@ -488,20 +488,24 @@ Example outputs_json:
     payment_req_json
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
-    {
-        "identifier": <str>,    // first <source payment address>
-        "reqId": <int>,         //a random identifier
-        "operation": {
-            "type": "10001",
-            "extra": <str>,     // optional field
-            "inputs": [
-                [<str: source payment address>, <int: sequence number>, <int: signature over source payment address, sequence number, and all outputs>],
-            ],
-            "outputs": [
-                [<str: change payment address>, <int: amount of change>],
-            ]
-        }
+{
+    "identifier": <str>,        // first <source payment address>
+    "reqId": <int>,             //a random identifier
+    "protocolVersion": <int>,   //the protocol version
+    "operation": {
+        "type": "10001",
+        "inputs": [
+            [<str: source payment address>, <int: sequence number>],
+        ],
+        "outputs": [
+            [<str: change payment address>, <int: amount of change>],
+        ],
+        "extra": <str>,     // optional field
+        "signatures": [
+            <int: signature over source payment address, sequence number, and all outputs>,
+        ]
     }
+}
 ```
 Example payment_req_json:
     note: output to ledger excludes address prefix "pay:sov"
@@ -511,14 +515,14 @@ Example payment_req_json:
     "identifier": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
     "reqId": 1529682415342024,
     "protocolVersion": 2,
-    "operation": 
+    "operation":
     {
         "type": "10001",
-        "inputs": 
+        "inputs":
         [
             ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
         ],
-        "outputs": 
+        "outputs":
         [
             ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
             ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
@@ -532,143 +536,119 @@ Example payment_req_json:
 ```
 
 ## method: indy_parse_payment_response
-This API call is handled by LibSovToken parse_payment_response_handler. *This is version 2, it is parsing the response for a write request It is updated as of 6/20/18*
+This API call is handled by LibSovToken parse_payment_response_handler. 
 ### inputs:
     resp_json: This is an example of the JSON that will be returned from the ledger after submitting a payment request.
 
 resp_json
-    note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
 {
-    "op": "REPLY", //type of operation returned
-    "ver": <int>, // the version of the transaction response data structure
-    "txn": { // the payload containing the specific transaction data relevant to the request
-        "type": <String>, //the transaction type based upon the request submitted
-        "protocolVersion": <int>, // the version of the transaction data structure
-        "data": {
-            "ver": <int>, //the version number of the payload data structure
-            "inputs":[
-                        [<String>, <int>], // [first payment address that sent payment, seqNo used to send payment],
-                        [<String>, <int>], // [second payment address that sent payment, seqNo used to send payment],
-                        [<String>, <int>], // [third payment address that sent payment, seqNo used to send payment]
-                        ],
-            "outputs": [
-                        [<String>, <int>], // [first payment address that received payment, amount being received] ,
-                        [<String>, <int>], // [second payment address that received payment, amount being received],
-                        [<String>, <int>], // [third payment address that received payment, amount being received]
-                    ],
-        },
-        "metadata": {
-            "reqId": <int>, // random nonce submitted used by the nodes to track the request
-            "from": <String> // first payment address in inputs - This should become optional to prevent correlation before version 2 becomes official
-        },
-    },
-    "txnMetadata": {
-        "creationTime": <int>, // time of request creation in UNIX epoch time format
-        "seqNo": <int>, // the seq_no of the transaction on the payment ledger
-    },
-    "reqSignature": {
-        "type": <string> //the type of key used for signatures,
-        "values": [
-            {
-                "from": <str>, // first payment address that sent payment
-                "Value": <integer>, // signature of inputs[0] and
+    "op": <str>,        //type of operation returned
+    "protocolVersion": <int>,
+    "result": 
+    {
+        "txn": 
+        {
+            "data": 
+            {   
+                "inputs": [
+                    [<str: source payment address>, <int: sequence number>],
+                ],
+                "outputs": [
+                    [<str: change payment address>, <int: amount>],
+                ],
+                "extra": <str>,     // optional field
             },
+            "metadata": 
             {
-                “from” : <payment address with type str from inputs[1]>,
-                “Value” :  <associated signature of inputs[1] and all outputs>
+                "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
+                "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
+                "reqId": 1529682415342024
             },
-            {
-                “from” : <payment address with type str from inputs[2]>,
-                “Value” :  <associated signature of inputs[2] and all outputs>
-            }
+            "protocolVersion": 2,
+            "type": "10001"
+        },
+        "ver": <int>,
+        "reqSignature":
+        {
+            "type": <str: signature type>,
+            "values":   // a list of signatures
+            [
+                {
+                    "from": <str: first input payment address>,
+                    "value": <str: signature of payment address on outputs>
+                },
+            ]
+        },
+        "txnMetadata":
+        {
+            "seqNo": <int: sequence number>,
+            "txnTime": <int: seconds since the unix epoch>
+        },
+        "rootHash": <str: root hash of ledger>,
+        "auditPath":    // a list of strings
+        [
+            <str: hash of node in ledger>,
         ]
     }
-    "rootHash": <String>, // the root hash used to validate that the transaction exists on the ledger
-    "auditPath": [<String>, <String>], //a list of hashes used to verify that the transaction exists on the ledger
 }
 ```
 
 Example resp_json:
-    note: output to ledger excludes address prefix "pay:sov"
-    note: any difference between the sum of the inputs and the sum of outputs is the fees amount
 ```
 {
     "op": "REPLY",
-    "ver": 2,
-    "txn": {
-            "type": 10001,
+    "protocolVersion": 2,
+    "result": 
+    {
+        "txn": 
+        {
+            "data": 
+            {   
+                "extra": None,
+                "inputs": 
+                [
+                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                ],
+                "outputs": 
+                [
+                    ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
+                    ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
+                    ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
+                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                ]
+            },
+            "metadata": 
+            {
+                "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
+                "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
+                "reqId": 1529682415342024
+            },
             "protocolVersion": 2,
-            "data": {
-             	"ver": 2,
-             	"inputs":[
-                            ["2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC", 3],
-                            ["knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL", 3],
-                            ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 3]
-                         ],
-               "outputs": [
-                            ["iu4wAP3TycMGCEh6tudajEwwSYspP9kBcgAkbBwqLQAxoyKHt", 17],
-                            ["2e6yD9dWwCbgMMdc59ZK5ikoZJFoLA2eBLfez65Next4vBW2pm", 7],
-                            ["24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb", 15]
-                       ],
-            },
-            "metadata": {
-                "reqId": 1527712589780601,
-                "from": "2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC"
-            }
-    },
-    "txnMetadata": {
-        "creationTime": 1527712991,
-        "seqNo": 4,
-    },
-    "reqSignature": {
-        "type": "ED25519",
-        "values": [
-            {
-                "from": "2i83FoT5vLeSqdnUrmV7n6dJkqwNxA6Dmgesx5c71Fjza2T1nC",
-                "Value": "3RqpRBNrNEDjdH6SPEtHBz1SjzeySGCZRdCX5z5Vwc4DmCDkVgxAvc2jnZjkHwNJqbxKFT7cfbkkBfAbooGRwZMr"
-            },
-            {
-                “from” : "knD8ACByNXftEbfsihNrJUQWcy31Wh1Bjk55iJdZcpAPid9oL",
-                “Value” :  "PV5Pt1aep3ejrcFBq4VkfYcuJCkWNfSfC3zMckUPVpbKXAhQApH8rrxaChzbhdDXVXdiGjz1S1gkiUfbnjsqVux"
-            },
-            {
-                “from” : "24q9X14ShgeUPmzQwtCDnfjt7jD8zNVtFZkbZECGsWpCkiCfVb",
-                “Value” :  "2a9gbMxZiV7CNacEmrvj4W36aeQC7XCHxzAcPrAsX7cmJMRnsNA4RmeRNW8Rwy2qs8GRcUBaFbmdAKpqsTLzaEYM"
-            }
-        ]
+            "type": "10001"
+        },
+        "reqSignature": 
+        {
+            "type": "ED25519",
+            "values": 
+            [
+                {
+                    "from": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                    "value": "4fFVD1HSVLaVdMpjHU168eviqWDxKrWYx1fRxw4DDLjg4XZXwya7UdcvVty81pYFcng244tS36WbshCeznC8ZN5Z"
+                }
+            ]
+        },
+        "txnMetadata": 
+        {
+            "seqNo": 2, 
+            "txnTime": 1529682415
+        },
+        "ver": "1",
+        "auditPath": ["5NtSQUXaZvETP1KEWi8LaxSb9gGa2Qj31xKQoimNxCAT"],
+        "rootHash": "GJFwiQt9r7n25PqM1oXBtRceXCeoqoCBcJmRH1c8fVTs"
     }
-    "rootHash": "5ecipNPSztrk6X77fYPdepzFRUvLdqBuSqv4M9Mcv2Vn",
-    "auditPath": ["Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA", "3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt"],
 }
 ```
-
-```
-    {
-        "op": "REPLY",
-        "result": {
-            "identifier": <str>,        // the first input payment address
-            "type": "10001",
-            "seqNo": <int>,             // the sequence number of the transaction
-            "txnTime": <int>,           // the posix time the transaction was written to the ledger
-            "signature": <str>,         // not used in this transaction
-            "signatures": <str>,        // not used in this transaction
-            "extra": <str>,             // optional field
-            "reqId": <int>,             // a random identifier
-            "inputs": [
-                [<str: source payment address>, <int: sequence number>, <int: signature over source payment address, sequence number, and all outputs>],
-            ],
-            "outputs": [
-                [<str: change payment address>, <int: amount of change>],
-            ]
-            "rootHash": <str>,          // the root hash of the transaction
-            "auditPath": [
-                <str: hash>,            // the hash of each node in the path
-            ]
-        }
-    }
-```
-
 ### return:
     utxo_json: parsed utxo info as json
 ```
