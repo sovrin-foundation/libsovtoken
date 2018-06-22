@@ -18,15 +18,7 @@ pub const ADDRESS_CHECKSUM_LEN: usize = CHECKSUM_LEN;
 pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDRESS_QUAL_LEN;
 
 /**
-Takes a fully qualified address and returns the unqualified address (qualifier is stripped)
-*/
-pub fn strip_qualifier_from_address(address : &str) -> String {
-    return address[ADDRESS_QUAL_LEN..].to_string();
-}
-
-
-/**
-    Removes the "pay:sov:".
+    Removes the "pay:sov:" from an address.
     Leaves the verkey with the checksum.
 
     ```
@@ -41,19 +33,42 @@ pub fn unqualified_address_from_address(fq_address: String) -> Result<String, Er
     return Ok(strip_qualifier_from_address(&fq_address));
 }
 
-/** computes an unqualified (verkey+checksum) based from a verkey */
-pub fn unqualified_address_from_verkey(verkey: &str) -> String {
-    // TODO: Make function return ErrorCode
-    let verkey_bytes = verkey.from_base58().unwrap();
-    verkey_bytes.to_base58_check()
+/** 
+    Adds a checksum to a verkey.
+
+    Returns an unqualified address <verkey><checksum>
+    ```
+    use sovtoken::logic::address::unqualified_address_from_verkey;
+    let verkey = "EFfodscoymgdJDuM885uEWmgCcA25P6VR6TjVqsYZLW3";
+    let address = unqualified_address_from_verkey(verkey).unwrap();
+
+    let expected_address = String::from("2Viu9qrpqM48PSw3vdoQoFKP5AvYTChUZhwWtCydfW9iu7ftRt");
+    assert_eq!(expected_address, address);
+    ```
+*/
+pub fn unqualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> {
+    let address = verkey.from_base58()
+        .or(Err(ErrorCode::CommonInvalidStructure))?
+        .to_base58_check();
+
+    return Ok(address)
 }
 
-/** creates the fully formatted payment address string */
-pub fn create_formatted_address_with_checksum(verkey: &str) -> String {
-    let address = unqualified_address_from_verkey(verkey);
-    return format!(
-        "{}{}", PAYMENT_ADDRESS_QUALIFIER, address
-    );
+/**
+    Form a qualified address from a verkey.
+
+    ```
+    use sovtoken::logic::address::qualified_address_from_verkey;
+    let verkey = "EFfodscoymgdJDuM885uEWmgCcA25P6VR6TjVqsYZLW3";
+    let address = qualified_address_from_verkey(verkey).unwrap();
+
+    let expected_address = String::from("pay:sov:2Viu9qrpqM48PSw3vdoQoFKP5AvYTChUZhwWtCydfW9iu7ftRt");
+    assert_eq!(expected_address, address);
+    ```
+*/
+pub fn qualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> {
+    let address = unqualified_address_from_verkey(verkey)?;
+    return Ok(format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address));
 }
 
 
@@ -93,6 +108,14 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
     KEEP all public methods above
 */
 
+/**
+    Takes a fully qualified address and returns the unqualified address.
+    Unqualified address is <verkey><checksum> without the "pay:sov"
+*/
+fn strip_qualifier_from_address(address : &str) -> String {
+    return address[ADDRESS_QUAL_LEN..].to_string();
+}
+
 
 #[cfg(test)]
 pub mod address_tests {
@@ -117,7 +140,11 @@ pub mod address_tests {
 
     pub fn gen_random_base58_address() -> String {
         let verkey = gen_random_base58_verkey();
-        unqualified_address_from_verkey(&verkey)
+        unqualified_address_from_verkey(&verkey).unwrap()
+    }
+
+    fn gen_random_qualified_address() -> String {
+        qualified_address_from_verkey(&gen_random_base58_verkey()).unwrap()
     }
 
     fn replace_char_at(s: &str, idx: usize, c: char) -> String {
@@ -133,7 +160,7 @@ pub mod address_tests {
     fn test_verkey_to_address_success() {
         let vk_bytes = rand_bytes(VERKEY_LEN);
         let verkey = vk_bytes.to_base58();
-        let address = unqualified_address_from_verkey(&verkey);
+        let address = unqualified_address_from_verkey(&verkey).unwrap();
         let address_bytes = address.from_base58().unwrap();
 
         assert!(address.len() > verkey.len());
@@ -158,7 +185,7 @@ pub mod address_tests {
     #[test]
     fn test_verkey_from_address() {
         let verkey = gen_random_base58_verkey();
-        let address = unqualified_address_from_verkey(&verkey);
+        let address = unqualified_address_from_verkey(&verkey).unwrap();
         let valid_fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
         let result = validate_address(&valid_fq_address);
         let verkey_extracted = result.unwrap();
@@ -169,7 +196,7 @@ pub mod address_tests {
     fn test_invalid_length_verkey() {
         let vk_bytes = rand_bytes(VERKEY_LEN+1);
         let verkey = vk_bytes.to_base58();
-        let address = unqualified_address_from_verkey(&verkey);
+        let address = unqualified_address_from_verkey(&verkey).unwrap();
         let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
         let result = validate_address(&fq_address);
         let error = result.unwrap_err();
@@ -186,7 +213,7 @@ pub mod address_tests {
     #[test]
     fn test_invalid_checksum_in_address() {
         let verkey = gen_random_base58_verkey();
-        let address = unqualified_address_from_verkey(&verkey);
+        let address = unqualified_address_from_verkey(&verkey).unwrap();
         let addr_len = address.len();
         // Mess up the checksum
         let mut bad_addr = replace_char_at(&address, addr_len-1, 'a');
@@ -206,8 +233,8 @@ pub mod address_tests {
     }
 
     #[test]
-    fn test_success_validate_create_formatted_address_with_checksum() {
-        let address = create_formatted_address_with_checksum(&gen_random_base58_verkey());
+    fn test_success_validate_qualified_address_from_verkey() {
+        let address = gen_random_qualified_address();
 
         // got our result, if its correct, it will look something like this:
         // pay:sov:gzidfrdJtvgUh4jZTtGvTZGU5ebuGMoNCbofXGazFa91234
@@ -234,7 +261,7 @@ pub mod address_tests {
                                     "B2gfDbd9EBh7Acs3x3cqgWebTApqZvuSKKhSocKzM4Cq",
                                     "52JU5iD4ryAkjpYLb58qwY48sGQZGYq3gQs1uqY3o1oz"];
         for i in 0..5 {
-            let a = unqualified_address_from_verkey(verkeys[i]);
+            let a = unqualified_address_from_verkey(verkeys[i]).unwrap();
             assert_eq!(&a, &addresses[i]);
             let fa = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, &addresses[i]);
             assert_eq!(validate_address(&fa).unwrap(), verkeys[i])

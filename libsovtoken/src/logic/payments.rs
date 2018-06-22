@@ -38,7 +38,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
         let verkey = self.injected_api.indy_create_key(wallet_id, config)?;
 
         trace!("got verkey from self.injected_api.indy_create_key {}", verkey);
-        return Ok(address::create_formatted_address_with_checksum(&verkey));
+        return address::qualified_address_from_verkey(&verkey);
     }
 
     /**
@@ -52,14 +52,20 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
                                      mut cb : F) -> ErrorCode where F: FnMut(String, ErrorCode) + Send {
 
         let cb_closure = move | err: ErrorCode, verkey : String | {
-            if err == ErrorCode::Success {
+            let res = if ErrorCode::Success == err {
                 trace!("got verkey from self.injected_api.indy_create_key_async {}", verkey);
-                cb(address::create_formatted_address_with_checksum(&verkey), err);
-                return;
-            }
+                address::qualified_address_from_verkey(&verkey)
+            } else {
+                Err(err)
+            };
 
-            error!("got error {:?} from self.injected_api.indy_create_key_async", err);
-            cb("".to_string(), err);
+            match res {
+                Ok(address) => cb(address, err),
+                Err(e) => {
+                    error!("got error {:?} from self.injected_api.indy_create_key_async", err);
+                    cb("".to_string(), e)
+                }
+            }
         };
 
         trace!("calling injected_api.indy_create_key_async");
