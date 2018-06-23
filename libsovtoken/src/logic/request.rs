@@ -14,13 +14,13 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: u32,
     pub protocol_version: u32,
-    pub identifier : String,
+    pub identifier : Option<String>,
 }
 
 impl<T> Request<T> 
     where T: Serialize
 {
-    pub fn new(operation: T, identifier : String) -> Self {
+    pub fn new(operation: T, identifier : Option<String>) -> Self {
         let req_id = rand_req_id();
         return Request {
             operation,

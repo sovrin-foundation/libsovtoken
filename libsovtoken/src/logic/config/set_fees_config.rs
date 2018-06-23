@@ -6,7 +6,6 @@
     TODO: Links need to be updated so they actually work.
  */
 
-use logic::did::Did;
 use logic::request::Request;
 use std::collections::HashMap;
 use std::fmt;
@@ -58,8 +57,8 @@ impl SetFees {
 
         [`Request`]: sovtoken::logic::request::Request
     */
-    pub fn as_request(self, identifier: Did) -> Request<SetFees> {
-        return Request::new(self, String::from(identifier));
+    pub fn as_request(self) -> Request<SetFees> {
+        return Request::new(self, None);
     }
 
     /**
@@ -122,7 +121,6 @@ impl Error for SetFeesError {
 mod fees_config_test {
     use super::*;
     use serde_json;
-    use utils::random::rand_string;
 
     #[test]
     fn test_set_fees_map_value_string() {
@@ -162,12 +160,10 @@ mod fees_config_test {
             "1000": 12
         });
         let expected = set_fees_json.clone();
-        let rand_identifier = rand_string(21);
-        let identifier = Did::new(&rand_identifier);
 
         let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
         let set_fees = SetFees::new(hash_map).validate().unwrap();
-        let request = set_fees.as_request(identifier);
+        let request = set_fees.as_request();
         let fees_from_request = serde_json::to_value(&request.operation.fees).unwrap();
         assert_eq!(expected, fees_from_request)
     }

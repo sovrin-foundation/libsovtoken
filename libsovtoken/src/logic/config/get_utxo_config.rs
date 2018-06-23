@@ -4,6 +4,7 @@
  *
  *  [`build_get_utxo_txn_handler`]: ../../../api/fn.build_utxo_txn_handler.html
  */
+use logic::did::Did;
 use logic::request::Request;
 use utils::constants::txn_types::GET_UTXO;
 
@@ -20,11 +21,11 @@ pub struct GetUtxoRequest {
 }
 
 impl GetUtxoRequest {
-    pub fn new(address : String, identifier : String) -> Request<GetUtxoRequest> {
+    pub fn new(address : String, identifier : Did) -> Request<GetUtxoRequest> {
         let req = GetUtxoRequest {
             address,
             req_type: GET_UTXO.to_string(),
         };
-        return Request::new(req, identifier);
+        return Request::new(req, Some(String::from(identifier)));
     }
 }
