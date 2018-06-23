@@ -266,14 +266,14 @@ fn success_signed_request_from_libindy() {
 
     let (sender, receiver) = channel();
 
-    let closure = move|error_code, req, payment_method| {
+    let closure = move|error_code, req, _| {
         sender.send((error_code, req)).unwrap();
     };
 
 
     trace!("Calling build_payment_req");
 
-    let error_code = indy::payments::Payment::build_payment_req_async(wallet_id,
+    let _ = indy::payments::Payment::build_payment_req_async(wallet_id,
                                                                                 &did,
                                                                                 &inputs.to_string(),
                                                                                 &outputs.to_string(),
