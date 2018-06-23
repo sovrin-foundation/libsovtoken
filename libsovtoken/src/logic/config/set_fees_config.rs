@@ -6,8 +6,7 @@
  */
 use std::collections::HashMap;
 use logic::request::Request;
-
-const SET_FEES: &str = "20000";
+use utils::constants::txn_types::SET_FEES;
 
 /**
  *  Json config to customize [`build_fees_txn_handler`]
@@ -22,7 +21,7 @@ pub struct SetFeesConfig {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct SetFeesRequest {
     #[serde(rename = "type")]
-    txn_type: &'static str,
+    txn_type: String,
     fees:  HashMap<String, u64>,
 }
 
@@ -33,7 +32,7 @@ impl SetFeesRequest {
 
     pub fn new(fees: HashMap<String, u64>, identifier : String) -> Request<SetFeesRequest> {
         let fee = SetFeesRequest {
-            txn_type: SET_FEES,
+            txn_type: SET_FEES.to_string(),
             fees,
         };
         return Request::new(fee, identifier);
