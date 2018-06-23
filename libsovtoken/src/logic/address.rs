@@ -118,6 +118,21 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
     }
 }
 
+/**
+    takes an "address" and returns "pay:sov" plus address.
+    there is no validation that the address is valid
+
+    ```
+    use sovtoken::logic::address::append_qualifer_to_address;
+    let address = String::from("WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
+    let qualifed_address = append_qualifer_to_address(&address);
+    ```
+
+*/
+pub fn append_qualifer_to_address(address : &str) -> String {
+    return format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
+}
+
 /*
     Methods "private" (aka not exported from this module)
 

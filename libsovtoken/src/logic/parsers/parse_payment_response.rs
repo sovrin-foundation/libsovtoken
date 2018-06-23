@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use logic::address::append_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**
@@ -118,8 +119,9 @@ impl ParsePaymentReply {
         for unspent_output in base.result.txn.data.outputs {
 
             let (address, amount) = unspent_output;
-            let txo: TXO = TXO { address: address.to_string(), seq_no: 1 };
-            let utxo: UTXO = UTXO { payment_address: address, txo, amount, extra: "".to_string() };
+            let qualified_address: String = append_qualifer_to_address(&address);
+            let txo: TXO = TXO { address: qualified_address.to_string(), seq_no: 1 };
+            let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);
         }
@@ -240,7 +242,11 @@ mod parse_payment_response_tests {
     #[test]
     fn success_response_json_to_reply_json() {
         let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
+        let number_of_outputs: usize = response.result.txn.data.outputs.len();
         let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+
+        assert_eq!(reply.utxo_json.len(), number_of_outputs);
+
     }
 
 
