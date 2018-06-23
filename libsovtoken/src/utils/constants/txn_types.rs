@@ -32,4 +32,4 @@ pub const SET_FEES: &'static str = "20000";
     A transaction type submitted by anyone to get the current Fees costs of every transaction
 */
 
-pub const GET_FEES: &'static str = "20000";
+pub const GET_FEES: &'static str = "20001";

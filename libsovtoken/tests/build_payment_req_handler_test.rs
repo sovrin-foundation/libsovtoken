@@ -13,6 +13,7 @@ use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::logic::address;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
@@ -68,7 +69,7 @@ fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
 
     let addresses = payment_addresses
         .iter()
-        .map(|address| address::verkey_checksum_from_address(address.clone()).unwrap())
+        .map(|address| address::unqualified_address_from_address(address.clone()).unwrap())
         .collect();
 
     return (payment_addresses, addresses);
@@ -178,7 +179,7 @@ fn success_signed_request() {
     });
 
     let expected_operation = json!({
-        "type": "10000",
+        "type": XFER_PUBLIC.to_string(),
         "inputs": [
             [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
             [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
@@ -256,7 +257,7 @@ fn success_signed_request_from_libindy() {
     });
 
     let expected_operation = json!({
-        "type": "10000",
+        "type": XFER_PUBLIC.to_string(),
         "inputs": [
             [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
             [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
@@ -266,14 +267,14 @@ fn success_signed_request_from_libindy() {
 
     let (sender, receiver) = channel();
 
-    let closure = move|error_code, req, payment_method| {
+    let closure = move|error_code, req, _| {
         sender.send((error_code, req)).unwrap();
     };
 
 
     trace!("Calling build_payment_req");
 
-    let error_code = indy::payments::Payment::build_payment_req_async(wallet_id,
+    let _ = indy::payments::Payment::build_payment_req_async(wallet_id,
                                                                                 &did,
                                                                                 &inputs.to_string(),
                                                                                 &outputs.to_string(),

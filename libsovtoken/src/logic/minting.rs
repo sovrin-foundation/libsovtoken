@@ -41,7 +41,7 @@ pub fn build_mint_request(
 ) -> Result<*const c_char, ErrorCode> {
 
     for output in &mut output_config.outputs {
-        let address = address::verkey_checksum_from_address(output.address.clone())?;
+        let address = address::unqualified_address_from_address(output.address.clone())?;
         output.address = address;
     }
     trace!("Stripped pay:sov: from outputs");

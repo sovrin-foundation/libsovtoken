@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use logic::address::append_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 
 /**
@@ -11,27 +12,90 @@ use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponse {
     pub op : ResponseOperations,
+    pub protocol_version: i32,
     pub result : ParsePaymentResponseResult,
 }
 
 /**
+    The nested type named "result in ParsePaymentResponse
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponseResult {
-    pub identifier: String,
-    #[serde(rename = "type")]
-    pub txn_type: String,
-    pub seq_no: i32,
-    pub txn_time: i32,
-    pub signature: Option<String>,
-    pub signatures: Option<String>,
-    pub extra: Option<String>,
-    pub req_id: i64,
-    pub inputs: Vec<(String, i32, String)>,
-    pub outputs: Vec<(String, u32)>,
+    pub txn: Transaction,
+    pub req_signature: RequireSignature,
+    #[serde(rename = "txnMetadata")]
+    pub tnx_meta_data: TransactionMetaData,
+    pub ver: String,
+    pub audit_path: Vec<String>,
     pub root_hash: String,
-    pub audit_path: Vec<String>
+}
+
+/**
+    the nested type "tnx" in ParsePaymentResponseResult
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Transaction {
+    #[serde(rename = "type")]
+    pub txn_type : String,
+    pub protocol_version : i32,
+    #[serde(rename = "metadata")]
+    pub meta_data: TransactionMetaData2,
+    pub data: TransactionData,
+}
+
+/**
+   the nested type "data" in Transaction
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionData {
+    pub extra: Option<String>,
+    pub inputs : Vec<(String, i32)>,
+    pub outputs: Vec<(String, u32)>,
+}
+
+/**
+    the nested type "meta_data" in Transaction
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionMetaData2 {
+    pub digest: String,
+    pub from: String,
+    pub req_id: i64
+}
+
+/**
+    the nested type "tnx_meta_data" in ParsePaymentResponseResult
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionMetaData {
+    pub seq_no: i32,
+    pub txn_time: u32,
+}
+
+/**
+    the nested type "req_signature" in ParsePaymentResponseResult
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RequireSignature {
+    #[serde(rename = "type")]
+    pub sig_type: String,
+    pub values: Vec<SignatureValues>,
+}
+
+/**
+    the nested type "values" in RequiredSignature
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SignatureValues {
+    pub from: String,
+    pub value: String,
 }
 
 /**
@@ -43,7 +107,7 @@ pub struct ParsePaymentReply {
     pub utxo_json : Vec<UTXO>,
 }
 
-    impl ParsePaymentReply {
+impl ParsePaymentReply {
     /**
         Converts ParsePaymentReply (which should be input via indy-sdk) to ParsePaymentReply
         please note:  use of this function moves ParsePaymentResponse and it cannot be used again
@@ -52,11 +116,12 @@ pub struct ParsePaymentReply {
     pub fn from_response(base : ParsePaymentResponse) -> ParsePaymentReply {
         let mut utxos: Vec<UTXO> = vec![];
 
-        for unspent_output in base.result.outputs {
+        for unspent_output in base.result.txn.data.outputs {
 
             let (address, amount) = unspent_output;
-            let txo: TXO = TXO { address: address.to_string(), seq_no: 1 };
-            let utxo: UTXO = UTXO { payment_address: address, txo, amount, extra: "".to_string() };
+            let qualified_address: String = append_qualifer_to_address(&address);
+            let txo: TXO = TXO { address: qualified_address.to_string(), seq_no: 1 };
+            let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);
         }
@@ -77,32 +142,90 @@ mod parse_payment_response_tests {
     use super::*;
 
     static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
-                "op": "REPLY",
-                "result": {
-                    "identifier": "QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH",
-                    "type": "10001",
-                    "seqNo": 4,
-                    "txnTime": 1527714130,
-                    "signature": null,
-                    "signatures": null,
-                    "extra": null,
-                    "reqId": 1527714086374556,
-                    "inputs": [
-                        ["QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", 3, "3TMn17XTUd7Qr93hiuBWJFyihZ7aQSDbZTwqJEepUFQ5NRoCYYA2ARih2eQLNUZcB2wDSeQaxRFXhrcW2a5RyXrx"],
-                        ["t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", 3, "4hPYHU1gBnC3ViQEyWf4zz3UPSrT364BfgP5YupBFv6HiuTh7JNLKKDLiiuwxHDHRd4o8AQwGVTT7nJHNTVq8NZy"],
-                        ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 3, "2VvANwBDYNcHyyheGSHx2og7Pc31hw5Box74xZ1EYrm6HijeKqAnKGX6dHF8gL6x78vWUgTpHRA5V41YB7EJMcKq"]
+        "op": "REPLY",
+        "protocolVersion": 2,
+        "result":
+        {
+            "txn":
+            {
+                "data":
+                {
+                    "inputs":
+                    [
+                        ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
                     ],
-                    "outputs": [
-                        ["2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", 11],
-                        ["2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", 19],
-                        ["2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", 9]
-                    ],
-                    "rootHash": "FRkqRd5jyNRK3SGSGNoR6xMmYQvLVnotGLGWYxR1dCN4",
-                    "auditPath": [
-                        "6QFFFVbio2q8viWBbuVfvQsv3Qgd3Ub64Qv41i5wH8Bo", "8vDzQmeYb8ecQ7Nyv5i6V8nUwT3fsebqTHMXqgzYi1NU"
+                    "outputs":
+                    [
+                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
+                        ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
+                        ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
+                        ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
                     ]
-                }
-            }"#;
+                },
+                "metadata":
+                {
+                    "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
+                    "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
+                    "reqId": 1529682415342024
+                },
+                "protocolVersion": 2,
+                "type": "10001"
+            },
+            "reqSignature":
+            {
+                "type": "ED25519",
+                "values":
+                [
+                    {
+                        "from": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                        "value": "4fFVD1HSVLaVdMpjHU168eviqWDxKrWYx1fRxw4DDLjg4XZXwya7UdcvVty81pYFcng244tS36WbshCeznC8ZN5Z"
+                    }
+                ]
+            },
+            "txnMetadata":
+            {
+                "seqNo": 2,
+                "txnTime": 1529682415
+            },
+            "ver": "1",
+            "auditPath": ["5NtSQUXaZvETP1KEWi8LaxSb9gGa2Qj31xKQoimNxCAT"],
+            "rootHash": "GJFwiQt9r7n25PqM1oXBtRceXCeoqoCBcJmRH1c8fVTs"
+        }
+    }"#;
+
+    static PAYMENT_RESPONSE_TRANSACTION_JSON: &'static str = r#"{
+            "data":
+            {
+                "inputs":
+                [
+                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                ],
+                "outputs":
+                [
+                    ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
+                    ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
+                    ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
+                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                ]
+            },
+            "metadata":
+            {
+                "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
+                "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
+                "reqId": 1529682415342024
+            },
+            "protocolVersion": 2,
+            "type": "10001"
+    }"#;
+
+    // Ensures Transaction structure correctly deserializes
+    #[test]
+    fn success_parse_payment_transaction_from_json() {
+        let response: Transaction = Transaction::from_json(PAYMENT_RESPONSE_TRANSACTION_JSON).unwrap();
+
+        assert_eq!(response.txn_type, "10001");
+        assert_eq!(response.protocol_version, 2);
+    }
 
     // the PARSE_PAYMENT_RESPONSE_JSON is valid per the documentation.   If serde correctly serializes it
     // into ParsePaymentResponse then we know the ParsePaymentResponse structure matches
@@ -119,7 +242,11 @@ mod parse_payment_response_tests {
     #[test]
     fn success_response_json_to_reply_json() {
         let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
+        let number_of_outputs: usize = response.result.txn.data.outputs.len();
         let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+
+        assert_eq!(reply.utxo_json.len(), number_of_outputs);
+
     }
 
 

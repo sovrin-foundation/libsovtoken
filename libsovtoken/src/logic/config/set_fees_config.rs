@@ -11,8 +11,7 @@ use logic::request::Request;
 use std::collections::HashMap;
 use std::fmt;
 use std::error::Error;
-
-const SET_FEES: &str = "20000";
+use utils::constants::txn_types::SET_FEES;
 
 /**
     Hashmap for the set_fees json.

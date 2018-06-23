@@ -8,6 +8,7 @@
 
 use logic::request::Request;
 use logic::output::{Output, OutputConfig};
+use utils::constants::txn_types::MINT_PUBLIC;
 
 /**
  *  A struct which can be transformed into a mint JSON object for [`build_mint_txn_handler`]
@@ -17,7 +18,7 @@ use logic::output::{Output, OutputConfig};
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct MintRequest {
     #[serde(rename = "type")]
-    txn_type: &'static str,
+    txn_type: String,
     outputs: Vec<(Output)>,
 }
 
@@ -28,7 +29,7 @@ impl MintRequest {
      */
     pub fn new(outputs: Vec<Output>, identifier : String ) -> Request<MintRequest> {
         let mint = MintRequest {
-            txn_type: "10000",
+            txn_type: MINT_PUBLIC.to_string(),
             outputs: outputs,
         };
 
@@ -107,7 +108,7 @@ mod mint_request_test {
     fn valid_request() {
         assert_mint_request(
             json!({
-                "type": "10000",
+                "type": MINT_PUBLIC.to_string(),
                 "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
             }),
             |_mint_req| {}

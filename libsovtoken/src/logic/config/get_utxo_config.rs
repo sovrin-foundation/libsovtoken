@@ -5,8 +5,7 @@
  *  [`build_get_utxo_txn_handler`]: ../../../api/fn.build_utxo_txn_handler.html
  */
 use logic::request::Request;
-
-const GET_UTXO : &str = "10002";
+use utils::constants::txn_types::GET_UTXO;
 
 /**
  *  Json config to customize [`build_get_utxo_txn_handler`]
