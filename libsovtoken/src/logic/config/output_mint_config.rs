@@ -53,12 +53,12 @@ mod output_mint_config_test {
 
     #[test]
     fn serializing_mint_struct_config() {
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
         let mint : OutputConfig = OutputConfig {
             ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(mint.to_json().unwrap(), r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
+        assert_eq!(mint.to_json().unwrap(), r#"{"ver":1,"outputs":[["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",10]]}"#);
     }
 }
 
@@ -72,7 +72,7 @@ mod mint_request_test {
 
     fn initial_mint_request() -> Request<MintRequest> {
         let identifier: String = rand_string(21);
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
         let outputs = vec![output];
         return MintRequest::new(outputs, identifier);
     }
@@ -94,7 +94,7 @@ mod mint_request_test {
     #[test]
     fn create_request_with_mint_config() {
         let identifier: String = rand_string(21);
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
         let outputs = vec![output];
         let mint_config = OutputConfig {
             ver: 1,
@@ -109,7 +109,7 @@ mod mint_request_test {
         assert_mint_request(
             json!({
                 "type": MINT_PUBLIC.to_string(),
-                "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
+                "outputs": [["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",10]],
             }),
             |_mint_req| {}
         )

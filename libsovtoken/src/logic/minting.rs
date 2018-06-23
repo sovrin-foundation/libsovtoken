@@ -65,7 +65,7 @@ mod test_build_mint_request {
         let output_config = OutputConfig {
             ver: 1,
             outputs: vec![
-                Output::new(String::from("pad:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs"), 12, None)
+                Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
             ]
         };
 
@@ -161,7 +161,7 @@ mod test_deserialize_inputs {
         let outputs = c_pointer_from_string(json!({
             "outputs": [
                 {
-                    "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                    "address": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
                     "amount": 10
                 }
             ]

@@ -57,7 +57,7 @@ mod fees_config_test {
     fn initial_set_fee_request() -> Request<SetFeesRequest> {
         let identifier: String = rand_string(21);
         let mut fees_map = HashMap::new();
-        fees_map.insert(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10 as u64);
+        fees_map.insert(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10 as u64);
         return SetFeesRequest::new(fees_map, identifier);
     }
 
@@ -79,7 +79,7 @@ mod fees_config_test {
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
         let mut fees_map = HashMap::new();
-        fees_map.insert(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10 as u64);
+        fees_map.insert(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10 as u64);
         let fees_config = SetFeesConfig {
             fees: fees_map.clone()
         };
@@ -92,7 +92,7 @@ mod fees_config_test {
         assert_set_fee_request(
             json!({
                 "type": SET_FEES,
-                "fees": {"AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja":10},
+                "fees": {"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7":10},
             }),
             |_fees_req| {}
         );

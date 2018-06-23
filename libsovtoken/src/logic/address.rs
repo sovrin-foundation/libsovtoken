@@ -162,7 +162,6 @@ pub mod address_tests {
         assert_ne!(length, VERKEY_LEN);
         let vk_bytes = rand_bytes(length);
         let verkey = vk_bytes.to_base58();
-        println!("{}", &verkey);
         let invalid_address = qualified_address_from_verkey(&verkey);
         assert!(invalid_address.is_err())
     }

@@ -48,7 +48,7 @@ mod payment_request_test {
 
     fn initial_fees_request() -> Request<PaymentRequest> {
         let identifier: String = rand_string(21);
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
         let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
     
         let fees = Fees::new(vec![input], vec![output]);
@@ -74,7 +74,7 @@ mod payment_request_test {
         assert_fees_request(
             json!({
                 "type": XFER_PUBLIC.to_string(),
-                "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
+                "outputs": [["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]],
                 "inputs": [["dakjhe238yad", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]]
             }),
             |_fees_req| {}
