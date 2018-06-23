@@ -36,7 +36,7 @@ pub fn deserialize_inputs<'a>(
 }
 
 pub fn build_mint_request(
-    did: String,
+    did: Did,
     mut output_config: OutputConfig
 ) -> Result<*const c_char, ErrorCode> {
 
@@ -69,7 +69,7 @@ mod test_build_mint_request {
             ]
         };
 
-        let did = String::from("en32ansFeZNERIouv2xA");
+        let did = Did::new(&"en32ansFeZNERIouv2xA");
         let result = build_mint_request(did, output_config);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }

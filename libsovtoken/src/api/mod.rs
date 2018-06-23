@@ -578,26 +578,38 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     return ErrorCode::Success as i32;
 }
 
-/// Description
-///
-///
-/// from tokens-interface.md/BuildSetTxnFeesReqCB
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
-#[no_mangle]
-pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
-                                         wallet_handle: i32,
-                                         submitter_did: *const c_char,
-                                         fees_json: *const c_char,
-                                         cb: Option<extern fn(command_handle_: i32, err: i32, set_txn_fees_json: *const c_char) -> i32>) -> i32 {
+/**
+    Set the fees for different transactions.
 
-    let (did, set_fees, cb) = match set_fees::deserialize_inputs(
+    ### fees_json
+    A JSON object where the key is a transaction type and the value is the fee.
+
+    Will be serialized into a [`SetFeesMap`]
+
+    #### Example
+    ```JSON
+        {
+            "3": 4,
+            "10000": 12
+        }
+    ```
+
+    [`SetFeesMap`]: sovtoken::logic::config::set_fees_config::SetFeesMap
+
+    TODO: Fix links
+    TODO: Remove submitter_did, doesn't need did because request doesn't have
+    identifier.
+*/
+#[no_mangle]
+pub extern "C" fn build_set_txn_fees_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    submitter_did: *const c_char,
+    fees_json: *const c_char,
+    cb: JsonCallback
+) -> i32 {
+
+    let (_did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
         fees_json,
         cb
@@ -606,7 +618,7 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
         Err(e) => return e as i32
     };
 
-    let fees_request = set_fees.as_request(did);
+    let fees_request = set_fees.as_request();
 
     let fees_request_pointer_option = fees_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));
@@ -645,15 +657,20 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32;
     }
 
-    let submitter_did = match string_from_char_ptr(submitter_did) {
-        Some(s) => s,
+    let did = match Did::from_pointer(submitter_did) {
+        Some(did) => did,
         None => {
             error!("Failed to convert submitter_did pointer to string");
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
 
-    let get_txn_request = GetFeesRequest::new(submitter_did);
+    let did = match did.validate() {
+        Ok(d) => d,
+        Err(_) => return ErrorCode::CommonInvalidStructure as i32
+    };
+
+    let get_txn_request = GetFeesRequest::new(did);
 
     let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
 
@@ -746,7 +763,7 @@ pub extern "C" fn build_mint_txn_handler(
     };
     trace!("Deserialized build_mint_txn_handler arguments.");
 
-    let mint_request = match minting::build_mint_request(did.into(), outputs) {
+    let mint_request = match minting::build_mint_request(did, outputs) {
         Ok(json) => json,
         Err(e) => return e as i32
     };
