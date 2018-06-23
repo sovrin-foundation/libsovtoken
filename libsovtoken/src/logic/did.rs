@@ -38,12 +38,14 @@ impl<'a> Did<'a> {
 
         ```
             # extern crate sovtoken;
-            use sovtoken::logic::did::Did;
-            use sovtoken::logic::did::DidError;
-        
-            let did_invalid = Did::new("123456789[01234567890");
-            let error = did_invalid.validate().unwrap_err();
-            assert_eq!(DidError::InvalidChar('['), error);
+            # fn main() {
+                use sovtoken::logic::did::Did;
+                use sovtoken::logic::did::DidError;
+            
+                let did_invalid = Did::new("123456789[01234567890");
+                let error = did_invalid.validate().unwrap_err();
+                assert_eq!(DidError::InvalidChar('['), error);
+            # }
         ```
     */
     pub fn validate(self) -> Result<Self, DidError> {
