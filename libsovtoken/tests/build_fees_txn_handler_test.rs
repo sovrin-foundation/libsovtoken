@@ -1,8 +1,3 @@
-#![warn(unused_imports)]
-#![allow(unused_variables)]
-#![allow(dead_code)]
-#[allow(unused_imports)]
-
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_json;
 extern crate libc;
@@ -11,7 +6,6 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 pub mod utils;
 
 use indy::ErrorCode;
-use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::utils::ffi_support;
 use std::ffi::CString;
@@ -21,7 +15,7 @@ use std::time::Duration;
 
 
 // ***** HELPER METHODS *****
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: i32, mint_req_json: *const c_char) -> i32 {
+extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _mint_req_json: *const c_char) -> i32 {
     return ErrorCode::Success as i32;
 }
 

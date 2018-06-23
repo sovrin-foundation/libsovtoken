@@ -20,8 +20,10 @@ use utils::constants::txn_types::SET_FEES;
 
     ## Example
     ```
+        use sovtoken::logic::config::set_fees_config::SetFeesMap;
+        use std::collections::HashMap;
         let mut set_fees_map : SetFeesMap = HashMap::new();
-        set_fees_map.push("1002", 10)
+        set_fees_map.insert(String::from("1002"), 10);
     ```
 */
 pub type SetFeesMap = HashMap<String, u64>;
@@ -90,8 +92,8 @@ impl SetFees {
     Enum which holds possible errors for [`SetFees::validate`].
 
     ### Includes
-        - `SetFeesError::Empty`
-        - `SetFeesError::KeyNotInteger(&str)`
+    - `SetFeesError::Empty`
+    - `SetFeesError::KeyNotInteger(&str)`
 
     [`SetFees::validate`]: SetFees::validate
 */
@@ -120,7 +122,6 @@ impl Error for SetFeesError {
 mod fees_config_test {
     use super::*;
     use serde_json;
-    use utils::json_conversion::{JsonSerialize};
     use utils::random::rand_string;
 
     #[test]

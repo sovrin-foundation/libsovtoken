@@ -21,7 +21,6 @@ use logic::set_fees;
 use logic::config::{
     payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
-    set_fees_config::{SetFees},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
