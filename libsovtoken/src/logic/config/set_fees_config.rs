@@ -1,7 +1,9 @@
 /*!
- *  Provides structures for the [`build_fees_txn_handler`].
- *
- *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
+    Provides structures for the [`build_fees_txn_handler`].
+
+    [`build_fees_txn_handler`]: sovtoken::logic::api::build_fees_txn_handler
+
+    TODO: Links need to be updated so they actually work.
  */
 
 use logic::did::Did;
@@ -12,12 +14,23 @@ use std::error::Error;
 
 const SET_FEES: &str = "20000";
 
+/**
+    Hashmap for the set_fees json.
+
+    The key is an integer string.
+
+    ## Example
+    ```
+        let mut set_fees_map : SetFeesMap = HashMap::new();
+        set_fees_map.push("1002", 10)
+    ```
+*/
 pub type SetFeesMap = HashMap<String, u64>;
 
 /**
  *  Struct for [`build_fees_txn_handler`].
  *
- *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
+ *  [`build_fees_txn_handler`]: sovtoken::logic::api::build_fees_txn_handler
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct SetFees {
@@ -42,7 +55,7 @@ impl SetFees {
     /**
         Transforms the [`SetFees`] to a [`Request`] struct.
 
-        [`Request`]: [`logic::request::Request`]
+        [`Request`]: sovtoken::logic::request::Request
     */
     pub fn as_request(self, identifier: Did) -> Request<SetFees> {
         return Request::new(self, String::from(identifier));
@@ -75,11 +88,13 @@ impl SetFees {
 }
 
 /**
-    Enum which holds possible errors for `[SetFees::validate]`.
+    Enum which holds possible errors for [`SetFees::validate`].
 
-    Includes:
+    ### Includes
         - `SetFeesError::Empty`
         - `SetFeesError::KeyNotInteger(&str)`
+
+    [`SetFees::validate`]: SetFees::validate
 */
 #[derive(Debug, PartialEq, Eq)]
 pub enum SetFeesError {
