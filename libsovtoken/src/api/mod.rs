@@ -607,7 +607,7 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
         Err(e) => return e as i32
     };
 
-    let fees_request = set_fees.as_request(String::from(did));
+    let fees_request = set_fees.as_request(did);
 
     let fees_request_pointer_option = fees_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));
