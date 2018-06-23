@@ -7,6 +7,8 @@ This document exists for multiple purposes:
 * [indy_create_payment_address](#method-indy_create_payment_address)
 * [indy_add_request_fees](#method-indy_add_request_fees)
 * [indy_parse_response_with_fees](#method-indy_parse_response_with_fees)
+* [indy_build_get_utxo_request](#method-build_get_utxo_request)
+* [indy_parse_get_utxo_response](#method-indy_parse_get_utxo_response)
 * [indy_build_payment_req](#method-indy_build_payment_req)
 * [indy_parse_payment_response](#method-indy_parse_payment_response)
 
@@ -144,7 +146,7 @@ This API call is handled by LibSovToken parse_response_with_fees_handler. *Note 
             "protocolVersion": <int>,
             "type": "1"
         },
-        "ver": <int>,
+        "ver": <str>,
         "txnMetadata":
         {
             "seqNo": <int>,
@@ -334,6 +336,7 @@ This API call is handled by LibSovToken build_get_utxo_request_handler
 ```
 Example get_utxo_txn_json:
 ```
+
 {
     "identifier": "2jyMWLv8NuxUV4yDc46mLQMn9WUUzeKURX3d2yQqgoLqEQC2sf",
     "operation":
@@ -363,12 +366,63 @@ This API call is handled by LibSovToken parse_get_utxo_response_handler *Note th
         "outputs": [
             ["<str: address>", <int: sequence number>, <int: amount>],
         ],
+        'state_proof':
+        {
+            'multi_signature':
+            {
+                'participants': [ <str>, ],
+                'signature': <str>
+                'value':
+                {
+                    'ledger_id': <int>,
+                    'pool_state_root_hash': <str>,
+                    'state_root_hash': <str>,
+                    'timestamp': <int>,
+                    'txn_root_hash': <str>
+                }
+            },
+            'proof_nodes': <str>,
+            'root_hash': <str>
+        }
     }
 }
 
 ```
 Example resp_json from the ledger:
 ```
+{
+    'op': 'REPLY',
+    'result':
+    {
+        'type': '10002',
+        'address': 'dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q',
+        'identifier': '6ouriXMZkLeHsuXrN1X1fd',
+        'reqId': 15424,
+        'outputs':
+        [
+            ['dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q', 1, 40]
+        ],
+        'state_proof':
+        {
+            'multi_signature':
+            {
+                'participants': ['Gamma', 'Alpha', 'Delta'],
+                'signature': 'RNUfcr74ekwBxsT7mxnT2RDFaRRYbfuhebnqQW9PsGkf1bsKC8m8DAqsFfMMLGgAy9CSWM8cyXRUdWLrKUywTajbySfy18oxxdg8ZZApGYHZtiuj6y9sbScAyMwWMmxrDErrj8DWVEVZbGMhPnSSUkmkC6SBnZtSDfdRDvHUMQVBRR',
+                'value':
+                {
+                    'ledger_id': 1001,
+                    'pool_state_root_hash': '9i3acxaDhCfx9jWXW2JZRoDWzRQEKo7bPBVN7VPE1Jhg',
+                    'state_root_hash': '8tJkWdp9wdz3bpb5s5hPDfrjWCQTPmsFKrSdoPmTTnea',
+                    'timestamp': 1529705683,
+                    'txn_root_hash': '67khbUNo8rySwEtW2SPSsyK4rmLCS7JAN4kYnppELajc'
+                }
+            },
+            'proof_nodes': '+I74ObM0Y3RLU1hCYnYyTXkzVEdHVWdURmpreHUxQTlKTTNTc2NkNUZ5ZFk0ZGt4bmZ3QTdxOjGEw4I0MPhRgICAgICAoKwYfN+WIsLFSOuMjp224HzlSFoSXhXc1+rE\\/vB8jh7MoF\\/sqT9NVI\\/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA',
+            'root_hash': '8tJkWdp9wdz3bpb5s5hPDfrjWCQTPmsFKrSdoPmTTnea'
+        }
+    }
+}
+
 {
     "op": "REPLY",
     "protocolVersion": 1,
@@ -570,7 +624,7 @@ resp_json
             "protocolVersion": <int>,
             "type": "10001"
         },
-        "ver": <int>,
+        "ver": <str>,
         "reqSignature":
         {
             "type": <str: signature type>,
