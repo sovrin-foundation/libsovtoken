@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use logic::address::append_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
@@ -110,23 +111,42 @@ impl ParseResponseWithFeesReply {
         after this call
     */
     pub fn from_response(base : ParseResponseWithFees) -> ParseResponseWithFeesReply {
-/*        let mut utxos: Vec<UTXO> = vec![];
+        let mut utxos: Vec<UTXO> = vec![];
 
         // according to the documentation, don't need the inputs.  Only the outputs
         // and seq_no which are part 2 and 3 of the tuple
-        let outputs: Outputs = base.fees.1;
-        let seq_no: i32 = base.fees.2;
+        let outputs = &base.request.fees.outputs;
 
         for output in outputs {
-            let txo: TXO = TXO { address: output.address.to_string(), seq_no };
-            let utxo: UTXO = UTXO { payment_address: output.address.to_string(), txo, amount : output.amount, extra: "".to_string()};
+            let output_address : String = output.0.to_string();
+            let amount: u32 = output.1;
+            let qualified_address: String = append_qualifer_to_address(&output_address);
+            let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
+
+            let txo: TXO = TXO { address: qualified_address.to_string(), seq_no };
+
+            let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 
             utxos.push(utxo);
         }
 
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply { ver : 1, utxo_json : utxos};
-        return reply;*/
-        unimplemented!()
+        return reply;
+    }
+
+    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> i32 {
+        let inputs = &base.request.fees.inputs;
+
+        for input in inputs {
+            let input_address : String = input.0.to_string();
+
+            if input_address == output_address.to_string() {
+                return input.1;
+            }
+
+        }
+
+        return -1;
     }
 }
 
@@ -324,28 +344,11 @@ mod parse_response_with_fees_handler_tests {
     // through the ParseResponseWithFeesReply::from_response method
     #[test]
     fn success_parse_response_with_fees_to_reply() {
-        /*let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
 
         assert_eq!(1, reply.utxo_json.len());
-
-        for utxo in reply.utxo_json {
-            let amount: u32 = utxo.amount;
-            let mut found_address: bool = false;
-
-            // if this next statement is outside the prior for, there is a move error.
-            // yes this is a cheat but its a unit test function...
-            let outputs: Vec<Output> = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap().fees.1.to_vec();
-
-            for output in outputs {
-                if utxo.payment_address == output.address {
-                    found_address = true;
-                    assert_eq!(amount, output.amount, "amounts did not match in reply (ParseResponseWithFeesReply)");
-                }
-            }
-            assert_eq!(true, found_address, "did not find address reply (ParseResponseWithFeesReply)");
-        }*/
 
     }
 
@@ -353,27 +356,10 @@ mod parse_response_with_fees_handler_tests {
     // through the ParseResponseWithFeesReply::from_response method
     #[test]
     fn success_parse_response_with_multiple_fees_to_reply() {
-        /*let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
 
         assert_eq!(2, reply.utxo_json.len());
 
-        for utxo in reply.utxo_json {
-            let amount: u32 = utxo.amount;
-            let mut found_address: bool = false;
-
-            // if this next statement is outside the prior for, there is a move error.
-            // yes this is a cheat but its a unit test function...
-            let outputs: Vec<Output> = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap().fees.1.to_vec();
-
-            for output in outputs {
-                if utxo.payment_address == output.address {
-                    found_address = true;
-                    assert_eq!(amount, output.amount, "amounts did not match in reply (ParseResponseWithFeesReply)");
-                }
-            }
-
-            assert_eq!(true, found_address, "did not find address reply (ParseResponseWithFeesReply)");
-        }*/
     }
 }
