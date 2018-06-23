@@ -35,3 +35,34 @@ pub struct TXO {
     pub seq_no: i32,
 }
 
+
+/**
+    the nested type "req_signature" in inputs in parse response methods
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RequireSignature {
+    #[serde(rename = "type")]
+    pub sig_type: String,
+    pub values: Vec<SignatureValues>,
+}
+
+/**
+    the nested type "values" in RequiredSignature
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SignatureValues {
+    pub from: String,
+    pub value: String,
+}
+
+/**
+    the nested type "tnx_meta_data" in inputs in parse response methods
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionMetaData {
+    pub seq_no: i32,
+    pub txn_time: u32,
+}
