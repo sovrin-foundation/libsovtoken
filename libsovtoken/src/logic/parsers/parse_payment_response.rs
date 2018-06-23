@@ -16,6 +16,7 @@ pub struct ParsePaymentResponse {
 }
 
 /**
+    The nested type named "result in ParsePaymentResponse
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -30,6 +31,7 @@ pub struct ParsePaymentResponseResult {
 }
 
 /**
+    the nested type "tnx" in ParsePaymentResponseResult
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -43,16 +45,18 @@ pub struct Transaction {
 }
 
 /**
+   the nested type "data" in Transaction
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     pub extra: Option<String>,
     pub inputs : Vec<(String, i32)>,
-    pub outputs: Vec<(String, i32)>,
+    pub outputs: Vec<(String, u32)>,
 }
 
 /**
+    the nested type "meta_data" in Transaction
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -63,6 +67,7 @@ pub struct TransactionMetaData2 {
 }
 
 /**
+    the nested type "tnx_meta_data" in ParsePaymentResponseResult
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -72,6 +77,7 @@ pub struct TransactionMetaData {
 }
 
 /**
+    the nested type "req_signature" in ParsePaymentResponseResult
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -82,6 +88,7 @@ pub struct RequireSignature {
 }
 
 /**
+    the nested type "values" in RequiredSignature
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -99,16 +106,16 @@ pub struct ParsePaymentReply {
     pub utxo_json : Vec<UTXO>,
 }
 
-    impl ParsePaymentReply {
+impl ParsePaymentReply {
     /**
         Converts ParsePaymentReply (which should be input via indy-sdk) to ParsePaymentReply
         please note:  use of this function moves ParsePaymentResponse and it cannot be used again
         after this call
     */
     pub fn from_response(base : ParsePaymentResponse) -> ParsePaymentReply {
-        /*let mut utxos: Vec<UTXO> = vec![];
+        let mut utxos: Vec<UTXO> = vec![];
 
-        for unspent_output in base.result.outputs {
+        for unspent_output in base.result.txn.data.outputs {
 
             let (address, amount) = unspent_output;
             let txo: TXO = TXO { address: address.to_string(), seq_no: 1 };
@@ -118,8 +125,7 @@ pub struct ParsePaymentReply {
         }
 
         let reply: ParsePaymentReply = ParsePaymentReply { ver : 1, utxo_json : utxos};
-        return reply;*/
-        unimplemented!()
+        return reply;
     }
 }
 
