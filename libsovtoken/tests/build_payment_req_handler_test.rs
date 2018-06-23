@@ -68,7 +68,7 @@ fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
 
     let addresses = payment_addresses
         .iter()
-        .map(|address| address::verkey_checksum_from_address(address.clone()).unwrap())
+        .map(|address| address::unqualified_address_from_address(address.clone()).unwrap())
         .collect();
 
     return (payment_addresses, addresses);
