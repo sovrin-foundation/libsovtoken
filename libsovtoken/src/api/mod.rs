@@ -21,7 +21,6 @@ use logic::set_fees;
 use logic::config::{
     payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
-    set_fees_config::{SetFeesRequest},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
@@ -598,7 +597,7 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
                                          fees_json: *const c_char,
                                          cb: Option<extern fn(command_handle_: i32, err: i32, set_txn_fees_json: *const c_char) -> i32>) -> i32 {
 
-    let (did, fees_config, cb) = match set_fees::deserialize_inputs(
+    let (did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
         fees_json,
         cb
@@ -607,7 +606,7 @@ pub extern "C" fn build_set_txn_fees_handler(command_handle: i32,
         Err(e) => return e as i32
     };
 
-    let fees_request = SetFeesRequest::from_fee_config(fees_config, did.into());
+    let fees_request = set_fees.as_request(did);
 
     let fees_request_pointer_option = fees_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));

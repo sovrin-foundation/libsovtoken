@@ -56,10 +56,8 @@ pub fn did() -> *const c_char {
 
 pub fn set_fees_json() -> *const c_char {
     let json = json!({
-        "fees": {
-            txn_types::XFER_PUBLIC: 3,
-            "3": 5
-        }
+        txn_types::XFER_PUBLIC: 3,
+        "3": 5
     });
 
     return c_pointer_from_string(json.to_string());

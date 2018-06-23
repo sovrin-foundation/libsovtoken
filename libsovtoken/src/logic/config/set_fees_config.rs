@@ -1,100 +1,174 @@
 /*!
- *  Defines structure and implementation SetFeesConfig and SetFeesRequest
- *  these are the structures for the [`build_fees_txn_handler`]
- *
- *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
+    Provides structures for the [`build_fees_txn_handler`].
+
+    [`build_fees_txn_handler`]: sovtoken::logic::api::build_fees_txn_handler
+
+    TODO: Links need to be updated so they actually work.
  */
-use std::collections::HashMap;
+
+use logic::did::Did;
 use logic::request::Request;
+use std::collections::HashMap;
+use std::fmt;
+use std::error::Error;
 use utils::constants::txn_types::SET_FEES;
 
 /**
- *  Json config to customize [`build_fees_txn_handler`]
+    Hashmap for the set_fees json.
+
+    The key is an integer string.
+
+    ## Example
+    ```
+        use sovtoken::logic::config::set_fees_config::SetFeesMap;
+        use std::collections::HashMap;
+        let mut set_fees_map : SetFeesMap = HashMap::new();
+        set_fees_map.insert(String::from("1002"), 10);
+    ```
+*/
+pub type SetFeesMap = HashMap<String, u64>;
+
+/**
+ *  Struct for [`build_fees_txn_handler`].
  *
- *  [`build_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
+ *  [`build_fees_txn_handler`]: sovtoken::logic::api::build_fees_txn_handler
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct SetFeesConfig {
-   pub fees: HashMap<String, u64>,
+pub struct SetFees {
+    #[serde(rename = "type")]
+    txn_type: &'static str,
+    fees: SetFeesMap,
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct SetFeesRequest {
-    #[serde(rename = "type")]
-    txn_type: String,
-    fees:  HashMap<String, u64>,
+impl SetFees {
+
+    /**
+        Creates a new [`SetFees`] struct.
+    */
+    pub fn new(fees: SetFeesMap) -> SetFees {
+        return SetFees {
+            txn_type: SET_FEES,
+            fees,
+        };
+    }
+
+
+    /**
+        Transforms the [`SetFees`] to a [`Request`] struct.
+
+        [`Request`]: sovtoken::logic::request::Request
+    */
+    pub fn as_request(self, identifier: Did) -> Request<SetFees> {
+        return Request::new(self, String::from(identifier));
+    }
+
+    /**
+        Validates a [`SetFees`].
+
+        Checks the [`SetFees.map`] is not empty and the keys are string
+        integers.
+    */
+    pub fn validate(self) -> Result<Self, SetFeesError> {
+        if self.fees.is_empty() {
+            return Err(SetFeesError::Empty);
+        }
+
+        {
+            let key_not_integer = self.fees
+                .keys()
+                .find(|&key| key.parse::<u32>().is_err());
+            
+            if let Some(key) = key_not_integer {
+                return Err(SetFeesError::KeyNotInteger(key.to_owned()));
+            }
+        }
+    
+        return Ok(self);
+    }
+
 }
 
 /**
- * A struct that can be transformed into a SetFeesConfig JSON object.
- */
-impl SetFeesRequest {
+    Enum which holds possible errors for [`SetFees::validate`].
 
-    pub fn new(fees: HashMap<String, u64>, identifier : String) -> Request<SetFeesRequest> {
-        let fee = SetFeesRequest {
-            txn_type: SET_FEES.to_string(),
-            fees,
-        };
-        return Request::new(fee, identifier);
+    ### Includes
+    - `SetFeesError::Empty`
+    - `SetFeesError::KeyNotInteger(&str)`
+
+    [`SetFees::validate`]: SetFees::validate
+*/
+#[derive(Debug, PartialEq, Eq)]
+pub enum SetFeesError {
+    Empty,
+    KeyNotInteger(String)
+}
+
+impl fmt::Display for SetFeesError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        return write!(f, "{}", self);
     }
+}
 
-    pub fn from_fee_config(fee: SetFeesConfig, identifier: String) -> Request<SetFeesRequest> {
-        return SetFeesRequest::new(fee.fees, identifier);
+impl Error for SetFeesError {
+    fn description(&self) -> &str {
+        match self {
+            &SetFeesError::Empty => "Set fees was empty.",
+            &SetFeesError::KeyNotInteger(_) => "A Set fees key wasn't a integer string.",
+        }
     }
-
 }
 
 #[cfg(test)]
 mod fees_config_test {
     use super::*;
     use serde_json;
-    use utils::json_conversion::{JsonSerialize};
-    use utils::ffi_support::{str_from_char_ptr};
     use utils::random::rand_string;
 
-    // fees_txn_handler requires that a valid fees transaction is serialized. This tests that
-    // the serializing structure for fees works correctly
-    fn initial_set_fee_request() -> Request<SetFeesRequest> {
-        let identifier: String = rand_string(21);
-        let mut fees_map = HashMap::new();
-        fees_map.insert(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10 as u64);
-        return SetFeesRequest::new(fees_map, identifier);
-    }
+    #[test]
+    fn test_set_fees_map_value_string() {
+        let set_fees_json = json!({
+            "3": "10",
+            "1000": "12"
+        });
+        let hash_map: Result<SetFeesMap, _> = serde_json::from_value(set_fees_json);
 
-    fn assert_set_fee_request<F>(expected: serde_json::Value, f: F)
-        where F: Fn(&mut Request<SetFeesRequest>) -> ()
-    {
-        let mut set_fee_req = initial_set_fee_request();
-        f(&mut set_fee_req);
-        let set_fee_req_c_string = set_fee_req.serialize_to_cstring().unwrap();
-        let set_fee_req_json_str = str_from_char_ptr(set_fee_req_c_string.as_ptr()).unwrap();
-        let deserialized_set_fee_request: Request<SetFeesRequest> = serde_json::from_str(set_fee_req_json_str).unwrap();
-        assert_eq!(deserialized_set_fee_request.protocol_version, 1);
-
-        let operation_json_value: serde_json::Value = serde_json::from_str(&deserialized_set_fee_request.operation.to_json().unwrap()).unwrap();
-        assert_eq!(operation_json_value, expected);
+        assert!(hash_map.is_err());
     }
 
     #[test]
-    fn create_request_with_fees_config() {
-        let identifier: String = rand_string(21);
-        let mut fees_map = HashMap::new();
-        fees_map.insert(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10 as u64);
-        let fees_config = SetFeesConfig {
-            fees: fees_map.clone()
-        };
-        let request = SetFeesRequest::from_fee_config(fees_config, identifier);
-        assert_eq!(request.operation.fees, fees_map);
+    fn test_validation_empty_fees() {
+        let set_fees_json = json!({});
+        let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
+        let set_fees = SetFees::new(hash_map);
+        assert_eq!(SetFeesError::Empty, set_fees.validate().unwrap_err());
     }
 
     #[test]
-    fn valid_request() {
-        assert_set_fee_request(
-            json!({
-                "type": SET_FEES,
-                "fees": {"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7":10},
-            }),
-            |_fees_req| {}
-        );
+    fn test_validation_fees_key_not_string_integer() {
+        let set_fees_json = json!({
+            "XFER_PUBLIC": 10,
+        });
+        let expected = SetFeesError::KeyNotInteger(String::from("XFER_PUBLIC"));
+
+        let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
+        let set_fees = SetFees::new(hash_map);
+        assert_eq!(expected, set_fees.validate().unwrap_err());
+    }
+
+    #[test]
+    fn create_valid_set_fees_request() {
+        let set_fees_json = json!({
+            "3": 10,
+            "1000": 12
+        });
+        let expected = set_fees_json.clone();
+        let rand_identifier = rand_string(21);
+        let identifier = Did::new(&rand_identifier);
+
+        let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
+        let set_fees = SetFees::new(hash_map).validate().unwrap();
+        let request = set_fees.as_request(identifier);
+        let fees_from_request = serde_json::to_value(&request.operation.fees).unwrap();
+        assert_eq!(expected, fees_from_request)
     }
 }
