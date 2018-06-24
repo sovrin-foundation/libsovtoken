@@ -170,7 +170,7 @@ trait InputSigner<A: CryptoAPI> {
 }
 
 #[cfg(test)]
-mod test_fees {
+mod test_xfer_payload {
     #![allow(unused_variables)]
     use super::*;
     use logic::config::payment_address_config::PaymentAddressConfig;
@@ -195,16 +195,24 @@ mod test_fees {
  
     fn inputs_outputs_valid() -> (Inputs, Outputs) {
         let outputs = vec![
-            Output::new(String::from("pay:sov:TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"), 10, None),
-            Output::new(String::from("pay:sov:2FKYJkgXRZtjhFpTMHhuyfc17BHZWcFPyF2MWy2SZMBaSo64fb"), 22, None),
+            Output::new(String::from("TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"), 10, None),
+            Output::new(String::from("2FKYJkgXRZtjhFpTMHhuyfc17BHZWcFPyF2MWy2SZMBaSo64fb"), 22, None),
         ];
 
         let inputs = vec![
-            Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1),
-            Input::new(String::from("pay:sov:2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1),
+            Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1),
+            Input::new(String::from("2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1),
         ]; 
 
         return (inputs, outputs);
+    }
+
+    fn inputs_outputs_valid_qualified() -> (Inputs, Outputs) {
+        let (inputs, outputs) = inputs_outputs_valid();
+        let inps = inputs.iter().map(|ref mut i| Input::new(address::add_qualifer_to_address(&i.address), i.seq_no)).collect::<Vec<Input>>();
+        let outs = outputs.iter().map(|ref mut o| Output::new(address::add_qualifer_to_address(&o.address), o.amount, o.extra.clone())).collect::<Vec<Output>>();
+
+        return (inps, outs);
     }
 
     fn sign_input_sync(input: &Input, outputs: &Outputs) -> Result<String, ErrorCode> {
@@ -279,7 +287,7 @@ mod test_fees {
     #[test]
     fn sign_payload_invalid_output_address() {
         let wallet_handle = 1;
-        let (inputs, mut outputs) = inputs_outputs_valid();
+        let (inputs, mut outputs) = inputs_outputs_valid_qualified();
         String::remove(&mut outputs[0].address, 5);
 
         let payload = XferPayload::new(inputs, outputs);
@@ -291,7 +299,7 @@ mod test_fees {
     #[test]
     fn sign_payload_invalid_input_address() {
         let wallet_handle = 1;
-        let (mut inputs, outputs) = inputs_outputs_valid();
+        let (mut inputs, outputs) = inputs_outputs_valid_qualified();
         String::remove(&mut inputs[0].address, 13);
 
         let signed_payload = XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
@@ -302,7 +310,7 @@ mod test_fees {
     #[test]
     fn sign_payload_invalid_empty_inputs() {
         let wallet_handle = 1;
-        let (_, outputs) = inputs_outputs_valid();
+        let (_, outputs) = inputs_outputs_valid_qualified();
 
         let signed_payload = XferPayload::new(Vec::new(), outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
 
@@ -312,7 +320,7 @@ mod test_fees {
     #[test]
     fn sign_payload_invalid_empty_outputs() {
         let wallet_handle = 1;
-        let (inputs, _) = inputs_outputs_valid();
+        let (inputs, _) = inputs_outputs_valid_qualified();
 
         let signed_payload = XferPayload::new(inputs, Vec::new()).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
 
@@ -322,7 +330,7 @@ mod test_fees {
     #[test]
     fn sign_address_inputs_valid() {
         let wallet_handle = 1;
-        let (inputs, outputs) = inputs_outputs_valid();
+        let (inputs, outputs) = inputs_outputs_valid_qualified();
 
         // Question: Why are signatures dummy values?
         let expected_inputs = vec![

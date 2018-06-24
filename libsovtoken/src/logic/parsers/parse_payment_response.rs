@@ -2,7 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use logic::address::append_qualifer_to_address;
+use logic::address::add_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
@@ -94,7 +94,7 @@ impl ParsePaymentReply {
         for unspent_output in base.result.txn.data.outputs {
 
             let (address, amount) = unspent_output;
-            let qualified_address: String = append_qualifer_to_address(&address);
+            let qualified_address: String = add_qualifer_to_address(&address);
             let txo: TXO = TXO { address: qualified_address.to_string(), seq_no: 1 };
             let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 

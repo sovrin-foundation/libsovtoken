@@ -147,7 +147,7 @@ pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<Stri
     ```
 
 */
-pub fn append_qualifer_to_address(address : &str) -> String {
+pub fn add_qualifer_to_address(address : &str) -> String {
     return format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
 }
 

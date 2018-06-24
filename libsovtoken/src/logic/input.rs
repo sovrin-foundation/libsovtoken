@@ -179,7 +179,7 @@ mod input_tests {
         assert_eq!(input_serialized, json_string);
     }
 
-    fn input_without_extra_or_signature() -> Input {
+    fn valid_input() -> Input {
         let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
         return Input::new(address, 30);
     }
@@ -191,15 +191,9 @@ mod input_tests {
     }
 
     #[test]
-    fn deserialize_invalid_tuple_invalid_address() {
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81f", 30]);
-        assert_invalid_deserialize(json, "invalid length 2, expected 2")
-    }
-
-    #[test]
     fn deserialize_invalid_tuple_invalid_seq_no() {
         let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81f", 2.5]);
-        assert_invalid_deserialize(json, "invalid length 2, expected 2")
+        assert_invalid_deserialize(json, "invalid type: floating point")
     }
 
     #[test]
@@ -210,7 +204,7 @@ mod input_tests {
     }
 
     #[test]
-    fn deserialize_invalid_input_object_without_address() {
+    fn deserialize_invalid_input_object_without_seq_no() {
         let json = json!({
             "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
         });
@@ -222,8 +216,8 @@ mod input_tests {
         let json = json!({
             "seqNo": 30,
         });
-        let input = input_without_extra_or_signature();
-        assert_valid_deserialize(json, input);
+        let input = valid_input();
+        assert_invalid_deserialize(json, "missing field `address`");
     }
 
     #[test]
@@ -232,7 +226,7 @@ mod input_tests {
             "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "seqNo": 30,
         });
-        let input = input_without_extra_or_signature();
+        let input = valid_input();
         assert_valid_deserialize(json, input);
     }
 }
