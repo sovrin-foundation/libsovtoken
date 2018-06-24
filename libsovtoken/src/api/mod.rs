@@ -12,7 +12,7 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
 use logic::did::Did;
-use logic::fees::Fees;
+use logic::xfer_payload::XferPayload;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::payments::{CreatePaymentHandler};
@@ -405,7 +405,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     };
 
 
-    let fees = Fees::new(inputs, outputs);
+    let fees = XferPayload::new(inputs, outputs);
     let fees_signed = fees.sign(&CryptoSdk {}, wallet_handle).unwrap();
     debug!("Signed fees >>> {:?}", fees_signed);
 

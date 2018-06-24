@@ -40,22 +40,23 @@ use std::sync;
  *      let inputs = vec![Input::new(address_input, 1, None)];
  *      let outputs = vec![Output::new(address_output, 20, None)];
  *
- *      let fees = Fees::new(inputs, outputs);
- *      let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle);
+ *      let payload = XferPayload::new(inputs, outputs);
+ *      let signed_payload = payload.sign(&CryptoSdk{}, wallet_handle);
  *  # }
  * ```
  */
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct Fees {
+pub struct XferPayload {
     pub outputs: Outputs,
     pub inputs: Inputs,
+    pub signatures: Option<Vec<String>>
 }
 
-impl<A: CryptoAPI> InputSigner<A> for Fees {}
-impl Fees {
+impl<A: CryptoAPI> InputSigner<A> for XferPayload {}
+impl XferPayload {
     pub fn new(inputs: Inputs, outputs: Outputs) -> Self
     {
-        return Fees { inputs, outputs };
+        return XferPayload { inputs, outputs, signatures: None };
     }
 
     /** 
@@ -67,7 +68,7 @@ impl Fees {
      * [`Input`]: Input
      * [`Inputs`]: Inputs
      */
-    pub fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle) -> Result<Fees, ErrorCode> {
+    pub fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle) -> Result<XferPayload, ErrorCode> {
         if self.outputs.len() < 1 || self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
         }
@@ -78,13 +79,14 @@ impl Fees {
         }
         trace!("Indicator stripped from outputs");
 
-        self.inputs = Fees::sign_inputs(crypto_api, wallet_handle, &self.inputs, &self.outputs)?;
-
         for input in &mut self.inputs {
             let address = address::unqualified_address_from_address(input.address.clone())?;
             input.address = address;
-        } 
+        }
+
         trace!("Indicator stripped from inputs");
+
+        self.signatures = Some(XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs, &self.outputs)?);
 
         return Ok(self);
     }
@@ -93,7 +95,7 @@ impl Fees {
 trait InputSigner<A: CryptoAPI> {
 
     fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
-        -> Result<Inputs, ErrorCode>
+        -> Result<Vec<String>, ErrorCode>
     {
 
         let signing_cbs: Result<Vec<_>, _> = inputs.iter()
@@ -110,14 +112,14 @@ trait InputSigner<A: CryptoAPI> {
             signing_cb(Box::new(cb));
         });
 
-        let mut signed_inputs = Vec::new();
+        let mut signatures = Vec::new();
         for _ in 0..inputs.len() {
-            let signed_input = receiver.recv()
+            let signature = receiver.recv()
                 .unwrap_or(Err(ErrorCode::CommonInvalidState))?;
-            signed_inputs.push(signed_input);
+            signatures.push(signature);
         }
 
-        return Ok(signed_inputs);
+        return Ok(signatures);
     }
 
     /**
@@ -129,14 +131,14 @@ trait InputSigner<A: CryptoAPI> {
      * 
      * [`Input`]: Input
      */
-    fn sign_input<F: Fn(Result<Input, ErrorCode>) + Send + 'static>(
+    fn sign_input<F: Fn(Result<String, ErrorCode>) + Send + 'static>(
         crypto_api: &'static A,
         wallet_handle: IndyHandle,
         input: &Input,
         outputs: &Outputs
     ) -> Result<Box<Fn(Box<F>)>, ErrorCode>
     {
-        let verkey = address::validate_address(&input.address)?;
+        let verkey = address::verkey_from_unqualified_address(&input.address)?;
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.address, input.seq_no], outputs]);
@@ -146,14 +148,15 @@ trait InputSigner<A: CryptoAPI> {
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
 
-        let input = input.to_owned();
+//        let input = input.to_owned();
         return Ok(Box::new(move |func: Box<F>| {
-            let input_clone = input.clone();
-            // this needs to be a mutatable function
-            let ca = move |signed_string: Result<String, ErrorCode>| {
-                debug!("Received encoded signature >>> {:?}", signed_string);
-                let signed_input = signed_string.map(|sig| input_clone.clone().sign_with(sig));
-                func(signed_input);
+//            let input_clone = input.clone();
+            // this needs to be a mutable function
+            let ca = move |signature: Result<String, ErrorCode>| {
+                debug!("Received encoded signature >>> {:?}", signature);
+                /*let signed_input = signature.map(|sig| input_clone.clone().sign_with(sig));
+                func(signed_input);*/
+                func(signature)
             };
 
             crypto_api.indy_crypto_sign(
@@ -197,17 +200,17 @@ mod test_fees {
         ];
 
         let inputs = vec![
-            Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, None),
-            Input::new(String::from("pay:sov:2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1, None),
+            Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1),
+            Input::new(String::from("pay:sov:2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1),
         ]; 
 
         return (inputs, outputs);
     }
 
-    fn sign_input_sync(input: &Input, outputs: &Outputs) -> Result<Input, ErrorCode> {
+    fn sign_input_sync(input: &Input, outputs: &Outputs) -> Result<String, ErrorCode> {
         let wallet_handle = 1;
         let (sender, receiver) = sync::mpsc::channel();
-        let signing_cb = Fees::sign_input(
+        let signing_cb = XferPayload::sign_input(
             &CryptoApiHandler{},
             wallet_handle,
             input,
@@ -219,9 +222,9 @@ mod test_fees {
         return result;
     }
 
-    fn sign_inputs_sync(inputs: &Inputs, outputs: &Outputs) -> Result<Inputs, ErrorCode> {
+    fn sign_inputs_sync(inputs: &Inputs, outputs: &Outputs) -> Result<Vec<String>, ErrorCode> {
         let wallet_handle = 1;
-        return Fees::sign_inputs(&CryptoApiHandler{}, wallet_handle, inputs, outputs);
+        return XferPayload::sign_inputs(&CryptoApiHandler{}, wallet_handle, inputs, outputs);
     }
 
     #[test]
@@ -238,16 +241,16 @@ mod test_fees {
         let (inputs, outputs) = inputs_outputs_valid();
 
         // Question: Why are signatures dummy values?
-        let signed_input = sign_input_sync(&inputs[0], &outputs).unwrap();
-        let expected = Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, Some(String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned")));
-        assert_eq!(expected, signed_input);
+        let signature = sign_input_sync(&inputs[0], &outputs).unwrap();
+        let expected = String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned");
+        assert_eq!(expected, signature);
     }
 
     #[test]
     fn sign_multi_input_valid_empty_inputs() {
         let (_, outputs) = inputs_outputs_valid();
-        let signed_inputs = sign_inputs_sync(&Vec::new(), &outputs).unwrap();
-        assert!(signed_inputs.is_empty());
+        let signatures = sign_inputs_sync(&Vec::new(), &outputs).unwrap();
+        assert!(signatures.is_empty());
     }
 
     #[test]
@@ -255,8 +258,8 @@ mod test_fees {
         let (mut inputs, outputs) = inputs_outputs_valid();
         String::remove(&mut inputs[0].address, 5);
     
-        let signed_inputs = sign_inputs_sync(&inputs, &outputs).unwrap_err();
-        assert_eq!(ErrorCode::CommonInvalidStructure, signed_inputs);
+        let signatures = sign_inputs_sync(&inputs, &outputs).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, signatures);
     }
 
     #[test]
@@ -265,8 +268,8 @@ mod test_fees {
 
         // Question: Why are signatures dummy values?
         let expected_signed_inputs = vec![
-            Input::new(String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, Some(String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"))),
-            Input::new(String::from("pay:sov:2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1, Some(String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned"))),
+            String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"),
+            String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned"),
         ];
         
         let signed_inputs = sign_inputs_sync(&inputs, &outputs).unwrap();
@@ -274,46 +277,46 @@ mod test_fees {
     }
 
     #[test]
-    fn sign_fees_invalid_address_output() {
+    fn sign_payload_invalid_output_address() {
         let wallet_handle = 1;
         let (inputs, mut outputs) = inputs_outputs_valid();
         String::remove(&mut outputs[0].address, 5);
 
-        let fees = Fees::new(inputs, outputs);
-        let signed_fees = fees.sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let payload = XferPayload::new(inputs, outputs);
+        let signed_payload = payload.sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
 
-        assert_eq!(ErrorCode::CommonInvalidStructure, signed_fees);
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
 
     #[test]
-    fn sign_fees_invalid_addresss() {
+    fn sign_payload_invalid_input_address() {
         let wallet_handle = 1;
         let (mut inputs, outputs) = inputs_outputs_valid();
         String::remove(&mut inputs[0].address, 13);
 
-        let signed_fees = Fees::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let signed_payload = XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
 
-        assert_eq!(ErrorCode::CommonInvalidStructure, signed_fees);
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
 
     #[test]
-    fn sign_fees_invalid_empty_inputs() {
+    fn sign_payload_invalid_empty_inputs() {
         let wallet_handle = 1;
         let (_, outputs) = inputs_outputs_valid();
 
-        let signed_fees = Fees::new(Vec::new(), outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let signed_payload = XferPayload::new(Vec::new(), outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
 
-        assert_eq!(ErrorCode::CommonInvalidStructure, signed_fees);
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
 
     #[test]
-    fn sign_fees_invalid_empty_outputs() {
+    fn sign_payload_invalid_empty_outputs() {
         let wallet_handle = 1;
         let (inputs, _) = inputs_outputs_valid();
 
-        let signed_fees = Fees::new(inputs, Vec::new()).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let signed_payload = XferPayload::new(inputs, Vec::new()).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
 
-        assert_eq!(ErrorCode::CommonInvalidStructure, signed_fees);
+        assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
 
     #[test]
@@ -323,18 +326,21 @@ mod test_fees {
 
         // Question: Why are signatures dummy values?
         let expected_inputs = vec![
-            Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1, Some(String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"))),
-            Input::new(String::from("2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1, Some(String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned"))),
+            Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 1),
+            Input::new(String::from("2oWxuFMbhPewEbCEeKnvjcpVq8qpHHrN5y4aU81MWG5dYfeM7V"), 1),
         ];
 
         let expected_outputs = vec![
             Output::new(String::from("TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs"), 10, None),
             Output::new(String::from("2FKYJkgXRZtjhFpTMHhuyfc17BHZWcFPyF2MWy2SZMBaSo64fb"), 22, None),
-        ];  
+        ];
 
-        let signed_fees = Fees::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap();
+        let expected_signatures = Some(vec![String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"),
+                                       String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned")]);
 
-        assert_eq!(expected_inputs, signed_fees.inputs);
-        assert_eq!(expected_outputs, signed_fees.outputs);
+        let signed_payload = XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap();
+
+        assert_eq!(expected_inputs, signed_payload.inputs);
+        assert_eq!(expected_outputs, signed_payload.outputs);
     }
 }

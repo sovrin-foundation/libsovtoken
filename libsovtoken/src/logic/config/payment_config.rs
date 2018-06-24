@@ -6,7 +6,7 @@
  */
 use logic::request::Request;
 use utils::constants::txn_types::XFER_PUBLIC;
-use logic::fees::Fees;
+use logic::xfer_payload::XferPayload;
 
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
@@ -14,7 +14,7 @@ pub struct PaymentRequest {
     #[serde(rename = "type")]
     txn_type: String,
     #[serde(flatten)]
-    signed_inputs_outputs: Fees
+    signed_inputs_outputs: XferPayload
 }
 
 /**
@@ -25,7 +25,7 @@ impl PaymentRequest {
     /**
      * Creates a new `PaymentRequest` with `inputs` and `outputs`
      */
-    pub fn new(signed_inputs_outputs: Fees, identifier: String) -> Request<PaymentRequest> {
+    pub fn new(signed_inputs_outputs: XferPayload, identifier: String) -> Request<PaymentRequest> {
         let fees = PaymentRequest {
             txn_type: XFER_PUBLIC.to_string(),
             signed_inputs_outputs,
@@ -49,9 +49,9 @@ mod payment_request_test {
     fn initial_fees_request() -> Request<PaymentRequest> {
         let identifier: String = rand_string(21);
         let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
-        let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
+        let input = Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"),30);
     
-        let fees = Fees::new(vec![input], vec![output]);
+        let fees = XferPayload::new(vec![input], vec![output]);
         return PaymentRequest::new(fees, identifier);
     }
 
@@ -75,7 +75,7 @@ mod payment_request_test {
             json!({
                 "type": XFER_PUBLIC.to_string(),
                 "outputs": [["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]],
-                "inputs": [["dakjhe238yad", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]]
+                "inputs": [["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]]
             }),
             |_fees_req| {}
         )

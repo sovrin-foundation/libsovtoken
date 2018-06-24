@@ -110,13 +110,27 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
     }
 
     let address = strip_qualifier_from_address(&fully_qualified_address);
-    match address.from_base58_check() {
+    /*match address.from_base58_check() {
         Ok(vk) => {
           if vk.len() != VERKEY_LEN {
               return Err(ErrorCode::CommonInvalidStructure)
           } else {
               return Ok(vk.to_base58());
           }
+        },
+        Err(_) => return Err(ErrorCode::CommonInvalidStructure)
+    }*/
+    verkey_from_unqualified_address(&address)
+}
+
+pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<String, ErrorCode> {
+    match unqualified_address.from_base58_check() {
+        Ok(vk) => {
+            if vk.len() != VERKEY_LEN {
+                return Err(ErrorCode::CommonInvalidStructure)
+            } else {
+                return Ok(vk.to_base58());
+            }
         },
         Err(_) => return Err(ErrorCode::CommonInvalidStructure)
     }

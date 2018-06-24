@@ -2,7 +2,7 @@
 
 use indy::ErrorCode;
 use libc::c_char;
-use logic::fees::Fees;
+use logic::xfer_payload::XferPayload;
 use logic::input::{InputConfig, Inputs};
 use logic::output::{OutputConfig, Outputs};
 use serde_json;
@@ -106,8 +106,8 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
     return Ok(serialized_request_with_fees);
 } 
 
-fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<Fees, ErrorCode> {
-    let fees = Fees::new(inputs, outputs);
+fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<XferPayload, ErrorCode> {
+    let fees = XferPayload::new(inputs, outputs);
     let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle)?;
     debug!("Signed fees >>> {:?}", signed_fees);
 
