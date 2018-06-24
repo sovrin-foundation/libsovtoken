@@ -63,11 +63,13 @@ pub fn unqualified_address_from_address(fq_address: String) -> Result<String, Er
     ```
 */
 pub fn unqualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> {
-    let address = verkey.from_base58()
-        .or(Err(ErrorCode::CommonInvalidStructure))?
-        .to_base58_check();
+    let vk_bytes = verkey.from_base58()
+        .or(Err(ErrorCode::CommonInvalidStructure))?;
 
-    return Ok(address)
+    if vk_bytes.len() != VERKEY_LEN {
+        return Err(ErrorCode::CommonInvalidStructure);
+    }
+    Ok(vk_bytes.to_base58_check())
 }
 
 /**
@@ -100,6 +102,8 @@ pub fn qualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> 
     assert_eq!(verkey, String::from("5ZTeJT5ykaWmZErwkM6qdF3RYN7gVXRTmVn4QdpzZ7BJ"));
     ```
 */
+
+
 pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCode> {
     if !fully_qualified_address.starts_with(&PAYMENT_ADDRESS_QUALIFIER) {
         return Err(ErrorCode::CommonInvalidStructure);
@@ -150,13 +154,14 @@ fn strip_qualifier_from_address(address : &str) -> String {
 
 #[cfg(test)]
 pub mod address_tests {
-    use utils::random::{rand_string, rand_bytes};
+    use utils::random::rand_bytes;
 
     use super::*;
 
     fn validate_address_invalid_verkey_len(length: usize) {
         assert_ne!(length, VERKEY_LEN);
-        let verkey = rand_string(length);
+        let vk_bytes = rand_bytes(length);
+        let verkey = vk_bytes.to_base58();
         let invalid_address = qualified_address_from_verkey(&verkey);
         assert!(invalid_address.is_err())
     }
@@ -223,8 +228,7 @@ pub mod address_tests {
     #[test]
     fn test_qualified_address_invalid_length_verkey() {
         let vk_bytes = rand_bytes(VERKEY_LEN+1);
-        let verkey = vk_bytes.to_base58();
-        let address = qualified_address_from_verkey(&verkey).unwrap();
+        let address = vk_bytes.to_base58_check();
         let result = validate_address(&address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);

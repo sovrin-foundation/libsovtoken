@@ -5,14 +5,14 @@
  *  [`build_payment_req_handler`]: ../../../api/fn.build_payment_req_handler.html
  */
 use logic::request::Request;
-
+use utils::constants::txn_types::XFER_PUBLIC;
 use logic::fees::Fees;
 
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct PaymentRequest {
     #[serde(rename = "type")]
-    txn_type: &'static str,
+    txn_type: String,
     #[serde(flatten)]
     signed_inputs_outputs: Fees
 }
@@ -27,11 +27,11 @@ impl PaymentRequest {
      */
     pub fn new(signed_inputs_outputs: Fees, identifier: String) -> Request<PaymentRequest> {
         let fees = PaymentRequest {
-            txn_type: "10000",
+            txn_type: XFER_PUBLIC.to_string(),
             signed_inputs_outputs,
         };
 
-        return Request::new(fees, identifier);
+        return Request::new(fees, Some(identifier));
     }
 }
 
@@ -48,7 +48,7 @@ mod payment_request_test {
 
     fn initial_fees_request() -> Request<PaymentRequest> {
         let identifier: String = rand_string(21);
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
         let input = Input::new(String::from("dakjhe238yad"),30,Some(String::from("239asdkj3298uadkljasd98u234ijasdlkj")));
     
         let fees = Fees::new(vec![input], vec![output]);
@@ -73,8 +73,8 @@ mod payment_request_test {
     fn valid_request() {
         assert_fees_request(
             json!({
-                "type": "10000",
-                "outputs": [["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]],
+                "type": XFER_PUBLIC.to_string(),
+                "outputs": [["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]],
                 "inputs": [["dakjhe238yad", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]]
             }),
             |_fees_req| {}

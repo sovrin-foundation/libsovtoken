@@ -4,9 +4,9 @@
  *
  *  [`build_get_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
  */
+use logic::did::Did;
 use logic::request::Request;
-
-const GET_FEES : &str = "20001";
+use utils::constants::txn_types::GET_FEES;
 
 /**
  *  Json config to customize [`build_get_fees_txn_handler`]
@@ -20,11 +20,11 @@ pub struct GetFeesRequest {
 }
 
 impl GetFeesRequest {
-    pub fn new(identifier : String) -> Request<GetFeesRequest> {
+    pub fn new(identifier : Did) -> Request<GetFeesRequest> {
         let req = GetFeesRequest {
             txn_type: GET_FEES.to_string(),
         };
-        return Request::new(req, identifier);
+        return Request::new(req, Some(String::from(identifier)));
     }
 }
 
@@ -38,7 +38,8 @@ mod get_fees_config_test {
 
     fn initial_get_fee_request() -> Request<GetFeesRequest> {
         let identifier: String = rand_string(21);
-        return GetFeesRequest::new(identifier);
+        let did = Did::new(&identifier);
+        return GetFeesRequest::new(did);
     }
 
     fn assert_get_fee_request<F>(expected: serde_json::Value, f: F)
@@ -58,10 +59,11 @@ mod get_fees_config_test {
     #[test]
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
+        let did = Did::new(&identifier);
         let get_fees_config = GetFeesRequest {
             txn_type: GET_FEES.to_string()
         };
-        let request = GetFeesRequest::new(identifier);
+        let request = GetFeesRequest::new(did);
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }
 

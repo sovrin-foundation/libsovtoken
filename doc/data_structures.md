@@ -7,8 +7,14 @@ This document exists for multiple purposes:
 * [indy_create_payment_address](#method-indy_create_payment_address)
 * [indy_add_request_fees](#method-indy_add_request_fees)
 * [indy_parse_response_with_fees](#method-indy_parse_response_with_fees)
+* [indy_build_get_utxo_request](#method-build_get_utxo_request)
+* [indy_parse_get_utxo_response](#method-indy_parse_get_utxo_response)
 * [indy_build_payment_req](#method-indy_build_payment_req)
 * [indy_parse_payment_response](#method-indy_parse_payment_response)
+* [indy_build_mint_req](#method-indy_build_mint_req)
+* [indy_build_set_txn_fees_req](#method-indy_build_set_txn_fees_req)
+* [indy_build_get_txn_fees_req](#method-indy_build_get_txn_fees_req)
+* [indy_parse_get_txn_fees_response](#method-indy_parse_get_txn_fees_response)
 
 ## method: indy_create_payment_address
 This API call is handled by LibSovToken create_payment_address_handler
@@ -41,44 +47,38 @@ This API call is handled by LibSovToken add_request_fees_handler.
 {
     "inputs_json": [<str: txo_string>, ]
     // Each txo string is of the format: "
-    {"address": "pay:sov:<address>", "seqNo": <int>}"
+    "{"address": "pay:sov:<address>", "seqNo": <int>}"
 
 }
 ```
     outputs_json: The list of UTXO outputs as json array:
 ```
-{
-    "ver": <int>,   // this field is included to allow for future backward compatability
-    "outputs_json": [
-        {
-            "address" : <str>   // the payment address
-            "amount": <int>,    // the payment amount
-            "extra": <str>      // optional field
-        },
-    ]
-}
+[
+    {
+        "address" : <str>   // the payment address
+        "amount": <int>,    // the payment amount
+        "extra": <str>      // optional field
+    },
+]
+
 ```
 Example inputs_json:
 ```
 {
-    "ver": 1,
     "inputs_json": [
-        {"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2}
+        "{"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2}"
     ]
 }
 ```
 Example outputs_json:
 ```
-{
-    "ver": 1,
-    "outputs_json": [
-        {
-            "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-            "amount": 11,
-            "extra": ""
-        },
-    ]
-}
+[
+    {
+        "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+        "amount": 11,
+        "extra": ""
+    },
+]
 ```
 
 ### return:
@@ -144,7 +144,7 @@ This API call is handled by LibSovToken parse_response_with_fees_handler. *Note 
             "protocolVersion": <int>,
             "type": "1"
         },
-        "ver": <int>,
+        "ver": <str>,
         "txnMetadata":
         {
             "seqNo": <int>,
@@ -287,26 +287,25 @@ Example resp_with_fees_json:
 ### return:
     utxo_json - parsed utxo info as json:
 ```
-{
-    "ver": <int>,                    // this field is included to allow for future backward compatability
-    "utxo_json":
-        [{
-            "paymentAddress": <str>,// sovrin payment address: "pay:sov:<address><checksum>"
-            "txo": <str>,           // txo string: "{"address" : "pay:sov:<address>", "seqNo": <int>}"
-            "amount": <int>,        // amount of tokens in this input
-            "extra": <str>          // optional data from payment transaction
-        }]
+[
+    {
+        "paymentAddress": <str>,// sovrin payment address: "pay:sov:<address><checksum>"
+        "txo": <str>,           // txo string: "{"address" : "pay:sov:<address>", "seqNo": <int>}"
+        "amount": <int>,        // amount of tokens in this input
+        "extra": <str>          // optional data from payment transaction
+    }
+]
 ```
 Example utxo_json:
 ```
-    "ver": 1,
-    "utxo_json":
-        [{
-            "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-            "txo": {"address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "seqNo": 3},
-            "amount": 11,
-            "extra":
-        }]
+[
+    {
+        "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+        "txo": "{"address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "seqNo": 3}",
+        "amount": 11,
+        "extra":
+    }
+]
 ```
 
 
@@ -334,6 +333,7 @@ This API call is handled by LibSovToken build_get_utxo_request_handler
 ```
 Example get_utxo_txn_json:
 ```
+
 {
     "identifier": "2jyMWLv8NuxUV4yDc46mLQMn9WUUzeKURX3d2yQqgoLqEQC2sf",
     "operation":
@@ -363,6 +363,24 @@ This API call is handled by LibSovToken parse_get_utxo_response_handler *Note th
         "outputs": [
             ["<str: address>", <int: sequence number>, <int: amount>],
         ],
+        "state_proof":
+        {
+            "multi_signature":
+            {
+                "participants": [ <str>, ],
+                "signature": <str>
+                "value":
+                {
+                    "ledger_id": <int>,
+                    "pool_state_root_hash": <str>,
+                    "state_root_hash": <str>,
+                    "timestamp": <int>,
+                    "txn_root_hash": <str>
+                }
+            },
+            "proof_nodes": <str>,
+            "root_hash": <str>
+        }
     }
 }
 
@@ -371,17 +389,34 @@ Example resp_json from the ledger:
 ```
 {
     "op": "REPLY",
-    "protocolVersion": 1,
     "result":
     {
         "type": "10002",
-        "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
-        "identifier": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
-        "reqId": 23887,
-        "outputs": [
-            ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2, 10],
-            ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 3, 3]
+        "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+        "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+        "reqId": 15424,
+        "outputs":
+        [
+            ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1, 40]
         ],
+        "state_proof":
+        {
+            "multi_signature":
+            {
+                "participants": ["Gamma", "Alpha", "Delta"],
+                "signature": "RNUfcr74ekwBxsT7mxnT2RDFaRRYbfuhebnqQW9PsGkf1bsKC8m8DAqsFfMMLGgAy9CSWM8cyXRUdWLrKUywTajbySfy18oxxdg8ZZApGYHZtiuj6y9sbScAyMwWMmxrDErrj8DWVEVZbGMhPnSSUkmkC6SBnZtSDfdRDvHUMQVBRR",
+                "value":
+                {
+                    "ledger_id": 1001,
+                    "pool_state_root_hash": "9i3acxaDhCfx9jWXW2JZRoDWzRQEKo7bPBVN7VPE1Jhg",
+                    "state_root_hash": "8tJkWdp9wdz3bpb5s5hPDfrjWCQTPmsFKrSdoPmTTnea",
+                    "timestamp": 1529705683,
+                    "txn_root_hash": "67khbUNo8rySwEtW2SPSsyK4rmLCS7JAN4kYnppELajc"
+                }
+            },
+            "proof_nodes": "+I74ObM0Y3RLU1hCYnYyTXkzVEdHVWdURmpreHUxQTlKTTNTc2NkNUZ5ZFk0ZGt4bmZ3QTdxOjGEw4I0MPhRgICAgICAoKwYfN+WIsLFSOuMjp224HzlSFoSXhXc1+rE\\/vB8jh7MoF\\/sqT9NVI\\/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA",
+            "root_hash": "8tJkWdp9wdz3bpb5s5hPDfrjWCQTPmsFKrSdoPmTTnea"
+        }
     }
 }
 
@@ -391,35 +426,31 @@ Example resp_json from the ledger:
 ### return:
     utxo_json - parsed utxo info as json:
 ```
-{
-    "ver": <int>,                    // this field is included to allow for future backward compatability
-    "utxo_json":
-        [{
-            "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
-            "txo": <str>,           // txo string: "{"address": "pay:sov:<address>", "seqNo": <int>}"
-            "amount": <int>,        // amount of tokens in this input
-            "extra": <str>          // optional data from payment transaction
-        }]
+[
+    {
+        "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
+        "txo": <str>,           // txo string: "{"address": "pay:sov:<address>", "seqNo": <int>}"
+        "amount": <int>,        // amount of tokens in this input
+        "extra": <str>          // optional data from payment transaction
+    }
+]
 ```
 Example utxo_json:
 ```
+[
     {
-    "ver": 1,
-    "utxo_json":[
-        {
-            "paymentAddress": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
-            "txo": {"address": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 2},
-            "amount": 10,   // amount of tokens in this input
-            "extra":        // optional data from payment transaction
-        },
-        {
-            "paymentAddress": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es"
-            "txo": "{"address": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 3}",
-            "amount": 3,   // amount of tokens in this input
-            "extra":        // optional data from payment transaction
-        }
-    ]
-}
+        "paymentAddress": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+        "txo": "{"address": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 2}",
+        "amount": 10,   // amount of tokens in this input
+        "extra":        // optional data from payment transaction
+    },
+    {
+        "paymentAddress": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es"
+        "txo": "{"address": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 3}",
+        "amount": 3,   // amount of tokens in this input
+        "extra":        // optional data from payment transaction
+    }
+]
 ```
 
 ## method: indy_build_payment_req
@@ -429,60 +460,46 @@ This API call is handled by LibSovToken build_payment_req_handler. *Note this ha
     submitter_did : DID of request sender
     inputs_json: The list of UTXO inputs as json array:
 ```
-{
-    "ver": <int>,   // this field is included to allow for future backward compatability
-    "inputs_json":  // Each txo string is of the format: "{"address": "pay:sov:<address>", "seqNo": <int>}"
-        [<str: txo_string>, ]
-}
+    // Each txo string is of the format: "{"address": "pay:sov:<address>", "seqNo": <int>}"
+    [<str: txo_string>, ]
 ```
     outputs_json: The list of UTXO outputs as json array:
 ```
-{
-    "ver": <int>,   // this field is included to allow for future backward compatability
-    "outputs_json": [
-        {
-            "address": <str>   // full sovrin payment address: "pay:sov:<address><checksum>"
-            "amount": <int>,    // the payment amount
-            "extra": <str>      // optional field
-        },
-    ]
-}
+[
+    {
+        "address": <str>   // full sovrin payment address: "pay:sov:<address><checksum>"
+        "amount": <int>,    // the payment amount
+        "extra": <str>      // optional field
+    },
+]
 ```
 Example inputs_json:
 ```
-    {
-    "ver": 1,
-    "inputs_json":
-        [
-            "{"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2 }",
-            "{"address": "pay:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", "seqNo": 5 }",
-            "{"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo": 14 }",
-        ]
-    }
+[
+    "{"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2 }",
+    "{"address": "pay:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", "seqNo": 5 }",
+    "{"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo": 14 }",
+]
 ```
 Example outputs_json:
 ```
+[
     {
-    "ver": 1,
-    "outputs_json":
-        [
-            {
-                "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-                "amount": 11,
-                "extra": ""
-            },
-            {
-                "address": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
-                "amount": 19
-                "extra": ""
-            },
-            {
-                "address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
-                "amount": 9
-                "extra": ""
-            },
-        ]
-    }
+        "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+        "amount": 11,
+        "extra": ""
+    },
+    {
+        "address": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
+        "amount": 19
+        "extra": ""
+   },
+   {
+       "address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
+       "amount": 9
+       "extra": ""
+   },
+]
 ```
 
 ### return:
@@ -538,7 +555,7 @@ Example payment_req_json:
 ```
 
 ## method: indy_parse_payment_response
-This API call is handled by LibSovToken parse_payment_response_handler. 
+This API call is handled by LibSovToken parse_payment_response_handler.
 ### inputs:
     resp_json: This is an example of the JSON that will be returned from the ledger after submitting a payment request.
 
@@ -570,7 +587,7 @@ resp_json
             "protocolVersion": <int>,
             "type": "10001"
         },
-        "ver": <int>,
+        "ver": <str>,
         "reqSignature":
         {
             "type": <str: signature type>,
@@ -654,44 +671,37 @@ Example resp_json:
 ### return:
     utxo_json: parsed utxo info as json
 ```
-{
-    "ver": <int>,                    // this field is included to allow for future backward compatability
-    "utxo_json": [
-        {
-            "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
-            "txo": <str>,           // txo string: "{"address": "pay:sov:<address>", "seqNo": <int>}"
-            "amount": <int>,        // amount of tokens in this input
-            "extra": <str>          // optional data from payment transaction
-        },
-    ]
-}
-
+[
+    {
+        "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
+        "txo": <str>,           // txo string: "{"address": "pay:sov:<address>", "seqNo": <int>}"
+        "amount": <int>,        // amount of tokens in this input
+        "extra": <str>          // optional data from payment transaction
+    },
+]
 ```
 Example utxo_json:
 ```
+[
     {
-        "ver" : 1,
-        "utxo_json": [
-            {
-                "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-                "txo": {"address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "seqNo" : 4},
-                "amount": 11,
-                "extra": ""
-            },
-            {
-                "paymentAddress": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
-                "txo": {"address": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", "seqNo" : 4},
-                "amount": 19,
-                "extra": ""
-            },
-            {
-                "paymentAddress": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
-                "txo": {"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo" : 4},
-                "amount": 9,
-                "extra": ""
-            }
-        ]
+        "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+        "txo": "{"address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "seqNo" : 4}",
+        "amount": 11,
+        "extra": ""
+    },
+    {
+        "paymentAddress": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
+        "txo": "{"address": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", "seqNo" : 4}",
+        "amount": 19,
+        "extra": ""
+    },
+    {
+        "paymentAddress": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
+        "txo": "{"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo" : 4}",
+        "amount": 9,
+        "extra": ""
     }
+]
 ```
 
 
@@ -703,16 +713,28 @@ This API call is handled by LibSovToken build_mint_txn_handlerr
     submitter_did : DID of request sender
     outputs_json: The list of UTXO outputs as json array:
 ```
-    [
-        [<str: output payment address>, <int: amount to mint>],
-    ]
+[
+    {
+    "paymentAddress": <str>, // payment address used as output
+    "amount": <int>, // amount of tokens to transfer to this payment address
+    "extra": <str>, // optional data
+    },
+]
 ```
 Example outputs_json:
 ```
-    [
-        ["sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC", 60],
-        ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 40]
-    ]
+[
+    {
+        "paymentAddress": "sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC",
+        "amount": 60,
+        "extra": ""
+    },
+    {
+        "paymentAddress": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+        "amount": 40,
+        "extra": ""
+    }
+]
 ```
 
 ### return:
@@ -727,9 +749,6 @@ Example outputs_json:
         "outputs": [
             [<str: output payment address>, <int: amount to mint>],
         ]
-    },
-    "signatures" {
-        <str: Trustee DID>: <str: Trustee Signature over operation>,
     }
 }
 ```
@@ -744,12 +763,6 @@ Example mint_req_json:
             ["sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC", 60],
             ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 40]
         ]
-    },
-    "signatures": {
-        "E7QRhdcnhAwA6E46k9EtZo": "j7kFGUmdmCjfuDFxotwKUZTCZ6veExaZTsqwxnTi2R6EsabUFQPR2VaAhaCKpR6bqHns2d2LUqG4czAkb1fNab3",
-        "CA4bVFDU4GLbX8xZju811o": "2KmN6kGKFCb9gDiCMvC6P2uXdFC95dHXsY2BYnetiasuq837zRiyVvLDyR8ud2dzXtaKvxFw7Jb6YWEzm4JWXnDS",
-        "B8fV7naUqLATYocqu7yZ8W": "4AwJ7pBJXUBeCDXQ7tveFCd96fhYhXUysLWYc6TWp9MK2ovCMgCienpZwkMsLX3p6u5pd2oHN3WuLhbJtU6BEcr2",
-        "M9BJDuS24bqbJNvBRsoGg3": "5j2DYSL8aa442pAKaaFZAhkUCdYX6UgioaLqGLXShMubgEX1EZhAmuPTnkgP7K36hRPXjTjSSYaWBJHQH48qqv55"
     }
 }
 ```
@@ -788,9 +801,6 @@ Example fees_json:
             <str: txnType>: <int: amount>,
         }
     },
-    "signatures": {
-        <str: Trustee DID>: <str: Trustee Signature over operation>,
-    }
 }
 ```
 
@@ -805,12 +815,6 @@ Example set_txn_fees_json:
             "1": 4,
             "10001": 8
         }
-    },
-    "signatures": {
-        "CA4bVFDU4GLbX8xZju811o": "67p5SSwPAKg26WJGCNWr5vHVA5U9eiWfntLjViurm4z57qnUU9Hbo3K8SZT3Q6NKFPk2RC3BBBPhcggFjkFuwL69",
-        "B8fV7naUqLATYocqu7yZ8W": "dydGPoozPnbKRKVkSwidYNCrDN6FtswGoS9roMRaALtjDC49q1DZGSKKUyoLbd1jcn3sVEpCk9rZFpEMMCMGNMF",
-        "E7QRhdcnhAwA6E46k9EtZo": "2D2TFByP4b9pj9uzibSwAPCVchgRwFanAk82k1S25XaXHit7sLbwdyPxEN1AzkQU3qUNBx1ndr69La4QuAU6K1tx",
-        "M9BJDuS24bqbJNvBRsoGg3": "5Mn8D8JBSg7pA3dpRsC2e7Zi1XskMkrurJaShF3ziFv4tM3s32dvrhe9WKz59wGRKQPGeRP1NAngZuBEGdBVgC9E"
     }
 }
 ```
@@ -866,6 +870,7 @@ This API call is handled by LibSovToken parse_get_txn_fees_response_handler. *No
             <str: txnType>: <int: amount>,
         },
         "state_proof": {
+            "multi-signature": <str>// the signature of the state proof
             "rootHash": <str>,      // the root hash of the transaction
             "proof_nodes": <str>,   // the hash of each node in the path
         }
@@ -877,18 +882,22 @@ Example resp_json:
 ```
 {
     "op": "REPLY",
-    "result": {
+    "result":
+    {
         "identifier": "6ouriXMZkLeHsuXrN1X1fd",
-        "reqId": 47660,
+        "reqId": 10378,
         "type": "20001",
-        "fees": {
-            "10001": 8,
-            "1": 4
+        "fees":
+        {
+            "1": 4,
+            "10001": 8
         },
-        "state_proof": {
-            "root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms",
-            "proof_nodes": "29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="
-        }
+        "state_proof":
+        {
+            "multi_signature": "9wdz3msFKrSdoPmTTneabpb5s5hPDfrjWCQTP8tJkWdp",
+            "proof_nodes": "29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ==",
+            "root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms"
+        },
     }
 }
 ```

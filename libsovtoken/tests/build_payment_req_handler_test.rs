@@ -13,6 +13,7 @@ use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::logic::address;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
@@ -178,7 +179,7 @@ fn success_signed_request() {
     });
 
     let expected_operation = json!({
-        "type": "10000",
+        "type": XFER_PUBLIC.to_string(),
         "inputs": [
             [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
             [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
@@ -256,7 +257,7 @@ fn success_signed_request_from_libindy() {
     });
 
     let expected_operation = json!({
-        "type": "10000",
+        "type": XFER_PUBLIC.to_string(),
         "inputs": [
             [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
             [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
