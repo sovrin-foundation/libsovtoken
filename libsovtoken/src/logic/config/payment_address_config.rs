@@ -4,10 +4,8 @@
 #![warn(unused_imports)]
 #[allow(unused_imports)]
 
-use std::ffi::CString;
-
 use serde_json;
-
+use std::ffi::CString;
 use utils::ffi_support::cstring_from_str;
 use utils::json_conversion::JsonSerialize;
 
