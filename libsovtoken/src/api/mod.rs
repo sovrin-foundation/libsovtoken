@@ -409,7 +409,8 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 
     let identifier = payload_signed.inputs[0].address.clone();
 
-    let payment_request = PaymentRequest::new(payload_signed, identifier);
+    let payment_request = PaymentRequest::new(payload_signed)
+        .as_request(identifier);
 
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
