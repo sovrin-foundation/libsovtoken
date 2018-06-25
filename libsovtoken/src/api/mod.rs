@@ -11,26 +11,24 @@ use indy::payments::Payment;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
-use logic::did::Did;
-use logic::xfer_payload::XferPayload;
-use logic::indy_sdk_api::crypto_api::CryptoSdk;
-use logic::minting;
-use logic::payments::{CreatePaymentHandler};
-use logic::set_fees;
-
 use logic::config::{
     payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
-
+use logic::did::Did;
+use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::minting;
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::parse_fees_from_get_txn_fees_response
 };
+use logic::payments::{CreatePaymentHandler};
+use logic::set_fees;
+use logic::xfer_payload::XferPayload;
 
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
