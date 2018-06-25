@@ -1,9 +1,7 @@
 /*!
-    Provides structures for the [`build_fees_txn_handler`].
+    Provides structures for the [`build_set_txn_fees_handler`].
 
-    [`build_fees_txn_handler`]: sovtoken::logic::api::build_fees_txn_handler
-
-    TODO: Links need to be updated so they actually work.
+    [`build_set_txn_fees_handler`]: ../../../api/fn.build_set_txn_fees_handler.html
  */
 
 use logic::request::Request;
@@ -28,9 +26,27 @@ use utils::constants::txn_types::SET_FEES;
 pub type SetFeesMap = HashMap<String, u64>;
 
 /**
- *  Struct for [`build_fees_txn_handler`].
- *
- *  [`build_fees_txn_handler`]: sovtoken::logic::api::build_fees_txn_handler
+    Struct for [`build_set_txn_fees_handler`] request.
+
+    Can build a Request<SetFees> which can be serialized into the request json.
+
+    ```
+        use std::collections::HashMap;
+        use sovtoken::utils::constants::txn_types;
+        use sovtoken::logic::config::set_fees_config::{
+            SetFees,
+            SetFeesError,
+        };
+
+        let mut fees = HashMap::new();
+        fees.insert(String::from(txn_types::XFER_PUBLIC), 10);
+        fees.insert(String::from("15"), 3);
+        let set_fees = SetFees::new(fees).validate().unwrap();
+        let set_fees_request = set_fees.as_request();
+        let json_pointer = set_fees_request.serialize_to_pointer().unwrap();
+    ```
+
+    [`build_set_txn_fees_handler`]: ../../../api/fn.build_set_txn_fees_handler.html
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct SetFees {
@@ -42,7 +58,9 @@ pub struct SetFees {
 impl SetFees {
 
     /**
-        Creates a new [`SetFees`] struct.
+        Create a new [`SetFees`] struct.
+
+        [`SetFees`]: ./struct.SetFees.html
     */
     pub fn new(fees: SetFeesMap) -> SetFees {
         return SetFees {
@@ -53,19 +71,77 @@ impl SetFees {
 
 
     /**
-        Transforms the [`SetFees`] to a [`Request`] struct.
+        Transform `self` to a [`Request`] struct.
 
-        [`Request`]: sovtoken::logic::request::Request
+        [`Request`]: ../../request/struct.Request.html
     */
     pub fn as_request(self) -> Request<SetFees> {
         return Request::new(self, None);
     }
 
     /**
-        Validates a [`SetFees`].
+        Validate `self.fees`.
 
-        Checks the [`SetFees.map`] is not empty and the keys are string
+        Checks `self.fees` is not empty and the keys are string
         integers.
+
+        ## Examples
+
+        #### Empty Fees
+        Returns a [`SetFeesError::Empty`].
+        ```
+            use std::collections::HashMap;
+            use sovtoken::logic::config::set_fees_config::{
+                SetFees,
+                SetFeesError,
+            };
+
+            let fees = HashMap::new();
+            let set_fees = SetFees::new(fees);
+            let validated = set_fees.validate();
+
+            assert_eq!(SetFeesError::Empty, validated.unwrap_err());
+        ```
+
+        #### Fees with non-string-integer keys
+        Returns a [`SetFeesError::KeyNotInteger`].
+        ```
+            use std::collections::HashMap;
+            use sovtoken::logic::config::set_fees_config::{
+                SetFees,
+                SetFeesError,
+            };
+
+            let mut fees = HashMap::new();
+            // Key should be "10001"
+            let key = String::from("XFER_PUBLIC");
+            fees.insert(key.clone(), 10);
+            let set_fees = SetFees::new(fees);
+            let validated = set_fees.validate();
+
+            assert_eq!(SetFeesError::KeyNotInteger(key), validated.unwrap_err())
+        ```
+
+        #### Valid Fees
+        ```
+            use std::collections::HashMap;
+            use sovtoken::utils::constants::txn_types;
+            use sovtoken::logic::config::set_fees_config::{
+                SetFees,
+                SetFeesError,
+            };
+
+            let mut fees = HashMap::new();
+            fees.insert(String::from(txn_types::XFER_PUBLIC), 10);
+            fees.insert(String::from("15"), 3);
+            let set_fees = SetFees::new(fees);
+            let validated = set_fees.validate();
+
+            assert!(validated.is_ok());
+        ```
+
+        [`SetFeesError::Empty`]: ./enum.SetFeesError.html#variant.Empty
+        [`SetFeesError::KeyNotInteger`]: ./enum.SetFeesError.html#variant.KeyNotInteger
     */
     pub fn validate(self) -> Result<Self, SetFeesError> {
         if self.fees.is_empty() {
@@ -94,7 +170,7 @@ impl SetFees {
     - `SetFeesError::Empty`
     - `SetFeesError::KeyNotInteger(&str)`
 
-    [`SetFees::validate`]: SetFees::validate
+    [`SetFees::validate`]: ./struct.SetFees.html#method.validate
 */
 #[derive(Debug, PartialEq, Eq)]
 pub enum SetFeesError {
