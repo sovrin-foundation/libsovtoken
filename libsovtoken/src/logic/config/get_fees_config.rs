@@ -20,11 +20,14 @@ pub struct GetFeesRequest {
 }
 
 impl GetFeesRequest {
-    pub fn new(identifier : Did) -> Request<GetFeesRequest> {
-        let req = GetFeesRequest {
+    pub fn new() -> GetFeesRequest {
+        return GetFeesRequest {
             txn_type: GET_FEES.to_string(),
         };
-        return Request::new(req, Some(String::from(identifier)));
+    }
+
+    pub fn as_request(self, identifier: Did) -> Request<GetFeesRequest> {
+        return Request::new(self, Some(String::from(identifier)));
     }
 }
 
@@ -39,7 +42,7 @@ mod get_fees_config_test {
     fn initial_get_fee_request() -> Request<GetFeesRequest> {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        return GetFeesRequest::new(did);
+        return GetFeesRequest::new().as_request(did);
     }
 
     fn assert_get_fee_request<F>(expected: serde_json::Value, f: F)
@@ -63,7 +66,7 @@ mod get_fees_config_test {
         let get_fees_config = GetFeesRequest {
             txn_type: GET_FEES.to_string()
         };
-        let request = GetFeesRequest::new(did);
+        let request = GetFeesRequest::new().as_request(did);
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }
 
