@@ -1,13 +1,13 @@
 use api::{JsonCallback, JsonCallbackUnwrapped};
 use indy::ErrorCode;
 use libc::c_char;
-use logic::config::set_fees_config::SetFeesConfig;
+use logic::config::set_fees_config::{SetFees, SetFeesMap};
 use logic::did::Did;
 use serde_json;
 use utils::ffi_support::string_from_char_ptr;
 
 
-type DeserializedArguments<'a> = (Did<'a>, SetFeesConfig, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Did<'a>, SetFees, JsonCallbackUnwrapped);
 
 pub fn deserialize_inputs<'a>(
     did: *const c_char,
@@ -24,10 +24,14 @@ pub fn deserialize_inputs<'a>(
     let set_fees_json = string_from_char_ptr(fees_json)
         .ok_or(ErrorCode::CommonInvalidStructure)?;
 
-    let set_fees_config: SetFeesConfig = serde_json::from_str(&set_fees_json)
+    let set_fees_map: SetFeesMap = serde_json::from_str(&set_fees_json)
         .or(Err(ErrorCode::CommonInvalidStructure))?;
 
-    return Ok((did, set_fees_config, cb));
+    let set_fees = SetFees::new(set_fees_map)
+        .validate()
+        .or(Err(ErrorCode::CommonInvalidStructure))?;
+
+    return Ok((did, set_fees, cb));
 }
 
 #[cfg(test)]
@@ -36,7 +40,6 @@ mod test_deserialize_inputs {
     use std::ptr;
     use utils::default;
     use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
-
 
     pub fn call_deserialize_inputs<'a>(
         did: Option<*const c_char>,
@@ -76,13 +79,39 @@ mod test_deserialize_inputs {
     }
 
     #[test]
-    fn deserialize_invalid_set_fees() {
-        // Needs to be enclosed in a fees field
-        let invalid_set_fees = c_pointer_from_string(json!({
+    fn deserialize_invalid_fees_encapsulated() {
+        let invalid_fees = c_pointer_from_string(json!({
+            "fees" : {
+                "4": 2,
+                "20000": 5,
+            }
+        }).to_string());
+
+        let result = call_deserialize_inputs(None, Some(invalid_fees), None);
+
+        assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
+    }
+
+    #[test]
+    fn deserialize_invalid_fees_string_values() {
+        let invalid_fees = c_pointer_from_string(json!({
             "4": "2",
             "20000": "5",
         }).to_string());
-        let result = call_deserialize_inputs(None, Some(invalid_set_fees), None);
+
+        let result = call_deserialize_inputs(None, Some(invalid_fees), None);
+
+        assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
+    }
+
+    #[test]
+    fn deserialize_invalid_fees_key_not_string_int() {
+        let invalid_fees = c_pointer_from_string(json!({
+            "XFER_PUBLIC": 5,
+            "3": 1,
+        }).to_string());
+
+        let result = call_deserialize_inputs(None, Some(invalid_fees), None);
 
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }

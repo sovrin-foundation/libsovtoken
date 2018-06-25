@@ -31,7 +31,7 @@ impl PaymentRequest {
             signed_inputs_outputs,
         };
 
-        return Request::new(fees, identifier);
+        return Request::new(fees, Some(identifier));
     }
 }
 

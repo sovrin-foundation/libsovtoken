@@ -5,7 +5,7 @@
  *  [`build_mint_txn_handler`]: ../../../api/fn.build_mint_txn_handler.html
  */
 
-
+use logic::did::Did;
 use logic::request::Request;
 use logic::output::{Output, OutputConfig};
 use utils::constants::txn_types::MINT_PUBLIC;
@@ -27,20 +27,20 @@ impl MintRequest {
     /**
      * Creates a new `MintRequest` with `outputs`
      */
-    pub fn new(outputs: Vec<Output>, identifier : String ) -> Request<MintRequest> {
+    pub fn new(outputs: Vec<Output>, identifier : Did ) -> Request<MintRequest> {
         let mint = MintRequest {
             txn_type: MINT_PUBLIC.to_string(),
             outputs: outputs,
         };
 
-        return Request::new(mint, identifier);
+        return Request::new(mint, Some(String::from(identifier)));
     }
 
     /**
      * Creates a new `MintRequest` from an [`OutputConfig`].
      * [`OutputConfig`]: ../general/struct.OutputConfig.html
      */
-    pub fn from_config(mint_config: OutputConfig, identifier : String) -> Request<MintRequest> {
+    pub fn from_config(mint_config: OutputConfig, identifier : Did) -> Request<MintRequest> {
         return MintRequest::new(mint_config.outputs, identifier);
     }
 }
@@ -72,9 +72,10 @@ mod mint_request_test {
 
     fn initial_mint_request() -> Request<MintRequest> {
         let identifier: String = rand_string(21);
+        let did = Did::new(&identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
         let outputs = vec![output];
-        return MintRequest::new(outputs, identifier);
+        return MintRequest::new(outputs, did);
     }
 
     fn assert_mint_request<F>(expected: serde_json::Value, f: F)
@@ -94,13 +95,14 @@ mod mint_request_test {
     #[test]
     fn create_request_with_mint_config() {
         let identifier: String = rand_string(21);
+        let did = Did::new(&identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
         let outputs = vec![output];
         let mint_config = OutputConfig {
             ver: 1,
             outputs: outputs.clone()
         };
-        let request = MintRequest::from_config(mint_config, identifier);
+        let request = MintRequest::from_config(mint_config, did);
         assert_eq!(request.operation.outputs, outputs);
     }
 

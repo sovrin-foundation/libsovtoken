@@ -59,6 +59,7 @@ pub struct ParseGetTxnFeesResult {
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct StateProof {
+    pub multi_signature : String,
     pub root_hash : String,
     pub proof_nodes : String
 }
@@ -86,6 +87,7 @@ mod parse_fees_responses_test {
                     "type": "20001",
                     "fees": {"1":1,"100":1,"101":3,"102":50,"10000":5,"10001":10},
                     "state_proof": {
+                            "multi_signature": "9wdz3msFKrSdoPmTTneabpb5s5hPDfrjWCQTP8tJkWdp",
                             "root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms",
                             "proof_nodes": "29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="
                     }
@@ -119,6 +121,7 @@ mod parse_fees_responses_test {
                     "type": "20001",
                     "fees": INVALID_JSON,
                     "state_proof": {
+                            "multi_signature": "9wdz3msFKrSdoPmTTneabpb5s5hPDfrjWCQTP8tJkWdp",
                             "root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms",
                             "proof_nodes": "29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="
                     }
@@ -135,5 +138,3 @@ mod parse_fees_responses_test {
         assert!(json_error_bool);
     }
 }
-
-
