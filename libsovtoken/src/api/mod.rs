@@ -15,7 +15,6 @@ use logic::did::Did;
 use logic::fees::Fees;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
-use logic::parsers::parse_payment_response::parse_payment_reply;
 use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 
@@ -28,7 +27,7 @@ use logic::config::{
 
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
-    parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
+    parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::parse_fees_from_get_txn_fees_response
 };
@@ -466,7 +465,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParsePaymentReply::from_response
-    let reply: ParsePaymentReply = match parse_payment_reply::from_response(response) {
+    let reply: ParsePaymentReply = match from_response(response) {
         Ok(rep) => rep,
         Err(ec) => return ec as i32,
     };
