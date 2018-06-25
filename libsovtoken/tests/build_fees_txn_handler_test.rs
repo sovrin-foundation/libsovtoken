@@ -8,6 +8,9 @@ extern crate libc;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
+#[macro_use]
+extern crate serde_json;
+
 use indy::ErrorCode;
 
 use libc::c_char;
@@ -51,3 +54,5 @@ fn errors_with_invalid_fees_json() {
     let return_error = sovtoken::api::build_set_txn_fees_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), fees_str_ptr, CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Valid JSON for 'build_fees_txn_handler'");
 }
+
+// TODO: This should have tests for valid set and get fees

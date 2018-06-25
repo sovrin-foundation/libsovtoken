@@ -69,7 +69,7 @@ fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
 
     let addresses = payment_addresses
         .iter()
-        .map(|address| address::unqualified_address_from_address(address.clone()).unwrap())
+        .map(|address| address::unqualified_address_from_address(&address).unwrap())
         .collect();
 
     return (payment_addresses, addresses);
@@ -157,8 +157,7 @@ fn success_signed_request() {
             },
             {
                 "address": payment_addresses[1],
-                "seqNo": 1,
-                "extra": "extra data",
+                "seqNo": 1
             }
         ]
     });
@@ -181,10 +180,12 @@ fn success_signed_request() {
     let expected_operation = json!({
         "type": XFER_PUBLIC.to_string(),
         "inputs": [
-            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
-            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
+            [addresses[0], 1],
+            [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
+        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
+                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
     });
 
     let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
@@ -235,8 +236,7 @@ fn success_signed_request_from_libindy() {
             },
             {
                 "address": payment_addresses[1],
-                "seqNo": 1,
-                "extra": "extra data",
+                "seqNo": 1
             }
         ]
     });
@@ -259,10 +259,12 @@ fn success_signed_request_from_libindy() {
     let expected_operation = json!({
         "type": XFER_PUBLIC.to_string(),
         "inputs": [
-            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
-            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
+            [addresses[0], 1],
+            [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
+        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
+                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
     });
 
     let (sender, receiver) = channel();

@@ -8,10 +8,13 @@ use logic::output::{OutputConfig, Outputs};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use utils::constants::txn_types::XFER_PUBLIC;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, SerdeMap, AddRequestFeesCb);
+
+pub static FEES_KEY_IN_REQ_RESP: &'static str = "fees";
 
 /**
  * Deserializes arguments of [`add_request_fees_handler`]
@@ -64,7 +67,7 @@ pub fn validate_type_not_transfer(request_json_map: &SerdeMap) -> Result<(), Err
         .ok_or(ErrorCode::CommonInvalidStructure)?;
     debug!("Request transaction type was >>> {}", transaction_type);
 
-    if transaction_type == "10000" {
+    if transaction_type == XFER_PUBLIC {
         return Err(ErrorCode::CommonInvalidStructure);
     } else {
         return Ok(());
@@ -89,10 +92,9 @@ pub fn add_fees_to_request_and_serialize(
 */
 
 fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, mut request_json_map: SerdeMap) -> Result<SerdeMap, ErrorCode> {
-    let key_fees = String::from("fees");
     let fees = signed_fees(wallet_handle, inputs, outputs)?;
 
-    request_json_map.insert(key_fees, json!(fees));
+    request_json_map.insert(FEES_KEY_IN_REQ_RESP.to_string(), json!(fees));
     trace!("Added fees to request_json.");
 
     return Ok(request_json_map);
@@ -227,6 +229,7 @@ mod test_validate_type_not_transfer {
     use super::validate_type_not_transfer;
     use super::test_deserialize_inputs::call_deserialize_inputs;
     use utils::ffi_support::c_pointer_from_string;
+    use utils::constants::txn_types::XFER_PUBLIC;
 
     fn deserialize_request_json(json: serde_json::value::Value) -> serde_json::Map<String, serde_json::value::Value> {
         let request_c_pointer = c_pointer_from_string(json.to_string());
@@ -258,7 +261,7 @@ mod test_validate_type_not_transfer {
     fn txn_type_is_transfer() {
         let request = deserialize_request_json(json!({
             "operation": {
-                "type": "10000",
+                "type": XFER_PUBLIC.to_string(),
             }
         }));
         let error = validate_type_not_transfer(&request).unwrap_err();
@@ -267,9 +270,11 @@ mod test_validate_type_not_transfer {
 
     #[test]
     fn txn_type_not_transfer() {
+        let typ = "30000";
+        assert_ne!(typ, XFER_PUBLIC);
         let request = deserialize_request_json(json!({
             "operation": {
-                "type": "10001"
+                "type": typ
             },
             "extra_field": "Doesn't check it is known request."
         }));

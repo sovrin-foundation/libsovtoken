@@ -64,11 +64,10 @@ pub struct InputConfig {
     use sovtoken::utils::json_conversion::JsonSerialize;
     use sovtoken::logic::input::Input;
     let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
-    let signature = String::from("239asdkj3298uadkljasd98u234ijasdlkj");
-    let input = Input::new(address, 30, Some(signature));
+    let input = Input::new(address, 30);
 
     let json = Input::to_json(&input).unwrap();
-    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30,"239asdkj3298uadkljasd98u234ijasdlkj"]"#);
+    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30]"#);
     ```
 
 */
@@ -216,7 +215,6 @@ mod input_tests {
         let json = json!({
             "seqNo": 30,
         });
-        let input = valid_input();
         assert_invalid_deserialize(json, "missing field `address`");
     }
 

@@ -30,14 +30,14 @@ use std::sync;
  *  # fn main() {
  *      use sovtoken::logic::input::Input;
  *      use sovtoken::logic::output::Output;
- *      use sovtoken::logic::fees::Fees;
+ *      use sovtoken::logic::xfer_payload::XferPayload;
  *      use sovtoken::logic::indy_sdk_api::crypto_api::CryptoSdk;
  *
  *      // Need an actual wallet_handle
  *      let wallet_handle = 1;
  *      let address_input = String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121");
  *      let address_output = String::from("pay:sov:FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp");
- *      let inputs = vec![Input::new(address_input, 1, None)];
+ *      let inputs = vec![Input::new(address_input, 1)];
  *      let outputs = vec![Output::new(address_output, 20, None)];
  *
  *      let payload = XferPayload::new(inputs, outputs);
@@ -74,14 +74,12 @@ impl XferPayload {
         }
 
         for output in &mut self.outputs {
-            let address = address::unqualified_address_from_address(output.address.clone())?;
-            output.address = address;
+            output.address = address::unqualified_address_from_address(&output.address)?;
         }
         trace!("Indicator stripped from outputs");
 
         for input in &mut self.inputs {
-            let address = address::unqualified_address_from_address(input.address.clone())?;
-            input.address = address;
+            input.address = address::unqualified_address_from_address(&input.address)?;
         }
 
         trace!("Indicator stripped from inputs");
@@ -148,14 +146,10 @@ trait InputSigner<A: CryptoAPI> {
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
 
-//        let input = input.to_owned();
         return Ok(Box::new(move |func: Box<F>| {
-//            let input_clone = input.clone();
             // this needs to be a mutable function
             let ca = move |signature: Result<String, ErrorCode>| {
                 debug!("Received encoded signature >>> {:?}", signature);
-                /*let signed_input = signature.map(|sig| input_clone.clone().sign_with(sig));
-                func(signed_input);*/
                 func(signature)
             };
 
