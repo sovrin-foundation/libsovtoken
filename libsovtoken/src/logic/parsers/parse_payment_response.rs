@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use indy::ErrorCode;
 use logic::address::append_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
@@ -9,6 +10,7 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature,
                              SignatureValues};
+use utils::json_conversion::JsonSerialize;
 
 /**
     for parse_payment_response_handler input resp_json
@@ -76,36 +78,34 @@ pub struct TransactionMetaData2 {
 /**
     for parse_payment_response_handler output utxo_json
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct ParsePaymentReply {
-    pub ver : i32,
-    pub utxo_json : Vec<UTXO>,
-}
+pub type ParsePaymentReply = Vec<UTXO>;
 
-impl ParsePaymentReply {
-    /**
-        Converts ParsePaymentReply (which should be input via indy-sdk) to ParsePaymentReply
-        please note:  use of this function moves ParsePaymentResponse and it cannot be used again
-        after this call
-    */
-    pub fn from_response(base : ParsePaymentResponse) -> ParsePaymentReply {
-        let mut utxos: Vec<UTXO> = vec![];
+/**
+    Converts ParsePaymentReply (which should be input via indy-sdk) to ParsePaymentReply
+    please note:  use of this function moves ParsePaymentResponse and it cannot be used again
+    after this call
+*/
+pub fn from_response(base : ParsePaymentResponse) -> Result<ParsePaymentReply, ErrorCode> {
+    let mut utxos: Vec<UTXO> = vec![];
 
-        for unspent_output in base.result.txn.data.outputs {
+    for unspent_output in base.result.txn.data.outputs {
 
-            let (address, amount) = unspent_output;
-            let qualified_address: String = append_qualifer_to_address(&address);
-            let txo: TXO = TXO { address: qualified_address.to_string(), seq_no: 1 };
-            let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
+        let (address, amount) = unspent_output;
+        let qualified_address: String = append_qualifer_to_address(&address);
+        let txo = match (TXO { address: qualified_address.to_string(), seq_no: 1 }).to_json() {
+            Ok(s) => s,
+            Err(err) => {
+                error!("JSON serialization error: {:?}", err);
+                return Err(ErrorCode::CommonInvalidState);
+            }
+        };
+        let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 
-            utxos.push(utxo);
-        }
-
-        let reply: ParsePaymentReply = ParsePaymentReply { ver : 1, utxo_json : utxos};
-        return reply;
+        utxos.push(utxo);
     }
-}
 
+    Ok(utxos)
+}
 
 #[cfg(test)]
 mod parse_payment_response_tests {
@@ -218,9 +218,9 @@ mod parse_payment_response_tests {
     fn success_response_json_to_reply_json() {
         let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
         let number_of_outputs: usize = response.result.txn.data.outputs.len();
-        let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+        let reply: ParsePaymentReply = from_response(response).unwrap();
 
-        assert_eq!(reply.utxo_json.len(), number_of_outputs);
+        assert_eq!(reply.len(), number_of_outputs);
 
     }
 
