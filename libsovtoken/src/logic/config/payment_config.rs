@@ -73,7 +73,7 @@ mod payment_request_test {
     fn valid_request() {
         assert_fees_request(
             json!({
-                "type": XFER_PUBLIC.to_string(),
+                "type": XFER_PUBLIC,
                 "outputs": [["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]],
                 "inputs": [["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm", 30]],
                 "signatures": ["239asdkj3298uadkljasd98u234ijasdlkj"]

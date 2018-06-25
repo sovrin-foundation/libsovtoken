@@ -178,7 +178,7 @@ fn success_signed_request() {
     });
 
     let expected_operation = json!({
-        "type": XFER_PUBLIC.to_string(),
+        "type": XFER_PUBLIC,
         "inputs": [
             [addresses[0], 1],
             [addresses[1], 1]
@@ -257,7 +257,7 @@ fn success_signed_request_from_libindy() {
     });
 
     let expected_operation = json!({
-        "type": XFER_PUBLIC.to_string(),
+        "type": XFER_PUBLIC,
         "inputs": [
             [addresses[0], 1],
             [addresses[1], 1]

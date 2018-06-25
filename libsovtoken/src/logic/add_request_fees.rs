@@ -261,7 +261,7 @@ mod test_validate_type_not_transfer {
     fn txn_type_is_transfer() {
         let request = deserialize_request_json(json!({
             "operation": {
-                "type": XFER_PUBLIC.to_string(),
+                "type": XFER_PUBLIC,
             }
         }));
         let error = validate_type_not_transfer(&request).unwrap_err();
