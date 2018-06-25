@@ -2,13 +2,53 @@
  *  Defines structure and implementation inputs and outputs and submitter did
  *  these are the structures for the [`build_payment_req_handler`]
  *
- *  [`build_payment_req_handler`]: ../../../api/fn.build_payment_req_handler.html
+ *  `build_payment_req_handler`]: ../../../api/fn.build_payment_req_handler.html
  */
+
 use logic::request::Request;
 use utils::constants::txn_types::XFER_PUBLIC;
 use logic::xfer_payload::XferPayload;
 
+/**
+    Struct for [`build_payment_req_handler`]
 
+    Can build a Request<PaymentRequest> which can be serialized into request json.
+
+    ```
+        use sovtoken::logic::config::payment_config::PaymentRequest;
+        use sovtoken::logic::indy_sdk_api::crypto_api::CryptoSdk;
+        use sovtoken::logic::input::Input;
+        use sovtoken::logic::output::Output;
+        use sovtoken::logic::xfer_payload::XferPayload;
+
+        sovtoken::api::sovtoken_init();
+
+        let wallet_handle = 1;
+        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
+        let address1 = String::from("pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC");
+        let address2 = String::from("pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy");
+        let address3 = String::from("pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs");
+
+        let inputs = vec![
+            Input::new(address1, 2),
+            Input::new(address2, 3)
+        ];
+
+        let outputs = vec![
+            Output::new(address3, 10, None)
+        ];
+
+        let transfer_data = XferPayload::new(inputs, outputs)
+            .sign(&CryptoSdk {}, wallet_handle)
+            .unwrap();
+
+        // let payment = PaymentRequest::new(transfer_data);
+        // let payment_request = payment.as_request(identifier);
+        // let json_pointer = payment_request.serialize_to_pointer();
+    ```
+
+     [`build_payment_req_handler`]: ../../../api/fn.build_payment_req_handler.html
+*/
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct PaymentRequest {
     #[serde(rename = "type")]
@@ -17,21 +57,29 @@ pub struct PaymentRequest {
     signed_inputs_outputs: XferPayload
 }
 
-/**
- * A struct that can be transformed into a Fees JSON object.
- */
+
 impl PaymentRequest {
     
     /**
-     * Creates a new `PaymentRequest` with `inputs` and `outputs`
-     */
-    pub fn new(signed_inputs_outputs: XferPayload, identifier: String) -> Request<PaymentRequest> {
-        let fees = PaymentRequest {
+        Create a new [`PaymentRequest`] with a signed [`XferPayload`].
+
+        [`PaymentRequest`]: ./struct.PaymentRequest.html
+        [`XferPayload`]: ../../xfer_payments/struct.XferPayload.html
+    */
+    pub fn new(signed_inputs_outputs: XferPayload ) -> PaymentRequest {
+        return PaymentRequest {
             txn_type: XFER_PUBLIC.to_string(),
             signed_inputs_outputs,
         };
+    }
 
-        return Request::new(fees, Some(identifier));
+    /**
+        Transforms `self` to a [`Request<PaymentRequest>`] struct.
+
+        [`Request<PaymentRequest>`]: ../../request/struct.Request.html
+    */
+    pub fn as_request(self, identifier: String) -> Request<PaymentRequest> {
+        return Request::new(self, Some(identifier));
     }
 }
 
@@ -52,7 +100,7 @@ mod payment_request_test {
     
         let mut payload = XferPayload::new(vec![input], vec![output]);
         payload.signatures = Some(vec![String::from("239asdkj3298uadkljasd98u234ijasdlkj")]);
-        return PaymentRequest::new(payload, identifier);
+        return PaymentRequest::new(payload).as_request(identifier);
     }
 
     fn assert_fees_request<F>(expected: serde_json::Value, f: F)
@@ -80,5 +128,35 @@ mod payment_request_test {
             }),
             |_fees_req| {}
         )
+    }
+
+    #[test]
+    fn test_blah() {
+        use sovtoken::logic::config::payment_config::PaymentRequest;
+        use sovtoken::logic::indy_sdk_api::crypto_api::CryptoSdk;
+        use sovtoken::logic::input::Input;
+        use sovtoken::logic::output::Output;
+        use sovtoken::logic::xfer_payload::XferPayload;
+
+        sovtoken::api::sovtoken_init();
+
+        let wallet_handle = 1;
+        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
+        let address1 = String::from("pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC");
+        let address2 = String::from("pay:sov:XuBhXW6gKcUAq6fmyKsdxxjOZEbLy66FEDkQwTPeoXBmTZKy");
+        let address3 = String::from("pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs");
+
+        let inputs = vec![
+            Input::new(address1, 2),
+            Input::new(address2, 3)
+        ];
+
+        let outputs = vec![
+            Output::new(address3, 10, None)
+        ];
+
+        let transfer_data = XferPayload::new(inputs, outputs)
+            .sign(&CryptoSdk {}, wallet_handle)
+            .unwrap();
     }
 }
