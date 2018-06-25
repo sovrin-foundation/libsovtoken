@@ -3,6 +3,7 @@
 #![allow(unused_imports)]
 
 use logic::parsers::common::{ResponseOperations, UTXO, TXO};
+use utils::json_conversion::JsonSerialize;
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -54,7 +55,7 @@ impl ParseGetUtxoReply {
 
             let (address, seq_no, amount) = unspent_output;
 
-            let txo: TXO = TXO { address, seq_no };
+            let txo = (TXO { address, seq_no }).to_json().unwrap();
             let utxo: UTXO = UTXO { payment_address: base.result.address.to_string(), txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);

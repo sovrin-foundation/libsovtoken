@@ -11,6 +11,7 @@ use logic::parsers::common::{ResponseOperations,
                              SignatureValues};
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
+use utils::json_conversion::JsonSerialize;
 
 /**
     for parse_response_with_fees_handler input resp_json
@@ -123,7 +124,7 @@ impl ParseResponseWithFeesReply {
             let qualified_address: String = append_qualifer_to_address(&output_address);
             let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
 
-            let txo: TXO = TXO { address: qualified_address.to_string(), seq_no };
+            let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_json().unwrap();
 
             let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 

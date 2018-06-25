@@ -15,6 +15,7 @@ use logic::did::Did;
 use logic::fees::Fees;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
+use logic::parsers::parse_payment_response::parse_payment_reply;
 use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 
@@ -462,7 +463,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParsePaymentReply::from_response
-    let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+    let reply: ParsePaymentReply = parse_payment_reply::from_response(response);
 
     let reply_str: String = match reply.to_json() {
         Ok(j) => j,
