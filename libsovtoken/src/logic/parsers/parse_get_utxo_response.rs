@@ -4,6 +4,7 @@
 
 use logic::parsers::common::{ResponseOperations, UTXO, TXO};
 use utils::json_conversion::JsonSerialize;
+use indy::ErrorCode;
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -48,21 +49,27 @@ impl ParseGetUtxoReply {
         please note:  use of this function moves ParseGetUtxoResponse and it cannot be used again
         after this call
     */
-    pub fn from_response(base : ParseGetUtxoResponse) -> ParseGetUtxoReply {
+    pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, ErrorCode> {
         let mut utxos: Vec<UTXO> = vec![];
 
         for unspent_output in base.result.outputs {
 
             let (address, seq_no, amount) = unspent_output;
 
-            let txo = (TXO { address, seq_no }).to_json().unwrap();
+            let txo = match (TXO { address, seq_no }).to_json() {
+                Ok(s) => s,
+                Err(err) => {
+                    error!("JSON serialization error: {:?}", err);
+                    return Err(ErrorCode::CommonInvalidState);
+                }
+            };
             let utxo: UTXO = UTXO { payment_address: base.result.address.to_string(), txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);
         }
 
         let reply: ParseGetUtxoReply = ParseGetUtxoReply { ver : 1, utxo_json : utxos};
-        return reply;
+        return Ok(reply);
     }
 }
 
@@ -117,7 +124,7 @@ mod parse_get_uto_responses_tests {
             result
         };
 
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response).unwrap();
 
         assert_eq!(outputs_len, reply.utxo_json.len());
 
@@ -145,7 +152,7 @@ mod parse_get_uto_responses_tests {
             result
         };
 
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response).unwrap();
 
         assert_eq!(outputs_len, reply.utxo_json.len());
     }
@@ -166,7 +173,7 @@ mod parse_get_uto_responses_tests {
     fn success_response_json_to_reply_json() {
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response).unwrap();
         let reply_json : String = reply.to_json().unwrap();
     }
 }
