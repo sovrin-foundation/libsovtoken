@@ -20,7 +20,7 @@ pub enum ResponseOperations {
 #[serde(rename_all = "camelCase")]
 pub struct UTXO {
     pub payment_address: String,
-    pub txo: TXO,
+    pub txo: String,
     pub amount: u32,
     pub extra: String,
 }

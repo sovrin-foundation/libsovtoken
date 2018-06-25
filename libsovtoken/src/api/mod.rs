@@ -27,7 +27,7 @@ use logic::config::{
 
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
-    parse_payment_response::{ParsePaymentResponse, ParsePaymentReply},
+    parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::parse_fees_from_get_txn_fees_response
 };
@@ -318,7 +318,10 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseResponseWithFeesReply::from_response
-    let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
+    let reply: ParseResponseWithFeesReply = match ParseResponseWithFeesReply::from_response(response) {
+        Ok(rep) => rep,
+        Err(ec) => return ec as i32,
+    };
 
     let reply_str: String = match reply.to_json() {
         Ok(j) => j,
@@ -460,7 +463,10 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParsePaymentReply::from_response
-    let reply: ParsePaymentReply = ParsePaymentReply::from_response(response);
+    let reply: ParsePaymentReply = match from_response(response) {
+        Ok(rep) => rep,
+        Err(ec) => return ec as i32,
+    };
 
     let reply_str: String = match reply.to_json() {
         Ok(j) => j,
@@ -563,7 +569,10 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseGetUtxoReply::from_response
-    let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response);
+    let reply: ParseGetUtxoReply = match ParseGetUtxoReply::from_response(response) {
+        Ok(reply) => reply,
+        Err(err) => return err as i32
+    };
 
     let reply_str: String = match reply.to_json() {
         Ok(j) => j,
