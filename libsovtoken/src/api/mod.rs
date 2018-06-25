@@ -12,7 +12,7 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
 use logic::did::Did;
-use logic::fees::Fees;
+use logic::xfer_payload::XferPayload;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::payments::{CreatePaymentHandler};
@@ -397,7 +397,6 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             cb: Option<extern fn(command_handle_: i32,
                                                                  err: i32,
                                                                  payment_req_json: *const c_char) -> i32>) -> i32 {
-
     let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -406,14 +405,13 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         }
     };
 
+    let payload = XferPayload::new(inputs, outputs);
+    let payload_signed = payload.sign(&CryptoSdk {}, wallet_handle).unwrap();
+    debug!("Signed payload >>> {:?}", payload_signed);
 
-    let fees = Fees::new(inputs, outputs);
-    let fees_signed = fees.sign(&CryptoSdk {}, wallet_handle).unwrap();
-    debug!("Signed fees >>> {:?}", fees_signed);
+    let identifier = payload_signed.inputs[0].address.clone();
 
-    let identifier = fees_signed.inputs[0].address.clone();
-
-    let payment_request = PaymentRequest::new(fees_signed, identifier);
+    let payment_request = PaymentRequest::new(payload_signed, identifier);
 
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 

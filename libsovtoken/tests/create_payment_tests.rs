@@ -118,7 +118,7 @@ fn successfully_creates_payment_address_with_no_seed() {
     let (err, payment_address) = receiver.recv_timeout(Duration::from_secs(TIMEOUT_SECONDS)).unwrap();
 
     debug!("******* got address of {}", payment_address);
-    let unqual_address = unqualified_address_from_address(payment_address).unwrap();
+    let unqual_address = unqualified_address_from_address(&payment_address).unwrap();
     assert_eq!(unqual_address.as_str().from_base58().unwrap().len(), 36);
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 }
@@ -148,7 +148,7 @@ fn success_callback_is_called() {
     let (err, payment_address) = receiver.recv_timeout(Duration::from_secs(TIMEOUT_SECONDS)).unwrap();
 
     debug!("******* got address of {}", payment_address);
-    let unqual_address = unqualified_address_from_address(payment_address).unwrap();
+    let unqual_address = unqualified_address_from_address(&payment_address).unwrap();
     assert_eq!(unqual_address.as_str().from_base58().unwrap().len(), 36, "callback did not receive valid payment address");
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 

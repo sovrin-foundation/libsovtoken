@@ -7,7 +7,7 @@ pub mod add_request_fees;
 pub mod address;
 pub mod build_payment;
 pub mod did;
-pub mod fees;
+pub mod xfer_payload;
 pub mod config;
 pub mod indy_sdk_api;
 pub mod input;
