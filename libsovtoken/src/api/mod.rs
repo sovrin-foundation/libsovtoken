@@ -782,6 +782,8 @@ pub extern "C" fn build_mint_txn_handler(
     return ErrorCode::Success as i32;
 }
 
+pub static PAYMENT_METHOD_NAME: &str = "sov";
+
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
 
@@ -798,7 +800,7 @@ pub extern fn sovtoken_init() -> i32 {
 
     debug!("sovtoken_init() started");
     let result = match Payment::register(
-        "sov",
+        PAYMENT_METHOD_NAME,
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,

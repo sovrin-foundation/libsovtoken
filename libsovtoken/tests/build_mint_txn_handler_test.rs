@@ -6,6 +6,8 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 extern crate serde_json;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate log;
 
 use indy::ErrorCode;
 
@@ -144,3 +146,54 @@ fn valid_output_json_from_libindy() {
     assert_eq!(mint_operation, &expected);
 }
 
+#[test]
+#[ignore]
+pub fn build_and_submit_mint_txn_works() {
+    utils::test::TestUtils::cleanup_storage();
+    sovtoken::api::sovtoken_init();
+    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let pool_name = "p1";
+    let wallet_name = "w1";
+    let pool_config = None;
+    //TODO: make genesis txn file and put to pool config
+
+    indy::pool::Pool::create_ledger_config(pool_name, pool_config).unwrap();
+    indy::wallet::Wallet::create(pool_name, wallet_name, None, None, Some(&json!({"key": "1"}).to_string())).unwrap();
+
+    let wallet_handle = indy::wallet::Wallet::open(wallet_name, None, Some(&json!({"key": "1"}).to_string())).unwrap();
+    let pool_handle = indy::pool::Pool::open_ledger(pool_name, None).unwrap();
+
+    let (did, verkey) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did_2, verkey_2) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee2"}).to_string()).unwrap();
+    let (did_3, verkey_2) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee3"}).to_string()).unwrap();
+
+    let pa1 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000000"}).to_string()).unwrap();
+    let pa2 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000001"}).to_string()).unwrap();
+    let pa3 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000002"}).to_string()).unwrap();
+
+    let (mint_req, name) = indy::payments::Payment::build_mint_req(wallet_handle, &did,
+        &json!([
+        {
+            "paymentAddress": pa1,
+            "amount": 5,
+            "extra": "pa1",
+        },
+        {
+            "paymentAddress": pa2,
+            "amount": 10,
+            "extra": "pa2",
+        },
+        {
+            "paymentAddress": pa3,
+            "amount": 15,
+            "extra": "pa3",
+        }
+    ]).to_string()).unwrap();
+
+    let sign1 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did, &mint_req).unwrap();
+    let sign2 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did_2, &sign1).unwrap();
+    let sign3 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did_3, &sign2).unwrap();
+
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &sign3).unwrap();
+    utils::test::TestUtils::cleanup_storage();
+}
