@@ -40,11 +40,11 @@ pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDRESS_QUAL_
     ```
     use sovtoken::logic::address::unqualified_address_from_address;
     let address = String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
-    let verkey_checksum = unqualified_address_from_address(address).unwrap();
+    let verkey_checksum = unqualified_address_from_address(&address).unwrap();
     assert_eq!(verkey_checksum, String::from("WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2"));
     ```
 */
-pub fn unqualified_address_from_address(fq_address: String) -> Result<String, ErrorCode> {
+pub fn unqualified_address_from_address(fq_address: &str) -> Result<String, ErrorCode> {
     validate_address(&fq_address)?;
     return Ok(strip_qualifier_from_address(&fq_address));
 }
@@ -110,13 +110,17 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
     }
 
     let address = strip_qualifier_from_address(&fully_qualified_address);
-    match address.from_base58_check() {
+    verkey_from_unqualified_address(&address)
+}
+
+pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<String, ErrorCode> {
+    match unqualified_address.from_base58_check() {
         Ok(vk) => {
-          if vk.len() != VERKEY_LEN {
-              return Err(ErrorCode::CommonInvalidStructure)
-          } else {
-              return Ok(vk.to_base58());
-          }
+            if vk.len() != VERKEY_LEN {
+                return Err(ErrorCode::CommonInvalidStructure)
+            } else {
+                return Ok(vk.to_base58());
+            }
         },
         Err(_) => return Err(ErrorCode::CommonInvalidStructure)
     }
@@ -127,13 +131,14 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
     there is no validation that the address is valid
 
     ```
-    use sovtoken::logic::address::append_qualifer_to_address;
+    use sovtoken::logic::address::add_qualifer_to_address;
     let address = String::from("WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2");
-    let qualifed_address = append_qualifer_to_address(&address);
+    let qualifed_address = add_qualifer_to_address(&address);
+    assert_eq!(qualifed_address, String::from("pay:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2"));
     ```
 
 */
-pub fn append_qualifer_to_address(address : &str) -> String {
+pub fn add_qualifer_to_address(address : &str) -> String {
     return format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
 }
 
@@ -259,7 +264,7 @@ pub mod address_tests {
     fn test_unqualified_address_invalid_qualifier() {
         let address = gen_random_base58_address();
         let invalid_address = format!("pat:sov:{}", address);
-        let error = unqualified_address_from_address(invalid_address).unwrap_err();
+        let error = unqualified_address_from_address(&invalid_address).unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
     }
 

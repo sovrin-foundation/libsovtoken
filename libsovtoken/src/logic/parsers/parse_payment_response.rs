@@ -3,7 +3,7 @@
 #![allow(unused_imports)]
 
 use indy::ErrorCode;
-use logic::address::append_qualifer_to_address;
+use logic::address::add_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
@@ -91,7 +91,7 @@ pub fn from_response(base : ParsePaymentResponse) -> Result<ParsePaymentReply, E
     for unspent_output in base.result.txn.data.outputs {
 
         let (address, amount) = unspent_output;
-        let qualified_address: String = append_qualifer_to_address(&address);
+        let qualified_address: String = add_qualifer_to_address(&address);
         let txo = match (TXO { address: qualified_address.to_string(), seq_no: 1 }).to_json() {
             Ok(s) => s,
             Err(err) => {

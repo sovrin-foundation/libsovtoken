@@ -69,8 +69,9 @@ fn test_add_fees_to_request_valid() {
 
     let expected_fees_request = json!({
        "fees": {
-           "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1, "DCpUnecETDT45aMWVGLnd8H9dTFied8ZbsHHZH5zbngQxifnfjHj5S2YtjP4xvub6y6ytqPoJTeTMTVYn4hxwb2"]],
-           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]]
+           "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
+           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
+           "signatures": ["44CNMo4qHJUkm26NLC4ptxACTMHq3MsPgiPRQfCgP98LBN3zck5DXTWoPScPtX6FNvSBM8NZhwTgFgw25tKXQGii"]
        },
        "operation": {
            "type": "3"

@@ -8,10 +8,9 @@ use logic::parsers::common::ResponseOperations;
 use utils::json_conversion::JsonDeserialize;
 
 /**
-    #description
     Structure for parsing GET_FEES request
 
-    #parameters
+    # parameters
     op - the operation type received
     protocol_version - the protocol version of the format of the transaction
     result - the payload containing data relevant to the GET_FEES transaction
@@ -24,12 +23,11 @@ pub struct ParseGetTxnFeesResponse {
     pub result : ParseGetTxnFeesResult
 }
 
-/*
-    #description
+/**
     Structure of the result value within the GET_FEES request
 
-    #parameters
-    indentifier - The DID this request was submitted from
+    # parameters
+    identifier - The DID this request was submitted from
     req_id - Unique ID number of the request with transaction
     txn_type - the type of transaction that was submitted
     fees - A key:value map with the transaction type as the key and the cost as the value
@@ -40,20 +38,19 @@ pub struct ParseGetTxnFeesResponse {
 pub struct ParseGetTxnFeesResult {
     pub identifier : String,
     pub req_id : i32,
-    //This is to change the json key to adhear to the functionality on ledger
+    // This is to change the json key to adhear to the functionality on ledger
     #[serde(rename = "type")]
     pub txn_type : String,
     pub fees : HashMap<String, i32>,
-    //This is being renamed back to the snake case because that is what the JSON object key expects
+    // This is being renamed back to the snake case because that is what the JSON object key expects
     #[serde(rename = "state_proof")]
     pub state_proof : StateProof
 }
 
-/*
-    #description
+/**
     Structure of the state proof value within the Result structure
 
-    #parameters
+    # parameters
     root_hash - the Merkle root hash of the state trie at the time of response by the ledger
     proof_nodes - the list of hashes necessary to verify the root_hash
 */
