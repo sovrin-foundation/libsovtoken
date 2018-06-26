@@ -25,7 +25,7 @@ mod utils;
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-static VALID_OUTPUT_JSON: &'static str = r#"{"ver":1,"outputs":[["pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]}"#;
+static VALID_OUTPUT_JSON: &'static str = r#"[{"paymentAddress":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":10}]"#;
 
 // ***** UNIT TESTS ****
 

@@ -9,6 +9,7 @@ use logic::did::Did;
 use logic::request::Request;
 use logic::output::{Output, OutputConfig};
 use utils::constants::txn_types::MINT_PUBLIC;
+use logic::output::Outputs;
 
 /**
  *  A struct which can be transformed into a mint JSON object for [`build_mint_txn_handler`]
@@ -40,8 +41,8 @@ impl MintRequest {
      * Creates a new `MintRequest` from an [`OutputConfig`].
      * [`OutputConfig`]: ../general/struct.OutputConfig.html
      */
-    pub fn from_config(mint_config: OutputConfig, identifier : Did) -> Request<MintRequest> {
-        return MintRequest::new(mint_config.outputs, identifier);
+    pub fn from_config(mint_config: Outputs, identifier : Did) -> Request<MintRequest> {
+        return MintRequest::new(mint_config, identifier);
     }
 }
 
@@ -98,11 +99,7 @@ mod mint_request_test {
         let did = Did::new(&identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
         let outputs = vec![output];
-        let mint_config = OutputConfig {
-            ver: 1,
-            outputs: outputs.clone()
-        };
-        let request = MintRequest::from_config(mint_config, did);
+        let request = MintRequest::from_config(outputs.clone(), did);
         assert_eq!(request.operation.outputs, outputs);
     }
 

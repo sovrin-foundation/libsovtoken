@@ -125,13 +125,7 @@ impl ParseResponseWithFeesReply {
             let qualified_address: String = add_qualifer_to_address(&output_address);
             let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
 
-            let txo = match (TXO { address: qualified_address.to_string(), seq_no }).to_json() {
-                Ok(s) => s,
-                Err(err) => {
-                    error!("JSON serialization error: {:?}", err);
-                    return Err(ErrorCode::CommonInvalidState);
-                }
-            };
+            let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
             let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 

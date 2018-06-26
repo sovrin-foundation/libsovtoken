@@ -33,6 +33,8 @@ use logic::xfer_payload::XferPayload;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
+use std::ffi::CString;
+use utils::ffi_support::c_pointer_from_str;
 
 /**
     Defines a callback to communicate results to Indy-sdk as type
@@ -261,15 +263,18 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
-    let serialized_request_with_fees = match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map) {
-        Ok(map) => map,
+    match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map, Box::new(move |res| {
+        match res {
+            Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
+            Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
+        };
+    })) {
         Err(e) => {
             error!("Received error adding fees to request_json'");
             return e as i32;
         }
+        _ => ()
     };
-
-    cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(serialized_request_with_fees));
 
     return ErrorCode::Success as i32;
 }
@@ -404,19 +409,28 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     };
 
     let payload = XferPayload::new(inputs, outputs);
-    let payload_signed = payload.sign(&CryptoSdk {}, wallet_handle).unwrap();
-    debug!("Signed payload >>> {:?}", payload_signed);
+    let result = payload.sign(&CryptoSdk {}, wallet_handle, Box::new(move |result| {
+        let payload_signed = match result {
+            Err(err) => {
+                cb(command_handle, err as i32, CString::new("").unwrap().as_ptr());
+                return;
+            }
+            Ok(payload) => payload
+        };
+        debug!("Signed payload >>> {:?}", payload_signed);
 
-    let identifier = payload_signed.inputs[0].address.clone();
+        let identifier = payload_signed.inputs[0].address.clone();
 
-    let payment_request = PaymentRequest::new(payload_signed)
-        .as_request(identifier);
+        let payment_request = PaymentRequest::new(payload_signed)
+            .as_request(identifier);
 
-    let payment_request = payment_request.serialize_to_cstring().unwrap();
+        let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    debug!("payment_request >>> {:?}", payment_request);
+        debug!("payment_request >>> {:?}", payment_request);
 
-    cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
+        cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
+    })).unwrap();
+
     return ErrorCode::Success as i32;
 }
 

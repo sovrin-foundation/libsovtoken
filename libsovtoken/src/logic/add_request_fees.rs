@@ -3,8 +3,8 @@
 use indy::ErrorCode;
 use libc::c_char;
 use logic::xfer_payload::XferPayload;
-use logic::input::{InputConfig, Inputs};
-use logic::output::{OutputConfig, Outputs};
+use logic::input::Inputs;
+use logic::output::Outputs;
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
@@ -37,11 +37,11 @@ pub fn deserialize_inputs (
     let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let input_config: InputConfig = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized input_json >>> {:?}", input_config);
+    let inputs: Inputs = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    debug!("Deserialized input_json >>> {:?}", inputs);
 
-    let output_config: OutputConfig = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized output_json >>> {:?}", output_config);
+    let outputs: Outputs = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    debug!("Deserialized output_json >>> {:?}", outputs);
 
     let request_json_object: serde_json::Value = serde_json::from_str(&request_json).or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Converted request_json to serde::json::Value");
@@ -50,8 +50,8 @@ pub fn deserialize_inputs (
     trace!("Converted request_json to hash_map");
 
     return Ok((
-        input_config.inputs,
-        output_config.outputs,
+        inputs,
+        outputs,
         request_json_map.to_owned(),
         cb,
     ));
@@ -78,10 +78,17 @@ pub fn add_fees_to_request_and_serialize(
     wallet_handle: i32,
     inputs: Inputs,
     outputs: Outputs,
-    request_json_map: SerdeMap
-) -> Result<String, ErrorCode> {
-    let request_json_map_with_fees = add_fees(wallet_handle, inputs, outputs, request_json_map)?;
-    return serialize_request_with_fees(request_json_map_with_fees);
+    request_json_map: SerdeMap,
+    cb: Box<Fn(Result<String, ErrorCode>) + Send + Sync>
+) -> Result<(), ErrorCode> {
+    add_fees(wallet_handle, inputs, outputs, request_json_map, Box::new(move |request_json_map_updated|{
+        let rm_fees = request_json_map_updated.map(|request_json_map_with_fees| serialize_request_with_fees(request_json_map_with_fees));
+        match rm_fees {
+            Ok(some) => cb(some),
+            Err(e) => cb(Err(e))
+        }
+    }))?;
+    Ok(())
 }
 
 
@@ -91,13 +98,22 @@ pub fn add_fees_to_request_and_serialize(
     KEEP all public methods above
 */
 
-fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, mut request_json_map: SerdeMap) -> Result<SerdeMap, ErrorCode> {
-    let fees = signed_fees(wallet_handle, inputs, outputs)?;
+fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    signed_fees(wallet_handle, inputs, outputs, Box::new(move |fees| {
+        trace!("Added fees to request_json.");
+        match fees {
+            Ok(fees) => {
+                let mut map = request_json_map.clone();
+                map.insert(FEES_KEY_IN_REQ_RESP.to_string(), json!(fees));
+                cb(Ok(map.clone()));
+            }
+            Err(err) => {
+                cb(Err(err))
+            }
+        }
+    }))?;
 
-    request_json_map.insert(FEES_KEY_IN_REQ_RESP.to_string(), json!(fees));
-    trace!("Added fees to request_json.");
-
-    return Ok(request_json_map);
+    Ok(())
 }
 
 fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<String, ErrorCode> {
@@ -108,12 +124,10 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
     return Ok(serialized_request_with_fees);
 } 
 
-fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs) -> Result<XferPayload, ErrorCode> {
+fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
     let fees = XferPayload::new(inputs, outputs);
-    let signed_fees = fees.sign(&CryptoSdk{}, wallet_handle)?;
-    debug!("Signed fees >>> {:?}", signed_fees);
-
-    return Ok(signed_fees);
+    fees.sign(&CryptoSdk{}, wallet_handle, cb)?;
+    Ok(())
 }
 
 
@@ -215,8 +229,11 @@ mod test_deserialize_inputs {
         error_deserialize_inputs_request(invalid_json, ErrorCode::CommonInvalidStructure);
     }
 
+    use env_logger;
+
     #[test]
     fn deserialize_inputs_valid() {
+        env_logger::init();
         let result = call_deserialize_inputs(None, None, None, None);
         assert!(result.is_ok());
     }

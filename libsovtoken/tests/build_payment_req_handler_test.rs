@@ -19,6 +19,7 @@ use std::ffi::CString;
 use std::time::Duration;
 use std::ffi::CStr;
 use std::sync::mpsc::channel;
+use sovtoken::logic::parsers::common::TXO;
 
 mod utils;
 
@@ -147,35 +148,24 @@ fn success_signed_request() {
     debug!("wallet id = {:?}", wallet_id);
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
 
-    let inputs = json!({
-        "ver": 1,
-        "inputs": [
-            {
-                "address": payment_addresses[0],
-                "seqNo": 1
-            },
-            {
-                "address": payment_addresses[1],
-                "seqNo": 1
-            }
-        ]
-    });
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
 
-    let outputs = json!({
-        "ver": 1,
-        "outputs": [
+    let outputs = json!([
             {
-                "address": payment_addresses[2],
+                "paymentAddress": payment_addresses[2],
                 "amount": 10
             },
             {
-                "address": payment_addresses[3],
+                "paymentAddress": payment_addresses[3],
                 "amount": 22,
                 "extra": "extra data"
             }
-        ]
-    });
+        ]);
 
     let expected_operation = json!({
         "type": XFER_PUBLIC,
@@ -227,9 +217,7 @@ fn success_signed_request_from_libindy() {
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
 
-    let inputs = json!({
-        "ver": 1,
-        "inputs": [
+    let inputs = json!([
             {
                 "address": payment_addresses[0],
                 "seqNo": 1
@@ -238,12 +226,9 @@ fn success_signed_request_from_libindy() {
                 "address": payment_addresses[1],
                 "seqNo": 1
             }
-        ]
-    });
+        ]);
 
-    let outputs = json!({
-        "ver": 1,
-        "outputs": [
+    let outputs = json!([
             {
                 "address": payment_addresses[2],
                 "amount": 10
@@ -253,8 +238,7 @@ fn success_signed_request_from_libindy() {
                 "amount": 22,
                 "extra": "extra data"
             }
-        ]
-    });
+        ]);
 
     let expected_operation = json!({
         "type": XFER_PUBLIC,
