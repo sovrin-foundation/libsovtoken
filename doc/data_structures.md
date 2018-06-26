@@ -870,7 +870,18 @@ This API call is handled by LibSovToken parse_get_txn_fees_response_handler. *No
             <str: txnType>: <int: amount>,
         },
         "state_proof": {
-            "multi-signature": <str>// the signature of the state proof
+            {
+                "participants": [ <str>, ], // the nodes that participated in consensus
+                "signature": <str> // the BLS signature of the nodes
+                "value":
+                {
+                    "ledger_id": <int>, // the associated ledger where the state proof came from
+                    "pool_state_root_hash": <str>, // the state proof root hash of the pool ledger
+                    "state_root_hash": <str>, // the state proof root hash of the total ledgers
+                    "timestamp": <int>, // the time the transaction was committed
+                    "txn_root_hash": <str> // the transaction root hash of the transaction on a specific ledger
+                }
+            },
             "rootHash": <str>,      // the root hash of the transaction
             "proof_nodes": <str>,   // the hash of each node in the path
         }
@@ -894,7 +905,7 @@ Example resp_json:
         },
         "state_proof":
         {
-            "multi_signature": "9wdz3msFKrSdoPmTTneabpb5s5hPDfrjWCQTP8tJkWdp",
+            "multi_signature": {//TODO add valid json string in here},
             "proof_nodes": "29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ==",
             "root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms"
         },
