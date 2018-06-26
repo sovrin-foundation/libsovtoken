@@ -110,7 +110,7 @@ mod mint_request_test {
     fn valid_request() {
         assert_mint_request(
             json!({
-                "type": MINT_PUBLIC.to_string(),
+                "type": MINT_PUBLIC,
                 "outputs": [["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",10]],
             }),
             |_mint_req| {}

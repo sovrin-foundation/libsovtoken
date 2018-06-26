@@ -86,7 +86,7 @@ use indy::ErrorCode;
         let inputs_json = c_pointer_from_string(json!({
             "ver": 1,
             "inputs": {
-                "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81f",
                 "seqNo": 2
             }
         }).to_string());
@@ -99,7 +99,7 @@ use indy::ErrorCode;
         let outputs_json = c_pointer_from_string(json!({
             "ver": 1,
             "outputs": {
-                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
                 "amount": 10,
                 "seqNo": 5,
             }

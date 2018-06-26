@@ -11,26 +11,24 @@ use indy::payments::Payment;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
-use logic::did::Did;
-use logic::fees::Fees;
-use logic::indy_sdk_api::crypto_api::CryptoSdk;
-use logic::minting;
-use logic::payments::{CreatePaymentHandler};
-use logic::set_fees;
-
 use logic::config::{
     payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
-
+use logic::did::Did;
+use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::minting;
 use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::parse_fees_from_get_txn_fees_response
 };
+use logic::payments::{CreatePaymentHandler};
+use logic::set_fees;
+use logic::xfer_payload::XferPayload;
 
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
@@ -397,7 +395,6 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             cb: Option<extern fn(command_handle_: i32,
                                                                  err: i32,
                                                                  payment_req_json: *const c_char) -> i32>) -> i32 {
-
     let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -406,14 +403,14 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         }
     };
 
+    let payload = XferPayload::new(inputs, outputs);
+    let payload_signed = payload.sign(&CryptoSdk {}, wallet_handle).unwrap();
+    debug!("Signed payload >>> {:?}", payload_signed);
 
-    let fees = Fees::new(inputs, outputs);
-    let fees_signed = fees.sign(&CryptoSdk {}, wallet_handle).unwrap();
-    debug!("Signed fees >>> {:?}", fees_signed);
+    let identifier = payload_signed.inputs[0].address.clone();
 
-    let identifier = fees_signed.inputs[0].address.clone();
-
-    let payment_request = PaymentRequest::new(fees_signed, identifier);
+    let payment_request = PaymentRequest::new(payload_signed)
+        .as_request(identifier);
 
     let payment_request = payment_request.serialize_to_cstring().unwrap();
 
@@ -679,11 +676,14 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         Err(_) => return ErrorCode::CommonInvalidStructure as i32
     };
 
-    let get_txn_request = GetFeesRequest::new(did);
+    let get_txn_request = GetFeesRequest::new().as_request(did);
 
-    let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
+    let request_pointer = match get_txn_request.serialize_to_pointer() {
+        Ok(p) => p,
+        Err(_) => return ErrorCode::CommonInvalidState as i32
+    };
 
-    return handle_result(Ok(get_txn_request.as_ptr())) as i32;
+    return handle_result(Ok(request_pointer)) as i32;
 }
 
 /// Description

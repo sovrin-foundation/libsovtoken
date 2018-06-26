@@ -2,7 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use logic::address::append_qualifer_to_address;
+use logic::address::add_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
@@ -122,8 +122,8 @@ impl ParseResponseWithFeesReply {
         for output in outputs {
             let output_address : String = output.0.to_string();
             let amount: u32 = output.1;
-            let qualified_address: String = append_qualifer_to_address(&output_address);
-            let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
+            let qualified_address: String = add_qualifer_to_address(&output_address);
+            let seq_no: i32 = base.request.tnx_meta_data.seq_no;
 
             let txo = match (TXO { address: qualified_address.to_string(), seq_no }).to_json() {
                 Ok(s) => s,
@@ -140,21 +140,6 @@ impl ParseResponseWithFeesReply {
 
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply { ver : 1, utxo_json : utxos};
         return Ok(reply);
-    }
-
-    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> i32 {
-        let inputs = &base.request.fees.inputs;
-
-        for input in inputs {
-            let input_address : String = input.0.to_string();
-
-            if input_address == output_address.to_string() {
-                return input.1;
-            }
-
-        }
-
-        return -1;
     }
 }
 

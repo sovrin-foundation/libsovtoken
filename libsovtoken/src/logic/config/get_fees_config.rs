@@ -1,17 +1,29 @@
 /*!
- *  Defines structure and implementation of getFeesRequest
- *  these are the structures for the [`build_get_fees_txn_handler`]
- *
- *  [`build_get_fees_txn_handler`]: ../../../api/fn.build_fees_txn_handler.html
+    Structures for the [`build_get_txn_fees_handler`]
+
+    [`build_get_txn_fees_handler`]: ../../../api/fn.build_get_txn_fees_handler.html
  */
 use logic::did::Did;
 use logic::request::Request;
 use utils::constants::txn_types::GET_FEES;
 
 /**
- *  Json config to customize [`build_get_fees_txn_handler`]
- *
- *  [`build_get_fees_txn_handler`]: ../../../api/fn.build_get_fees_txn_handler.html
+    Struct for [`build_get_txn_fees_handler`]
+
+    Can build a `Request<GetFeesRequest>` which can be serialized into json.
+
+    ```
+        use sovtoken::logic::config::get_fees_config::GetFeesRequest;
+        use sovtoken::logic::did::Did;
+
+        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
+        let did = Did::new(&identifier).validate().unwrap();
+        let get_fees_request = GetFeesRequest::new().as_request(did);
+        let json_pointer = get_fees_request.serialize_to_pointer().unwrap();
+    ```
+
+    [`Request<GetFeesRequest>`]: ../../request/struct.Request.html
+    [`build_get_txn_fees_handler`]: ../../../api/fn.build_get_txn_fees_handler.html
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct GetFeesRequest {
@@ -20,11 +32,25 @@ pub struct GetFeesRequest {
 }
 
 impl GetFeesRequest {
-    pub fn new(identifier : Did) -> Request<GetFeesRequest> {
-        let req = GetFeesRequest {
+    
+    /**
+        Creates a new [`GetFeesRequest`] struct.
+
+        [`GetFeesRequest`]: ./struct.GetFeesRequest.html
+    */
+    pub fn new() -> GetFeesRequest {
+        return GetFeesRequest {
             txn_type: GET_FEES.to_string(),
         };
-        return Request::new(req, Some(String::from(identifier)));
+    }
+
+    /**
+        Transform `self` to a [`Request<GetFeesRequest>`] struct.
+
+        [`Request<GetFeesRequest>`]: ../../request/struct.Request.html
+    */
+    pub fn as_request(self, identifier: Did) -> Request<GetFeesRequest> {
+        return Request::new(self, Some(String::from(identifier)));
     }
 }
 
@@ -39,7 +65,7 @@ mod get_fees_config_test {
     fn initial_get_fee_request() -> Request<GetFeesRequest> {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        return GetFeesRequest::new(did);
+        return GetFeesRequest::new().as_request(did);
     }
 
     fn assert_get_fee_request<F>(expected: serde_json::Value, f: F)
@@ -63,7 +89,7 @@ mod get_fees_config_test {
         let get_fees_config = GetFeesRequest {
             txn_type: GET_FEES.to_string()
         };
-        let request = GetFeesRequest::new(did);
+        let request = GetFeesRequest::new().as_request(did);
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }
 
