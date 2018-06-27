@@ -1,4 +1,4 @@
-FROM evernym/rust:0.3.0-xenial
+FROM evernym/rust:0.3.1-xenial
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG u_id=1000
