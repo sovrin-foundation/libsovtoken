@@ -4,6 +4,8 @@ FROM evernym/rust:0.3.0-xenial
 ARG u_id=1000
 ARG u_name=user
 
+ENV LIBINDY_DIR=/usr/lib
+
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
