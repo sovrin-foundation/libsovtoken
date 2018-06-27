@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+
+  base:
+    build:
+      dockerfile: Dockerfile.${BASE_DOCKER_VERSION}
+      context: base/$OSNAME
+    # TODO ${VAR:-} raises error in docker-compose < 1.21.0
+    image: evernym/base:${BASE_DOCKER_VERSION}-${OSNAME}
+
+  rust:
+    build:
+      dockerfile: Dockerfile.${RUST_DOCKER_VERSION}
+      context: rust/$OSNAME
+      args:
+          - RUST_VERSION
+    image: evernym/rust:${RUST_DOCKER_VERSION}-${OSNAME}
