@@ -13,7 +13,8 @@ use logic::indy_sdk_api::crypto_api::CryptoAPI;
 use logic::input::{Input, Inputs};
 use logic::output::{Outputs};
 use serde_json;
-use std::sync;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 
 /**
@@ -41,16 +42,19 @@ use std::sync;
  *      let outputs = vec![Output::new(address_output, 20, None)];
  *
  *      let payload = XferPayload::new(inputs, outputs);
- *      let signed_payload = payload.sign(&CryptoSdk{}, wallet_handle);
+ *      let signed_payload = payload.sign(&CryptoSdk{}, wallet_handle, Box::new(|res| Default::default()));
  *  # }
  * ```
  */
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 pub struct XferPayload {
     pub outputs: Outputs,
     pub inputs: Inputs,
     pub signatures: Option<Vec<String>>
 }
+
+unsafe impl Send for XferPayload {}
+unsafe impl Sync for XferPayload {}
 
 impl<A: CryptoAPI> InputSigner<A> for XferPayload {}
 impl XferPayload {
@@ -68,7 +72,7 @@ impl XferPayload {
      * [`Input`]: Input
      * [`Inputs`]: Inputs
      */
-    pub fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle) -> Result<XferPayload, ErrorCode> {
+    pub fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         if self.outputs.len() < 1 || self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
         }
@@ -84,59 +88,76 @@ impl XferPayload {
 
         trace!("Indicator stripped from inputs");
 
-        self.signatures = Some(XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs, &self.outputs)?);
+        XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), Box::new(move |signatures| {
+                    match signatures {
+                        Ok(signatures) => {
+                            let mut payload = self.clone();
+                            payload.signatures = Some(signatures);
+                            cb(Ok(payload));
+                        }
+                        Err(err) => {cb(Err(err));}
+                    };
+                }
+            )
+        )?;
 
-        return Ok(self);
+        return Ok(());
     }
 }
 
 trait InputSigner<A: CryptoAPI> {
-
-    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs)
-        -> Result<Vec<String>, ErrorCode>
+    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, cb: Box<Fn(Result<Vec<String>, ErrorCode>) + Send + Sync>)
+                   -> Result<(), ErrorCode>
     {
+        if inputs.is_empty() {
+            cb(Ok(vec![]));
+            return Ok(());
+        }
+        let inputs_result: Arc<Mutex<Vec<String>>> = Default::default();
 
-        let signing_cbs: Result<Vec<_>, _> = inputs.iter()
-            .map(|input| Self::sign_input(crypto_api, wallet_handle, input, outputs))
-            .collect();
-        let signing_cbs = signing_cbs?;
-        trace!("Received signing callbacks.");
-
-        let (sender, receiver) = sync::mpsc::channel();
-    
-        signing_cbs.iter().for_each(|signing_cb| {
-            let sender_clone = sender.clone();
-            let cb = move |result| { sender_clone.send(result); };
-            signing_cb(Box::new(cb));
+        let res_cnt = inputs.len();
+        let cb = Arc::new(move |input: Result<String, ErrorCode>| {
+            match input {
+                Ok(input) => {
+                    let mut results = inputs_result.lock().unwrap();
+                    results.push(input);
+                    if results.len() == res_cnt {
+                        cb(Ok(results.to_vec()))
+                    }
+                }
+                Err(err) => cb(Err(err))
+            }
         });
 
-        let mut signatures = Vec::new();
-        for _ in 0..inputs.len() {
-            let signature = receiver.recv()
-                .unwrap_or(Err(ErrorCode::CommonInvalidState))?;
-            signatures.push(signature);
+        for input in inputs {
+            let cb = cb.clone();
+            match Self::sign_input(crypto_api, wallet_handle, input, outputs, Box::new(cb)) {
+                err @ Err(_) => { return err; }
+                _ => ()
+            }
         }
 
-        return Ok(signatures);
+        Ok(())
     }
 
     /**
      * Signs an [`Input`] with indy_crypto_sign
-     * 
+     *
      * Validates the `input`'s `address`, but not the `outputs`.
      * The message that will be signed is
      * `[[<address>, <seq_no>], [<Output>, <Output>, ...]]`
-     * 
+     *
      * [`Input`]: Input
      */
-    fn sign_input<F: Fn(Result<String, ErrorCode>) + Send + 'static>(
+    fn sign_input(
         crypto_api: &'static A,
         wallet_handle: IndyHandle,
         input: &Input,
-        outputs: &Outputs
-    ) -> Result<Box<Fn(Box<F>)>, ErrorCode>
+        outputs: &Outputs,
+        cb: Box<Arc<Fn(Result<String, ErrorCode>) + Send + Sync>>,
+    ) -> Result<(), ErrorCode>
     {
-        let verkey = address::verkey_from_unqualified_address(&input.address)?;
+        let verkey = address::verkey_from_unqualified_address(&input.address.clone())?;
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.address, input.seq_no], outputs]);
@@ -146,20 +167,23 @@ trait InputSigner<A: CryptoAPI> {
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
 
-        return Ok(Box::new(move |func: Box<F>| {
-            // this needs to be a mutable function
-            let ca = move |signature: Result<String, ErrorCode>| {
-                debug!("Received encoded signature >>> {:?}", signature);
-                func(signature)
-            };
+        let ca = move |signature: Result<String, ErrorCode>| {
+            debug!("Received encoded signature >>> {:?}", signature);
+            cb(signature);
+        };
 
-            crypto_api.indy_crypto_sign(
-                wallet_handle,
-                verkey.clone(),
-                message.clone(),
-                ca
-            );
-        }));
+        let ec = crypto_api.indy_crypto_sign(
+            wallet_handle,
+            verkey.clone(),
+            message.clone(),
+            ca,
+        );
+
+        if ec == ErrorCode::Success {
+            Ok(())
+        } else {
+            Err(ec)
+        }
     }
 }
 
@@ -169,6 +193,7 @@ mod test_xfer_payload {
     use super::*;
     use logic::config::payment_address_config::PaymentAddressConfig;
     use logic::output::Output;
+    use std::sync::mpsc::channel;
 
     struct CryptoApiHandler {}
 
@@ -212,21 +237,27 @@ mod test_xfer_payload {
     fn sign_input_sync(input: &Input, outputs: &Outputs) -> Result<String, ErrorCode> {
         let wallet_handle = 1;
         let (sender, receiver) = sync::mpsc::channel();
-        let signing_cb = XferPayload::sign_input(
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        XferPayload::sign_input(
             &CryptoApiHandler{},
             wallet_handle,
             input,
-            outputs
+            outputs,
+            Box::new(Arc::new(cb))
         )?;
-        let cb = move |result| { sender.send(result); };
-        signing_cb(Box::new(cb));
         let result = receiver.recv().unwrap();
         return result;
     }
 
     fn sign_inputs_sync(inputs: &Inputs, outputs: &Outputs) -> Result<Vec<String>, ErrorCode> {
         let wallet_handle = 1;
-        return XferPayload::sign_inputs(&CryptoApiHandler{}, wallet_handle, inputs, outputs);
+        let (sender, receiver) = channel();
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        XferPayload::sign_inputs(&CryptoApiHandler{}, wallet_handle, inputs, outputs,
+                                 Box::new(cb))?;
+        receiver.recv().unwrap()
     }
 
     #[test]
@@ -285,7 +316,10 @@ mod test_xfer_payload {
         String::remove(&mut outputs[0].address, 5);
 
         let payload = XferPayload::new(inputs, outputs);
-        let signed_payload = payload.sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let (sender, receiver) = channel();
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        let signed_payload = payload.sign(&CryptoApiHandler{}, wallet_handle, Box::new(cb)).unwrap_err();
 
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
@@ -296,7 +330,10 @@ mod test_xfer_payload {
         let (mut inputs, outputs) = inputs_outputs_valid_qualified();
         String::remove(&mut inputs[0].address, 13);
 
-        let signed_payload = XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let (sender, receiver) = channel();
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        let signed_payload = XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle, Box::new(cb)).unwrap_err();
 
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
@@ -306,7 +343,10 @@ mod test_xfer_payload {
         let wallet_handle = 1;
         let (_, outputs) = inputs_outputs_valid_qualified();
 
-        let signed_payload = XferPayload::new(Vec::new(), outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let (sender, receiver) = channel();
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        let signed_payload = XferPayload::new(Vec::new(), outputs).sign(&CryptoApiHandler{}, wallet_handle, Box::new(cb)).unwrap_err();
 
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
@@ -316,7 +356,10 @@ mod test_xfer_payload {
         let wallet_handle = 1;
         let (inputs, _) = inputs_outputs_valid_qualified();
 
-        let signed_payload = XferPayload::new(inputs, Vec::new()).sign(&CryptoApiHandler{}, wallet_handle).unwrap_err();
+        let (sender, receiver) = channel();
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        let signed_payload = XferPayload::new(inputs, Vec::new()).sign(&CryptoApiHandler{}, wallet_handle, Box::new(cb)).unwrap_err();
 
         assert_eq!(ErrorCode::CommonInvalidStructure, signed_payload);
     }
@@ -340,7 +383,12 @@ mod test_xfer_payload {
         let expected_signatures = Some(vec![String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"),
                                        String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned")]);
 
-        let signed_payload = XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle).unwrap();
+
+        let (sender, receiver) = channel();
+        let sender = Mutex::new(sender);
+        let cb = move |result| { sender.lock().unwrap().send(result); };
+        XferPayload::new(inputs, outputs).sign(&CryptoApiHandler{}, wallet_handle, Box::new(cb)).unwrap();
+        let signed_payload = receiver.recv().unwrap().unwrap();
 
         assert_eq!(expected_inputs, signed_payload.inputs);
         assert_eq!(expected_outputs, signed_payload.outputs);

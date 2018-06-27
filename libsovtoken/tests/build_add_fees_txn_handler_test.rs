@@ -11,6 +11,7 @@ use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
 use std::sync::mpsc::channel;
 use std::time::Duration;
+use sovtoken::logic::parsers::common::TXO;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {
@@ -43,6 +44,7 @@ fn init_wallet_with_address() -> (IndyHandle, String) {
 
 #[test]
 fn test_add_fees_to_request_valid() {
+    utils::test::TestUtils::cleanup_storage();
     let (wallet_handle, input_address) = init_wallet_with_address();
 
     let fake_request = json!({
@@ -51,21 +53,14 @@ fn test_add_fees_to_request_valid() {
        }
     });
 
-    let inputs = json!({
-        "ver": 1,
-        "inputs": [{
-            "address": input_address,
-            "seqNo": 1,
-        }]
-    });
+    let txo = TXO { address: input_address, seq_no: 1 };
+
+    let inputs = json!([txo.to_libindy_string().unwrap()]);
     
-    let outputs = json!({
-        "ver": 1,
-        "outputs": [{
-            "address": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+    let outputs = json!([{
+            "paymentAddress": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
             "amount": 20,
-        }]
-    });
+    }]);
 
     let expected_fees_request = json!({
        "fees": {
@@ -79,12 +74,15 @@ fn test_add_fees_to_request_valid() {
     });
 
     let result = call_add_fees(wallet_handle, inputs.to_string(), outputs.to_string(), fake_request.to_string()).unwrap();
+
+    indy::wallet::Wallet::close(wallet_handle);
     assert_eq!(expected_fees_request.to_string(), result);
+    utils::test::TestUtils::cleanup_storage();
 }
 
 #[test]
-#[ignore]
 fn test_add_fees_to_request_valid_from_libindy() {
+    utils::test::TestUtils::cleanup_storage();
     let (wallet_handle, input_address) = init_wallet_with_address();
     let did = "Th7MpTaRZVRYnPiabds81Y";
 
@@ -94,26 +92,20 @@ fn test_add_fees_to_request_valid_from_libindy() {
        }
     });
 
-    let inputs = json!({
-        "ver": 1,
-        "inputs": [{
-            "address": input_address,
-            "seqNo": 1,
-        }]
-    });
+    let txo = TXO { address: input_address, seq_no: 1 };
 
-    let outputs = json!({
-        "ver": 1,
-        "outputs": [{
-            "address": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+    let inputs = json!([txo.to_libindy_string().unwrap()]);
+
+    let outputs = json!([{
+            "paymentAddress": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
             "amount": 20,
-        }]
-    });
+    }]);
 
     let expected_fees_request = json!({
        "fees": {
-           "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
-           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]]
+           "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
+           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
+           "signatures": ["44CNMo4qHJUkm26NLC4ptxACTMHq3MsPgiPRQfCgP98LBN3zck5DXTWoPScPtX6FNvSBM8NZhwTgFgw25tKXQGii"]
        },
        "operation": {
            "type": "3"
@@ -133,7 +125,9 @@ fn test_add_fees_to_request_valid_from_libindy() {
                                                     &outputs.to_string(),
                                                     cb);
 
-    let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
+    let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(15)).unwrap();
 
     assert_eq!(expected_fees_request.to_string(), req);
+    indy::wallet::Wallet::close(wallet_handle);
+    utils::test::TestUtils::cleanup_storage();
 }

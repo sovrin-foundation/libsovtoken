@@ -4,11 +4,11 @@ use libc::c_char;
 use logic::address;
 use logic::config::output_mint_config::MintRequest;
 use logic::did::Did;
-use logic::output::{OutputConfig};
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
+use logic::output::Outputs;
 
-type DeserializedArguments<'a> = (Did<'a>, OutputConfig, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Did<'a>, Outputs, JsonCallbackUnwrapped);
 
 pub fn deserialize_inputs<'a>(
     did: *const c_char,
@@ -28,19 +28,19 @@ pub fn deserialize_inputs<'a>(
         .ok_or(ErrorCode::CommonInvalidStructure)?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let output_config: OutputConfig = serde_json::from_str(&outputs_json)
+    let outputs: Outputs = serde_json::from_str(&outputs_json)
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized output_json >>> {:?}", output_config);
+    debug!("Deserialized output_json >>> {:?}", outputs);
 
-    return Ok((did, output_config, cb));
+    return Ok((did, outputs, cb));
 }
 
 pub fn build_mint_request(
     did: Did,
-    mut output_config: OutputConfig
+    mut output_config: Outputs
 ) -> Result<*const c_char, ErrorCode> {
 
-    for output in &mut output_config.outputs {
+    for output in &mut output_config {
         let address = address::unqualified_address_from_address(&output.address)?;
         output.address = address;
     }
@@ -57,36 +57,31 @@ pub fn build_mint_request(
 mod test_build_mint_request {
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
-    use logic::output::Output;
+    use logic::output::{Output, OutputConfig};
+    use rust_base58::ToBase58;
     use super::*;
     
     #[test]
     fn build_mint_request_invalid_address() {
-        let output_config = OutputConfig {
-            ver: 1,
-            outputs: vec![
+        let outputs = vec![
                 Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
-            ]
-        };
+            ];
 
         let did = Did::new(&"en32ansFeZNERIouv2xA");
-        let result = build_mint_request(did, output_config);
+        let result = build_mint_request(did, outputs);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn build_mint_request_valid() {
-        let output_config_value = json!({
-            "ver": 1,
-            "outputs": [{
-                "address": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+        let output_config_value = json!([{
+                "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
                 "amount": 12
-            }]
-        });
+            }]);
 
-        let did = c_pointer_from_str("en32ansFeZNERIouv2xAo");
+        let did_str = &"1123456789abcdef".as_bytes().to_base58();
         let (did, output_config, _) = test_deserialize_inputs::call_deserialize_inputs(
-            Some(did),
+            Some(c_pointer_from_str(did_str)),
             Some(c_pointer_from_string(output_config_value.to_string())),
             None
         ).unwrap();
@@ -96,7 +91,7 @@ mod test_build_mint_request {
         let mint_value: serde_json::value::Value = serde_json::from_str(&mint_request_json).unwrap();
 
         let expected = json!({
-            "identifier": "en32ansFeZNERIouv2xAo",
+            "identifier": did_str,
             "operation": {
                 "type": MINT_PUBLIC,
                 "outputs": [
