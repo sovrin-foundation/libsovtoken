@@ -67,11 +67,11 @@ ${CMD}
 
 if [ ! -L "/home/token_user/.cargo/git" ] ; then
     rm -rf /rust/git
-    mv /home/token_user/.cargo/git /rust/git
+    mv -v /home/token_user/.cargo/git /rust/git
 fi
 if [ ! -L "/home/token_user/.cargo/registry" ] ; then
     rm -rf /rust/registry
-    mv /home/token_user/.cargo/registry /rust/registry
+    mv -v /home/token_user/.cargo/registry /rust/registry
 fi
 EOF
 }
@@ -236,10 +236,12 @@ fi
 if [ ${RUST_FLUSH_CACHE} -eq 0 ] ; then
     cat > "${BUILD_DIR}/build.sh" << EOF
 if [ -d "/rust/git" ] ; then
-    ln -s /rust/git /home/token_user/.cargo/git
+    echo "Reusing cargo/git"
+    ln -fs /rust/git /home/token_user/.cargo/git
 fi
 if [ -d "/rust/registry" ] ; then
-    ln -s /rust/registry /home/token_user/.cargo/registry
+    echo "Reusing cargo/registry"
+    ln -fs /rust/registry /home/token_user/.cargo/registry
 fi
 EOF
 fi
@@ -265,6 +267,7 @@ else
     cat >> "${BUILD_DIR}/build.sh" << EOF
 export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
 export LIBINDY_DIR=/usr/lib
+export RUST_TEST_THREADS=1
 EOF
 fi
 
