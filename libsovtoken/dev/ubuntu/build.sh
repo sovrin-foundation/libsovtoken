@@ -219,7 +219,7 @@ EOT
     else
         echo "" > "${INDY_INSTALL}"
     fi
-    __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci/ubuntu --build-arg indy_install=indy_install.sh"
+    __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/dev/ubuntu --build-arg indy_install=indy_install.sh"
     rm -f "${INDY_INSTALL}"
 else
     echo "Using existing docker image ${DOCKERIMAGE}:latest"
