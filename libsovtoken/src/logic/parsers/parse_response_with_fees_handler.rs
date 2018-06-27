@@ -123,7 +123,8 @@ impl ParseResponseWithFeesReply {
             let output_address : String = output.0.to_string();
             let amount: u32 = output.1;
             let qualified_address: String = add_qualifer_to_address(&output_address);
-            let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
+            // Why is there no error checking?
+            let seq_no: u32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
 
             let txo = match (TXO { address: qualified_address.to_string(), seq_no }).to_json() {
                 Ok(s) => s,
@@ -142,19 +143,20 @@ impl ParseResponseWithFeesReply {
         return Ok(reply);
     }
 
-    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> i32 {
+    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> u32 {
+        // TODO: The result should be an option, avoid using a sentinel value like
         let inputs = &base.request.fees.inputs;
 
         for input in inputs {
             let input_address : String = input.0.to_string();
 
             if input_address == output_address.to_string() {
-                return input.1;
+                return input.1 as u32;
             }
 
         }
 
-        return -1;
+        return 0;
     }
 }
 

@@ -29,7 +29,7 @@ pub struct ParseGetUtxoResponseResult {
     pub address : String,
     pub identifier: String,
     pub req_id: i64,
-    pub outputs : Vec<(String, i32, u32)>,
+    pub outputs : Vec<(String, u32, u32)>
 }
 
 /**
@@ -80,6 +80,7 @@ mod parse_get_uto_responses_tests {
     use logic::parsers::common::{ResponseOperations, UTXO, TXO};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
+    use utils::constants::txn_types::GET_UTXO;
     use super::*;
 
     static PARSE_GET_UTXO_RESPONSE_JSON: &'static str = r#"{
@@ -103,7 +104,7 @@ mod parse_get_uto_responses_tests {
 
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, i32, u32)> = Vec::new();
+        let mut outputs: Vec<(String, u32, u32)> = Vec::new();
 
         outputs.push((rand_string(32), 1, 10));
         outputs.push((rand_string(32), 2, 20));
@@ -111,7 +112,7 @@ mod parse_get_uto_responses_tests {
         let outputs_len: usize = outputs.len();
 
         let result: ParseGetUtxoResponseResult = ParseGetUtxoResponseResult {
-            txn_type : "1002".to_string(),
+            txn_type : GET_UTXO.to_string(),
             address,
             identifier,
             req_id: 123457890,
@@ -134,12 +135,12 @@ mod parse_get_uto_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let outputs: Vec<(String, i32, u32)> = Vec::new();
+        let outputs: Vec<(String, u32, u32)> = Vec::new();
 
         let outputs_len: usize = outputs.len();
 
         let result: ParseGetUtxoResponseResult = ParseGetUtxoResponseResult {
-            txn_type : "1002".to_string(),
+            txn_type : GET_UTXO.to_string(),
             address,
             identifier,
             req_id: 123457890,

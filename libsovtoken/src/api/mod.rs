@@ -792,8 +792,13 @@ pub extern "C" fn build_mint_txn_handler(
 pub extern fn sovtoken_init() -> i32 {
 
     super::utils::logger::init_log();
+    super::utils::constants::txn_types::GET_UTXO;
+    super::utils::constants::txn_types::GET_FEES;
 
     debug!("sovtoken_init() started");
+
+    debug!("Going to call Payment::register");
+
     let result = match Payment::register(
         "sov",
         create_payment_address_handler,
@@ -811,6 +816,8 @@ pub extern fn sovtoken_init() -> i32 {
         Ok(()) => ErrorCode::Success ,
         Err(e) => e ,
     };
+
+    // TODO: Need to call register methods for state proof
 
     debug!("sovtoken_init() returning {:?}", result);
     return result as i32;
