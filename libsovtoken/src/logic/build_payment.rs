@@ -1,7 +1,7 @@
 use indy::ErrorCode;
 use libc::c_char;
-use logic::input::{Inputs, InputConfig};
-use logic::output::{Outputs, OutputConfig};
+use logic::input::Inputs;
+use logic::output::Outputs;
 use utils::ffi_support::string_from_char_ptr;
 use serde_json;
 
@@ -24,16 +24,16 @@ pub fn deserialize_inputs(
         .ok_or(ErrorCode::CommonInvalidStructure)?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let input_config: InputConfig = serde_json::from_str(&inputs_json)
+    let inputs: Inputs = serde_json::from_str(&inputs_json)
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized input_json >>> {:?}", input_config);
+    debug!("Deserialized input_json >>> {:?}", inputs);
 
-    let output_config: OutputConfig = serde_json::from_str(&outputs_json)
+    let outputs: Outputs = serde_json::from_str(&outputs_json)
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized output_json >>> {:?}", output_config);
+    debug!("Deserialized output_json >>> {:?}", outputs);
 
 
-    return Ok((input_config.inputs, output_config.outputs, cb));
+    return Ok((inputs, outputs, cb));
 }
 
 #[cfg(test)]
@@ -86,7 +86,7 @@ use indy::ErrorCode;
         let inputs_json = c_pointer_from_string(json!({
             "ver": 1,
             "inputs": {
-                "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81f",
                 "seqNo": 2
             }
         }).to_string());
@@ -99,7 +99,7 @@ use indy::ErrorCode;
         let outputs_json = c_pointer_from_string(json!({
             "ver": 1,
             "outputs": {
-                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+                "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
                 "amount": 10,
                 "seqNo": 5,
             }

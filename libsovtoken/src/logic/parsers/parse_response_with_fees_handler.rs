@@ -2,7 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use logic::address::append_qualifer_to_address;
+use logic::address::add_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
@@ -11,6 +11,8 @@ use logic::parsers::common::{ResponseOperations,
                              SignatureValues};
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
+use utils::json_conversion::JsonSerialize;
+use indy::ErrorCode;
 
 /**
     for parse_response_with_fees_handler input resp_json
@@ -110,7 +112,7 @@ impl ParseResponseWithFeesReply {
         please note:  use of this function moves ParseResponseWithFees and it cannot be used again
         after this call
     */
-    pub fn from_response(base : ParseResponseWithFees) -> ParseResponseWithFeesReply {
+    pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFeesReply, ErrorCode> {
         let mut utxos: Vec<UTXO> = vec![];
 
         // according to the documentation, don't need the inputs.  Only the outputs
@@ -120,10 +122,10 @@ impl ParseResponseWithFeesReply {
         for output in outputs {
             let output_address : String = output.0.to_string();
             let amount: u32 = output.1;
-            let qualified_address: String = append_qualifer_to_address(&output_address);
-            let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
+            let qualified_address: String = add_qualifer_to_address(&output_address);
+            let seq_no: i32 = base.request.tnx_meta_data.seq_no;
 
-            let txo: TXO = TXO { address: qualified_address.to_string(), seq_no };
+            let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
             let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 
@@ -131,22 +133,7 @@ impl ParseResponseWithFeesReply {
         }
 
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply { ver : 1, utxo_json : utxos};
-        return reply;
-    }
-
-    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> i32 {
-        let inputs = &base.request.fees.inputs;
-
-        for input in inputs {
-            let input_address : String = input.0.to_string();
-
-            if input_address == output_address.to_string() {
-                return input.1;
-            }
-
-        }
-
-        return -1;
+        return Ok(reply);
     }
 }
 
@@ -346,7 +333,7 @@ mod parse_response_with_fees_handler_tests {
     fn success_parse_response_with_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
+        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response).unwrap();
 
         assert_eq!(1, reply.utxo_json.len());
 
@@ -357,7 +344,7 @@ mod parse_response_with_fees_handler_tests {
     #[test]
     fn success_parse_response_with_multiple_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response);
+        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response).unwrap();
 
         assert_eq!(2, reply.utxo_json.len());
 

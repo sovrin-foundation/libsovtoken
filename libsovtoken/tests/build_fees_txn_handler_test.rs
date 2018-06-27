@@ -3,6 +3,7 @@
 extern crate libc;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
+extern crate rust_base58;
 pub mod utils;
 
 use indy::ErrorCode;
@@ -79,6 +80,7 @@ fn add_fees_invalid_json_key() {
 
 #[test]
 fn add_fees_json() {
+    sovtoken::api::sovtoken_init();
     let fees = json!({
         "3": 6,
         "20001": 12
@@ -88,7 +90,8 @@ fn add_fees_json() {
         "fees": fees,
     });
 
-    let (ec_initial, receiver) = call_set_fees(FAKE_DID, fees);
+    use rust_base58::ToBase58;
+    let (ec_initial, receiver) = call_set_fees(&"1234567890123456".as_bytes().to_base58(), fees);
     let (ec_callback, fees_request) = receiver.recv().unwrap();
 
     let request_value: serde_json::value::Value = serde_json::from_str(&fees_request).unwrap();

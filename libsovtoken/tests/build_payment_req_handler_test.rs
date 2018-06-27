@@ -19,6 +19,7 @@ use std::ffi::CString;
 use std::time::Duration;
 use std::ffi::CStr;
 use std::sync::mpsc::channel;
+use sovtoken::logic::parsers::common::TXO;
 
 mod utils;
 
@@ -69,7 +70,7 @@ fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
 
     let addresses = payment_addresses
         .iter()
-        .map(|address| address::unqualified_address_from_address(address.clone()).unwrap())
+        .map(|address| address::unqualified_address_from_address(&address).unwrap())
         .collect();
 
     return (payment_addresses, addresses);
@@ -139,6 +140,7 @@ fn errors_with_no_submitter_did_json() {
 #[test]
 fn success_signed_request() {
 
+    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
 
     let did = String::from("287asdjkh2323kjnbakjs");
@@ -147,44 +149,34 @@ fn success_signed_request() {
     debug!("wallet id = {:?}", wallet_id);
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    println!("{}", txo_1);
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
 
-    let inputs = json!({
-        "ver": 1,
-        "inputs": [
+    let outputs = json!([
             {
-                "address": payment_addresses[0],
-                "seqNo": 1
-            },
-            {
-                "address": payment_addresses[1],
-                "seqNo": 1,
-                "extra": "extra data",
-            }
-        ]
-    });
-
-    let outputs = json!({
-        "ver": 1,
-        "outputs": [
-            {
-                "address": payment_addresses[2],
+                "paymentAddress": payment_addresses[2],
                 "amount": 10
             },
             {
-                "address": payment_addresses[3],
+                "paymentAddress": payment_addresses[3],
                 "amount": 22,
                 "extra": "extra data"
             }
-        ]
-    });
+        ]);
 
     let expected_operation = json!({
-        "type": XFER_PUBLIC.to_string(),
+        "type": XFER_PUBLIC,
         "inputs": [
-            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
-            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
+            [addresses[0], 1],
+            [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
+        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
+                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
     });
 
     let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
@@ -210,13 +202,15 @@ fn success_signed_request() {
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
-    assert!(request.get("reqId").is_some());
+    assert!(request.get("reqId").is_some());    indy::wallet::Wallet::close(wallet_id);
+    indy::wallet::Wallet::close(wallet_id);
+    utils::test::TestUtils::cleanup_storage();
 }
 
 #[test]
-#[ignore]
 fn success_signed_request_from_libindy() {
 
+    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
 
     let did = String::from("Th7MpTaRZVRYnPiabds81Y");
@@ -226,43 +220,34 @@ fn success_signed_request_from_libindy() {
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
 
-    let inputs = json!({
-        "ver": 1,
-        "inputs": [
-            {
-                "address": payment_addresses[0],
-                "seqNo": 1
-            },
-            {
-                "address": payment_addresses[1],
-                "seqNo": 1,
-                "extra": "extra data",
-            }
-        ]
-    });
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
 
-    let outputs = json!({
-        "ver": 1,
-        "outputs": [
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
+
+    let outputs = json!([
             {
-                "address": payment_addresses[2],
+                "paymentAddress": payment_addresses[2],
                 "amount": 10
             },
             {
-                "address": payment_addresses[3],
+                "paymentAddress": payment_addresses[3],
                 "amount": 22,
                 "extra": "extra data"
             }
-        ]
-    });
+        ]);
 
     let expected_operation = json!({
-        "type": XFER_PUBLIC.to_string(),
+        "type": XFER_PUBLIC,
         "inputs": [
-            [addresses[0], 1, "5cf6YmesLninnQyemBXG4QBsX5GALGhz2Vg9ZcJd1joaMKNDcT47cHGdriQgS2n8VaXmw8xpPNiGpps1TFzf1e2X"],
-            [addresses[1], 1, "PbaxJhdNwaskqGRRhH6RB22caG5yM5DLRYF7Hmou5mXMArgZA3rZGkmLtV9JANfB8xjijEog5ki3Jvbr2F3q2bN"]
+            [addresses[0], 1],
+            [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
+        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
+                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
     });
 
     let (sender, receiver) = channel();
@@ -288,4 +273,7 @@ fn success_signed_request_from_libindy() {
     assert_eq!(&expected_operation, request.get("operation").unwrap());
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
     assert!(request.get("reqId").is_some());
+
+    indy::wallet::Wallet::close(wallet_id);
+    utils::test::TestUtils::cleanup_storage();
 }

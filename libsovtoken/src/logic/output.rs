@@ -9,9 +9,9 @@ pub type Outputs = Vec<Output>;
 
 /**
  * Config which holds a vec of [`Output`]s
- * 
+ *
  * Also has a version for backward compatability.
- * 
+ *
  * [`Outputs`]: Output
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
@@ -25,7 +25,7 @@ pub struct OutputConfig {
 
     ```text
     // (address, token_amount)
-    ("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5)
+    ("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5)
     ```
 
     # Deserialization
@@ -35,7 +35,7 @@ pub struct OutputConfig {
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::output::Output;
-    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 5]"#;
+    let json = r#"["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]"#;
     let output = Output::from_json(json);
     ```
 
@@ -44,7 +44,7 @@ pub struct OutputConfig {
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::output::Output;
     let json = r#"{
-        "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+        "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
         "amount": 5,
         "extra": None
     }"#;
@@ -57,10 +57,10 @@ pub struct OutputConfig {
     ```
     use sovtoken::utils::json_conversion::JsonSerialize;
     use sovtoken::logic::output::Output;
-    let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+    let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
     let output = Output::new(address, 5, None);
     let json = Output::to_json(&output).unwrap();
-    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",5]"#);
+    assert_eq!(json, r#"["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",5]"#);
     ```
 
 */
@@ -68,6 +68,7 @@ pub struct OutputConfig {
 pub struct Output {
     pub address: String,
     pub amount: u32,
+    // This is wrong, there should be no extra in output
     pub extra: Option<String>,
 }
 
@@ -118,21 +119,21 @@ impl<'de> Deserialize<'de> for Output {
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "address" => { address = map.next_value()?; },
+                        "paymentAddress" => { address = map.next_value()?; },
                         "amount" => { amount =  map.next_value()?; },
                         "extra" => { extra = map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let address = address.ok_or(de::Error::missing_field("address"))?;
+                let address = address.ok_or(de::Error::missing_field("paymentAddress"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
                 return Ok(Output::new(address, amount, extra));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["address", "amount", "extra"];
+        const FIELDS: &'static [&'static str] = &["paymentAddress", "amount", "extra"];
         return deserializer.deserialize_struct("Output", FIELDS, OutputVisitor);
     }
 }
@@ -168,13 +169,13 @@ mod output_tests {
     }
 
     fn output_with_extra() -> Output {
-        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
         let extra = Some(String::from("ewt3eioSSDziqDGehdJLSEwanzZNsgaawqp"));
         return Output::new(address, 10, extra);
     }
 
     fn output_without_extra() -> Output {
-        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
         return Output::new(address, 10, None);
     }
 
@@ -186,15 +187,15 @@ mod output_tests {
 
     #[test]
     fn deserialize_output_tuple() {
-        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 10]);
-        let expected = Output::new(String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
+        let expected = Output::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
         assert_valid_deserialize(json, expected);
     }
 
     #[test]
     fn deserialize_invalid_output_object() {
         let json = json!({
-            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "extra": "eifjoaiandvskasn",
         });
         assert_invalid_deserialize(json, "missing field `amount`");
@@ -203,7 +204,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_object_without_extra() {
         let json = json!({
-            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "amount": 10,
         });
         let output = output_without_extra();
@@ -213,7 +214,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_object_with_extra() {
         let json = json!({
-            "address": "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",
+            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "amount": 10,
             "extra": "ewt3eioSSDziqDGehdJLSEwanzZNsgaawqp",
         });
@@ -223,14 +224,14 @@ mod output_tests {
 
     #[test]
     fn serialize_output_without_extra() {
-        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 10]);
+        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
         let output = output_without_extra();
         assert_valid_serialize(output, json);
     }
 
     #[test]
     fn serialize_output_with_extra() {
-        let json = json!(["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 10]);
+        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
         let output = output_with_extra();
         assert_valid_serialize(output, json);
     }
@@ -244,12 +245,12 @@ mod output_config_test {
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]
     fn serializing_fee_struct_output_config() {
-        let output = Output::new(String::from("AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"), 10, None);
+        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
 
         let fee: OutputConfig = OutputConfig {
             ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]]}"#);
     }
 }
