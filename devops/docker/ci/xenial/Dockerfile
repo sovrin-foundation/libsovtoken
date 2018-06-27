@@ -6,7 +6,7 @@ ARG u_name=user
 
 ENV LIBINDY_DIR=/usr/lib
 ENV LIBSODIUM_LIB_DIR=/usr/lib
-ENV LIBSODIUM_INCLUDE_DIR=/usr/include
+ENV LIBSODIUM_INC_DIR=/usr/include
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list \
@@ -20,4 +20,4 @@ USER $u_name
 # TODO CMD ENTRYPOINT ...
 WORKDIR /home/$u_name
 
-ENV CI_ENV_VERSION=0.5.1
+ENV CI_ENV_VERSION=0.5.2
