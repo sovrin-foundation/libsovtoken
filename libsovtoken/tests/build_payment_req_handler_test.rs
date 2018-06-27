@@ -17,7 +17,6 @@ use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
-use std::ffi::CStr;
 use std::sync::mpsc::channel;
 use sovtoken::logic::parsers::common::TXO;
 
@@ -202,8 +201,8 @@ fn success_signed_request() {
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
-    assert!(request.get("reqId").is_some());    indy::wallet::Wallet::close(wallet_id);
-    indy::wallet::Wallet::close(wallet_id);
+    assert!(request.get("reqId").is_some());
+    indy::wallet::Wallet::close(wallet_id).unwrap();
     utils::test::TestUtils::cleanup_storage();
 }
 
@@ -274,6 +273,6 @@ fn success_signed_request_from_libindy() {
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
     assert!(request.get("reqId").is_some());
 
-    indy::wallet::Wallet::close(wallet_id);
+    indy::wallet::Wallet::close(wallet_id).unwrap();
     utils::test::TestUtils::cleanup_storage();
 }

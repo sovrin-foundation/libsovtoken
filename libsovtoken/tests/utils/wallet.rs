@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 /*!
  * A set of test helpers dealing with the wallet.
  */

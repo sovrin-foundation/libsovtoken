@@ -116,7 +116,6 @@ fn valid_output_json_from_libindy() {
     let did = "Th7MpTaRZVRYnPiabds81Y";
     let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
     let outputs_str = VALID_OUTPUT_JSON;
-    let outputs_str_ptr = outputs_str.as_ptr();
     let (sender, receiver) = channel();
 
     let cb = move |ec, req, payment_method| {
