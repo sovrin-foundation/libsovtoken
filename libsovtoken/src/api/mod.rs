@@ -155,29 +155,18 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
  * 
  * ### inputs_json
  * ```JSON
- * {
- *     "ver": <int>
- *     "inputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "seqNo": <int>
- *          }
- *     ]
- * }
+ * [<str: txo>]
  * ```
  * 
  * ### outputs_json
  * ```JSON
- * {
- *      "ver": <int>
- *      "outputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "amount": <int>
- *              "extra": <str>
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": <str: payment_address>,
+ *          "amount": <int>
+ *          "extra": <str>
+ *      }
+ * ]
  * ```
  * 
  * ## Example
@@ -195,28 +184,17 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
  * 
  * #### inputs_json
  * ```JSON
- * {
- *      "ver": 1,
- *      "inputs": [
- *          {
- *              "address": "pay:sov:7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM",
- *              "seqNo": 1
- *          }
- *      ]
- * }
+ * ["txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD6KZCuNwGWnmmtGVgkXafzy7fgaWrpKnwVbNnxTdHF5T4vsAZPe3BVkk3Pg5dYdnGedFHaFhWW2PsgqGAyTLfh4Vit"]
  * ```
  * 
  * #### outputs_json
  * ```JSON
- * {
- *      "ver": 1,
- *      "outputs": [
- *          {
- *              "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
- *              "amount": "10"
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+ *          "amount": "10"
+ *      }
+ * ]
  * ```
  * 
  * ### Return
@@ -228,8 +206,9 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
  *          "type": 3
  *      },
  *      "fees": {
- *          "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
- *          "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 10]]
+ *          "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1]],
+ *          "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 10]],
+ *          "signatures": ["2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]
  *      }
  * }
  * ```
@@ -352,29 +331,18 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
  * 
  * ### inputs_json
  * ```JSON
- * {
- *     "ver": <int>
- *     "inputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "seqNo": <int>
- *          }
- *     ]
- * }
+ * [<str: txo>, <str: txo>]
  * ```
  * 
  * ### outputs_json
  * ```JSON
- * {
- *      "ver": <int>
- *      "outputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "amount": <int>
- *              "extra": <str>
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": <str: payment_address>,
+ *          "amount": <int>
+ *          "extra": <str>
+ *      }
+ * ]
  * ```
  * 
  * ## Returns
@@ -385,8 +353,9 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
  *      "reqId": <int>,
  *      "operation" {
  *          "type": "10001",
- *          "inputs": [<str: payment_address>, <int: seq_no>, <str: signature>],
- *          "outputs": [<str: payment_address>, <int: amount>]
+ *          "inputs": [<str: payment_address>, <int: seq_no>],
+ *          "outputs": [<str: payment_address>, <int: amount>],
+ *          "signatures": [<str: signature>]
  *      }
  * }
  * ```
@@ -754,16 +723,13 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
  * 
  * ### outputs_json
  * ```JSON
- * {
- *      "ver": <int>
- *      "outputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "amount": <int>
- *              "extra": <str>
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": <str: payment_address>,
+ *          "amount": <int>
+ *          "extra": <str>
+ *      }
+ * ]
  */
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(

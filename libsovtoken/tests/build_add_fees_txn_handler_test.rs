@@ -44,6 +44,7 @@ fn init_wallet_with_address() -> (IndyHandle, String) {
 
 #[test]
 fn test_add_fees_to_request_valid() {
+    utils::test::TestUtils::cleanup_storage();
     let (wallet_handle, input_address) = init_wallet_with_address();
 
     let fake_request = json!({
@@ -73,12 +74,15 @@ fn test_add_fees_to_request_valid() {
     });
 
     let result = call_add_fees(wallet_handle, inputs.to_string(), outputs.to_string(), fake_request.to_string()).unwrap();
+
+    indy::wallet::Wallet::close(wallet_handle);
     assert_eq!(expected_fees_request.to_string(), result);
+    utils::test::TestUtils::cleanup_storage();
 }
 
 #[test]
-#[ignore]
 fn test_add_fees_to_request_valid_from_libindy() {
+    utils::test::TestUtils::cleanup_storage();
     let (wallet_handle, input_address) = init_wallet_with_address();
     let did = "Th7MpTaRZVRYnPiabds81Y";
 
@@ -99,8 +103,9 @@ fn test_add_fees_to_request_valid_from_libindy() {
 
     let expected_fees_request = json!({
        "fees": {
-           "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
-           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]]
+           "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
+           "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
+           "signatures": ["44CNMo4qHJUkm26NLC4ptxACTMHq3MsPgiPRQfCgP98LBN3zck5DXTWoPScPtX6FNvSBM8NZhwTgFgw25tKXQGii"]
        },
        "operation": {
            "type": "3"
@@ -123,4 +128,6 @@ fn test_add_fees_to_request_valid_from_libindy() {
     let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(15)).unwrap();
 
     assert_eq!(expected_fees_request.to_string(), req);
+    indy::wallet::Wallet::close(wallet_handle);
+    utils::test::TestUtils::cleanup_storage();
 }

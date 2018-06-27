@@ -140,6 +140,7 @@ fn errors_with_no_submitter_did_json() {
 #[test]
 fn success_signed_request() {
 
+    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
 
     let did = String::from("287asdjkh2323kjnbakjs");
@@ -150,7 +151,7 @@ fn success_signed_request() {
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
     let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
     let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
-
+    println!("{}", txo_1);
     let inputs = json!([
             txo_1, txo_2
         ]);
@@ -201,13 +202,15 @@ fn success_signed_request() {
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
-    assert!(request.get("reqId").is_some());
+    assert!(request.get("reqId").is_some());    indy::wallet::Wallet::close(wallet_id);
+    indy::wallet::Wallet::close(wallet_id);
+    utils::test::TestUtils::cleanup_storage();
 }
 
 #[test]
-#[ignore]
 fn success_signed_request_from_libindy() {
 
+    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
 
     let did = String::from("Th7MpTaRZVRYnPiabds81Y");
@@ -217,24 +220,20 @@ fn success_signed_request_from_libindy() {
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
 
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+
     let inputs = json!([
-            {
-                "address": payment_addresses[0],
-                "seqNo": 1
-            },
-            {
-                "address": payment_addresses[1],
-                "seqNo": 1
-            }
+            txo_1, txo_2
         ]);
 
     let outputs = json!([
             {
-                "address": payment_addresses[2],
+                "paymentAddress": payment_addresses[2],
                 "amount": 10
             },
             {
-                "address": payment_addresses[3],
+                "paymentAddress": payment_addresses[3],
                 "amount": 22,
                 "extra": "extra data"
             }
@@ -274,4 +273,7 @@ fn success_signed_request_from_libindy() {
     assert_eq!(&expected_operation, request.get("operation").unwrap());
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
     assert!(request.get("reqId").is_some());
+
+    indy::wallet::Wallet::close(wallet_id);
+    utils::test::TestUtils::cleanup_storage();
 }

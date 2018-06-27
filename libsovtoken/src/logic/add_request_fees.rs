@@ -117,6 +117,7 @@ fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, request_json_m
 }
 
 fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<String, ErrorCode> {
+    trace!("fee_map: {:?}", request_json_map_with_fees);
     let serialized_request_with_fees = serde_json::to_string(&json!(request_json_map_with_fees))
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Serialized request_with_fees");

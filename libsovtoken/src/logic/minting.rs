@@ -58,6 +58,7 @@ mod test_build_mint_request {
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use logic::output::{Output, OutputConfig};
+    use rust_base58::ToBase58;
     use super::*;
     
     #[test]
@@ -78,9 +79,9 @@ mod test_build_mint_request {
                 "amount": 12
             }]);
 
-        let did = c_pointer_from_str("en32ansFeZNERIouv2xAo");
+        let did_str = &"1123456789abcdef".as_bytes().to_base58();
         let (did, output_config, _) = test_deserialize_inputs::call_deserialize_inputs(
-            Some(did),
+            Some(c_pointer_from_str(did_str)),
             Some(c_pointer_from_string(output_config_value.to_string())),
             None
         ).unwrap();
@@ -90,7 +91,7 @@ mod test_build_mint_request {
         let mint_value: serde_json::value::Value = serde_json::from_str(&mint_request_json).unwrap();
 
         let expected = json!({
-            "identifier": "en32ansFeZNERIouv2xAo",
+            "identifier": did_str,
             "operation": {
                 "type": MINT_PUBLIC,
                 "outputs": [
