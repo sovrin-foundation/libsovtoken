@@ -659,11 +659,14 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         Err(_) => return ErrorCode::CommonInvalidStructure as i32
     };
 
-    let get_txn_request = GetFeesRequest::new(did);
+    let get_txn_request = GetFeesRequest::new().as_request(did);
 
-    let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
+    let request_pointer = match get_txn_request.serialize_to_pointer() {
+        Ok(p) => p,
+        Err(_) => return ErrorCode::CommonInvalidState as i32
+    };
 
-    return handle_result(Ok(get_txn_request.as_ptr())) as i32;
+    return handle_result(Ok(request_pointer)) as i32;
 }
 
 /// Description
