@@ -236,7 +236,7 @@ mod test_xfer_payload {
 
     fn sign_input_sync(input: &Input, outputs: &Outputs) -> Result<String, ErrorCode> {
         let wallet_handle = 1;
-        let (sender, receiver) = sync::mpsc::channel();
+        let (sender, receiver) = channel();
         let sender = Mutex::new(sender);
         let cb = move |result| { sender.lock().unwrap().send(result); };
         XferPayload::sign_input(

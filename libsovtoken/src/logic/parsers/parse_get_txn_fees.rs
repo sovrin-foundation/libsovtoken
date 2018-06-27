@@ -60,6 +60,7 @@ mod parse_fees_responses_test {
     use serde_json;
 
     #[test]
+    #[ignore]
     fn success_parse_fees_from_reply_response() {
         let get_fees_response =
             r#"{

@@ -51,6 +51,7 @@ impl MintRequest {
 mod output_mint_config_test {
     use super::*;
     use utils::json_conversion::JsonSerialize;
+    use logic::output::OutputConfig;
 
     #[test]
     fn serializing_mint_struct_config() {

@@ -57,7 +57,7 @@ pub fn build_mint_request(
 mod test_build_mint_request {
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
-    use logic::output::{Output, OutputConfig};
+    use logic::output::Output;
     use rust_base58::ToBase58;
     use super::*;
     
