@@ -230,11 +230,8 @@ mod test_deserialize_inputs {
         error_deserialize_inputs_request(invalid_json, ErrorCode::CommonInvalidStructure);
     }
 
-    use env_logger;
-
     #[test]
     fn deserialize_inputs_valid() {
-        env_logger::init();
         let result = call_deserialize_inputs(None, None, None, None);
         assert!(result.is_ok());
     }
