@@ -13,7 +13,6 @@ use logic::indy_sdk_api::crypto_api::CryptoAPI;
 use logic::input::{Input, Inputs};
 use logic::output::{Outputs};
 use serde_json;
-use std::sync;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -167,8 +166,6 @@ trait InputSigner<A: CryptoAPI> {
         let message = serde_json::to_string(&message_json_value)
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
-
-        let input = input.to_owned();
 
         let ca = move |signature: Result<String, ErrorCode>| {
             debug!("Received encoded signature >>> {:?}", signature);

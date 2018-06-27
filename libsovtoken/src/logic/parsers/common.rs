@@ -53,9 +53,9 @@ impl TXO {
 
     pub fn from_libindy_string(txo_str: &str) -> Result<Self, serde_json::Error> {
         let json_u8 = txo_str.replace(TXO_IDENTIFIER, "").from_base58_check()
-            .map_err(|e| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
+            .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
         let json = str::from_utf8(&json_u8)
-            .map_err(|e| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
+            .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
         TXO::from_json(json)
     }
 }

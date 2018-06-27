@@ -7,7 +7,7 @@
 
 use logic::did::Did;
 use logic::request::Request;
-use logic::output::{Output, OutputConfig};
+use logic::output::Output;
 use utils::constants::txn_types::MINT_PUBLIC;
 use logic::output::Outputs;
 
