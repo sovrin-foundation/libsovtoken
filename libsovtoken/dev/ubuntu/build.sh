@@ -14,9 +14,9 @@ GIT_BRANCH="master"
 REBUILD=0
 HOST=$(uname -s)
 case "${HOST}" in
-    Linux*)  CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
-    CYGWIN*) CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
-    MINGW*)  CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
+    Linux*)   CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
+    CYGWIN*)  CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
+    MINGW*)   CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
     FreeBSD*) CPUS=$(sysctl -n hw.physicalcpu) ;;
     Darwin*)  CPUS=$(sysctl -n hw.physicalcpu) ;;
     *) CPUS=2 ;;
