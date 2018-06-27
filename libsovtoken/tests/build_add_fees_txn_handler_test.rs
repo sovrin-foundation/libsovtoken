@@ -75,7 +75,7 @@ fn test_add_fees_to_request_valid() {
 
     let result = call_add_fees(wallet_handle, inputs.to_string(), outputs.to_string(), fake_request.to_string()).unwrap();
 
-    indy::wallet::Wallet::close(wallet_handle).unwrap();
+    utils::wallet::close_wallet(wallet_handle);
     assert_eq!(expected_fees_request.to_string(), result);
     utils::test::TestUtils::cleanup_storage();
 }
@@ -128,6 +128,6 @@ fn test_add_fees_to_request_valid_from_libindy() {
     let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(15)).unwrap();
 
     assert_eq!(expected_fees_request.to_string(), req);
-    indy::wallet::Wallet::close(wallet_handle).unwrap();
+    utils::wallet::close_wallet(wallet_handle);
     utils::test::TestUtils::cleanup_storage();
 }

@@ -31,3 +31,7 @@ pub fn create_wallet(wallet_name : &str) -> i32 {
 
     return wallet_id;
 }
+
+pub fn close_wallet(wallet_handle: i32) {
+    let _ = Wallet::close(wallet_handle);
+}
