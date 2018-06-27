@@ -27,7 +27,7 @@ use logic::xfer_payload::XferPayload;
         use sovtoken::logic::xfer_payload::XferPayload;
 
         sovtoken::api::sovtoken_init();
-        // let wallet_handle = utils::wallet::create_wallet("wallet_add_fees");
+        // let wallet = utils::wallet::Wallet::new().unwrap();
 
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
         let address1 = String::from("pay:sov:TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs");
@@ -44,7 +44,7 @@ use logic::xfer_payload::XferPayload;
         ];
 
         let transfer_data = XferPayload::new(inputs, outputs);
-            // .sign(&CryptoSdk {}, wallet_handle)
+            // .sign(&CryptoSdk {}, wallet.handle)
             // .unwrap();
 
         let payment = PaymentRequest::new(transfer_data);

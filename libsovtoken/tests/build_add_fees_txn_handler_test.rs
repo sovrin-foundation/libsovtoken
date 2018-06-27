@@ -12,6 +12,7 @@ use sovtoken::utils::ffi_support::c_pointer_from_str;
 use std::sync::mpsc::channel;
 use std::time::Duration;
 use sovtoken::logic::parsers::common::TXO;
+use utils::wallet::Wallet;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {
@@ -30,22 +31,21 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, req
     return ResultHandler::one(ErrorCode::from(error_code), receiver); 
 }
 
-fn init_wallet_with_address() -> (IndyHandle, String) {
+fn init_wallet_with_address() -> (utils::wallet::Wallet, String) {
     sovtoken::api::sovtoken_init();
 
-    let wallet_handle = utils::wallet::create_wallet("wallet_add_fees");
+    let wallet = Wallet::new();
     let key_config = json!({
         "seed": str::repeat("2", 32),
     });
 
-    let input_address = Payment::create_payment_address(wallet_handle, "sov", &key_config.to_string()).unwrap();
-    return (wallet_handle, input_address);
+    let input_address = Payment::create_payment_address(wallet.handle, "sov", &key_config.to_string()).unwrap();
+    return (wallet, input_address);
 }
 
 #[test]
 fn test_add_fees_to_request_valid() {
-    utils::test::TestUtils::cleanup_storage();
-    let (wallet_handle, input_address) = init_wallet_with_address();
+    let (wallet, input_address) = init_wallet_with_address();
 
     let fake_request = json!({
        "operation": {
@@ -73,17 +73,19 @@ fn test_add_fees_to_request_valid() {
        }
     });
 
-    let result = call_add_fees(wallet_handle, inputs.to_string(), outputs.to_string(), fake_request.to_string()).unwrap();
+    let result = call_add_fees(
+        wallet.handle,
+        inputs.to_string(),
+        outputs.to_string(),
+        fake_request.to_string()
+    ).unwrap();
 
-    utils::wallet::close_wallet(wallet_handle);
     assert_eq!(expected_fees_request.to_string(), result);
-    utils::test::TestUtils::cleanup_storage();
 }
 
 #[test]
 fn test_add_fees_to_request_valid_from_libindy() {
-    utils::test::TestUtils::cleanup_storage();
-    let (wallet_handle, input_address) = init_wallet_with_address();
+    let (wallet, input_address) = init_wallet_with_address();
     let did = "Th7MpTaRZVRYnPiabds81Y";
 
     let fake_request = json!({
@@ -118,16 +120,16 @@ fn test_add_fees_to_request_valid_from_libindy() {
         sender.send((ec, req, method));
     };
 
-    let return_error = indy::payments::Payment::add_request_fees_async(wallet_handle,
-                                                    did,
-                                                    &fake_request.to_string(),
-                                                    &inputs.to_string(),
-                                                    &outputs.to_string(),
-                                                    cb);
+    let return_error = indy::payments::Payment::add_request_fees_async(
+        wallet.handle,
+        did,
+        &fake_request.to_string(),
+        &inputs.to_string(),
+        &outputs.to_string(),
+        cb
+    );
 
     let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(15)).unwrap();
 
     assert_eq!(expected_fees_request.to_string(), req);
-    utils::wallet::close_wallet(wallet_handle);
-    utils::test::TestUtils::cleanup_storage();
 }

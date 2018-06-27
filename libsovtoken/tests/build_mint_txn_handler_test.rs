@@ -114,7 +114,7 @@ fn  valid_output_json() {
 fn valid_output_json_from_libindy() {
     sovtoken::api::sovtoken_init();
     let did = "Th7MpTaRZVRYnPiabds81Y";
-    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
+    let wallet = utils::wallet::Wallet::new();
     let outputs_str = VALID_OUTPUT_JSON;
     let (sender, receiver) = channel();
 
@@ -122,10 +122,11 @@ fn valid_output_json_from_libindy() {
         sender.send((ec, req, payment_method));
     };
 
-    let return_error = indy::payments::Payment::build_mint_req_async(wallet_id,
-                                                                     did,
-                                                                     outputs_str,
-                                                                     cb
+    let return_error = indy::payments::Payment::build_mint_req_async(
+        wallet.handle,
+        did,
+        outputs_str,
+        cb
     );
 
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");

@@ -3,7 +3,11 @@
  */
 
 extern crate rust_indy_sdk as indy;
-use self::indy::wallet::Wallet;
+extern crate sovtoken;
+
+use self::indy::ErrorCode;
+use self::indy::wallet::Wallet as IndyWallet;
+use self::sovtoken::utils::random::rand_string;
 
 use std::panic;
 
@@ -15,23 +19,41 @@ static USEFUL_CREDENTIALS : &'static str = r#"
    }
 "#;
 
-/** Creates a wallet and opens it.
- *  Will delete the current wallet if it exists. It will then create and open the wallet.
- *  
- *  # Errors
- *  May panic on creating the wallet or opening it.
- */
-pub fn create_wallet(wallet_name : &str) -> i32 {
-   let _ = panic::catch_unwind(| | {
-       Wallet::delete(wallet_name, Some(USEFUL_CREDENTIALS)).unwrap();
-   });
 
-    Wallet::create("pool_1", wallet_name, None, None, Some(USEFUL_CREDENTIALS)).unwrap();
-    let wallet_id: i32 = Wallet::open(wallet_name, None, Some(USEFUL_CREDENTIALS)).unwrap();
-
-    return wallet_id;
+pub struct Wallet {
+    name: String,
+    pub handle: i32,
 }
 
-pub fn close_wallet(wallet_handle: i32) {
-    let _ = Wallet::close(wallet_handle);
+impl Wallet {
+    pub fn new() -> Wallet {
+        let name = rand_string(20);
+        Wallet::create(&name).unwrap();
+        let handle = Wallet::open(&name).unwrap();
+
+        Wallet { name, handle }
+    }
+
+    fn open(name: &str) -> Result<i32, ErrorCode> {
+        IndyWallet::open(&name, None, Some(USEFUL_CREDENTIALS))
+    }
+
+    fn create(name: &str) -> Result<(), ErrorCode> {
+        IndyWallet::create("pool_1", &name, None, None, Some(USEFUL_CREDENTIALS))
+    }
+
+    fn close(handle: i32) -> Result<(), ErrorCode> {
+        IndyWallet::close(handle)
+    }
+
+    fn delete(name: &str) -> Result<(), ErrorCode> {
+        IndyWallet::delete(name, Some(USEFUL_CREDENTIALS))
+    }
+}
+
+impl Drop for Wallet {
+    fn drop(&mut self) {
+        Wallet::close(self.handle).unwrap();
+        Wallet::delete(&self.name).unwrap();
+    }
 }
