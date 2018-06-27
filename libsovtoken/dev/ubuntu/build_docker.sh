@@ -67,11 +67,11 @@ ${CMD}
 
 if [ ! -L "/home/token_user/.cargo/git" ] ; then
     rm -rf /rust/git
-    mv -v /home/token_user/.cargo/git /rust/git
+    mv /home/token_user/.cargo/git /rust/git
 fi
 if [ ! -L "/home/token_user/.cargo/registry" ] ; then
     rm -rf /rust/registry
-    mv -v /home/token_user/.cargo/registry /rust/registry
+    mv /home/token_user/.cargo/registry /rust/registry
 fi
 EOF
 }
