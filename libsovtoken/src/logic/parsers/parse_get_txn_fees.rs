@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use serde_json;
 use serde_json::Error;
 
-use logic::parsers::common::ResponseOperations;
+use logic::parsers::common::{ResponseOperations, StateProof};
 use utils::json_conversion::JsonDeserialize;
 
 /**
@@ -45,20 +45,6 @@ pub struct ParseGetTxnFeesResult {
     // This is being renamed back to the snake case because that is what the JSON object key expects
     #[serde(rename = "state_proof")]
     pub state_proof : StateProof
-}
-
-/**
-    Structure of the state proof value within the Result structure
-
-    # parameters
-    root_hash - the Merkle root hash of the state trie at the time of response by the ledger
-    proof_nodes - the list of hashes necessary to verify the root_hash
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct StateProof {
-    pub multi_signature : String,
-    pub root_hash : String,
-    pub proof_nodes : String
 }
 
 pub fn parse_fees_from_get_txn_fees_response(response : String) -> Result<String, Error> {
@@ -131,7 +117,6 @@ mod parse_fees_responses_test {
             invalid_json_response.to_string());
 
         let json_error_bool: bool = invalid_fees_json.is_err();
-        println!("{:?}", json_error_bool);
         assert!(json_error_bool);
     }
 }

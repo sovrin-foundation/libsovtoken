@@ -123,15 +123,9 @@ impl ParseResponseWithFeesReply {
             let output_address : String = output.0.to_string();
             let amount: u32 = output.1;
             let qualified_address: String = add_qualifer_to_address(&output_address);
-            let seq_no: i32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
+            let seq_no: i32 = base.request.tnx_meta_data.seq_no;
 
-            let txo = match (TXO { address: qualified_address.to_string(), seq_no }).to_json() {
-                Ok(s) => s,
-                Err(err) => {
-                    error!("JSON serialization error: {:?}", err);
-                    return Err(ErrorCode::CommonInvalidState);
-                }
-            };
+            let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
             let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 
@@ -140,21 +134,6 @@ impl ParseResponseWithFeesReply {
 
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply { ver : 1, utxo_json : utxos};
         return Ok(reply);
-    }
-
-    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> i32 {
-        let inputs = &base.request.fees.inputs;
-
-        for input in inputs {
-            let input_address : String = input.0.to_string();
-
-            if input_address == output_address.to_string() {
-                return input.1;
-            }
-
-        }
-
-        return -1;
     }
 }
 

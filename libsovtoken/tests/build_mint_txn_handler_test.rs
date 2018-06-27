@@ -27,7 +27,7 @@ mod utils;
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-static VALID_OUTPUT_JSON: &'static str = r#"{"ver":1,"outputs":[["pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]}"#;
+static VALID_OUTPUT_JSON: &'static str = r#"[{"paymentAddress":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":10}]"#;
 
 // ***** UNIT TESTS ****
 
@@ -75,6 +75,7 @@ fn errors_with_invalid_outputs_json() {
 
 #[test]
 fn  valid_output_json() {
+    sovtoken::api::sovtoken_init();
     static mut CALLBACK_CALLED: bool = false;
     extern "C" fn valid_output_json_cb(command_handle: i32, error_code: i32, mint_request: *const c_char) -> i32 {
         unsafe { CALLBACK_CALLED = true; }
@@ -94,7 +95,7 @@ fn  valid_output_json() {
         return ErrorCode::Success as i32;
     }
 
-    let did = c_pointer_from_str("857297582y4672jdsjk8l");
+    let did = c_pointer_from_str("Th7MpTaRZVRYnPiabds81Y");
     let outputs_str = CString::new(VALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
     let return_error = sovtoken::api::build_mint_txn_handler(
@@ -112,8 +113,8 @@ fn  valid_output_json() {
 }
 
 #[test]
-#[ignore]
 fn valid_output_json_from_libindy() {
+    sovtoken::api::sovtoken_init();
     let did = "Th7MpTaRZVRYnPiabds81Y";
     let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
     let outputs_str = VALID_OUTPUT_JSON;

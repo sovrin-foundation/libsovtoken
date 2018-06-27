@@ -9,9 +9,9 @@ pub type Outputs = Vec<Output>;
 
 /**
  * Config which holds a vec of [`Output`]s
- * 
+ *
  * Also has a version for backward compatability.
- * 
+ *
  * [`Outputs`]: Output
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
@@ -119,21 +119,21 @@ impl<'de> Deserialize<'de> for Output {
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "address" => { address = map.next_value()?; },
+                        "paymentAddress" => { address = map.next_value()?; },
                         "amount" => { amount =  map.next_value()?; },
                         "extra" => { extra = map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let address = address.ok_or(de::Error::missing_field("address"))?;
+                let address = address.ok_or(de::Error::missing_field("paymentAddress"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
                 return Ok(Output::new(address, amount, extra));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["address", "amount", "extra"];
+        const FIELDS: &'static [&'static str] = &["paymentAddress", "amount", "extra"];
         return deserializer.deserialize_struct("Output", FIELDS, OutputVisitor);
     }
 }
@@ -195,7 +195,7 @@ mod output_tests {
     #[test]
     fn deserialize_invalid_output_object() {
         let json = json!({
-            "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
+            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "extra": "eifjoaiandvskasn",
         });
         assert_invalid_deserialize(json, "missing field `amount`");
@@ -204,7 +204,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_object_without_extra() {
         let json = json!({
-            "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
+            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "amount": 10,
         });
         let output = output_without_extra();
@@ -214,7 +214,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_object_with_extra() {
         let json = json!({
-            "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
+            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
             "amount": 10,
             "extra": "ewt3eioSSDziqDGehdJLSEwanzZNsgaawqp",
         });
