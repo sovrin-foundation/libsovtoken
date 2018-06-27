@@ -86,9 +86,6 @@ mod get_fees_config_test {
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        let get_fees_config = GetFeesRequest {
-            txn_type: GET_FEES.to_string()
-        };
         let request = GetFeesRequest::new().as_request(did);
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }
