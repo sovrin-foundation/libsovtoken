@@ -210,11 +210,10 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
 #!/bin/bash
 set -xv
 apt-get -qq update -y
-apt-get -qq install -y software-properties-common 2>&1 > /dev/null
+apt-get -qq install -y software-properties-common apt-transport-https 2>&1 > /dev/null
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 add-apt-repository -y "deb https://repo.sovrin.org/sdk/deb xenial ${APT_INSTALL}"
-apt-get -qq update -y
-apt-get -qq install -y indy 2>&1 > /dev/null
+apt-get -qq update -y && apt-get -qq install -y libindy 2>&1 > /dev/null
 EOT
     else
         echo "" > "${INDY_INSTALL}"
