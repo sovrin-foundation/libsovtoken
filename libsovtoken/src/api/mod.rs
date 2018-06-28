@@ -502,8 +502,11 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         Err(_) => return ErrorCode::CommonInvalidStructure as i32
     };
 
-    let utxo_request = GetUtxoRequest::new(String::from(payment_address), did.into());
-    let utxo_request = utxo_request.serialize_to_cstring().unwrap();
+    let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address), did.into());
+    let utxo_request = match utxo_request.serialize_to_cstring() {
+        Ok(s) => s,
+        Err(_e) => return ErrorCode::CommonInvalidStructure as i32
+    };
 
     handle_result(Ok(utxo_request.as_ptr())) as i32
 }

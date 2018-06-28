@@ -1,3 +1,5 @@
+//! This module is for ???
+
 use api::{JsonCallback, JsonCallbackUnwrapped};
 use indy::ErrorCode;
 use libc::c_char;
