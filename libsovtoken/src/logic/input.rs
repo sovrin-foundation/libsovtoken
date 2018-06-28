@@ -177,11 +177,6 @@ mod input_tests {
         assert_eq!(input, expected_input);
     }
 
-    fn assert_invalid_serialize(input: Input, error_message_starts_with: &str) {
-        let invalid = Input::to_json(&input).unwrap_err();
-        assert!(format!("{}", invalid).starts_with(error_message_starts_with));
-    }
-
     fn assert_valid_serialize(input: Input, json: serde_json::Value) {
         let json_string = json_value_to_string(json);
         let input_serialized = Input::to_json(&input).unwrap();
@@ -238,6 +233,13 @@ mod input_tests {
         );
         let input = valid_input();
         assert_valid_deserialize(json, input);
+    }
+
+    #[test]
+    fn serialize_input() {
+        let input = Input::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 5);
+        let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
+        assert_valid_serialize(input, expected);
     }
 }
 

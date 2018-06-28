@@ -18,6 +18,7 @@ use indy::utils::results::ResultHandler;
 use std::time::Duration;
 
 mod utils;
+use utils::wallet::Wallet;
 
 // ***** HELPER METHODS *****
 
@@ -114,19 +115,19 @@ fn  valid_output_json() {
 fn valid_output_json_from_libindy() {
     sovtoken::api::sovtoken_init();
     let did = "Th7MpTaRZVRYnPiabds81Y";
-    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
+    let wallet = Wallet::new();
     let outputs_str = VALID_OUTPUT_JSON;
-    let outputs_str_ptr = outputs_str.as_ptr();
     let (sender, receiver) = channel();
 
     let cb = move |ec, req, payment_method| {
-        sender.send((ec, req, payment_method));
+        sender.send((ec, req, payment_method)).unwrap();
     };
 
-    let return_error = indy::payments::Payment::build_mint_req_async(wallet_id,
-                                                                     did,
-                                                                     outputs_str,
-                                                                     cb
+    let return_error = indy::payments::Payment::build_mint_req_async(
+        wallet.handle,
+        did,
+        outputs_str,
+        cb
     );
 
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
@@ -139,9 +140,12 @@ fn valid_output_json_from_libindy() {
         .unwrap();
 
     let expected = json!({
-            "type": "10000",
-            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
-        });
+        "type": "10000",
+        "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+    });
+
+
+    assert_eq!("sov", payment_method);
     assert_eq!(mint_operation, &expected);
 }
 
