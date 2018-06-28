@@ -117,7 +117,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
     let (sender, receiver) = channel();
 
     let cb = move |ec, req, method| {
-        sender.send((ec, req, method));
+        sender.send((ec, req, method)).unwrap();
     };
 
     let return_error = indy::payments::Payment::add_request_fees_async(
@@ -130,6 +130,6 @@ fn test_add_fees_to_request_valid_from_libindy() {
     );
 
     let (req, method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(15)).unwrap();
-
+    assert_eq!("sov", method);
     assert_eq!(expected_fees_request.to_string(), req);
 }

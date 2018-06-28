@@ -21,6 +21,7 @@ use std::sync::mpsc::channel;
 use sovtoken::logic::parsers::common::TXO;
 
 mod utils;
+use utils::wallet::Wallet;
 
 
 // ***** HELPER METHODS *****
@@ -142,7 +143,7 @@ fn success_signed_request() {
 
     let did = String::from("287asdjkh2323kjnbakjs");
 
-    let wallet = utils::wallet::Wallet::new();
+    let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
@@ -172,8 +173,10 @@ fn success_signed_request() {
             [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
-        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
-                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
+        "signatures": [
+            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
+            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+        ]
     });
 
     let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
@@ -209,7 +212,7 @@ fn success_signed_request_from_libindy() {
 
     let did = String::from("Th7MpTaRZVRYnPiabds81Y");
 
-    let wallet = utils::wallet::Wallet::new();
+    let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
@@ -240,8 +243,10 @@ fn success_signed_request_from_libindy() {
             [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
-        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
-                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
+        "signatures": [
+            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
+            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+        ]
     });
 
     let (sender, receiver) = channel();
