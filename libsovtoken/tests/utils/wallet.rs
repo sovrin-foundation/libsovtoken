@@ -9,8 +9,6 @@ use self::indy::ErrorCode;
 use self::indy::wallet::Wallet as IndyWallet;
 use self::sovtoken::utils::random::rand_string;
 
-use std::panic;
-
 static USEFUL_CREDENTIALS : &'static str = r#"
    {
        "key": "12345678901234567890123456789012",
@@ -28,32 +26,44 @@ pub struct Wallet {
 impl Wallet {
     pub fn new() -> Wallet {
         let name = rand_string(20);
-        Wallet::create(&name).unwrap();
-        let handle = Wallet::open(&name).unwrap();
+        let mut wallet = Wallet { name, handle: -1 };
+        wallet.create().unwrap();
+        wallet.open().unwrap();
 
-        Wallet { name, handle }
+        wallet
     }
 
-    fn open(name: &str) -> Result<i32, ErrorCode> {
-        IndyWallet::open(&name, None, Some(USEFUL_CREDENTIALS))
+    pub fn from_name(name: &str) -> Wallet {
+        let name = name.to_owned();
+        let mut wallet = Wallet { name, handle: -1 };
+        wallet.create().unwrap();
+        wallet.open().unwrap();
+
+        wallet
     }
 
-    fn create(name: &str) -> Result<(), ErrorCode> {
-        IndyWallet::create("pool_1", &name, None, None, Some(USEFUL_CREDENTIALS))
+    fn open(&mut self) -> Result<i32, ErrorCode> {
+        let handle = IndyWallet::open(&self.name, None, Some(USEFUL_CREDENTIALS))?;
+        self.handle = handle;
+        Ok(handle)
     }
 
-    fn close(handle: i32) -> Result<(), ErrorCode> {
-        IndyWallet::close(handle)
+    fn create(&self) -> Result<(), ErrorCode> {
+        IndyWallet::create("pool_1", &self.name, None, None, Some(USEFUL_CREDENTIALS))
     }
 
-    fn delete(name: &str) -> Result<(), ErrorCode> {
-        IndyWallet::delete(name, Some(USEFUL_CREDENTIALS))
+    fn close(&self) -> Result<(), ErrorCode> {
+        IndyWallet::close(self.handle)
+    }
+
+    fn delete(&self) -> Result<(), ErrorCode> {
+        IndyWallet::delete(&self.name, Some(USEFUL_CREDENTIALS))
     }
 }
 
 impl Drop for Wallet {
     fn drop(&mut self) {
-        Wallet::close(self.handle).unwrap();
-        Wallet::delete(&self.name).unwrap();
+        self.close().unwrap();
+        self.delete().unwrap();
     }
 }
