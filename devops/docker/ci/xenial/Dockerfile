@@ -14,10 +14,15 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
         libindy \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /tmp
+RUN curl https://download.libsodium.org/libsodium/releases/libsodium-1.0.14.tar.gz | tar -xz
+WORKDIR /tmp/libsodium-1.0.14
+RUN ./configure --prefix=/usr && make && make install && ldconfig
+
 RUN useradd -ms /bin/bash -u $u_id $u_name
 USER $u_name
 
 # TODO CMD ENTRYPOINT ...
 WORKDIR /home/$u_name
 
-ENV CI_ENV_VERSION=0.5.2
+ENV CI_ENV_VERSION=0.6.0
