@@ -1,6 +1,8 @@
 extern crate libc;
 
 extern crate sovtoken;
+#[macro_use]
+extern crate serde_derive;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
@@ -18,6 +20,9 @@ use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use std::sync::mpsc::channel;
 use indy::utils::results::ResultHandler;
 use std::time::Duration;
+use sovtoken::logic::parsers::common::ResponseOperations;
+use sovtoken::utils::json_conversion::JsonDeserialize;
+use utils::parse_mint_response::ParseMintResponse;
 
 mod utils;
 
@@ -122,7 +127,7 @@ fn valid_output_json_from_libindy() {
     let (sender, receiver) = channel();
 
     let cb = move |ec, req, payment_method| {
-        sender.send((ec, req, payment_method));
+        sender.send((ec, req, payment_method)).unwrap();
     };
 
     let return_error = indy::payments::Payment::build_mint_req_async(wallet_id,
@@ -133,7 +138,7 @@ fn valid_output_json_from_libindy() {
 
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
 
-    let (req, payment_method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
+    let (req, _) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
 
     let mint_request_json_value : serde_json::Value = serde_json::from_str(&req).unwrap();
     let mint_operation = mint_request_json_value
@@ -155,8 +160,9 @@ pub fn build_and_submit_mint_txn_works() {
     let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
     let pool_name = "p1";
     let wallet_name = "w1";
-    let pool_config = None;
-    //TODO: make genesis txn file and put to pool config
+    let pc_str = utils::pool::create_pool_config();
+    let pool_config = Some(pc_str.as_str());
+    indy::pool::Pool::set_protocol_version(2).unwrap();
 
     indy::pool::Pool::create_ledger_config(pool_name, pool_config).unwrap();
     indy::wallet::Wallet::create(pool_name, wallet_name, None, None, Some(&json!({"key": "1"}).to_string())).unwrap();
@@ -164,15 +170,15 @@ pub fn build_and_submit_mint_txn_works() {
     let wallet_handle = indy::wallet::Wallet::open(wallet_name, None, Some(&json!({"key": "1"}).to_string())).unwrap();
     let pool_handle = indy::pool::Pool::open_ledger(pool_name, None).unwrap();
 
-    let (did, verkey) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
-    let (did_2, verkey_2) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee2"}).to_string()).unwrap();
-    let (did_3, verkey_2) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee3"}).to_string()).unwrap();
+    let (did, _) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did_2, _) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee2"}).to_string()).unwrap();
+    let (did_3, _) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee3"}).to_string()).unwrap();
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000000"}).to_string()).unwrap();
     let pa2 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000001"}).to_string()).unwrap();
     let pa3 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000002"}).to_string()).unwrap();
 
-    let (mint_req, name) = indy::payments::Payment::build_mint_req(wallet_handle, &did,
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet_handle, &did,
         &json!([
         {
             "paymentAddress": pa1,
@@ -196,5 +202,7 @@ pub fn build_and_submit_mint_txn_works() {
     let sign3 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did_3, &sign2).unwrap();
 
     let result = indy::ledger::Ledger::submit_request(pool_handle, &sign3).unwrap();
+    let response = ParseMintResponse::from_json(&result).unwrap();
+    assert_eq!(response.op, ResponseOperations::REPLY);
     utils::test::TestUtils::cleanup_storage();
 }
