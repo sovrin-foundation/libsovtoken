@@ -75,11 +75,11 @@ pub struct InputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub address: String,
-    pub seq_no: i32
+    pub seq_no: u64
 }
 
 impl Input {
-    pub fn new(address: String, seq_no: i32) -> Input {
+    pub fn new(address: String, seq_no: u64) -> Input {
         return Input { address, seq_no};
     }
 
@@ -111,7 +111,8 @@ impl<'de> Deserialize<'de> for Input {
             fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
                 let txo = TXO::from_libindy_string(v)
                     .map_err(|ec| de::Error::custom(format!("Error when deserializing txo: error code {:?}", ec)))?;
-                Ok(Input{ address: txo.address, seq_no: txo.seq_no })
+
+                return Ok(Input::new(txo.address, txo.seq_no ))
             }
 
             fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Input, V::Error> {
