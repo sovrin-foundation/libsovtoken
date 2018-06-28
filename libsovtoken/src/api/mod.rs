@@ -33,6 +33,8 @@ use logic::xfer_payload::XferPayload;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
+use std::ffi::CString;
+use utils::ffi_support::c_pointer_from_str;
 
 /**
     Defines a callback to communicate results to Indy-sdk as type
@@ -153,29 +155,18 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
  * 
  * ### inputs_json
  * ```JSON
- * {
- *     "ver": <int>
- *     "inputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "seqNo": <int>
- *          }
- *     ]
- * }
+ * [<str: txo>]
  * ```
  * 
  * ### outputs_json
  * ```JSON
- * {
- *      "ver": <int>
- *      "outputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "amount": <int>
- *              "extra": <str>
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": <str: payment_address>,
+ *          "amount": <int>
+ *          "extra": <str>
+ *      }
+ * ]
  * ```
  * 
  * ## Example
@@ -193,28 +184,17 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
  * 
  * #### inputs_json
  * ```JSON
- * {
- *      "ver": 1,
- *      "inputs": [
- *          {
- *              "address": "pay:sov:7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM",
- *              "seqNo": 1
- *          }
- *      ]
- * }
+ * ["txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD6KZCuNwGWnmmtGVgkXafzy7fgaWrpKnwVbNnxTdHF5T4vsAZPe3BVkk3Pg5dYdnGedFHaFhWW2PsgqGAyTLfh4Vit"]
  * ```
  * 
  * #### outputs_json
  * ```JSON
- * {
- *      "ver": 1,
- *      "outputs": [
- *          {
- *              "address": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
- *              "amount": "10"
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+ *          "amount": "10"
+ *      }
+ * ]
  * ```
  * 
  * ### Return
@@ -226,8 +206,9 @@ pub extern "C" fn list_payment_addresses_handler() -> i32 {
  *          "type": 3
  *      },
  *      "fees": {
- *          "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1, "2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]],
- *          "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 10]]
+ *          "inputs": [["7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8GYjJM", 1]],
+ *          "outputs": [["x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6", 10]],
+ *          "signatures": ["2uU4zJWjVMKAmabQefkxhFc3K4BgPuwqVoZUiWYS2Ct9hidmKF9hcLNBjw76EjuDuN4RpzejKJUofJPcA3KhkBvi"]
  *      }
  * }
  * ```
@@ -261,15 +242,18 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
-    let serialized_request_with_fees = match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map) {
-        Ok(map) => map,
+    match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map, Box::new(move |res| {
+        match res {
+            Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
+            Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
+        };
+    })) {
         Err(e) => {
             error!("Received error adding fees to request_json'");
             return e as i32;
         }
+        _ => ()
     };
-
-    cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(serialized_request_with_fees));
 
     return ErrorCode::Success as i32;
 }
@@ -347,29 +331,18 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
  * 
  * ### inputs_json
  * ```JSON
- * {
- *     "ver": <int>
- *     "inputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "seqNo": <int>
- *          }
- *     ]
- * }
+ * [<str: txo>, <str: txo>]
  * ```
  * 
  * ### outputs_json
  * ```JSON
- * {
- *      "ver": <int>
- *      "outputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "amount": <int>
- *              "extra": <str>
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": <str: payment_address>,
+ *          "amount": <int>
+ *          "extra": <str>
+ *      }
+ * ]
  * ```
  * 
  * ## Returns
@@ -380,8 +353,9 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
  *      "reqId": <int>,
  *      "operation" {
  *          "type": "10001",
- *          "inputs": [<str: payment_address>, <int: seq_no>, <str: signature>],
- *          "outputs": [<str: payment_address>, <int: amount>]
+ *          "inputs": [<str: payment_address>, <int: seq_no>],
+ *          "outputs": [<str: payment_address>, <int: amount>],
+ *          "signatures": [<str: signature>]
  *      }
  * }
  * ```
@@ -404,19 +378,28 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     };
 
     let payload = XferPayload::new(inputs, outputs);
-    let payload_signed = payload.sign(&CryptoSdk {}, wallet_handle).unwrap();
-    debug!("Signed payload >>> {:?}", payload_signed);
+    let result = payload.sign(&CryptoSdk {}, wallet_handle, Box::new(move |result| {
+        let payload_signed = match result {
+            Err(err) => {
+                cb(command_handle, err as i32, CString::new("").unwrap().as_ptr());
+                return;
+            }
+            Ok(payload) => payload
+        };
+        debug!("Signed payload >>> {:?}", payload_signed);
 
-    let identifier = payload_signed.inputs[0].address.clone();
+        let identifier = payload_signed.inputs[0].address.clone();
 
-    let payment_request = PaymentRequest::new(payload_signed)
-        .as_request(identifier);
+        let payment_request = PaymentRequest::new(payload_signed)
+            .as_request(identifier);
 
-    let payment_request = payment_request.serialize_to_cstring().unwrap();
+        let payment_request = payment_request.serialize_to_cstring().unwrap();
 
-    debug!("payment_request >>> {:?}", payment_request);
+        debug!("payment_request >>> {:?}", payment_request);
 
-    cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
+        cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
+    })).unwrap();
+
     return ErrorCode::Success as i32;
 }
 
@@ -676,11 +659,14 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         Err(_) => return ErrorCode::CommonInvalidStructure as i32
     };
 
-    let get_txn_request = GetFeesRequest::new(did);
+    let get_txn_request = GetFeesRequest::new().as_request(did);
 
-    let get_txn_request = get_txn_request.serialize_to_cstring().unwrap();
+    let request_pointer = match get_txn_request.serialize_to_pointer() {
+        Ok(p) => p,
+        Err(_) => return ErrorCode::CommonInvalidState as i32
+    };
 
-    return handle_result(Ok(get_txn_request.as_ptr())) as i32;
+    return handle_result(Ok(request_pointer)) as i32;
 }
 
 /// Description
@@ -740,16 +726,13 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
  * 
  * ### outputs_json
  * ```JSON
- * {
- *      "ver": <int>
- *      "outputs": [
- *          {
- *              "address": <str: payment_address>,
- *              "amount": <int>
- *              "extra": <str>
- *          }
- *      ]
- * }
+ * [
+ *      {
+ *          "paymentAddress": <str: payment_address>,
+ *          "amount": <int>
+ *          "extra": <str>
+ *      }
+ * ]
  */
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(

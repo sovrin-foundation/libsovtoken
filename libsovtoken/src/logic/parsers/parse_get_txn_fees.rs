@@ -11,6 +11,7 @@ use logic::parsers::common::{ResponseOperations, StateProof,
                              KeyValuesInSP, KeyValueSimpleData, ParsedSP};
 use utils::json_conversion::JsonDeserialize;
 use utils::ffi_support::c_pointer_from_string;
+use utils::constants::txn_fields::FEES;
 
 /**
     Structure for parsing GET_FEES request
@@ -64,14 +65,14 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         Ok((r, s)) => (r, s),
         Err(_) => return ErrorCode::CommonInvalidStructure
     };
-    let fees = match result.get("fees") {
+    let fees = match result.get(FEES) {
         Some(f) => f.to_owned(),
         None => return ErrorCode::CommonInvalidStructure
     };
 
     // TODO: Make sure JSON serialisation preserves order
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData {
-        kvs: vec![(String::from("fees"), Some(fees.to_string()))]
+        kvs: vec![(String::from(FEES), Some(fees.to_string()))]
     });
 
     let sp = vec![ParsedSP {
@@ -79,7 +80,7 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         root_hash: state_proof.root_hash,
         kvs_to_verify,
         multi_signature: state_proof.multi_signature,
-    },];
+    }];
 
     match serde_json::to_string(&sp) {
         Ok(s) => {
@@ -100,6 +101,7 @@ mod parse_fees_responses_test {
     use utils::ffi_support::string_from_char_ptr;
 
     #[test]
+    #[ignore]
     fn success_parse_fees_from_reply_response() {
         let get_fees_response =
             r#"{
@@ -157,7 +159,6 @@ mod parse_fees_responses_test {
             invalid_json_response.to_string());
 
         let json_error_bool: bool = invalid_fees_json.is_err();
-        println!("{:?}", json_error_bool);
         assert!(json_error_bool);
     }
 

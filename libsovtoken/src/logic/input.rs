@@ -2,8 +2,9 @@
     Payment Input
 */
 
-use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
+use serde::{de, ser, Deserialize, ser::SerializeTuple, Serialize};
 use std::fmt;
+use logic::parsers::common::TXO;
 
 pub type Inputs = Vec<Input>;
 
@@ -74,11 +75,11 @@ pub struct InputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub address: String,
-    pub seq_no: u32
+    pub seq_no: u64
 }
 
 impl Input {
-    pub fn new(address: String, seq_no: u32) -> Input {
+    pub fn new(address: String, seq_no: u64) -> Input {
         return Input { address, seq_no};
     }
 
@@ -105,6 +106,13 @@ impl<'de> Deserialize<'de> for Input {
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 return formatter.write_str("Expected an Input with address and seqNo.");
+            }
+
+            fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                let txo = TXO::from_libindy_string(v)
+                    .map_err(|ec| de::Error::custom(format!("Error when deserializing txo: error code {:?}", ec)))?;
+
+                return Ok(Input::new(txo.address, txo.seq_no ))
             }
 
             fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Input, V::Error> {
@@ -139,7 +147,7 @@ impl<'de> Deserialize<'de> for Input {
         }
 
         const FIELDS: &'static [&'static str] = &["address", "seqNo"];
-        return deserializer.deserialize_struct("Input", FIELDS, InputVisitor);
+        return deserializer.deserialize_any(InputVisitor);
     }
 }
 
@@ -149,6 +157,8 @@ mod input_tests {
     use super::Input;
     use serde_json;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+    use logic::parsers::common::TXO;
+    use rust_base58::ToBase58;
 
     fn json_value_to_string(json: serde_json::Value) -> String {
         return serde_json::to_string(&json).unwrap();
@@ -158,18 +168,13 @@ mod input_tests {
         let json_string = json_value_to_string(json);
         let invalid = Input::from_json(&json_string).unwrap_err();
         println!("{}", invalid);
-        assert!(format!("{}", invalid).starts_with(error_message_starts_with));
+        assert!(format!("{}", invalid).contains(error_message_starts_with));
     }
 
     fn assert_valid_deserialize(json: serde_json::Value, expected_input: Input) {
         let json_string = json_value_to_string(json);
         let input = Input::from_json(&json_string).unwrap();
         assert_eq!(input, expected_input);
-    }
-
-    fn assert_invalid_serialize(input: Input, error_message_starts_with: &str) {
-        let invalid = Input::to_json(&input).unwrap_err();
-        assert!(format!("{}", invalid).starts_with(error_message_starts_with));
     }
 
     fn assert_valid_serialize(input: Input, json: serde_json::Value) {
@@ -204,28 +209,37 @@ mod input_tests {
 
     #[test]
     fn deserialize_invalid_input_object_without_seq_no() {
-        let json = json!({
+        let json = json!("txo:sov:".to_string() + &json!({
             "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
-        });
+        }).to_string().as_bytes().to_base58_check());
         assert_invalid_deserialize(json, "missing field `seqNo`");
     }
 
     #[test]
     fn deserialize_input_object_without_address() {
-        let json = json!({
+        let json = json!("txo:sov:".to_string() + &json!({
             "seqNo": 30,
-        });
+        }).to_string().as_bytes().to_base58_check());
         assert_invalid_deserialize(json, "missing field `address`");
     }
 
     #[test]
     fn deserialize_input_object_with_keys() {
-        let json = json!({
-            "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
-            "seqNo": 30,
-        });
+        let json = json!(
+            TXO {
+                address: "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7".to_string(),
+                seq_no: 30
+            }.to_libindy_string().unwrap()
+        );
         let input = valid_input();
         assert_valid_deserialize(json, input);
+    }
+
+    #[test]
+    fn serialize_input() {
+        let input = Input::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 5);
+        let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
+        assert_valid_serialize(input, expected);
     }
 }
 

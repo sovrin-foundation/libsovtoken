@@ -59,8 +59,8 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     pub extra: Option<String>,
-    pub inputs : Vec<(String, i32)>,
-    pub outputs: Vec<(String, u32)>,
+    pub inputs : Vec<(String, u64)>,
+    pub outputs: Vec<(String, u64)>,
 }
 
 /**
@@ -92,13 +92,8 @@ pub fn from_response(base : ParsePaymentResponse) -> Result<ParsePaymentReply, E
 
         let (address, amount) = unspent_output;
         let qualified_address: String = add_qualifer_to_address(&address);
-        let txo = match (TXO { address: qualified_address.to_string(), seq_no: 1 }).to_json() {
-            Ok(s) => s,
-            Err(err) => {
-                error!("JSON serialization error: {:?}", err);
-                return Err(ErrorCode::CommonInvalidState);
-            }
-        };
+        let seq_no: u64 = base.result.tnx_meta_data.seq_no;
+        let txo = (TXO { address: qualified_address.to_string(), seq_no}).to_libindy_string()?;
         let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 
         utxos.push(utxo);

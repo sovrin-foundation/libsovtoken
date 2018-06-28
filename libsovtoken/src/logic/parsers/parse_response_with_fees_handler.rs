@@ -49,13 +49,13 @@ pub struct ParseResponseWithFeesRequest {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionFees {
-    pub fees: i32,
+    pub fees: u64,
     #[serde(rename = "ref")]
     pub reference: String,
     pub root_hash: String,
     pub audit_path: Vec<String>,
-    pub inputs: Vec<(String, i32)>,
-    pub outputs: Vec<(String, u32)>,
+    pub inputs: Vec<(String, u64)>,
+    pub outputs: Vec<(String, u64)>,
     #[serde(rename = "txnMetadata")]
     pub tnx_meta_data: TransactionMetaData,
     pub req_signature: RequireSignature,
@@ -118,21 +118,14 @@ impl ParseResponseWithFeesReply {
         // according to the documentation, don't need the inputs.  Only the outputs
         // and seq_no which are part 2 and 3 of the tuple
         let outputs = &base.request.fees.outputs;
-
+        let seq_no: u64 = base.request.tnx_meta_data.seq_no;
+        
         for output in outputs {
             let output_address : String = output.0.to_string();
-            let amount: u32 = output.1;
+            let amount: u64 = output.1;
             let qualified_address: String = add_qualifer_to_address(&output_address);
-            // Why is there no error checking?
-            let seq_no: u32 = ParseResponseWithFeesReply::find_seq_no(&base, &output_address);
 
-            let txo = match (TXO { address: qualified_address.to_string(), seq_no }).to_json() {
-                Ok(s) => s,
-                Err(err) => {
-                    error!("JSON serialization error: {:?}", err);
-                    return Err(ErrorCode::CommonInvalidState);
-                }
-            };
+            let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
             let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 
@@ -141,22 +134,6 @@ impl ParseResponseWithFeesReply {
 
         let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply { ver : 1, utxo_json : utxos};
         return Ok(reply);
-    }
-
-    fn find_seq_no(base : &ParseResponseWithFees, output_address: &String) -> u32 {
-        // TODO: The result should be an option, avoid using a sentinel value like
-        let inputs = &base.request.fees.inputs;
-
-        for input in inputs {
-            let input_address : String = input.0.to_string();
-
-            if input_address == output_address.to_string() {
-                return input.1 as u32;
-            }
-
-        }
-
-        return 0;
     }
 }
 

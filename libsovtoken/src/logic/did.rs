@@ -7,6 +7,7 @@ use utils::ffi_support::str_from_char_ptr;
 use std::char;
 use std::error::Error;
 use std::fmt;
+use rust_base58::{FromBase58Error, FromBase58};
 
 
 /**
@@ -19,8 +20,6 @@ use std::fmt;
 pub struct Did<'a>(&'a str);
 
 impl<'a> Did<'a> {
-    const LENGTH_LOWER_BOUND: usize = 20;
-    const LENGTH_HIGHER_BOUND: usize = 21;
 
     pub fn new(did_string: &'a str) -> Self {
         return Did(did_string);
@@ -42,7 +41,7 @@ impl<'a> Did<'a> {
                 use sovtoken::logic::did::Did;
                 use sovtoken::logic::did::DidError;
             
-                let did_invalid = Did::new("123456789[01234567890");
+                let did_invalid = Did::new("123456789[11234567891");
                 let error = did_invalid.validate().unwrap_err();
                 assert_eq!(DidError::InvalidChar('['), error);
             # }
@@ -50,17 +49,14 @@ impl<'a> Did<'a> {
     */
     pub fn validate(self) -> Result<Self, DidError> {
         let Did(did_string) = self;
-        let did_length = did_string.len();
+        let res_did = did_string.from_base58();
 
-        if did_length < Did::LENGTH_LOWER_BOUND || did_length > Did::LENGTH_HIGHER_BOUND {
-            return Err(DidError::InvalidLength(did_length));
+        match res_did {
+            Ok(ref vec) if vec.len() == 32 || vec.len() == 16 => Ok(self),
+            Ok(ref vec) => Err(DidError::InvalidLength(vec.len())),
+            Err(FromBase58Error::InvalidBase58Byte(b, _)) => Err(DidError::InvalidChar(b as char)),
+            Err(_) => Err(DidError::InvalidLength(did_string.len()))
         }
-
-        if let Some(c) = did_string.chars().find(|c| ! char::is_alphanumeric(*c)) {
-            return Err(DidError::InvalidChar(c));
-        }
-
-        return Ok(self);
     }
 }
 
@@ -104,16 +100,12 @@ impl Error for DidError {
 mod test_did_validation {
     use super::*;
     use utils::ffi_support::c_pointer_from_str;
+    use rust_base58::ToBase58;
     use std::ptr;
 
     #[test]
-    fn did_invalid_length_short() {
-        assert_eq!(Err(DidError::InvalidLength(19)), Did::new("0123456789abcdefghi").validate());
-    }
-
-    #[test]
-    fn did_invalid_length_long() {
-        assert_eq!(Err(DidError::InvalidLength(22)), Did::new("0123456789abcdefghijkl").validate());
+    fn did_invalid_length() {
+        assert_eq!(Err(DidError::InvalidLength(17)), Did::new(&"1123456789abcdef1".as_bytes().to_base58()).validate());
     }
 
     #[test]
@@ -122,13 +114,13 @@ mod test_did_validation {
     }
 
     #[test]
-    fn did_valid_length_20() {
-        assert!(Did::new("0123456789abcdefghij").validate().is_ok());
+    fn did_valid_length_16() {
+        assert!(Did::new(&"1123456789abcdef".as_bytes().to_base58()).validate().is_ok());
     }
 
     #[test]
-    fn did_valid_length_21() {
-        assert!(Did::new("0123456789abcdefghijk").validate().is_ok());
+    fn did_valid_length_32() {
+        assert!(Did::new(&"1123456789abcdef1123456789abcdef".as_bytes().to_base58()).validate().is_ok());
     }
 
     #[test]
@@ -145,7 +137,7 @@ mod test_did_validation {
 
     #[test]
     fn did_valid_deserialize() {
-        let pointer = c_pointer_from_str("0123456789abcdefghijk");
+        let pointer = c_pointer_from_str("1123456789abcdefghijk");
         assert!(Did::from_pointer(pointer).unwrap().validate().is_ok());
     }
 }

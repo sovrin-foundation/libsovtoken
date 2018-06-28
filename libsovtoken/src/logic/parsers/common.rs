@@ -1,8 +1,5 @@
 //!
 
-extern crate serde;
-extern crate serde_json;
-
 use std::ffi::CString;
 
 use serde_json::{Value as SJsonValue};
@@ -10,6 +7,12 @@ use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
 use utils::json_conversion::JsonDeserialize;
+
+use rust_base58::{FromBase58, ToBase58};
+use std::str;
+use serde_json;
+use utils::json_conversion::*;
+use std::io;
 
 /**
     enumeration matches values for the op field in json
@@ -32,7 +35,7 @@ pub enum ResponseOperations {
 pub struct UTXO {
     pub payment_address: String,
     pub txo: String,
-    pub amount: u32,
+    pub amount: u64,
     pub extra: String,
 }
 
@@ -43,9 +46,27 @@ pub struct UTXO {
 #[serde(rename_all = "camelCase")]
 pub struct TXO {
     pub address: String,
-    pub seq_no: u32,
+    pub seq_no: u64,
 }
 
+pub static TXO_IDENTIFIER: &str = "txo:sov:";
+
+impl TXO {
+    pub fn to_libindy_string(&self) -> Result<String, ErrorCode> {
+        let temp = self.to_json()
+            .map_err(|_| ErrorCode::CommonInvalidState)?
+            .as_bytes().to_base58_check();
+        Ok(TXO_IDENTIFIER.to_string() + &temp)
+    }
+
+    pub fn from_libindy_string(txo_str: &str) -> Result<Self, serde_json::Error> {
+        let json_u8 = txo_str.replace(TXO_IDENTIFIER, "").from_base58_check()
+            .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
+        let json = str::from_utf8(&json_u8)
+            .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
+        TXO::from_json(json)
+    }
+}
 
 /**
     the nested type "req_signature" in inputs in parse response methods
@@ -74,10 +95,9 @@ pub struct SignatureValues {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetaData {
-    pub seq_no: u32,
+    pub seq_no: u64,
     pub txn_time: u32,
 }
-
 
 /**
     Structure of the state proof value within the Result structure
@@ -214,7 +234,7 @@ mod common_tests {
         test_invalid_json(invalid_json1);
         // Remove key `root_hash` from `state_proof`
         let invalid_json2 = r#"{ "op" : "REPLY", "result": {"reqId": 83955, "state_proof": {"multi_signature": {"participants": ["Gamma", "Delta", "Beta"], "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"}}, "type": "20001", "identifier": "6ouriXMZkLeHsuXrN1X1fd", "fees": {"1": 4, "10001": 8}}}"#;
-        test_invalid_json(invalid_json1);
+        test_invalid_json(invalid_json2);
     }
 
     #[test]
