@@ -17,7 +17,25 @@ static USEFUL_CREDENTIALS : &'static str = r#"
    }
 "#;
 
+/**
+A test wallet that deletees itself when it leaves scope.
 
+Use by calling `let wallet = Wallet::new();` and pass the `wallet.handle`.
+
+```
+use utils::wallet::Wallet;
+// The wallet is opened and created.
+let wallet_1 = Wallet::new();
+{
+    let wallet_2 = Wallet::new();
+    // we have the wallet and wallet handle.
+    assert!(wallet.handle > 0);
+}
+// Now wallet_2 is out of scope, it closes and deletes itself.
+assert!(wallet.handle > 0);
+```
+
+*/
 pub struct Wallet {
     name: String,
     pub handle: i32,
