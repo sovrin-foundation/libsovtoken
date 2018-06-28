@@ -5,6 +5,7 @@ use utils::random::rand_req_id;
 use serde::Serialize;
 use serde_json;
 use utils::json_conversion::JsonSerialize;
+use utils::constants::general::PROTOCOL_VERSION;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -24,7 +25,7 @@ impl<T> Request<T>
         let req_id = rand_req_id();
         return Request {
             operation,
-            protocol_version: 1,
+            protocol_version: PROTOCOL_VERSION,
             req_id,
             identifier
         }
