@@ -101,7 +101,7 @@ impl XferPayload {
             )
         )?;
 
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -157,13 +157,14 @@ trait InputSigner<A: CryptoAPI> {
         cb: Box<Arc<Fn(Result<String, ErrorCode>) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
+        trace!("logic::xfer_payload::input_signer::sign_input >> input: {:?}, outputs: {:?}, wallet_handle {:?}", input, outputs, wallet_handle);
         let verkey = address::verkey_from_unqualified_address(&input.address.clone())?;
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.address, input.seq_no], outputs]);
         debug!("Message to sign >>> {:?}", message_json_value);
 
-        let message = serde_json::to_string(&message_json_value)
+        let message = serde_json::to_string(&message_json_value).map_err(map_err_err!())
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
 
@@ -179,6 +180,7 @@ trait InputSigner<A: CryptoAPI> {
             ca,
         );
 
+        trace!("logic::xfer_payload::input_signer::sign_input << result: {:?}", ec);
         if ec == ErrorCode::Success {
             Ok(())
         } else {
