@@ -1,7 +1,5 @@
 //!
 
-use std::ffi::CString;
-
 use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
@@ -188,6 +186,7 @@ pub fn extract_result_and_state_proof_from_node_reply(reply_from_node: *const c_
 #[cfg(test)]
 mod common_tests {
     use super::*;
+    use std::ffi::CString;
 
     pub fn test_invalid_json(invalid_json: &str) {
         let json_str = CString::new(invalid_json).unwrap();
