@@ -33,7 +33,6 @@ use logic::xfer_payload::XferPayload;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use std::ffi::CString;
 use utils::ffi_support::c_pointer_from_str;
 
 /**
@@ -75,21 +74,25 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: JsonCallback) -> i32 {
-
+    trace!("api::create_payment_address_handler >> wallet_handle: {:?}, config_str: {:?}", wallet_handle, config_str);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if config_str.is_null() {
+        trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
     let json_config_str: String = match string_from_char_ptr(config_str) {
         Some(s) => s,
-        None => return ErrorCode::CommonInvalidStructure as i32,
+        None => {
+            trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
+            return ErrorCode::CommonInvalidStructure as i32
+        },
     };
 
     // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
     // like { } as valid.  if we get any kind of serialization failure assume we can use the default
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str).map_err(map_err_trace!()) {
         Ok(c) => c,
         Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
@@ -110,7 +113,9 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     };
 
     let handler = CreatePaymentHandler::new(CryptoSdk {} );
-    return handler.create_payment_address_async(wallet_handle, config, payment_closure) as i32;
+    let ec = handler.create_payment_address_async(wallet_handle, config, payment_closure);
+    trace!("api::create_payment_address_handler << result: {:?}", ec);
+    return ec as i32;
 }
 
 /// Description
@@ -224,10 +229,11 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                                                err: i32,
                                                                req_with_fees_json: *const c_char) -> i32>) -> i32 {
 
+    trace!("api::add_request_fees_handler >> wallet_handle: {:?}, did: {:?}, req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, did, req_json, inputs_json, outputs_json);
     let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
-            error!("Error in deserializing the add_request_fees_handler arguments.");
+            trace!("api::add_request_fees_handler << result: {:?}", error_code);
             return error_code as i32;
         }
     };
@@ -243,6 +249,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     }
 
     match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map, Box::new(move |res| {
+        info!("Request with fees: {:?}", res);
         match res {
             Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
             Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
@@ -255,7 +262,9 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         _ => ()
     };
 
-    return ErrorCode::Success as i32;
+    let res = ErrorCode::Success;
+    trace!("api::add_request_fees_handler << result: {:?}", res);
+    return res as i32;
 }
 
 
@@ -279,9 +288,11 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
                                                    cb: Option<extern fn(command_handle_: i32,
                                                                err: i32,
                                                                utxo_json: *const c_char) -> i32>) -> i32 {
+    trace!("api::parse_response_with_fees_handler >> req_json: {:?}", req_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if req_json.is_null() {
+        trace!("api::parse_response_with_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
@@ -293,7 +304,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
         }
     };
 
-    let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string) {
+    let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string).map_err(map_err_err!()) {
         Ok(r) => r,
         Err(e) => return ErrorCode::CommonInvalidStructure as i32,
     };
@@ -302,19 +313,24 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
     // is handled in ParseResponseWithFeesReply::from_response
     let reply: ParseResponseWithFeesReply = match ParseResponseWithFeesReply::from_response(response) {
         Ok(rep) => rep,
-        Err(ec) => return ec as i32,
+        Err(ec) => {
+            trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
+            return ec as i32
+        },
     };
 
-    let reply_str: String = match reply.to_json() {
+    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(e) => return ErrorCode::CommonInvalidState as i32,
     };
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
+    let ec = ErrorCode::Success;
 
-    cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
+    cb(command_handle, ec as i32, reply_str_ptr);
 
-    return ErrorCode::Success as i32;
+    trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
+    ec as i32
 }
 
 
@@ -369,10 +385,11 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
                                             cb: Option<extern fn(command_handle_: i32,
                                                                  err: i32,
                                                                  payment_req_json: *const c_char) -> i32>) -> i32 {
+    trace!("api::build_payment_req_handler >> wallet_handle {:?}, submitter_did: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, submitter_did, inputs_json, outputs_json);
     let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
-            error!("Error in deserializing the build_payment_req_handler arguments.");
+            trace!("api::build_payment_req_handler << result: {:?}", error_code);
             return error_code as i32;
         }
     };
@@ -381,7 +398,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     let result = payload.sign(&CryptoSdk {}, wallet_handle, Box::new(move |result| {
         let payload_signed = match result {
             Err(err) => {
-                cb(command_handle, err as i32, CString::new("").unwrap().as_ptr());
+                cb(command_handle, err as i32, c_pointer_from_str(""));
                 return;
             }
             Ok(payload) => payload
@@ -398,9 +415,14 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         debug!("payment_request >>> {:?}", payment_request);
 
         cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
-    })).unwrap();
+    }));
 
-    return ErrorCode::Success as i32;
+    let ec = match result {
+        Ok(()) => ErrorCode::Success,
+        Err(ec) => ec
+    };
+    trace!("api::build_payment_req_handler << result {:?}", ec);
+    return ec as i32;
 }
 
 /// Parses inputted payment data and returns formatted UTXOs
@@ -423,10 +445,11 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
                                                  cb: Option<extern fn(command_handle_: i32,
                                                              err: i32,
                                                              utxo_json: *const c_char) -> i32>) -> i32 {
-
+    trace!("api::parse_payment_response_handler >> resp_json: {:?}", resp_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if resp_json.is_null() {
+        trace!("api::parse_payment_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
@@ -438,7 +461,8 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
         }
     };
 
-    let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string) {
+    let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string)
+        .map_err(map_err_err!()) {
         Ok(r) => r,
         Err(e) => return ErrorCode::CommonInvalidStructure as i32,
     };
@@ -447,18 +471,23 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
     // is handled in ParsePaymentReply::from_response
     let reply: ParsePaymentReply = match from_response(response) {
         Ok(rep) => rep,
-        Err(ec) => return ec as i32,
+        Err(ec) => {
+            trace!("api::parse_payment_response_handler << result: {:?}", ec);
+            return ec as i32
+        },
     };
 
-    let reply_str: String = match reply.to_json() {
+    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(e) => return ErrorCode::CommonInvalidState as i32,
     };
 
+    info!("Parsed payment response: {:?}", reply_str);
+
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
     cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
-
+    trace!("api::parse_payment_response_handler << result: {:?}", ErrorCode::Success);
     return ErrorCode::Success as i32;
 }
 
@@ -481,34 +510,42 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  submitter_did: *const c_char,
                                                  payment_address: *const c_char,
                                                  cb: JsonCallback)-> i32 {
-
+    trace!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, submitter_did: {:?}, payment_address: {:?}", wallet_handle, submitter_did, payment_address);
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
         None => {
-            error!("Failed to convert submitter_did pointer to string");
+            error!("Failed to convert payment_address pointer to string");
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
 
     let did = match Did::from_pointer(submitter_did) {
         Some(did) => did,
-        None => return ErrorCode::CommonInvalidStructure as i32
+        None => {
+            error!("Failed to convert submitter_did pointer to string");
+            return ErrorCode::CommonInvalidStructure as i32
+        }
     };
 
     let did = match did.validate() {
         Ok(did_valid) => did_valid,
-        Err(_) => return ErrorCode::CommonInvalidStructure as i32
+        Err(_) => {
+            trace!("api::build_get_utxo_request_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
+            return ErrorCode::CommonInvalidStructure as i32
+        }
     };
 
     let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address), did.into());
-    let utxo_request = match utxo_request.serialize_to_cstring() {
-        Ok(s) => s,
-        Err(_e) => return ErrorCode::CommonInvalidStructure as i32
-    };
+    info!("Built GET_UTXO request: {:?}", utxo_request);
+    let utxo_request = utxo_request.serialize_to_cstring()
+        .map(|s| s.as_ptr())
+        .map_err(|_| ErrorCode::CommonInvalidStructure);
 
-    handle_result(Ok(utxo_request.as_ptr())) as i32
+    let res = handle_result(utxo_request) as i32;
+    trace!("api::build_get_utxo_request_handler << result: {:?}", res);
+    res
 }
 
 /// Description
@@ -532,10 +569,11 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
                                                   cb: Option<extern fn(command_handle_: i32,
                                                                        err: i32,
                                                                        utxo_json: *const c_char) -> i32>)-> i32 {
-
+    trace!("api::parse_get_utxo_response_handler >> resp_json: {:?}", resp_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if resp_json.is_null() {
+        trace!("api::parse_get_utxo_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
@@ -543,11 +581,13 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
         Some(s) => s,
         None => {
             error!("Failed to convert inputs_json pointer to string");
+            trace!("api::parse_get_utxo_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
 
-    let response: ParseGetUtxoResponse = match ParseGetUtxoResponse::from_json(&resp_json_string) {
+    let response: ParseGetUtxoResponse = match ParseGetUtxoResponse::from_json(&resp_json_string)
+        .map_err(map_err_err!()) {
         Ok(r) => r,
         Err(e) => return ErrorCode::CommonInvalidStructure as i32,
     };
@@ -556,17 +596,22 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     // is handled in ParseGetUtxoReply::from_response
     let reply: ParseGetUtxoReply = match ParseGetUtxoReply::from_response(response) {
         Ok(reply) => reply,
-        Err(err) => return err as i32
+        Err(err) => {
+            trace!("api::parse_get_utxo_response_handler << result: {:?}", err);
+            return err as i32
+        }
     };
 
-    let reply_str: String = match reply.to_json() {
+    let reply_str: String = match reply.to_json().map_err(map_err_err!())  {
         Ok(j) => j,
         Err(e) => return ErrorCode::CommonInvalidState as i32,
     };
+    info!("Parsed GET_UTXO response, received: {:?}", reply_str);
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
     cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
+    trace!("api::parse_get_utxo_response_handler << result: {:?}", ErrorCode::Success);
     return ErrorCode::Success as i32;
 }
 
@@ -601,13 +646,17 @@ pub extern "C" fn build_set_txn_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
+    trace!("api::build_set_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}, fees_json: {:?}", wallet_handle, submitter_did, fees_json);
     let (_did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
         fees_json,
         cb
     ) {
         Ok(tup) => tup,
-        Err(e) => return e as i32
+        Err(e) => {
+            trace!("api::build_set_txn_fees_handler << result: {:?}", e);
+            return e as i32
+        }
     };
 
     let fees_request = set_fees.as_request();
@@ -617,12 +666,16 @@ pub extern "C" fn build_set_txn_fees_handler(
 
     let fees_request_pointer = match fees_request_pointer_option {
         Ok(ptr) => ptr,
-        Err(e) => return e as i32,
+        Err(e) => {
+            trace!("api::build_set_txn_fees_handler << result: {:?}", e);
+            return e as i32
+        },
     };
 
     cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
 
-    return ErrorCode::Success as i32;
+    trace!("api::build_set_txn_fees_handler << result: {:?}", ErrorCode::Success);
+    ErrorCode::Success as i32
 }
 
 /// Description
@@ -644,6 +697,7 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
                                              cb: Option<extern fn(command_handle_: i32, err: i32, get_txn_fees_json: *const c_char) -> i32>) -> i32 {
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+    trace!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, submitter_did);
 
     if cb.is_none() {
         return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32;
@@ -653,23 +707,33 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
         Some(did) => did,
         None => {
             error!("Failed to convert submitter_did pointer to string");
+            trace!("api::build_get_txn_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
 
     let did = match did.validate() {
         Ok(d) => d,
-        Err(_) => return ErrorCode::CommonInvalidStructure as i32
+        Err(_) => {
+            trace!("api::build_get_txn_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
+            return ErrorCode::CommonInvalidStructure as i32
+        }
     };
 
     let get_txn_request = GetFeesRequest::new().as_request(did);
+    info!("Built GET_TXN_FEES request: {:?}", get_txn_request);
 
     let request_pointer = match get_txn_request.serialize_to_pointer() {
         Ok(p) => p,
-        Err(_) => return ErrorCode::CommonInvalidState as i32
+        Err(_) => {
+            trace!("api::build_get_txn_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
+            return ErrorCode::CommonInvalidState as i32
+        }
     };
 
-    return handle_result(Ok(request_pointer)) as i32;
+    let res = handle_result(Ok(request_pointer)) as i32;
+    trace!("api::build_get_txn_fees_handler << res: {:?}", res);
+    res
 }
 
 /// Description
@@ -691,6 +755,8 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
                                                                 err: i32,
                                                                 fees_json: *const c_char) -> i32>)-> i32{
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
+
+    trace!("api::parse_get_txn_fees_response_handler >> resp_json: {:?}", resp_json);
     if resp_json.is_null() {
         return ErrorCode::CommonInvalidStructure as i32;
     }
@@ -698,21 +764,28 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
         Some(s) => s,
         None => {
             error!("Failed to convert inputs_json pointer to string");
+            trace!("api::parse_get_txn_fees_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+    debug!("Deserialized parse_get_txn_fees_response_handler arguments");
     let fees_json_obj =
         match parse_fees_from_get_txn_fees_response(resp_json_string){
             Ok(s) => {
                 s
             },
             Err(_) => {
+                trace!("api::parse_get_txn_fees_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
                 return ErrorCode::CommonInvalidStructure as i32;
             }
         };
+    info!("Parsed get_txn_fees_response, result: {:?}", fees_json_obj);
     let fees_json_ptr : *const c_char = c_pointer_from_string(fees_json_obj);
     cb(command_handle, ErrorCode::Success as i32, fees_json_ptr);
-    return ErrorCode::Success as i32;
+
+    let res = ErrorCode::Success as i32;
+    trace!("api::parse_get_txn_fees_response_handler << result: {:?}", res);
+    res
 }
 
 
@@ -745,24 +818,33 @@ pub extern "C" fn build_mint_txn_handler(
     outputs_json: *const c_char,
     cb: JsonCallback) -> i32
 {
+    trace!("api::build_mint_txn_handle >> wallet_handle: {:?}, did: {:?}, outputs_json: {:?}", wallet_handle, submitter_did, outputs_json);
     let (did, outputs, cb) = match minting::deserialize_inputs(
         submitter_did,
         outputs_json,
         cb
     ) {
         Ok(tup) => tup,
-        Err(e) => return e as i32,
+        Err(e) => {
+            trace!("api::build_mint_txn_handle << res: {:?}", e);
+            return e as i32
+        },
     };
-    trace!("Deserialized build_mint_txn_handler arguments.");
+    debug!("Deserialized build_mint_txn_handler arguments.");
 
     let mint_request = match minting::build_mint_request(did, outputs) {
         Ok(json) => json,
-        Err(e) => return e as i32
+        Err(e) => {
+            trace!("api::build_mint_txn_handle << res: {:?}", e);
+            return e as i32
+        }
     };
-    trace!("Serialized mint request as pointer.");
+    debug!("Serialized mint request as pointer.");
 
     cb(command_handle, ErrorCode::Success as i32, mint_request);
-    return ErrorCode::Success as i32;
+    let res = ErrorCode::Success;
+    trace!("api::build_mint_txn_handle << res: {:?}", res);
+    res as i32
 }
 
 /**

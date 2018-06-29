@@ -25,30 +25,32 @@ pub fn deserialize_inputs (
     outputs_json: *const c_char,
     cb: Option<AddRequestFeesCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
+    trace!("logic::add_request_fees::deserialize_inputs >> req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", req_json, inputs_json, outputs_json);
 
-    let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
+    let cb = cb.ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
 
-    let request_json = string_from_char_ptr(req_json).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let request_json = string_from_char_ptr(req_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted request_json pointer into string >>> {:?}", request_json);
 
-    let inputs_json = string_from_char_ptr(inputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let inputs_json = string_from_char_ptr(inputs_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted inputs_json pointer to string >>> {:?}", inputs_json);
 
-    let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let inputs: Inputs = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    let inputs: Inputs = serde_json::from_str(&inputs_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized input_json >>> {:?}", inputs);
 
-    let outputs: Outputs = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    let outputs: Outputs = serde_json::from_str(&outputs_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
-    let request_json_object: serde_json::Value = serde_json::from_str(&request_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    let request_json_object: serde_json::Value = serde_json::from_str(&request_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Converted request_json to serde::json::Value");
 
-    let request_json_map = request_json_object.as_object().ok_or(ErrorCode::CommonInvalidStructure)?;
+    let request_json_map = request_json_object.as_object().ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     trace!("Converted request_json to hash_map");
 
+    debug!("Deserialized values: inputs: {:?}, outputs: {:?}, request_json_map: {:?}", inputs, outputs, request_json_map);
     return Ok((
         inputs,
         outputs,
@@ -81,14 +83,16 @@ pub fn add_fees_to_request_and_serialize(
     request_json_map: SerdeMap,
     cb: Box<Fn(Result<String, ErrorCode>) + Send + Sync>
 ) -> Result<(), ErrorCode> {
-    add_fees(wallet_handle, inputs, outputs, request_json_map, Box::new(move |request_json_map_updated|{
+    trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> wallet_handle: {:?}, inputs: {:?}, outputs: {:?}, request_json_map: {:?}", wallet_handle, inputs, outputs, request_json_map);
+    let res = add_fees(wallet_handle, inputs, outputs, request_json_map, Box::new(move |request_json_map_updated|{
         let rm_fees = request_json_map_updated.map(|request_json_map_with_fees| serialize_request_with_fees(request_json_map_with_fees));
         match rm_fees {
             Ok(some) => cb(some),
             Err(e) => cb(Err(e))
         }
-    }))?;
-    Ok(())
+    }));
+    trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> result: {:?}", res);
+    res
 }
 
 

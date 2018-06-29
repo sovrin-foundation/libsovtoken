@@ -65,3 +65,30 @@ pub fn init_log() {
         builder.init();
     });
 }
+
+macro_rules! _map_err {
+    ($lvl:expr, $expr:expr) => (
+        |err| {
+            log!($lvl, "{} - {}", $expr, err);
+            err
+        }
+    );
+    ($lvl:expr) => (
+        |err| {
+            log!($lvl, "{:?}", err);
+            err
+        }
+    )
+}
+
+#[macro_export]
+macro_rules! map_err_err {
+    () => ( _map_err!(::log::Level::Error) );
+    ($($arg:tt)*) => ( _map_err!(::log::Level::Error, $($arg)*) )
+}
+
+#[macro_export]
+macro_rules! map_err_trace {
+    () => ( _map_err!(::log::Level::Trace) );
+    ($($arg:tt)*) => ( _map_err!(::log::Level::Trace, $($arg)*) )
+}
