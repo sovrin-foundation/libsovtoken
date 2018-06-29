@@ -161,11 +161,14 @@ impl<'de> Deserialize<'de> for Input {
 
 #[cfg(test)]
 mod input_tests {
-    use super::Input;
-    use serde_json;
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use logic::parsers::common::TXO;
+    use super::*;
     use rust_base58::ToBase58;
+    use serde_json;
+
+    use logic::input::{Input, InputConfig};
+    use logic::parsers::common::TXO;
+    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+
 
     fn json_value_to_string(json: serde_json::Value) -> String {
         return serde_json::to_string(&json).unwrap();
@@ -248,12 +251,6 @@ mod input_tests {
         let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
         assert_valid_serialize(input, expected);
     }
-}
-
-#[cfg(test)]
-mod input_config_test {
-    use logic::input::{Input, InputConfig};
-    use utils::json_conversion::JsonSerialize;
 
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]
