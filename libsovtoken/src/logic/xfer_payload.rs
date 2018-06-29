@@ -73,6 +73,7 @@ impl XferPayload {
      * [`Inputs`]: Inputs
      */
     pub fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+        trace!("logic::xfer_payload::xfer_payload::sign >> wallet_handle: {:?}", wallet_handle);
         if self.outputs.len() < 1 || self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
         }
@@ -80,28 +81,34 @@ impl XferPayload {
         for output in &mut self.outputs {
             output.address = address::unqualified_address_from_address(&output.address)?;
         }
-        trace!("Indicator stripped from outputs");
+        debug!("Indicator stripped from outputs");
 
         for input in &mut self.inputs {
             input.address = address::unqualified_address_from_address(&input.address)?;
         }
 
-        trace!("Indicator stripped from inputs");
+        debug!("Indicator stripped from inputs");
 
         XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), Box::new(move |signatures| {
                     match signatures {
                         Ok(signatures) => {
                             let mut payload = self.clone();
                             payload.signatures = Some(signatures);
+                            info!("Built XFER payload: {:?}", payload);
                             cb(Ok(payload));
                         }
-                        Err(err) => {cb(Err(err));}
+                        Err(err) => {
+                            error!("Got an error while signing utxos: {:?}", err);
+                            cb(Err(err));
+                        }
                     };
                 }
             )
         )?;
 
-        Ok(())
+        let res = Ok(());
+        trace!("logic::xfer_payload::xfer_payload::sign << result: {:?}", res);
+        res
     }
 }
 

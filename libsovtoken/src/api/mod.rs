@@ -33,7 +33,6 @@ use logic::xfer_payload::XferPayload;
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use std::ffi::CString;
 use utils::ffi_support::c_pointer_from_str;
 
 /**
@@ -75,21 +74,25 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: JsonCallback) -> i32 {
-
+    trace!("api::create_payment_address_handler >> wallet_handle: {:?}, config_str: {:?}", wallet_handle, config_str);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if config_str.is_null() {
+        trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
     let json_config_str: String = match string_from_char_ptr(config_str) {
         Some(s) => s,
-        None => return ErrorCode::CommonInvalidStructure as i32,
+        None => {
+            trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
+            return ErrorCode::CommonInvalidStructure as i32
+        },
     };
 
     // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
     // like { } as valid.  if we get any kind of serialization failure assume we can use the default
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str) {
+    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str).map_err(map_err_trace!()) {
         Ok(c) => c,
         Err(_) => PaymentAddressConfig { seed : "".to_string()},
     };
@@ -110,7 +113,9 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     };
 
     let handler = CreatePaymentHandler::new(CryptoSdk {} );
-    return handler.create_payment_address_async(wallet_handle, config, payment_closure) as i32;
+    let ec = handler.create_payment_address_async(wallet_handle, config, payment_closure);
+    trace!("api::create_payment_address_handler << result: {:?}", ec);
+    return ec as i32;
 }
 
 /// Description
@@ -224,10 +229,11 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
                                                                err: i32,
                                                                req_with_fees_json: *const c_char) -> i32>) -> i32 {
 
+    trace!("api::add_request_fees_handler >> wallet_handle: {:?}, did: {:?}, req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, did, req_json, inputs_json, outputs_json);
     let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
-            error!("Error in deserializing the add_request_fees_handler arguments.");
+            trace!("api::add_request_fees_handler << result: {:?}", error_code);
             return error_code as i32;
         }
     };
@@ -243,6 +249,7 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
     }
 
     match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map, Box::new(move |res| {
+        info!("Request with fees: {:?}", res);
         match res {
             Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
             Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
@@ -255,7 +262,9 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
         _ => ()
     };
 
-    return ErrorCode::Success as i32;
+    let res = ErrorCode::Success;
+    trace!("api::add_request_fees_handler << result: {:?}", res);
+    return res as i32;
 }
 
 
@@ -279,9 +288,11 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
                                                    cb: Option<extern fn(command_handle_: i32,
                                                                err: i32,
                                                                utxo_json: *const c_char) -> i32>) -> i32 {
+    trace!("api::parse_response_with_fees_handler >> req_json: {:?}", req_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if req_json.is_null() {
+        trace!("api::parse_response_with_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
@@ -293,7 +304,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
         }
     };
 
-    let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string) {
+    let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string).map_err(map_err_err!()) {
         Ok(r) => r,
         Err(e) => return ErrorCode::CommonInvalidStructure as i32,
     };
@@ -302,19 +313,24 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
     // is handled in ParseResponseWithFeesReply::from_response
     let reply: ParseResponseWithFeesReply = match ParseResponseWithFeesReply::from_response(response) {
         Ok(rep) => rep,
-        Err(ec) => return ec as i32,
+        Err(ec) => {
+            trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
+            return ec as i32
+        },
     };
 
-    let reply_str: String = match reply.to_json() {
+    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(e) => return ErrorCode::CommonInvalidState as i32,
     };
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
+    let ec = ErrorCode::Success;
 
-    cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
+    cb(command_handle, ec as i32, reply_str_ptr);
 
-    return ErrorCode::Success as i32;
+    trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
+    ec as i32
 }
 
 
@@ -373,7 +389,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
-            trace!("api::build_payment_req_handler >> result: {:?}", error_code);
+            trace!("api::build_payment_req_handler << result: {:?}", error_code);
             return error_code as i32;
         }
     };
@@ -382,7 +398,7 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     let result = payload.sign(&CryptoSdk {}, wallet_handle, Box::new(move |result| {
         let payload_signed = match result {
             Err(err) => {
-                cb(command_handle, err as i32, CString::new("").unwrap().as_ptr());
+                cb(command_handle, err as i32, c_pointer_from_str(""));
                 return;
             }
             Ok(payload) => payload
@@ -399,9 +415,14 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         debug!("payment_request >>> {:?}", payment_request);
 
         cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
-    })).unwrap();
+    }));
 
-    return ErrorCode::Success as i32;
+    let ec = match result {
+        Ok(()) => ErrorCode::Success,
+        Err(ec) => ec
+    };
+    trace!("api::build_payment_req_handler << result {:?}", ec);
+    return ec as i32;
 }
 
 /// Parses inputted payment data and returns formatted UTXOs
