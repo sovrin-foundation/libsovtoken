@@ -1,6 +1,8 @@
 //! Contains constants for transaction types
 
 
+// TODO: Make them part of an Enum
+
 /**
     # description
     This is the transaction type used for Minting

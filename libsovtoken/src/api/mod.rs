@@ -8,6 +8,7 @@ use std;
 use libc::c_char;
 
 use indy::payments::Payment;
+use indy::ledger::Ledger;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
@@ -24,7 +25,8 @@ use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
-    parse_get_txn_fees::parse_fees_from_get_txn_fees_response
+    parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor},
+    common::ParsedSP
 };
 use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
@@ -847,6 +849,47 @@ pub extern "C" fn build_mint_txn_handler(
     res as i32
 }
 
+#[no_mangle]
+pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
+                                              parsed_sp: *mut *const c_char) -> i32 {
+    trace!("Calling get_utxo_state_proof_parser.");
+
+    check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
+
+    let res = ParseGetUtxoReply::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32;
+
+    trace!("Called get_utxo_state_proof_parser: <<< res: {:?}", res);
+
+    res
+}
+
+#[no_mangle]
+pub extern "C" fn get_fees_state_proof_parser(reply_from_node: *const c_char,
+                                              parsed_sp: *mut *const c_char) -> i32 {
+    trace!("Calling get_fees_state_proof_parser.");
+
+    check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
+
+    let res = get_fees_state_proof_extractor(reply_from_node, parsed_sp) as i32;
+
+    trace!("Called get_fees_state_proof_parser: <<< res: {:?}", res);
+
+    res
+}
+
+#[no_mangle]
+pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
+    trace!("Calling free_parsed_state_proof.");
+
+    check_useful_c_ptr!(sp, ErrorCode::CommonInvalidParam1 as i32);
+
+    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
+
+    trace!("Called free_parsed_state_proof");
+
+    ErrorCode::Success as i32
+}
+
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
 
@@ -860,9 +903,14 @@ pub extern "C" fn build_mint_txn_handler(
 pub extern fn sovtoken_init() -> i32 {
 
     super::utils::logger::init_log();
+    use super::utils::constants::txn_types::GET_FEES;
+    use super::utils::constants::txn_types::GET_UTXO;
 
     debug!("sovtoken_init() started");
-    let result = match Payment::register(
+
+    debug!("Going to call Payment::register");
+
+    let mut result = match Payment::register(
         "sov",
         create_payment_address_handler,
         add_request_fees_handler,
@@ -877,7 +925,33 @@ pub extern fn sovtoken_init() -> i32 {
         parse_get_txn_fees_response_handler
     ) {
         Ok(()) => ErrorCode::Success ,
-        Err(e) => e ,
+        Err(e) => {
+            debug!("Payment::register failed with {:?}", e);
+            return e as i32
+        },
+    };
+
+    debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
+
+    result = match Ledger::register_transaction_parser_for_sp(GET_UTXO,
+                                                              Some(get_utxo_state_proof_parser),
+                                                              Some(free_parsed_state_proof)) {
+        Ok(()) => ErrorCode::Success ,
+        Err(e) => {
+            debug!("Ledger::register_transaction_parser_for_sp for GET_UTXO failed with {:?}", e);
+            return e as i32
+        },
+    };
+
+    debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
+    result = match Ledger::register_transaction_parser_for_sp(GET_FEES,
+                                                              Some(get_fees_state_proof_parser),
+                                                              Some(free_parsed_state_proof)) {
+        Ok(()) => ErrorCode::Success ,
+        Err(e) => {
+            debug!("Ledger::register_transaction_parser_for_sp for GET_FEES failed with {:?}", e);
+            return e as i32
+        },
     };
 
     debug!("sovtoken_init() returning {:?}", result);

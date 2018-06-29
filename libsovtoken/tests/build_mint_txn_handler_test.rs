@@ -13,9 +13,12 @@ use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
+use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
+use sovtoken::utils::constants::txn_fields::OUTPUTS;
 use std::sync::mpsc::channel;
 use indy::utils::results::ResultHandler;
 use std::time::Duration;
+
 
 mod utils;
 use utils::wallet::Wallet;
@@ -87,8 +90,8 @@ fn  valid_output_json() {
             .unwrap();
 
         let expected = json!({
-            "type": "10000",
-            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+            "type": MINT_PUBLIC,
+            OUTPUTS: [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
         });
         assert_eq!(mint_operation, &expected);
         return ErrorCode::Success as i32;
@@ -140,8 +143,8 @@ fn valid_output_json_from_libindy() {
         .unwrap();
 
     let expected = json!({
-        "type": "10000",
-        "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+        "type": MINT_PUBLIC,
+        OUTPUTS: [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
     });
 
 
