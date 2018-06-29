@@ -10,7 +10,7 @@ use libc::c_char;
 use serde_json;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::OUTPUTS;
-use logic::types::{TokenAmount, TxnSeqNo, ProtocolVersion, ReqId};
+use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, ReqId};
 
 type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 

@@ -5,7 +5,7 @@ extern crate rand;
 
 use self::rand::Rng;
 use self::rand::random;
-use logic::types::ReqId;
+use logic::type_aliases::ReqId;
 /**
    Builds a string of random numbers of the inputted length
 */

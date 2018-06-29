@@ -8,7 +8,7 @@ use std::str;
 use serde_json;
 use serde_json::{Value as SJsonValue};
 use logic::address;
-use logic::types::{TokenAmount, TxnSeqNo};
+use logic::type_aliases::{TokenAmount, TxnSeqNo};
 
 /**
     enumeration matches values for the op field in json

@@ -13,7 +13,7 @@ use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 use utils::json_conversion::JsonSerialize;
 use indy::ErrorCode;
-use logic::types::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
+use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
 
 /**
     for parse_response_with_fees_handler input resp_json

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::error::Error;
 use utils::constants::txn_types::SET_FEES;
-use logic::types::TokenAmount;
+use logic::type_aliases::TokenAmount;
 /**
     Hashmap for the set_fees json.
 

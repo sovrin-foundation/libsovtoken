@@ -12,7 +12,7 @@ use logic::parsers::common::{ResponseOperations, StateProof,
 use utils::json_conversion::JsonDeserialize;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::FEES;
-use logic::types::{TokenAmount, ReqId};
+use logic::type_aliases::{TokenAmount, ReqId};
 
 /**
     Structure for parsing GET_FEES request

@@ -5,7 +5,7 @@
 use serde::{de, ser, Deserialize, ser::SerializeTuple, Serialize};
 use std::fmt;
 use logic::parsers::common::TXO;
-use logic::types::TxnSeqNo;
+use logic::type_aliases::TxnSeqNo;
 
 pub type Inputs = Vec<Input>;
 

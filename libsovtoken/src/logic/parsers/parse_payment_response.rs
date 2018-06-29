@@ -11,7 +11,7 @@ use logic::parsers::common::{ResponseOperations,
                              RequireSignature,
                              SignatureValues};
 use utils::json_conversion::JsonSerialize;
-use logic::types::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
+use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
 
 /**
     for parse_payment_response_handler input resp_json

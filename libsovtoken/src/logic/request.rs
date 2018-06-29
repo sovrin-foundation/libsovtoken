@@ -9,7 +9,7 @@ use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::random::rand_req_id;
 use utils::json_conversion::JsonSerialize;
 use utils::constants::general::PROTOCOL_VERSION;
-use logic::types::{ProtocolVersion, ReqId};
+use logic::type_aliases::{ProtocolVersion, ReqId};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
