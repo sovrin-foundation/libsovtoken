@@ -1,7 +1,5 @@
 //!
 
-use std::ffi::CString;
-
 use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
