@@ -44,12 +44,12 @@ This API call is handled by LibSovToken add_request_fees_handler.
     req_json: initial transaction request as json
     inputs_json: The list of UTXO inputs as json array:
 ```
-{
-    "inputs_json": [<str: txo_string>, ]
-    // Each txo string is of the format: "
-    "{"address": "pay:sov:<address>", "seqNo": <int>}"
+[
+    <str: txo_string>, 
+]
+    // Each txo string is of the format: "txo:sov:<base58 string>"
+    // The base58 string can be decoded internally as {"address": <str:address>, "seqNo": <int>}
 
-}
 ```
     outputs_json: The list of UTXO outputs as json array:
 ```
@@ -64,11 +64,10 @@ This API call is handled by LibSovToken add_request_fees_handler.
 ```
 Example inputs_json:
 ```
-{
-    "inputs_json": [
-        "{"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2}"
-    ]
-}
+[
+    "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7"
+]
+
 ```
 Example outputs_json:
 ```
@@ -290,7 +289,7 @@ Example resp_with_fees_json:
 [
     {
         "paymentAddress": <str>,// sovrin payment address: "pay:sov:<address><checksum>"
-        "txo": <str>,           // txo string: "{"address" : "pay:sov:<address>", "seqNo": <int>}"
+        "txo": <str>,           // txo string: "txo:sov:<base58 encoded two identifier>"
         "amount": <int>,        // amount of tokens in this input
         "extra": <str>          // optional data from payment transaction
     }
@@ -301,7 +300,7 @@ Example utxo_json:
 [
     {
         "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-        "txo": "{"address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "seqNo": 3}",
+	"txo": "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
         "amount": 11,
         "extra":
     }
@@ -439,16 +438,16 @@ Example utxo_json:
 ```
 [
     {
-        "paymentAddress": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
-        "txo": "{"address": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 2}",
-        "amount": 10,   // amount of tokens in this input
-        "extra":        // optional data from payment transaction
+        "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+	"txo": "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
+        "amount": 11,
+        "extra":
     },
     {
-        "paymentAddress": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es"
-        "txo": "{"address": "pay:sov:2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 3}",
-        "amount": 3,   // amount of tokens in this input
-        "extra":        // optional data from payment transaction
+        "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+	"txo": "txo:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2Aat9x86MwXNw88RAojPpdgxLPQyC1oJH88Pxf9u7JsM5m8ApXn"
+        "amount": 3,
+        "extra":
     }
 ]
 ```
@@ -460,25 +459,30 @@ This API call is handled by LibSovToken build_payment_req_handler. *Note this ha
     submitter_did : DID of request sender
     inputs_json: The list of UTXO inputs as json array:
 ```
-    // Each txo string is of the format: "{"address": "pay:sov:<address>", "seqNo": <int>}"
-    [<str: txo_string>, ]
+[
+    <str: txo_string>, 
+]
+    // Each txo string is of the format: "txo:sov:<base58 string>"
+    // The base58 string can be decoded internally as {"address": <str:address>, "seqNo": <int>}
+
 ```
     outputs_json: The list of UTXO outputs as json array:
 ```
 [
     {
-        "address": <str>   // full sovrin payment address: "pay:sov:<address><checksum>"
+        "address" : <str>   // the payment address
         "amount": <int>,    // the payment amount
         "extra": <str>      // optional field
     },
 ]
+
 ```
 Example inputs_json:
 ```
 [
-    "{"address": "pay:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBH", "seqNo": 2 }",
-    "{"address": "pay:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjV", "seqNo": 5 }",
-    "{"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo": 14 }",
+    "txo:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBHnzx2mVXsXyVADzSDw88RAojPpdw88RAojPpdgxLPQyCgxLPQyC1oJUqkrLeU",
+    "txo:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvouG3yHqnK2LvVWVjV",
+    "txo:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgxggsbNTmVMy1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtSxggsbNJDa5z7"
 ]
 ```
 Example outputs_json:
@@ -673,11 +677,11 @@ Example resp_json:
 ```
 [
     {
-        "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
-        "txo": <str>,           // txo string: "{"address": "pay:sov:<address>", "seqNo": <int>}"
+        "paymentAddress": <str>,// sovrin payment address: "pay:sov:<address><checksum>"
+        "txo": <str>,           // txo string: "txo:sov:<base58 encoded two identifier>"
         "amount": <int>,        // amount of tokens in this input
         "extra": <str>          // optional data from payment transaction
-    },
+    }
 ]
 ```
 Example utxo_json:
@@ -685,19 +689,19 @@ Example utxo_json:
 [
     {
         "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-        "txo": "{"address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC", "seqNo" : 4}",
+	"txo": "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
         "amount": 11,
-        "extra": ""
+        "extra":
     },
     {
         "paymentAddress": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
-        "txo": "{"address": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h", "seqNo" : 4}",
+        "txo": "txo:sov:2k7K2zwNTF7po3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyM2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
         "amount": 19,
         "extra": ""
     },
     {
         "paymentAddress": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
-        "txo": "{"address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy", "seqNo" : 4}",
+        "txo": "txo:sov:2SBZcBgBHzU1d9u7jxggsbNJDDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwX2SBZcBgBHzU1d9u7jx3v13V5oR6eZgTmVMy",
         "amount": 9,
         "extra": ""
     }
