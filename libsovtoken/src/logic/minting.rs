@@ -15,6 +15,7 @@ pub fn deserialize_inputs<'a>(
     outputs_json: *const c_char,
     cb: JsonCallback
 ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+    trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}", did, outputs_json);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
@@ -32,25 +33,30 @@ pub fn deserialize_inputs<'a>(
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
+    trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}", did, outputs);
     return Ok((did, outputs, cb));
 }
 
 pub fn build_mint_request(
     did: Did,
-    mut output_config: Outputs
+    mut outputs: Outputs
 ) -> Result<*const c_char, ErrorCode> {
+    trace!("logic::minting::build_mint_request >> did: {:?}, outputs: {:?}", did, outputs);
 
-    for output in &mut output_config {
+    for output in &mut outputs {
         let address = address::unqualified_address_from_address(&output.address)?;
         output.address = address;
     }
     trace!("Stripped pay:sov: from outputs");
 
-    let mint_request = MintRequest::from_config(output_config, did);
-    debug!("Built a mint request >>> {:?}", mint_request);
+    let mint_request = MintRequest::from_config(outputs, did);
+    info!("Built a mint request >>> {:?}", mint_request);
 
-    return mint_request.serialize_to_pointer()
+    let ptr = mint_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));
+
+    trace!("logic::minting::build_mint_request << res: {:?}", ptr);
+    ptr
 }
 
 #[cfg(test)]

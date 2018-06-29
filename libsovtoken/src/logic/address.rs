@@ -111,6 +111,7 @@ pub fn qualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> 
 
 pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCode> {
     if !fully_qualified_address.starts_with(&PAYMENT_ADDRESS_QUALIFIER) {
+        error!("Payment address should start with a correct qualifier {}", PAYMENT_ADDRESS_QUALIFIER);
         return Err(ErrorCode::CommonInvalidStructure);
     }
 
@@ -119,9 +120,10 @@ pub fn validate_address(fully_qualified_address: &str) -> Result<String, ErrorCo
 }
 
 pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<String, ErrorCode> {
-    match unqualified_address.from_base58_check() {
+    match unqualified_address.from_base58_check().map_err(map_err_err!()) {
         Ok(vk) => {
             if vk.len() != VERKEY_LEN {
+                error!("Incorrect verkey length, expected {:?}, real {:?}", VERKEY_LEN, vk.len());
                 return Err(ErrorCode::CommonInvalidStructure)
             } else {
                 return Ok(vk.to_base58());

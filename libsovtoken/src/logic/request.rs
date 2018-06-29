@@ -31,12 +31,12 @@ impl<T> Request<T>
     }
 
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
-        return self.serialize_to_string()
+        return self.serialize_to_string().map_err(map_err_err!())
             .map(|string| cstring_from_str(string));
     }
 
     pub fn serialize_to_string(&self) -> Result<String, serde_json::Error> {
-        return JsonSerialize::to_json(&self);
+        return JsonSerialize::to_json(&self).map_err(map_err_err!());
     }
 
     pub fn serialize_to_pointer(&self) -> Result<*const c_char, serde_json::Error> {

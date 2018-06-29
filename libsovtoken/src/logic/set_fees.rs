@@ -16,24 +16,28 @@ pub fn deserialize_inputs<'a>(
     fees_json: *const c_char,
     cb: JsonCallback
 ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+    trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", did, fees_json);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
     let did = Did::from_pointer(did)
-        .ok_or(ErrorCode::CommonInvalidStructure)?
+        .ok_or(ErrorCode::CommonInvalidStructure)
+        .map_err(map_err_err!())?
         .validate()
         .or(Err(ErrorCode::CommonInvalidStructure))?;
 
     let set_fees_json = string_from_char_ptr(fees_json)
-        .ok_or(ErrorCode::CommonInvalidStructure)?;
+        .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
 
-    let set_fees_map: SetFeesMap = serde_json::from_str(&set_fees_json)
+    let set_fees_map: SetFeesMap = serde_json::from_str(&set_fees_json).map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
 
     let set_fees = SetFees::new(set_fees_map)
-        .validate()
+        .validate().map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
 
-    return Ok((did, set_fees, cb));
+    let res = Ok((did, set_fees, cb));
+    trace!("logic::set_fees::deserialize_inputs << res: {:?}", res);
+    return res;
 }
 
 #[cfg(test)]
