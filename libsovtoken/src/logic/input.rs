@@ -161,7 +161,6 @@ impl<'de> Deserialize<'de> for Input {
 
 #[cfg(test)]
 mod input_tests {
-    use super::*;
     use rust_base58::ToBase58;
     use serde_json;
 
