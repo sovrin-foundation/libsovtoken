@@ -7,6 +7,10 @@ use serde_json;
 use utils::json_conversion::JsonSerialize;
 use utils::constants::general::PROTOCOL_VERSION;
 
+/**
+    Request is the outter structure of many input types.  The operation type is
+    the specific structure for a given input.  
+*/
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Request<T>
