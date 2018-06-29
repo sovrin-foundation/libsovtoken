@@ -12,6 +12,7 @@ use logic::parsers::common::{ResponseOperations, StateProof,
 use utils::json_conversion::JsonDeserialize;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::FEES;
+use logic::types::{TokenAmount, ReqId};
 
 /**
     Structure for parsing GET_FEES request
@@ -43,11 +44,11 @@ pub struct ParseGetTxnFeesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ParseGetTxnFeesResult {
     pub identifier : String,
-    pub req_id : i32,
+    pub req_id : ReqId,
     // This is to change the json key to adhear to the functionality on ledger
     #[serde(rename = "type")]
     pub txn_type : String,
-    pub fees : HashMap<String, i32>,
+    pub fees : HashMap<String, TokenAmount>,
     // This is being renamed back to the snake case because that is what the JSON object key expects
     #[serde(rename = "state_proof")]
     pub state_proof : Option<StateProof>

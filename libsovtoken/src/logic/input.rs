@@ -5,6 +5,7 @@
 use serde::{de, ser, Deserialize, ser::SerializeTuple, Serialize};
 use std::fmt;
 use logic::parsers::common::TXO;
+use logic::types::TxnSeqNo;
 
 pub type Inputs = Vec<Input>;
 
@@ -76,7 +77,7 @@ pub struct InputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub address: String,
-    pub seq_no: u64
+    pub seq_no: TxnSeqNo
 }
 
 impl ToString for Input {
@@ -86,7 +87,7 @@ impl ToString for Input {
 }
 
 impl Input {
-    pub fn new(address: String, seq_no: u64) -> Input {
+    pub fn new(address: String, seq_no: TxnSeqNo) -> Input {
         return Input { address, seq_no};
     }
 

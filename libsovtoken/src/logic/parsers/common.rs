@@ -8,6 +8,7 @@ use std::str;
 use serde_json;
 use serde_json::{Value as SJsonValue};
 use logic::address;
+use logic::types::{TokenAmount, TxnSeqNo};
 
 /**
     enumeration matches values for the op field in json
@@ -30,7 +31,7 @@ pub enum ResponseOperations {
 pub struct UTXO {
     pub payment_address: String,
     pub txo: String,
-    pub amount: u64,
+    pub amount: TokenAmount,
     pub extra: String,
 }
 
@@ -41,7 +42,7 @@ pub struct UTXO {
 #[serde(rename_all = "camelCase")]
 pub struct TXO {
     pub address: String,
-    pub seq_no: u64,
+    pub seq_no: TxnSeqNo,
 }
 
 
@@ -82,7 +83,7 @@ pub struct SignatureValues {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetaData {
-    pub seq_no: u64,
+    pub seq_no: TxnSeqNo,
     pub txn_time: u32,
 }
 

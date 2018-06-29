@@ -9,12 +9,11 @@ use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use utils::constants::txn_types::XFER_PUBLIC;
+use utils::constants::txn_fields::FEES;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, SerdeMap, AddRequestFeesCb);
-
-pub static FEES_KEY_IN_REQ_RESP: &'static str = "fees";
 
 /**
  * Deserializes arguments of [`add_request_fees_handler`]
@@ -108,7 +107,7 @@ fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, request_json_m
         match fees {
             Ok(fees) => {
                 let mut map = request_json_map.clone();
-                map.insert(FEES_KEY_IN_REQ_RESP.to_string(), json!(fees));
+                map.insert(FEES.to_string(), json!(fees));
                 cb(Ok(map.clone()));
             }
             Err(err) => {

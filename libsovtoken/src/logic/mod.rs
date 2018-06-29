@@ -17,3 +17,4 @@ pub mod payments;
 pub mod parsers;
 pub mod request;
 pub mod set_fees;
+pub mod types;
