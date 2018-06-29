@@ -1,3 +1,5 @@
+//! what is this module for?
+
 use indy::ErrorCode;
 use libc::c_char;
 use logic::input::Inputs;
@@ -40,7 +42,7 @@ pub fn deserialize_inputs(
 #[cfg(test)]
 mod test_deserialize_inputs {
     use utils::ffi_support::c_pointer_from_string;
-use indy::ErrorCode;
+    use indy::ErrorCode;
     use libc::c_char;
     use std::ptr;
     use utils::default;
