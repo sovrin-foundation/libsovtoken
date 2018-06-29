@@ -49,9 +49,8 @@ pub struct ParseGetTxnFeesResult {
     pub txn_type : String,
     pub fees : HashMap<String, i32>,
     // This is being renamed back to the snake case because that is what the JSON object key expects
-    // TODO: State proof is optional
     #[serde(rename = "state_proof")]
-    pub state_proof : StateProof
+    pub state_proof : Option<StateProof>
 }
 
 pub fn parse_fees_from_get_txn_fees_response(response : String) -> Result<String, Error> {

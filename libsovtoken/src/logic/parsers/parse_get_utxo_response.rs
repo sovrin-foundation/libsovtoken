@@ -11,7 +11,7 @@ use serde_json;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::OUTPUTS;
 
-type Outputs = Vec<(String, u64, u64)>;
+type Outputs_ = Vec<(String, u64, u64)>;
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -37,10 +37,10 @@ pub struct ParseGetUtxoResponseResult {
     pub address : String,
     pub identifier: String,
     pub req_id : i64,
-    pub outputs : Outputs,
+    pub outputs : Outputs_,
     // TODO: State proof is optional
     #[serde(rename = "state_proof")]
-    pub state_proof : StateProof
+    pub state_proof : Option<StateProof>
 }
 
 
@@ -93,9 +93,9 @@ impl ParseGetUtxoReply {
         // a single private field called `address` and with implementation defining `new` and a getter.
         // The `new` method will do the validation.
 
-        let outputs: Outputs = match result.get(OUTPUTS) {
+        let outputs: Outputs_ = match result.get(OUTPUTS) {
             Some(outs) => {
-                let outputs: Outputs = match serde_json::from_value(outs.to_owned()) {
+                let outputs: Outputs_ = match serde_json::from_value(outs.to_owned()) {
                     Ok(o) => o,
                     Err(_) => return ErrorCode::CommonInvalidStructure
                 };
@@ -214,7 +214,7 @@ mod parse_get_utxo_responses_tests {
             identifier,
             req_id: 123457890,
             outputs,
-            state_proof
+            state_proof: Some(state_proof)
         };
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse {
@@ -261,7 +261,7 @@ mod parse_get_utxo_responses_tests {
             identifier,
             req_id: 123457890,
             outputs,
-            state_proof
+            state_proof: Some(state_proof)
         };
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse {

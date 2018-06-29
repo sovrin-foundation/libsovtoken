@@ -7,7 +7,7 @@ use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
 use utils::json_conversion::JsonDeserialize;
-
+use utils::constants::txn_fields::{RESULT, STATE_PROOF};
 use rust_base58::{FromBase58, ToBase58};
 use std::str;
 use serde_json;
@@ -179,18 +179,18 @@ pub fn extract_result_and_state_proof_from_node_reply(reply_from_node: *const c_
     let json_reply: SJsonValue = serde_json::from_str::<SJsonValue>(&reply)
         .or(Err(ErrorCode::CommonInvalidStructure))?;
 
-    let result: SJsonValue = match json_reply.get("result") {
+    let result: SJsonValue = match json_reply.get(RESULT) {
         Some(r) => r.clone(),
         None => return Err(ErrorCode::CommonInvalidStructure)
     };
 
-    let state_proof = match result.get("state_proof") {
+    let state_proof = match result.get(STATE_PROOF) {
         Some(sp) => sp.to_owned(),
         None => return Err(ErrorCode::CommonInvalidStructure)
     };
 
     match serde_json::from_value(state_proof) {
-        Ok(s) => Ok((result.clone(), s)),
+        Ok(s) => Ok((result, s)),
         Err(_) => Err(ErrorCode::CommonInvalidStructure)
     }
 }

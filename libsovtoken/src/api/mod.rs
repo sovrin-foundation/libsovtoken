@@ -24,7 +24,8 @@ use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
-    parse_get_txn_fees::parse_fees_from_get_txn_fees_response
+    parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor},
+    common::ParsedSP
 };
 use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
@@ -763,6 +764,33 @@ pub extern "C" fn build_mint_txn_handler(
 
     cb(command_handle, ErrorCode::Success as i32, mint_request);
     return ErrorCode::Success as i32;
+}
+
+#[no_mangle]
+pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
+                                              parsed_sp: *mut *const c_char) -> i32 {
+    check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
+    ParseGetUtxoReply::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32
+}
+
+#[no_mangle]
+pub extern "C" fn get_fees_state_proof_parser(reply_from_node: *const c_char,
+                                              parsed_sp: *mut *const c_char) -> i32 {
+    check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
+    get_fees_state_proof_extractor(reply_from_node, parsed_sp) as i32
+}
+
+#[no_mangle]
+pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
+    trace!("Calling free_parsed_state_proof.");
+
+    check_useful_c_ptr!(sp, ErrorCode::CommonInvalidParam1 as i32);
+
+    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
+    let res = ErrorCode::Success as i32;
+
+    trace!("Called free_parsed_state_proof: <<< res: {:?}", res);
+    res
 }
 
 /**
