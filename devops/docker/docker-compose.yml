@@ -1,0 +1,8 @@
+version: "3"
+
+services:
+
+  ci:
+    build:
+      context: ./ci/$OSNAME
+    image: ${CI_DOCKER_NAME}:${CI_DOCKER_TAG}

@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:evernym/jenkins-shared.git
+	branch = devops-shared
+	commit = 695e30faac29ec4a047ba990cbef709e6b83c2ba
+	parent = 4e7a268676ba442dae1aa36dcb7a219081ec0f08
+	cmdver = 0.3.1

@@ -12,14 +12,9 @@ RUN useradd -m -d /home/token_user -s /bin/bash -p $(openssl passwd -1 "token") 
 RUN usermod -aG sudo token_user
 
 WORKDIR /tmp
-RUN wget -q https://download.libsodium.org/libsodium/releases/libsodium-1.0.14.tar.gz
-RUN tar xf /tmp/libsodium-1.0.14.tar.gz
-RUN rm -f libsodium-1.0.14.tar.gz
+RUN curl https://download.libsodium.org/libsodium/releases/libsodium-1.0.14.tar.gz | tar -xz
 WORKDIR /tmp/libsodium-1.0.14
-RUN ./autogen.sh
-RUN ./configure
-RUN make
-RUN make install
+RUN ./autogen.sh && ./configure && make && make install
 
 USER token_user
 WORKDIR /home/token_user
