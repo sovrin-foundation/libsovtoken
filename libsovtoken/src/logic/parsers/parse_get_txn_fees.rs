@@ -54,9 +54,12 @@ pub struct ParseGetTxnFeesResult {
 }
 
 pub fn parse_fees_from_get_txn_fees_response(response : String) -> Result<String, Error> {
+    trace!("logic::parsers::parse_fees_from_get_txn_fees_response >> response: {:?}", response);
     let fees_response : ParseGetTxnFeesResponse =
-            ParseGetTxnFeesResponse::from_json(&response)?;
-    return serde_json::to_string(&fees_response.result.fees);
+            ParseGetTxnFeesResponse::from_json(&response).map_err(map_err_err!())?;
+    let res = serde_json::to_string(&fees_response.result.fees).map_err(map_err_err!());
+    trace!("logic::parsers::parse_fees_from_get_txn_fees_response << result: {:?}", res);
+    res
 }
 
 pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp: *mut *const c_char) -> ErrorCode {

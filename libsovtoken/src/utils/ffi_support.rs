@@ -25,10 +25,7 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
     utility method for converting *const c_char a String.  Returns None if the input is invalid
 */
 pub fn string_from_char_ptr(str_ptr: *const c_char) -> Option<String> {
-    match str_from_char_ptr(str_ptr) {
-        Some(s) => return Some(s.to_string()),
-        None => return None,
-    };
+    str_from_char_ptr(str_ptr).map(|s| s.to_string())
 }
 
 /**

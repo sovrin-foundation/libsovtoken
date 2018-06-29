@@ -24,11 +24,11 @@ lazy_static = "0.2"
 libc = "0.2.21"
 log = "0.4.1"
 rand = "0.4.2"
-rust-base58 = {git = "https://github.com/lovesh/rust-base58.git", branch = "b58check"}
+rust-base58 = { git = "https://github.com/lovesh/rust-base58.git", branch = "b58check" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 sha2 = "0.6.0"
 sha3 = "0.6.0"
 sodiumoxide = {version = "0.0.14"}
-rust-indy-sdk = { git = "https://github.com/mikelodder7/rust-indy-sdk.git"}
+rust-indy-sdk = { git = "https://github.com/mikelodder7/rust-indy-sdk.git" }

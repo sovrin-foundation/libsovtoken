@@ -2,17 +2,15 @@
 
 use std::ffi::CString;
 
-use serde_json::{Value as SJsonValue};
 use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
 use utils::json_conversion::JsonDeserialize;
 use utils::constants::txn_fields::{RESULT, STATE_PROOF};
-use rust_base58::{FromBase58, ToBase58};
 use std::str;
 use serde_json;
-use utils::json_conversion::*;
-use std::io;
+use serde_json::{Value as SJsonValue};
+use logic::address;
 
 /**
     enumeration matches values for the op field in json
@@ -49,22 +47,14 @@ pub struct TXO {
     pub seq_no: u64,
 }
 
-pub static TXO_IDENTIFIER: &str = "txo:sov:";
 
 impl TXO {
     pub fn to_libindy_string(&self) -> Result<String, ErrorCode> {
-        let temp = self.to_json()
-            .map_err(|_| ErrorCode::CommonInvalidState)?
-            .as_bytes().to_base58_check();
-        Ok(TXO_IDENTIFIER.to_string() + &temp)
+        address::txo_to_string(self)
     }
 
     pub fn from_libindy_string(txo_str: &str) -> Result<Self, serde_json::Error> {
-        let json_u8 = txo_str.replace(TXO_IDENTIFIER, "").from_base58_check()
-            .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
-        let json = str::from_utf8(&json_u8)
-            .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
-        TXO::from_json(json)
+        address::string_to_txo(txo_str)
     }
 }
 
@@ -247,4 +237,3 @@ mod common_tests {
             json_str_ptr).unwrap();
     }
 }
-
