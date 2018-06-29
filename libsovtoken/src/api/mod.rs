@@ -8,6 +8,7 @@ use std;
 use libc::c_char;
 
 use indy::payments::Payment;
+use indy::ledger::Ledger;
 use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
@@ -769,15 +770,29 @@ pub extern "C" fn build_mint_txn_handler(
 #[no_mangle]
 pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
                                               parsed_sp: *mut *const c_char) -> i32 {
+    trace!("Calling get_utxo_state_proof_parser.");
+
     check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
-    ParseGetUtxoReply::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32
+
+    let res = ParseGetUtxoReply::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32;
+
+    trace!("Called get_utxo_state_proof_parser: <<< res: {:?}", res);
+
+    res
 }
 
 #[no_mangle]
 pub extern "C" fn get_fees_state_proof_parser(reply_from_node: *const c_char,
                                               parsed_sp: *mut *const c_char) -> i32 {
+    trace!("Calling get_fees_state_proof_parser.");
+
     check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
-    get_fees_state_proof_extractor(reply_from_node, parsed_sp) as i32
+
+    let res = get_fees_state_proof_extractor(reply_from_node, parsed_sp) as i32;
+
+    trace!("Called get_fees_state_proof_parser: <<< res: {:?}", res);
+
+    res
 }
 
 #[no_mangle]
@@ -787,10 +802,10 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
     check_useful_c_ptr!(sp, ErrorCode::CommonInvalidParam1 as i32);
 
     unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
-    let res = ErrorCode::Success as i32;
 
-    trace!("Called free_parsed_state_proof: <<< res: {:?}", res);
-    res
+    trace!("Called free_parsed_state_proof");
+
+    ErrorCode::Success as i32
 }
 
 /**
@@ -806,14 +821,14 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 pub extern fn sovtoken_init() -> i32 {
 
     super::utils::logger::init_log();
-    super::utils::constants::txn_types::GET_UTXO;
-    super::utils::constants::txn_types::GET_FEES;
+    use super::utils::constants::txn_types::GET_FEES;
+    use super::utils::constants::txn_types::GET_UTXO;
 
     debug!("sovtoken_init() started");
 
     debug!("Going to call Payment::register");
 
-    let result = match Payment::register(
+    let mut result = match Payment::register(
         "sov",
         create_payment_address_handler,
         add_request_fees_handler,
@@ -831,7 +846,22 @@ pub extern fn sovtoken_init() -> i32 {
         Err(e) => e ,
     };
 
-    // TODO: Need to call register methods for state proof
+    debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
+
+    result = match Ledger::register_transaction_parser_for_sp(GET_UTXO,
+                                                              Some(get_utxo_state_proof_parser),
+                                                              Some(free_parsed_state_proof)) {
+        Ok(()) => ErrorCode::Success ,
+        Err(e) => e ,
+    };
+
+    debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
+    result = match Ledger::register_transaction_parser_for_sp(GET_FEES,
+                                                              Some(get_fees_state_proof_parser),
+                                                              Some(free_parsed_state_proof)) {
+        Ok(()) => ErrorCode::Success ,
+        Err(e) => e ,
+    };
 
     debug!("sovtoken_init() returning {:?}", result);
     return result as i32;

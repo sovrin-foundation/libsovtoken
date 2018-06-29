@@ -31,4 +31,5 @@ serde_json = "1.0"
 sha2 = "0.6.0"
 sha3 = "0.6.0"
 sodiumoxide = {version = "0.0.14"}
-rust-indy-sdk = { git = "https://github.com/mikelodder7/rust-indy-sdk.git" }
+# This dependecy is temporary until the PR https://github.com/mikelodder7/rust-indy-sdk/pull/1 is merged
+rust-indy-sdk = { git = "https://github.com/lovesh/rust-indy-sdk.git", branch = "mut-fix" }
