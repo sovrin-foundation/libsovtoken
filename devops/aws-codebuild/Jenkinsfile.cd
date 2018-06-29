@@ -53,7 +53,7 @@ pipelineWrapper({
         stage('Set release parameters') {
             def releaseVersion = "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
 
-            debPVersion = utils.packageVersion('deb-kraken', srcVersion, releaseVersion)
+            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
             logger.info("Package version for evernym repo: $debPVersion")
 
             // TODO crate and rpm
