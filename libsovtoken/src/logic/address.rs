@@ -18,8 +18,13 @@
 
 use rust_base58::{ToBase58, FromBase58, CHECKSUM_LEN};
 use indy::ErrorCode;
+use logic::parsers::common::TXO;
+use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+use serde_json;
+use std::{io, str};
 
 pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
+pub static TXO_QUALIFIER: &str = "txo:sov:";
 
 // Following lengths are in bytes
 pub const VERKEY_LEN: usize = 32;
@@ -124,6 +129,48 @@ pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<Stri
         },
         Err(_) => return Err(ErrorCode::CommonInvalidStructure)
     }
+}
+
+/**
+    `string_to_txo` checks that the string is formatted as `txo:sov:<base58-encoded json>` and parses it to TXO struct.
+    Returns TXO.
+
+    ```
+    use sovtoken::logic::parsers::common::TXO;
+    use sovtoken::logic::address::string_to_txo;
+    let txo_str = "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7WmMSpWL";
+    let result_txo = string_to_txo(txo_str).unwrap();
+    assert_eq!(TXO {address:"pay:sov:iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd".to_string(), seq_no: 1}, result_txo);
+    ```
+*/
+pub fn string_to_txo(txo_str: &str) -> Result<TXO, serde_json::Error> {
+    if !txo_str.starts_with(TXO_QUALIFIER) {
+        return Err(serde_json::Error::io(io::ErrorKind::InvalidInput.into()));
+    }
+    let json_u8 = txo_str[TXO_QUALIFIER.len()..].from_base58_check()
+        .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
+    let json = str::from_utf8(&json_u8)
+        .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
+    TXO::from_json(json)
+}
+
+/**
+    `txo_to_string` serialize TXO to json and encodes it with base58. After that string is prepended with `txo:sov` prefix.
+    Return String.
+
+    ```
+    use sovtoken::logic::parsers::common::TXO;
+    use sovtoken::logic::address::txo_to_string;
+    let result_txo_str = "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7WmMSpWL";
+    let txo = TXO {address:"pay:sov:iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd".to_string(), seq_no: 1};
+    assert_eq!(txo_to_string(&txo).unwrap(), result_txo_str);
+    ```
+*/
+pub fn txo_to_string(txo: &TXO) ->  Result<String, ErrorCode> {
+    let temp = txo.to_json()
+        .map_err(|_| ErrorCode::CommonInvalidState)?
+        .as_bytes().to_base58_check();
+    Ok(TXO_QUALIFIER.to_string() + &temp)
 }
 
 /**
