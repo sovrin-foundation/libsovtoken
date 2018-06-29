@@ -92,6 +92,18 @@ macro_rules! check_useful_c_callback {
     }
 }
 
+/**
+    Checks that a pointer is not null.  Copied from indy-sdk
+*/
+macro_rules! check_useful_c_ptr {
+    ($ptr:ident, $err1:expr) => {
+        if $ptr.is_null() {
+            return $err1
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod ffi_support_tests {
 

@@ -59,8 +59,8 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     pub extra: Option<String>,
-    pub inputs : Vec<(String, i32)>,
-    pub outputs: Vec<(String, u32)>,
+    pub inputs : Vec<(String, u64)>,
+    pub outputs: Vec<(String, u64)>,
 }
 
 /**

@@ -1,0 +1,93 @@
+#!groovy
+
+def evLibrary = library(identifier: 'evernym-aws-codebuild@aws-codebuild', retriever: modernSCM(
+    github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
+)).com.evernym.pipeline
+
+logger = evLibrary.Logger.new(this)
+notifier = evLibrary.Notifier.new(this)
+logger.setGlobalLevel('TRACE')
+
+pipelineWrapper({
+    nodeWrapper {
+
+        List osnames = [
+            'xenial',
+            //'centos7'
+        ]
+        def goals = ['test_dry', 'test']
+
+        stage('Checkout from SCM') {
+            checkout scm
+        }
+
+        def utils = evLibrary.Utils.new(this)
+        // TODO Cargo.toml is necessary only for variable in makefile which is not used for that context, thus
+        // shouldn't be taken into account when deciding to rebuild docker images
+        def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken', ['devops', 'libsovtoken/Cargo.toml'])
+        def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
+
+        stage('Upload source to S3') {
+            awsCBHelper.uploadSourceToS3()
+        }
+
+        Map builds = osnames.collectEntries { osname ->
+            [(osname): {
+                def ciImageTag
+                def prTag = "ci-$osname"
+
+                stage("$osname: Resolve image tag") {
+                    def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_ci_version -s")
+                    ciImageTag = "${_imgVersion}-${osname}-ci"
+                    logger.info("CI docker image tag: $ciImageTag")
+                }
+
+                awsCBHelper.build() {
+                    projectTag = prTag
+
+                    // env and build spec
+                    imageTag = ciImageTag
+                    buildspec = 'devops/aws-codebuild/buildspec.yml'
+                    envv = [
+                        [name: 'OSNAME', value: osname],
+                        [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                    ]
+
+                    // build spec for env image
+                    envBuildSrc = ['devops'] // TODO make more accurate
+                    envBuildCmds = [
+                        'export PROJECT_DIR=$PWD',
+                        'make -C devops image_ci'
+                    ]
+                    envBuildEnvv = [
+                        [name: 'OSNAME', value: osname],
+                        [name: 'DOCKER_NAME', value: "$awsCBHelper.buildCtx.projectName"],
+                        [name: 'DOCKER_TAG', value: ciImageTag],
+                    ]
+
+                    onArtifacts = {
+                        this.stage("$osname: Archive artifacts") {
+                            utils.archiveArtifacts("logs/*.out*") {
+                                truncate = true
+                                allowEmptyArchive = true
+                            }
+                        }
+                    }
+                }
+            }]
+        }
+
+        stage("Build and test") {
+            builds.failFast = false
+            utils.parallel builds
+        }
+    }
+}, { err ->
+    if (err) {
+        logger.error("Pipeline failed with the error $err")
+    }
+
+    stage("Build result notification") {
+        notifier.email()
+    }
+})
