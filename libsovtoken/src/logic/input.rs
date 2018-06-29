@@ -72,7 +72,7 @@ pub struct InputConfig {
     ```
 
 */
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub address: String,
     pub seq_no: u64
