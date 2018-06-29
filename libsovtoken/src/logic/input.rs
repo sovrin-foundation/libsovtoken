@@ -78,6 +78,12 @@ pub struct Input {
     pub seq_no: i32
 }
 
+impl ToString for Input {
+    fn to_string(&self) -> String {
+        format!("{}{}", self.seq_no, self.address)
+    }
+}
+
 impl Input {
     pub fn new(address: String, seq_no: i32) -> Input {
         return Input { address, seq_no};
