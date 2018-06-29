@@ -191,19 +191,20 @@ pub fn add_qualifer_to_address(address : &str) -> String {
     return format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
 }
 
+/**
+    Takes a fully qualified address and returns the unqualified address.
+    Unqualified address is <verkey><checksum> without the "pay:sov"
+*/
+pub fn strip_qualifier_from_address(address : &str) -> String {
+    return address[ADDRESS_QUAL_LEN..].to_string();
+}
+
 /*
     Methods "private" (aka not exported from this module)
 
     KEEP all public methods above
 */
 
-/**
-    Takes a fully qualified address and returns the unqualified address.
-    Unqualified address is <verkey><checksum> without the "pay:sov"
-*/
-fn strip_qualifier_from_address(address : &str) -> String {
-    return address[ADDRESS_QUAL_LEN..].to_string();
-}
 
 
 #[cfg(test)]
