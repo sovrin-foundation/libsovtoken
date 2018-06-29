@@ -28,6 +28,10 @@ ifdef FPM_P_DEPENDS
 FPM_ARGS += $(patsubst %,--depends "%", $(FPM_P_DEPENDS))
 endif
 
+ifdef FPM_P_ARCH
+FPM_ARGS += --architecture $(FPM_P_ARCH)
+endif
+
 ifdef FPM_P_MAINTAINER
 FPM_ARGS += --maintainer "$(FPM_P_MAINTAINER)"
 endif

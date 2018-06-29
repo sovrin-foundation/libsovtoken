@@ -72,11 +72,12 @@ Expects the following targets to be defined in child makefiles:
 
 Variables to config packaing using [fpm][a1feb9f1] tool:
   - (please refer to [fpm wiki][3c28cd3e] for more information about the fpm command line options)
-  - `FPM_P_NAME` (**required**): value for fpm's `--name` option. Default: `$(SRC_VERSION)`
-  - `FPM_P_VERSION` (**required**): value for fpm's `--version` option. Default: not set
+  - `FPM_P_NAME` (**required for `dir` input**): value for fpm's `--name` option. Default: not set
+  - `FPM_P_VERSION` (**required for `dir` input**): value for fpm's `--version` option. Default: not set
   - `FPM_P_INPUT_TYPE`: value for fpm's `--input-type` option. Default: `dir`
   - `FPM_P_OUTPUT_TYPE`: value for fpm's `--output-type` option. Default: `deb` if `OSNAME=xenial`, `rpm` if `OSNAME=centos7`, otherwise - not set
   - `FPM_P_OUTPUT_DIR`: value for fpm's `--package` option. Default: not set
+  - `FPM_P_ARCH`: value for fpm's `--architecture` option. Default: not set
   - `FPM_P_MAINTAINER`: value for fpm's `--maintainer` option. Default: not set
   - `FPM_P_URL`: value for fpm's `--url` option. Default: not set
   - `FPM_P_LICENSE`: value for fpm's `--license` option. Default: not set

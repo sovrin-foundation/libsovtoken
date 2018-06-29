@@ -16,3 +16,11 @@ services:
       args:
           - RUST_VERSION
     image: evernym/rust:${RUST_DOCKER_VERSION}-${OSNAME}
+
+  python3:
+    build:
+      dockerfile: Dockerfile.${PYTHON3_DOCKER_VERSION}
+      context: python3/$OSNAME
+      args:
+          - PYTHON3_VERSION
+    image: evernym/python3:${PYTHON3_DOCKER_VERSION}-${OSNAME}

@@ -53,7 +53,7 @@ pipelineWrapper({
         stage('Set release parameters') {
             def releaseVersion = "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
 
-            debPVersion = utils.packageVersion('deb-kraken', srcVersion, releaseVersion)
+            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
             logger.info("Package version for evernym repo: $debPVersion")
 
             // TODO crate and rpm
@@ -77,11 +77,23 @@ pipelineWrapper({
             // TODO shouldn't create/update CodeBuild project assuming that CI did this before
             // and no changes in settings have appeared
 
+            // build spec for env image
+            envBuildSrc = ['devops'] // TODO make more accurate
+            envBuildCmds = [
+                'export PROJECT_DIR=$PWD',
+                'make -C devops image_ci'
+            ]
+            envBuildEnvv = [
+                [name: 'OSNAME', value: osname],
+                [name: 'DOCKER_NAME', value: "$awsCBHelper.buildCtx.projectName"],
+                [name: 'DOCKER_TAG', value: ciImageTag],
+            ]
+
             // env and build spec
             imageTag = ciImageTag
             buildspec = 'devops/aws-codebuild/buildspec.yml'
             envv = [
-                [name: 'OSNAME', value: "$osname"],
+                [name: 'OSNAME', value: osname],
                 [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
                 [name: 'ARTIFACTS', value: 'libsovtoken/target/release/libsovtoken*.*'],
                 [name: 'FPM_P_VERSION', value: debPVersion],

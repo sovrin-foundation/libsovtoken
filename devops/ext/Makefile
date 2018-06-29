@@ -19,14 +19,16 @@ check_non_empty = $(if $(1),$(1),$(error $(2)))
 check_defined = $(if $(value $1),, $(error Undefined $1$(if $2,	($2))$(if $(value @), \
                     required by target '$@')))
 
-docker_env_value = $(call check_non_empty,$(shell grep -oP '^ENV $(1)=\K.*' $(2)), \
+docker_env_value = $(call check_non_empty,$(shell grep '^ENV $(1)=' $(2) | cut -d '=' -f 2), \
 				   "Value for ENV $(1) not found in dockerfile $(2)")
-docker_from_tag = $(call check_non_empty,$(shell grep -oP '^FROM $(1):\K.*' $(2)), \
+docker_from_tag = $(call check_non_empty,$(shell grep '^FROM $(1):' $(2) | cut -d ':' -f 2), \
 					"Tag for FROM $(1) not found in dockerfile $(2)")
 docker_from_version = $(firstword $(subst -, ,$(call docker_from_tag,$(1),$(2))))
 
+# TODO DRY refactor: make common callable logic
 BASE_DOCKERFILE_PATH = $(_THIS_MK_ABS_DIR)/docker/base/$(OSNAME)/Dockerfile.$(BASE_DOCKER_VERSION)
 RUST_DOCKERFILE_PATH = $(_THIS_MK_ABS_DIR)/docker/rust/$(OSNAME)/Dockerfile.$(RUST_DOCKER_VERSION)
+PYTHON3_DOCKERFILE_PATH = $(_THIS_MK_ABS_DIR)/docker/python3/$(OSNAME)/Dockerfile.$(PYTHON3_DOCKER_VERSION)
 
 # required for in-docker targets
 DOCKER_NAME ?=
@@ -70,11 +72,17 @@ export $(EXPORT_ENV)
 
 # PACKAGING ROUTINE
 _check_fpm_args:
+ifeq ($(FPM_P_INPUT_TYPE),dir)
+
 ifeq ($(FPM_P_NAME),)
 	$(error Package name is not specified)
-else ifeq ($(FPM_P_VERSION),)
+endif
+ifeq ($(FPM_P_VERSION),)
 	$(error Package version is not specified)
 endif
+
+endif
+
 
 # TODO deps with versions like "package (>= 1.0)"
 package: _check_fpm_args $(PRE_PACKAGE_GOALS)
@@ -85,8 +93,13 @@ image_rust_base_version:
 	$(eval BASE_DOCKER_VERSION=$(call docker_from_version,'evernym/base',$(RUST_DOCKERFILE_PATH)))
 	echo $(BASE_DOCKER_VERSION)
 
+image_python3_base_version:
+	$(call check_defined,PYTHON3_DOCKER_VERSION)
+	$(eval BASE_DOCKER_VERSION=$(call docker_from_version,'evernym/base',$(PYTHON3_DOCKERFILE_PATH)))
+	echo $(BASE_DOCKER_VERSION)
+
 # TODO refactor that once compose provides support for images
-# build oreder: https://github.com/docker/compose/issues/5228
+# build order: https://github.com/docker/compose/issues/5228
 image_base:
 	$(call check_defined,BASE_DOCKER_VERSION)
 	BASE_DOCKER_VERSION=$(BASE_DOCKER_VERSION) \
@@ -95,6 +108,10 @@ image_base:
 image_rust: image_rust_base_version image_base
 	RUST_DOCKER_VERSION=$(RUST_DOCKER_VERSION) \
 		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build rust
+
+image_python3: image_python3_base_version image_base
+	PYTHON3_DOCKER_VERSION=$(PYTHON3_DOCKER_VERSION) \
+		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build python3
 
 %_in_docker: image_%
 	echo "Re-running goal $* in docker $(DOCKER_NAME):$(DOCKER_TAG)"
