@@ -4,6 +4,7 @@
 
 use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use std::fmt;
+use logic::type_aliases::TokenAmount;
 
 pub type Outputs = Vec<Output>;
 
@@ -67,13 +68,13 @@ pub struct OutputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Output {
     pub address: String,
-    pub amount: u32,
+    pub amount: TokenAmount,
     // This is wrong, there should be no extra in output
     pub extra: Option<String>,
 }
 
 impl Output {
-    pub fn new(address: String, amount: u32, extra: Option<String>) -> Output {
+    pub fn new(address: String, amount: TokenAmount, extra: Option<String>) -> Output {
         return Output { address, amount, extra };
     }
 }
