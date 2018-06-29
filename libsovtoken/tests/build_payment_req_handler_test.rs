@@ -149,7 +149,7 @@ fn success_signed_request() {
     let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
     let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
     let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
-    println!("{}", txo_1);
+
     let inputs = json!([
             txo_1, txo_2
         ]);
