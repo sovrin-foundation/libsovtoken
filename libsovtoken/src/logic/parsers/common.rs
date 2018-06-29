@@ -3,7 +3,6 @@
 use indy::ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
-use utils::json_conversion::JsonDeserialize;
 use utils::constants::txn_fields::{RESULT, STATE_PROOF};
 use std::str;
 use serde_json;
@@ -234,5 +233,36 @@ mod common_tests {
 
         let (result, state_proof) = extract_result_and_state_proof_from_node_reply(
             json_str_ptr).unwrap();
+
+        let expected_state_proof = StateProof {
+            multi_signature : json!({
+                "participants": ["Gamma", "Delta", "Beta"],
+                "value": {
+                    "timestamp": 1530059419,
+                    "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms",
+                    "ledger_id": 2,
+                    "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU",
+                    "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy",
+                },
+                "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"
+            }),
+            root_hash : String::from("5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms"),
+            proof_nodes : String::from("29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ==")
+        };
+
+        let expected_result = json!({
+            "reqId": 83955,
+            "type": "20001",
+            "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+            "fees": {"1": 4, "10001": 8}
+        });
+
+        assert_eq!(expected_state_proof.multi_signature, state_proof.multi_signature);
+        assert_eq!(expected_state_proof.root_hash, state_proof.root_hash);
+        assert_eq!(expected_state_proof.proof_nodes, state_proof.proof_nodes);
+        assert_eq!(expected_result.get("reqId").unwrap(), result.get("reqId").unwrap());
+        assert_eq!(expected_result.get("type").unwrap(), result.get("type").unwrap());
+        assert_eq!(expected_result.get("identifier").unwrap(), result.get("identifier").unwrap());
+        assert_eq!(expected_result.get("fees").unwrap(), result.get("fees").unwrap());
     }
 }
