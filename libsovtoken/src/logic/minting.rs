@@ -115,7 +115,7 @@ mod test_build_mint_request {
 mod test_deserialize_inputs {
     use super::*;
     use std::ptr;
-    use utils::default;
+    use utils::test::default;
     use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
 
 

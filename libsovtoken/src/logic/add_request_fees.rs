@@ -141,7 +141,7 @@ mod test_deserialize_inputs {
     use indy::ErrorCode;
     use libc::c_char;
     use std::ptr;
-    use utils::default;
+    use utils::test::default;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
 
