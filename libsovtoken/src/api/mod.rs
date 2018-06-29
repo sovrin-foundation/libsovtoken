@@ -910,7 +910,7 @@ pub extern fn sovtoken_init() -> i32 {
 
     debug!("Going to call Payment::register");
 
-    let mut result = match Payment::register(
+    if let Err(e) = Payment::register(
         "sov",
         create_payment_address_handler,
         add_request_fees_handler,
@@ -924,36 +924,31 @@ pub extern fn sovtoken_init() -> i32 {
         build_get_txn_fees_handler,
         parse_get_txn_fees_response_handler
     ) {
-        Ok(()) => ErrorCode::Success ,
-        Err(e) => {
-            debug!("Payment::register failed with {:?}", e);
-            return e as i32
-        },
+        debug!("Payment::register failed with {:?}", e);
+        return e as i32
     };
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
 
-    result = match Ledger::register_transaction_parser_for_sp(GET_UTXO,
-                                                              Some(get_utxo_state_proof_parser),
-                                                              Some(free_parsed_state_proof)) {
-        Ok(()) => ErrorCode::Success ,
-        Err(e) => {
-            debug!("Ledger::register_transaction_parser_for_sp for GET_UTXO failed with {:?}", e);
-            return e as i32
-        },
+    if let Err(e) = Ledger::register_transaction_parser_for_sp(
+        GET_UTXO,
+        Some(get_utxo_state_proof_parser),
+        Some(free_parsed_state_proof)
+    ) {
+        debug!("Ledger::register_transaction_parser_for_sp for GET_UTXO failed with {:?}", e);
+        return e as i32
     };
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
-    result = match Ledger::register_transaction_parser_for_sp(GET_FEES,
-                                                              Some(get_fees_state_proof_parser),
-                                                              Some(free_parsed_state_proof)) {
-        Ok(()) => ErrorCode::Success ,
-        Err(e) => {
-            debug!("Ledger::register_transaction_parser_for_sp for GET_FEES failed with {:?}", e);
-            return e as i32
-        },
+    if let Err(e) =  Ledger::register_transaction_parser_for_sp(
+        GET_FEES,
+        Some(get_fees_state_proof_parser),
+        Some(free_parsed_state_proof)
+    ) {
+        debug!("Ledger::register_transaction_parser_for_sp for GET_FEES failed with {:?}", e);
+        return e as i32
     };
 
-    debug!("sovtoken_init() returning {:?}", result);
-    return result as i32;
+    debug!("sovtoken_init() returning ErrorCode::Success");
+    return ErrorCode::Success as i32;
 }
