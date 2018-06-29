@@ -141,7 +141,7 @@ impl<'de> Deserialize<'de> for Output {
 
 #[cfg(test)]
 mod output_tests {
-    use super::Output;
+    use super::*;
     use serde_json;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
@@ -235,12 +235,6 @@ mod output_tests {
         let output = output_with_extra();
         assert_valid_serialize(output, json);
     }
-}
-
-#[cfg(test)]
-mod output_config_test {
-    use super::*;
-    use utils::json_conversion::JsonSerialize;
 
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]

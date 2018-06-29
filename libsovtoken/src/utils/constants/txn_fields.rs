@@ -1,3 +1,5 @@
+//!
+
 // TODO: Make them part of an Enum
 
 pub const FEES: &'static str = "fees";
