@@ -49,7 +49,7 @@ pipelineWrapper({
                     imageTag = ciImageTag
                     buildspec = 'devops/aws-codebuild/buildspec.yml'
                     envv = [
-                        [name: 'OSNAME', value: "$osname"],
+                        [name: 'OSNAME', value: osname],
                         [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
                     ]
 
@@ -60,9 +60,9 @@ pipelineWrapper({
                         'make -C devops image_ci'
                     ]
                     envBuildEnvv = [
-                        [name: 'OSNAME', value: "$osname"],
+                        [name: 'OSNAME', value: osname],
                         [name: 'DOCKER_NAME', value: "$awsCBHelper.buildCtx.projectName"],
-                        [name: 'DOCKER_TAG', value: "$ciImageTag"],
+                        [name: 'DOCKER_TAG', value: ciImageTag],
                     ]
 
                     onArtifacts = {
