@@ -14,15 +14,15 @@ use utils::constants::txn_types::GET_UTXO;
  *  [`build_get_utxo_txn_handler`]: ../../../api/fn.build_get_utxo_txn_handler.html
  */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct GetUtxoRequest {
+pub struct GetUtxoOperationRequest {
     address : String,
     #[serde(rename = "type")]
     req_type: String
 }
 
-impl GetUtxoRequest {
-    pub fn new(address : String, identifier : Did) -> Request<GetUtxoRequest> {
-        let req = GetUtxoRequest {
+impl GetUtxoOperationRequest {
+    pub fn new(address : String, identifier : Did) -> Request<GetUtxoOperationRequest> {
+        let req = GetUtxoOperationRequest {
             address,
             req_type: GET_UTXO.to_string(),
         };

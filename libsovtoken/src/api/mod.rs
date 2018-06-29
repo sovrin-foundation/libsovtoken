@@ -516,11 +516,13 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
         }
     };
 
-    let utxo_request = GetUtxoRequest::new(String::from(payment_address), did.into());
+    let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address), did.into());
     info!("Built GET_UTXO request: {:?}", utxo_request);
-    let utxo_request = utxo_request.serialize_to_cstring().unwrap();
+    let utxo_request = utxo_request.serialize_to_cstring()
+        .map(|s| s.as_ptr())
+        .map_err(|_| ErrorCode::CommonInvalidStructure);
 
-    let res = handle_result(Ok(utxo_request.as_ptr())) as i32;
+    let res = handle_result(utxo_request) as i32;
     trace!("api::build_get_utxo_request_handler << result: {:?}", res);
     res
 }

@@ -109,9 +109,9 @@ fn successfully_creates_payment_address_with_no_seed() {
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_1);
+    let wallet = utils::wallet::Wallet::new();
 
-    let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
+    let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet.handle, config_str_ptr, cb);
 
     assert_eq!(ErrorCode::Success, ErrorCode::from(return_error), "api call to create_payment_address_handler failed");
 
@@ -140,9 +140,9 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet_id: i32 = utils::wallet::create_wallet(WALLET_NAME_2);
+    let wallet = utils::wallet::Wallet::new();
 
-    let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet_id, config_str_ptr, cb);
+    let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet.handle, config_str_ptr, cb);
     assert_eq!(ErrorCode::Success, ErrorCode::from(return_error), "api call to create_payment_address_handler failed");
 
     let (err, payment_address) = receiver.recv_timeout(Duration::from_secs(TIMEOUT_SECONDS)).unwrap();

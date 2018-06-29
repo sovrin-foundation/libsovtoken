@@ -38,7 +38,7 @@ pub struct UTXO {
 #[serde(rename_all = "camelCase")]
 pub struct TXO {
     pub address: String,
-    pub seq_no: i32,
+    pub seq_no: u64,
 }
 
 pub static TXO_IDENTIFIER: &str = "txo:sov:";
@@ -87,7 +87,7 @@ pub struct SignatureValues {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetaData {
-    pub seq_no: i32,
+    pub seq_no: u64,
     pub txn_time: u32,
 }
 

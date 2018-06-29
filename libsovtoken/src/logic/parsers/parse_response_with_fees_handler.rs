@@ -123,7 +123,7 @@ impl ParseResponseWithFeesReply {
             let output_address : String = output.0.to_string();
             let amount: u32 = output.1;
             let qualified_address: String = add_qualifer_to_address(&output_address);
-            let seq_no: i32 = base.request.tnx_meta_data.seq_no;
+            let seq_no: u64 = base.request.tnx_meta_data.seq_no;
 
             let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 

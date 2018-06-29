@@ -75,11 +75,11 @@ pub struct InputConfig {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Input {
     pub address: String,
-    pub seq_no: i32
+    pub seq_no: u64
 }
 
 impl Input {
-    pub fn new(address: String, seq_no: i32) -> Input {
+    pub fn new(address: String, seq_no: u64) -> Input {
         return Input { address, seq_no};
     }
 
@@ -111,7 +111,8 @@ impl<'de> Deserialize<'de> for Input {
             fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
                 let txo = TXO::from_libindy_string(v)
                     .map_err(|ec| de::Error::custom(format!("Error when deserializing txo: error code {:?}", ec)))?;
-                Ok(Input{ address: txo.address, seq_no: txo.seq_no })
+
+                return Ok(Input::new(txo.address, txo.seq_no ))
             }
 
             fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Input, V::Error> {
@@ -176,11 +177,6 @@ mod input_tests {
         assert_eq!(input, expected_input);
     }
 
-    fn assert_invalid_serialize(input: Input, error_message_starts_with: &str) {
-        let invalid = Input::to_json(&input).unwrap_err();
-        assert!(format!("{}", invalid).starts_with(error_message_starts_with));
-    }
-
     fn assert_valid_serialize(input: Input, json: serde_json::Value) {
         let json_string = json_value_to_string(json);
         let input_serialized = Input::to_json(&input).unwrap();
@@ -237,6 +233,13 @@ mod input_tests {
         );
         let input = valid_input();
         assert_valid_deserialize(json, input);
+    }
+
+    #[test]
+    fn serialize_input() {
+        let input = Input::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 5);
+        let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
+        assert_valid_serialize(input, expected);
     }
 }
 

@@ -30,7 +30,7 @@ pub struct ParseGetUtxoResponseResult {
     pub address : String,
     pub identifier: String,
     pub req_id : i64,
-    pub outputs : Vec<(String, i32, u32)>,
+    pub outputs : Vec<(String, u64, u32)>,
     #[serde(rename = "state_proof")]
     pub state_proof : StateProof
 }
@@ -118,7 +118,7 @@ mod parse_get_utxo_responses_tests {
 
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, i32, u32)> = Vec::new();
+        let mut outputs: Vec<(String, u64, u32)> = Vec::new();
         
         let value : MultiSigValue = MultiSigValue {
             ledger_id: 1001,
@@ -170,7 +170,7 @@ mod parse_get_utxo_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let outputs: Vec<(String, i32, u32)> = Vec::new();
+        let outputs: Vec<(String, u64, u32)> = Vec::new();
 
         let value : MultiSigValue = MultiSigValue {
             ledger_id: 1001,
