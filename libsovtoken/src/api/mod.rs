@@ -866,7 +866,8 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     check_useful_c_ptr!(sp, ErrorCode::CommonInvalidParam1 as i32);
 
-    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
+    //TODO: FIXME: ERROR: THIS LINE CAUSES A SIGSEGV! THIS NEED TO BE CHECKED AND FIXED!
+//    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
 
     trace!("Called free_parsed_state_proof");
 

@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use rust_base58::ToBase58;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO, StateProof, ParsedSP, KeyValuesInSP,
                              KeyValueSimpleData, extract_result_and_state_proof_from_node_reply};
 use utils::json_conversion::{JsonSerialize, JsonDeserialize};
@@ -184,7 +185,7 @@ mod parse_get_utxo_responses_tests {
     #[test]
     fn success_parse_get_utxo_reply_from_response() {
 
-        let address: String = rand_string(32);
+        let address: String = "00000000000000000000000000000000".as_bytes().to_base58_check();
         let identifier: String = rand_req_id().to_string();
         let mut outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
 
