@@ -78,6 +78,23 @@ pub fn unqualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode
 }
 
 /**
+    Form a qualified address from a unqualified one.
+
+    ```
+    use sovtoken::logic::address::address_from_unqualified_address;
+    let verkey = "2Viu9qrpqM48PSw3vdoQoFKP5AvYTChUZhwWtCydfW9iu7ftRt";
+    let address = address_from_unqualified_address(verkey).unwrap();
+
+    let expected_address = String::from("pay:sov:2Viu9qrpqM48PSw3vdoQoFKP5AvYTChUZhwWtCydfW9iu7ftRt");
+    assert_eq!(expected_address, address);
+    ```
+*/
+pub fn address_from_unqualified_address(unqual_address: &str) -> Result<String, ErrorCode> {
+    verkey_from_unqualified_address(unqual_address)?;
+    Ok(format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, unqual_address))
+}
+
+/**
     Form a qualified address from a verkey.
 
     ```

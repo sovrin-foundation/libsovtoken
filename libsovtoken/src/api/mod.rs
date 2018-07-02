@@ -508,8 +508,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address), did.into());
     info!("Built GET_UTXO request: {:?}", utxo_request);
-    let utxo_request = utxo_request.serialize_to_cstring()
-        .map(|s| s.as_ptr())
+    let utxo_request = utxo_request.serialize_to_pointer()
         .map_err(|_| ErrorCode::CommonInvalidStructure);
 
     let res = handle_result(utxo_request) as i32;
@@ -850,12 +849,15 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     check_useful_c_ptr!(sp, ErrorCode::CommonInvalidParam1 as i32);
 
-    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
+    //TODO: FIXME: ERROR: THIS LINE CAUSES A SIGSEGV! THIS NEED TO BE CHECKED AND FIXED!
+//    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
 
     trace!("Called free_parsed_state_proof");
 
     return ErrorCode::Success as i32;
 }
+
+pub static PAYMENT_METHOD_NAME: &str = "sov";
 
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
@@ -872,11 +874,10 @@ pub extern fn sovtoken_init() -> i32 {
     super::utils::logger::init_log();
 
     debug!("sovtoken_init() started");
-
     debug!("Going to call Payment::register");
 
     if let Err(e) = Payment::register(
-        "sov",
+        PAYMENT_METHOD_NAME,
         create_payment_address_handler,
         add_request_fees_handler,
         parse_response_with_fees_handler,

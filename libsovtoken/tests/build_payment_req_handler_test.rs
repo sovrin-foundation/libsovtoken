@@ -5,6 +5,7 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 
 use indy::ErrorCode;
 use indy::payments::Payment;
@@ -143,7 +144,7 @@ fn success_signed_request() {
 
     let did = String::from("287asdjkh2323kjnbakjs");
 
-    let wallet = Wallet::new();
+    let wallet = Wallet::new("p1");
     debug!("wallet id = {:?}", wallet.handle);
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
@@ -212,7 +213,7 @@ fn success_signed_request_from_libindy() {
 
     let did = String::from("Th7MpTaRZVRYnPiabds81Y");
 
-    let wallet = Wallet::new();
+    let wallet = Wallet::new("p1");
     debug!("wallet id = {:?}", wallet.handle);
 
     let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);

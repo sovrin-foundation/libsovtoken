@@ -1,4 +1,5 @@
 #[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 extern crate libc;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project

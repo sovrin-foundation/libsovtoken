@@ -165,7 +165,7 @@ mod parse_response_with_fees_handler_tests {
                     "metadata":
                     {
                         "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
-                        "reqId": 1529697827844532830
+                        "reqId": 152969782
                     },
                     "protocolVersion": 2,
                     "type": "1"
@@ -243,7 +243,7 @@ mod parse_response_with_fees_handler_tests {
                     "metadata":
                     {
                         "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
-                        "reqId": 1529697827844532830
+                        "reqId": 152969782
                     },
                     "protocolVersion": 2,
                     "type": "1"
