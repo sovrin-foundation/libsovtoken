@@ -17,11 +17,11 @@ use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
-use std::ffi::CStr;
 use std::sync::mpsc::channel;
 use sovtoken::logic::parsers::common::TXO;
 
 mod utils;
+use utils::wallet::Wallet;
 
 
 // ***** HELPER METHODS *****
@@ -38,7 +38,7 @@ const WALLET_HANDLE:i32 = 0;
 const CB : Option<extern fn(_command_handle_: i32, err: i32, payment_req_json: *const c_char) -> i32 > = Some(empty_create_payment_callback);
 
 
-fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
+fn generate_payment_addresses(wallet_handle: i32) -> (Vec<String>, Vec<String>) {
     let seed_1 = json!({
         "seed": str::repeat("1", 32),
     }).to_string();
@@ -57,10 +57,10 @@ fn generate_payment_addresses(wallet_id: i32) -> (Vec<String>, Vec<String>) {
 
 
     let payment_addresses = vec![
-        Payment::create_payment_address(wallet_id, "sov", &seed_1).unwrap(),
-        Payment::create_payment_address(wallet_id, "sov", &seed_2).unwrap(),
-        Payment::create_payment_address(wallet_id, "sov", &seed_3).unwrap(),
-        Payment::create_payment_address(wallet_id, "sov", &seed_4).unwrap(),
+        Payment::create_payment_address(wallet_handle, "sov", &seed_2).unwrap(),
+        Payment::create_payment_address(wallet_handle, "sov", &seed_3).unwrap(),
+        Payment::create_payment_address(wallet_handle, "sov", &seed_4).unwrap(),
+        Payment::create_payment_address(wallet_handle, "sov", &seed_1).unwrap(),
     ];
 
     payment_addresses
@@ -139,19 +139,17 @@ fn errors_with_no_submitter_did_json() {
 
 #[test]
 fn success_signed_request() {
-
-    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
 
     let did = String::from("287asdjkh2323kjnbakjs");
 
-    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
-    debug!("wallet id = {:?}", wallet_id);
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
 
-    let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
+    let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
     let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
     let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
-    println!("{}", txo_1);
+
     let inputs = json!([
             txo_1, txo_2
         ]);
@@ -175,8 +173,10 @@ fn success_signed_request() {
             [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
-        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
-                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
+        "signatures": [
+            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
+            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+        ]
     });
 
     let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
@@ -186,7 +186,7 @@ fn success_signed_request() {
 
     let error_code = sovtoken::api::build_payment_req_handler(
         command_handle,
-        wallet_id,
+        wallet.handle,
         c_pointer_from_string(did),
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
@@ -202,23 +202,20 @@ fn success_signed_request() {
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
-    assert!(request.get("reqId").is_some());    indy::wallet::Wallet::close(wallet_id);
-    indy::wallet::Wallet::close(wallet_id);
-    utils::test::TestUtils::cleanup_storage();
+    assert!(request.get("reqId").is_some());
 }
 
 #[test]
 fn success_signed_request_from_libindy() {
 
-    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
 
     let did = String::from("Th7MpTaRZVRYnPiabds81Y");
 
-    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
-    debug!("wallet id = {:?}", wallet_id);
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
 
-    let (payment_addresses, addresses) = generate_payment_addresses(wallet_id);
+    let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
 
     let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
     let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
@@ -246,8 +243,10 @@ fn success_signed_request_from_libindy() {
             [addresses[1], 1]
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
-        "signatures": ["w5vWTfguNqqsM24L4vR59ibndyT4KxQqmp7H6uwKYkfK1XexpxeCxN9HYjv1QnDyVkKtH61fsRBPLYkew1H32em",
-                       "33yMWSGEAqmLrtT9CkER5QsykLvxEaeQNNvMJLdq4UvAWqU9hGjj6tDXX8DzfLC2U4ihCLQa2UyS8riuUJh57E6i"]
+        "signatures": [
+            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
+            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+        ]
     });
 
     let (sender, receiver) = channel();
@@ -259,11 +258,13 @@ fn success_signed_request_from_libindy() {
 
     trace!("Calling build_payment_req");
 
-    let _ = indy::payments::Payment::build_payment_req_async(wallet_id,
-                                                                                &did,
-                                                                                &inputs.to_string(),
-                                                                                &outputs.to_string(),
-                                                                                closure);
+    let _ = indy::payments::Payment::build_payment_req_async(
+        wallet.handle,
+        &did,
+        &inputs.to_string(),
+        &outputs.to_string(),
+        closure
+    );
 
     let request_string = ResultHandler::one_timeout(ErrorCode::Success, receiver, Duration::from_secs(5)).unwrap();
 
@@ -274,6 +275,4 @@ fn success_signed_request_from_libindy() {
     assert_eq!(&addresses[0], request.get("identifier").unwrap());
     assert!(request.get("reqId").is_some());
 
-    indy::wallet::Wallet::close(wallet_id);
-    utils::test::TestUtils::cleanup_storage();
 }

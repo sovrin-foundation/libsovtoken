@@ -3,12 +3,20 @@ use std::path::PathBuf;
 use std::fs;
 use utils::environment::EnvironmentUtils;
 use std::io::Write;
+use sovtoken::utils::random::rand_string;
+extern crate rust_indy_sdk as indy;
 
 pub fn create_pool_config() -> String {
     let path = create_genesis_txn_file_for_test_pool("p1", None, None);
     json!({
         "genesis_txn": path.to_string_lossy().to_string()
     }).to_string()
+}
+
+pub fn create_pool_ledger(pool_cfg: Option<&str>) -> String {
+    let name = rand_string(10);
+    indy::pool::Pool::create_ledger_config(&name, pool_cfg).unwrap();
+    name
 }
 
 fn create_genesis_txn_file_for_test_pool(pool_name: &str,

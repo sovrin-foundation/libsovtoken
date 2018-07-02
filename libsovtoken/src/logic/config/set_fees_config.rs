@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::error::Error;
 use utils::constants::txn_types::SET_FEES;
-
+use logic::type_aliases::TokenAmount;
 /**
     Hashmap for the set_fees json.
 
@@ -23,7 +23,7 @@ use utils::constants::txn_types::SET_FEES;
         set_fees_map.insert(String::from("1002"), 10);
     ```
 */
-pub type SetFeesMap = HashMap<String, u64>;
+pub type SetFeesMap = HashMap<String, TokenAmount>;
 
 /**
     Struct for [`build_set_txn_fees_handler`] request.

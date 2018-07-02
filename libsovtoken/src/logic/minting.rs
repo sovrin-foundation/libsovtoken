@@ -15,6 +15,7 @@ pub fn deserialize_inputs<'a>(
     outputs_json: *const c_char,
     cb: JsonCallback
 ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+    trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}", did, outputs_json);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
@@ -32,35 +33,56 @@ pub fn deserialize_inputs<'a>(
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
+    trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}", did, outputs);
     return Ok((did, outputs, cb));
 }
 
 pub fn build_mint_request(
     did: Did,
-    mut output_config: Outputs
+    mut outputs: Outputs
 ) -> Result<*const c_char, ErrorCode> {
+    trace!("logic::minting::build_mint_request >> did: {:?}, outputs: {:?}", did, outputs);
 
-    for output in &mut output_config {
+    for output in &mut outputs {
         let address = address::unqualified_address_from_address(&output.address)?;
         output.address = address;
     }
     trace!("Stripped pay:sov: from outputs");
 
-    let mint_request = MintRequest::from_config(output_config, did);
-    debug!("Built a mint request >>> {:?}", mint_request);
+    let mint_request = MintRequest::from_config(outputs, did);
+    info!("Built a mint request >>> {:?}", mint_request);
 
-    return mint_request.serialize_to_pointer()
+    let ptr = mint_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));
+
+    trace!("logic::minting::build_mint_request << res: {:?}", ptr);
+    ptr
 }
 
 #[cfg(test)]
 mod test_build_mint_request {
+    use std::ptr;
+    use rust_base58::ToBase58;
+
+    use super::*;
+
+    use logic::output::Output;
+    use utils::default;
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
-    use logic::output::{Output, OutputConfig};
-    use rust_base58::ToBase58;
-    use super::*;
-    
+
+    fn call_deserialize_inputs<'a>(
+        did: Option<*const c_char>,
+        outputs_json: Option<*const c_char>,
+        cb: Option<JsonCallback>
+    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+        let req_json = did.unwrap_or_else(default::did);
+        let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let cb = cb.unwrap_or(Some(default::empty_callback_string));
+
+        return deserialize_inputs(req_json, outputs_json, cb);
+    }
+
     #[test]
     fn build_mint_request_invalid_address() {
         let outputs = vec![
@@ -80,7 +102,7 @@ mod test_build_mint_request {
             }]);
 
         let did_str = &"1123456789abcdef".as_bytes().to_base58();
-        let (did, output_config, _) = test_deserialize_inputs::call_deserialize_inputs(
+        let (did, output_config, _) = call_deserialize_inputs(
             Some(c_pointer_from_str(did_str)),
             Some(c_pointer_from_string(output_config_value.to_string())),
             None
@@ -103,27 +125,7 @@ mod test_build_mint_request {
         assert_eq!(expected.get("operation"), mint_value.get("operation"));
         assert_eq!(expected.get("identifier"), mint_value.get("identifier"));
     }
-}
 
-#[cfg(test)]
-mod test_deserialize_inputs {
-    use super::*;
-    use std::ptr;
-    use utils::default;
-    use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
-
-
-    pub fn call_deserialize_inputs<'a>(
-        did: Option<*const c_char>,
-        outputs_json: Option<*const c_char>,
-        cb: Option<JsonCallback>
-    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
-        let req_json = did.unwrap_or_else(default::did);
-        let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
-        let cb = cb.unwrap_or(Some(default::empty_callback_string));
-
-        return deserialize_inputs(req_json, outputs_json, cb);
-    }
 
     #[test]
     fn deserialize_empty_did() {

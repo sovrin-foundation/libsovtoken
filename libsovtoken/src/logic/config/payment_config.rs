@@ -27,7 +27,7 @@ use logic::xfer_payload::XferPayload;
         use sovtoken::logic::xfer_payload::XferPayload;
 
         sovtoken::api::sovtoken_init();
-        // let wallet_handle = utils::wallet::create_wallet("wallet_add_fees");
+        // let wallet = utils::wallet::Wallet::new().unwrap();
 
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
         let address1 = String::from("pay:sov:TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs");
@@ -44,7 +44,7 @@ use logic::xfer_payload::XferPayload;
         ];
 
         let transfer_data = XferPayload::new(inputs, outputs);
-            // .sign(&CryptoSdk {}, wallet_handle)
+            // .sign(&CryptoSdk {}, wallet.handle)
             // .unwrap();
 
         let payment = PaymentRequest::new(transfer_data);
@@ -91,9 +91,10 @@ impl PaymentRequest {
 #[cfg(test)]
 mod payment_request_test {
     use super::*;
+    use serde_json;
     use logic::input::Input;
     use logic::output::Output;
-    use serde_json;
+    use utils::constants::general::PROTOCOL_VERSION;
     use utils::ffi_support::str_from_char_ptr;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::rand_string;
@@ -116,7 +117,7 @@ mod payment_request_test {
         let xfer_req_c_string = xfer_req.serialize_to_cstring().unwrap();
         let xfer_req_json_str = str_from_char_ptr(xfer_req_c_string.as_ptr()).unwrap();
         let deserialized_xfer_request: Request<PaymentRequest> = Request::<PaymentRequest>::from_json(xfer_req_json_str).unwrap();
-        assert_eq!(deserialized_xfer_request.protocol_version, 1);
+        assert_eq!(deserialized_xfer_request.protocol_version, PROTOCOL_VERSION);
 
         let operation_json_value : serde_json::Value = serde_json::from_str(&deserialized_xfer_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);

@@ -9,12 +9,11 @@ use serde_json;
 use utils::ffi_support::{string_from_char_ptr};
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use utils::constants::txn_types::XFER_PUBLIC;
+use utils::constants::txn_fields::FEES;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, SerdeMap, AddRequestFeesCb);
-
-pub static FEES_KEY_IN_REQ_RESP: &'static str = "fees";
 
 /**
  * Deserializes arguments of [`add_request_fees_handler`]
@@ -25,30 +24,32 @@ pub fn deserialize_inputs (
     outputs_json: *const c_char,
     cb: Option<AddRequestFeesCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
+    trace!("logic::add_request_fees::deserialize_inputs >> req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", req_json, inputs_json, outputs_json);
 
-    let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
+    let cb = cb.ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
 
-    let request_json = string_from_char_ptr(req_json).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let request_json = string_from_char_ptr(req_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted request_json pointer into string >>> {:?}", request_json);
 
-    let inputs_json = string_from_char_ptr(inputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let inputs_json = string_from_char_ptr(inputs_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted inputs_json pointer to string >>> {:?}", inputs_json);
 
-    let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure)?;
+    let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let inputs: Inputs = serde_json::from_str(&inputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    let inputs: Inputs = serde_json::from_str(&inputs_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized input_json >>> {:?}", inputs);
 
-    let outputs: Outputs = serde_json::from_str(&outputs_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    let outputs: Outputs = serde_json::from_str(&outputs_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
-    let request_json_object: serde_json::Value = serde_json::from_str(&request_json).or(Err(ErrorCode::CommonInvalidStructure))?;
+    let request_json_object: serde_json::Value = serde_json::from_str(&request_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Converted request_json to serde::json::Value");
 
-    let request_json_map = request_json_object.as_object().ok_or(ErrorCode::CommonInvalidStructure)?;
+    let request_json_map = request_json_object.as_object().ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     trace!("Converted request_json to hash_map");
 
+    debug!("Deserialized values: inputs: {:?}, outputs: {:?}, request_json_map: {:?}", inputs, outputs, request_json_map);
     return Ok((
         inputs,
         outputs,
@@ -81,14 +82,16 @@ pub fn add_fees_to_request_and_serialize(
     request_json_map: SerdeMap,
     cb: Box<Fn(Result<String, ErrorCode>) + Send + Sync>
 ) -> Result<(), ErrorCode> {
-    add_fees(wallet_handle, inputs, outputs, request_json_map, Box::new(move |request_json_map_updated|{
+    trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> wallet_handle: {:?}, inputs: {:?}, outputs: {:?}, request_json_map: {:?}", wallet_handle, inputs, outputs, request_json_map);
+    let res = add_fees(wallet_handle, inputs, outputs, request_json_map, Box::new(move |request_json_map_updated|{
         let rm_fees = request_json_map_updated.map(|request_json_map_with_fees| serialize_request_with_fees(request_json_map_with_fees));
         match rm_fees {
             Ok(some) => cb(some),
             Err(e) => cb(Err(e))
         }
-    }))?;
-    Ok(())
+    }));
+    trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> result: {:?}", res);
+    res
 }
 
 
@@ -104,7 +107,7 @@ fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, request_json_m
         match fees {
             Ok(fees) => {
                 let mut map = request_json_map.clone();
-                map.insert(FEES_KEY_IN_REQ_RESP.to_string(), json!(fees));
+                map.insert(FEES.to_string(), json!(fees));
                 cb(Ok(map.clone()));
             }
             Err(err) => {
@@ -134,12 +137,18 @@ fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, cb: Box<Fn(
 
 #[cfg(test)]
 mod test_deserialize_inputs {
-    use indy::ErrorCode;
     use libc::c_char;
+    use serde_json;
     use std::ptr;
+
+    use indy::ErrorCode;
+
     use utils::default;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use utils::constants::txn_types::XFER_PUBLIC;
+
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
+    use super::validate_type_not_transfer;
 
     pub fn call_deserialize_inputs(
         req_json: Option<*const c_char>,
@@ -180,6 +189,12 @@ mod test_deserialize_inputs {
     fn error_deserialize_inputs_cb(cb: Option<AddRequestFeesCb>, error: ErrorCode) {
         let result = call_deserialize_inputs(None, None, None, Some(cb));
         assert_eq!(error, result.unwrap_err());
+    }
+
+    fn deserialize_request_json(json: serde_json::value::Value) -> serde_json::Map<String, serde_json::value::Value> {
+        let request_c_pointer = c_pointer_from_string(json.to_string());
+        let (_, _, request, _) = call_deserialize_inputs(Some(request_c_pointer), None, None, None).unwrap();
+        return request;
     }
 
     #[test]
@@ -234,22 +249,6 @@ mod test_deserialize_inputs {
     fn deserialize_inputs_valid() {
         let result = call_deserialize_inputs(None, None, None, None);
         assert!(result.is_ok());
-    }
-}
-
-#[cfg(test)]
-mod test_validate_type_not_transfer {
-    use indy::ErrorCode;
-    use serde_json;
-    use super::validate_type_not_transfer;
-    use super::test_deserialize_inputs::call_deserialize_inputs;
-    use utils::ffi_support::c_pointer_from_string;
-    use utils::constants::txn_types::XFER_PUBLIC;
-
-    fn deserialize_request_json(json: serde_json::value::Value) -> serde_json::Map<String, serde_json::value::Value> {
-        let request_c_pointer = c_pointer_from_string(json.to_string());
-        let (_, _, request, _) = call_deserialize_inputs(Some(request_c_pointer), None, None, None).unwrap();
-        return request;
     }
 
     #[test]

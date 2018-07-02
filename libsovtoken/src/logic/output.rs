@@ -4,6 +4,7 @@
 
 use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
 use std::fmt;
+use logic::type_aliases::TokenAmount;
 
 pub type Outputs = Vec<Output>;
 
@@ -67,13 +68,13 @@ pub struct OutputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Output {
     pub address: String,
-    pub amount: u32,
+    pub amount: TokenAmount,
     // This is wrong, there should be no extra in output
     pub extra: Option<String>,
 }
 
 impl Output {
-    pub fn new(address: String, amount: u32, extra: Option<String>) -> Output {
+    pub fn new(address: String, amount: TokenAmount, extra: Option<String>) -> Output {
         return Output { address, amount, extra };
     }
 }
@@ -141,7 +142,7 @@ impl<'de> Deserialize<'de> for Output {
 
 #[cfg(test)]
 mod output_tests {
-    use super::Output;
+    use super::*;
     use serde_json;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 
@@ -235,12 +236,6 @@ mod output_tests {
         let output = output_with_extra();
         assert_valid_serialize(output, json);
     }
-}
-
-#[cfg(test)]
-mod output_config_test {
-    use super::*;
-    use utils::json_conversion::JsonSerialize;
 
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]

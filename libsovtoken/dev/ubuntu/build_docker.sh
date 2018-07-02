@@ -14,9 +14,9 @@ GIT_BRANCH="master"
 REBUILD=0
 HOST=$(uname -s)
 case "${HOST}" in
-    Linux*)  CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
-    CYGWIN*) CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
-    MINGW*)  CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
+    Linux*)   CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
+    CYGWIN*)  CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
+    MINGW*)   CPUS=$(grep -c ^processor /proc/cpuinfo) ;;
     FreeBSD*) CPUS=$(sysctl -n hw.physicalcpu) ;;
     Darwin*)  CPUS=$(sysctl -n hw.physicalcpu) ;;
     *) CPUS=2 ;;
@@ -210,16 +210,15 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
 #!/bin/bash
 set -xv
 apt-get -qq update -y
-apt-get -qq install -y software-properties-common 2>&1 > /dev/null
+apt-get -qq install -y software-properties-common apt-transport-https 2>&1 > /dev/null
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 add-apt-repository -y "deb https://repo.sovrin.org/sdk/deb xenial ${APT_INSTALL}"
-apt-get -qq update -y
-apt-get -qq install -y indy 2>&1 > /dev/null
+apt-get -qq update -y && apt-get -qq install -y libindy 2>&1 > /dev/null
 EOT
     else
         echo "" > "${INDY_INSTALL}"
     fi
-    __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/ci/ubuntu --build-arg indy_install=indy_install.sh"
+    __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/dev/ubuntu --build-arg indy_install=indy_install.sh"
     rm -f "${INDY_INSTALL}"
 else
     echo "Using existing docker image ${DOCKERIMAGE}:latest"
@@ -236,10 +235,12 @@ fi
 if [ ${RUST_FLUSH_CACHE} -eq 0 ] ; then
     cat > "${BUILD_DIR}/build.sh" << EOF
 if [ -d "/rust/git" ] ; then
-    ln -s /rust/git /home/token_user/.cargo/git
+    echo "Reusing cargo/git"
+    ln -fs /rust/git /home/token_user/.cargo/git
 fi
 if [ -d "/rust/registry" ] ; then
-    ln -s /rust/registry /home/token_user/.cargo/registry
+    echo "Reusing cargo/registry"
+    ln -fs /rust/registry /home/token_user/.cargo/registry
 fi
 EOF
 fi
@@ -265,6 +266,7 @@ else
     cat >> "${BUILD_DIR}/build.sh" << EOF
 export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
 export LIBINDY_DIR=/usr/lib
+export RUST_TEST_THREADS=1
 EOF
 fi
 

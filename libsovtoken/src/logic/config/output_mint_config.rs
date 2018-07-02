@@ -50,7 +50,13 @@ impl MintRequest {
 #[cfg(test)]
 mod output_mint_config_test {
     use super::*;
-    use utils::json_conversion::JsonSerialize;
+    use serde_json;
+    use logic::output::OutputConfig;
+    use utils::constants::general::PROTOCOL_VERSION;
+    use utils::ffi_support::str_from_char_ptr;
+    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+    use utils::random::rand_string;
+
 
     #[test]
     fn serializing_mint_struct_config() {
@@ -61,15 +67,6 @@ mod output_mint_config_test {
         };
         assert_eq!(mint.to_json().unwrap(), r#"{"ver":1,"outputs":[["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",10]]}"#);
     }
-}
-
-#[cfg(test)]
-mod mint_request_test {
-    use super::*;
-    use serde_json;
-    use utils::ffi_support::str_from_char_ptr;
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use utils::random::rand_string;
 
     fn initial_mint_request() -> Request<MintRequest> {
         let identifier: String = rand_string(21);
@@ -87,7 +84,7 @@ mod mint_request_test {
         let mint_req_c_string = mint_req.serialize_to_cstring().unwrap();
         let mint_req_json_str = str_from_char_ptr(mint_req_c_string.as_ptr()).unwrap();
         let deserialized_mint_request: Request<MintRequest> = Request::<MintRequest>::from_json(mint_req_json_str).unwrap();
-        assert_eq!(deserialized_mint_request.protocol_version, 1);
+        assert_eq!(deserialized_mint_request.protocol_version, PROTOCOL_VERSION);
 
         let operation_json_value : serde_json::Value = serde_json::from_str(&deserialized_mint_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);

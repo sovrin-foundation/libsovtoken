@@ -13,6 +13,7 @@ use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 use utils::json_conversion::JsonSerialize;
 use indy::ErrorCode;
+use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
 
 /**
     for parse_response_with_fees_handler input resp_json
@@ -23,7 +24,7 @@ use indy::ErrorCode;
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponseWithFees {
     pub op : ResponseOperations,
-    pub protocol_version: i32,
+    pub protocol_version: ProtocolVersion,
     pub request : ParseResponseWithFeesRequest,
 }
 
@@ -34,7 +35,7 @@ pub struct ParseResponseWithFees {
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponseWithFeesRequest {
     pub txn : Transaction,
-    pub ver: i32,
+    pub ver: TxnVersion,
     #[serde(rename = "txnMetadata")]
     pub tnx_meta_data: TransactionMetaData,
     pub req_signature: RequireSignature,
@@ -49,13 +50,13 @@ pub struct ParseResponseWithFeesRequest {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionFees {
-    pub fees: i32,
+    pub fees: TokenAmount,
     #[serde(rename = "ref")]
     pub reference: String,
     pub root_hash: String,
     pub audit_path: Vec<String>,
-    pub inputs: Vec<(String, i32)>,
-    pub outputs: Vec<(String, u32)>,
+    pub inputs: Vec<(String, TxnSeqNo)>,
+    pub outputs: Vec<(String, TokenAmount)>,
     #[serde(rename = "txnMetadata")]
     pub tnx_meta_data: TransactionMetaData,
     pub req_signature: RequireSignature,
@@ -67,7 +68,7 @@ pub struct TransactionFees {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-    pub protocol_version : i32,
+    pub protocol_version : ProtocolVersion,
     #[serde(rename = "type")]
     pub txn_type : String,
     #[serde(rename = "metadata")]
@@ -82,7 +83,7 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetaData2 {
     pub digest: String,
-    pub req_id: i64
+    pub req_id: ReqId
 }
 
 /**
@@ -118,12 +119,12 @@ impl ParseResponseWithFeesReply {
         // according to the documentation, don't need the inputs.  Only the outputs
         // and seq_no which are part 2 and 3 of the tuple
         let outputs = &base.request.fees.outputs;
-
+        let seq_no: TxnSeqNo = base.request.tnx_meta_data.seq_no;
+        
         for output in outputs {
             let output_address : String = output.0.to_string();
-            let amount: u32 = output.1;
+            let amount: TokenAmount = output.1;
             let qualified_address: String = add_qualifer_to_address(&output_address);
-            let seq_no: i32 = base.request.tnx_meta_data.seq_no;
 
             let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
@@ -169,7 +170,7 @@ mod parse_response_with_fees_handler_tests {
                     "protocolVersion": 2,
                     "type": "1"
                 },
-                "ver": 1,
+                "ver": "1",
                 "txnMetadata":
                 {
                     "seqNo": 13,
@@ -247,7 +248,7 @@ mod parse_response_with_fees_handler_tests {
                     "protocolVersion": 2,
                     "type": "1"
                 },
-                "ver": 1,
+                "ver": "1",
                 "txnMetadata":
                 {
                     "seqNo": 13,

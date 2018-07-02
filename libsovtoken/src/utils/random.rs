@@ -5,7 +5,7 @@ extern crate rand;
 
 use self::rand::Rng;
 use self::rand::random;
-
+use logic::type_aliases::ReqId;
 /**
    Builds a string of random numbers of the inputted length
 */
@@ -28,6 +28,6 @@ pub fn rand_bytes(length : usize) -> Vec<u8> {
     to any current request . This function simply calls and returns rand's
     `random` function using a u32
 */
-pub fn rand_req_id() -> u32 {
-    random::<u32>()
+pub fn rand_req_id() -> ReqId {
+    random::<ReqId>()
 }

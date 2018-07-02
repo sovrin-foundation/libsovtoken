@@ -1,3 +1,5 @@
+//! what is this module for?
+
 use indy::ErrorCode;
 use libc::c_char;
 use logic::input::Inputs;
@@ -13,33 +15,34 @@ pub fn deserialize_inputs(
     outputs_json: *const c_char,
     cb: Option<BuildPaymentRequestCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
+    trace!("logic::build_payment::deserialize_inputs >> inputs_json: {:?}, outputs_json: {:?}", inputs_json, outputs_json);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
     let inputs_json = string_from_char_ptr(inputs_json)
-        .ok_or(ErrorCode::CommonInvalidStructure)?;
+        .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted inputs_json pointer to string >>> {:?}", inputs_json);
     
 
     let outputs_json = string_from_char_ptr(outputs_json)
-        .ok_or(ErrorCode::CommonInvalidStructure)?;
+        .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
 
-    let inputs: Inputs = serde_json::from_str(&inputs_json)
+    let inputs: Inputs = serde_json::from_str(&inputs_json).map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized input_json >>> {:?}", inputs);
 
-    let outputs: Outputs = serde_json::from_str(&outputs_json)
+    let outputs: Outputs = serde_json::from_str(&outputs_json).map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
-
+    trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}", inputs, outputs);
     return Ok((inputs, outputs, cb));
 }
 
 #[cfg(test)]
 mod test_deserialize_inputs {
     use utils::ffi_support::c_pointer_from_string;
-use indy::ErrorCode;
+    use indy::ErrorCode;
     use libc::c_char;
     use std::ptr;
     use utils::default;

@@ -5,6 +5,7 @@
 use serde::{de, ser, Deserialize, ser::SerializeTuple, Serialize};
 use std::fmt;
 use logic::parsers::common::TXO;
+use logic::type_aliases::TxnSeqNo;
 
 pub type Inputs = Vec<Input>;
 
@@ -31,11 +32,12 @@ pub struct InputConfig {
     ## From Array
     An array with the format of `[address, seq_no, signature]`.
     When deserializing from an array, the signature is required.
-    ```ignore
+    ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
-    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30, "239asdkj3298uadkljasd98u234ijasdlkj"]"#;
-    let input = Input::from_json(json);
+    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30]"#;
+    let input = Input::from_json(json).unwrap();
+    assert_eq!(Input{address: "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja".to_string(), seq_no: 30}, input);
     ```
 
     ## From Object
@@ -75,11 +77,17 @@ pub struct InputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub address: String,
-    pub seq_no: i32
+    pub seq_no: TxnSeqNo
+}
+
+impl ToString for Input {
+    fn to_string(&self) -> String {
+        format!("{}{}", self.seq_no, self.address)
+    }
 }
 
 impl Input {
-    pub fn new(address: String, seq_no: i32) -> Input {
+    pub fn new(address: String, seq_no: TxnSeqNo) -> Input {
         return Input { address, seq_no};
     }
 
@@ -111,7 +119,8 @@ impl<'de> Deserialize<'de> for Input {
             fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
                 let txo = TXO::from_libindy_string(v)
                     .map_err(|ec| de::Error::custom(format!("Error when deserializing txo: error code {:?}", ec)))?;
-                Ok(Input{ address: txo.address, seq_no: txo.seq_no })
+
+                return Ok(Input::new(txo.address, txo.seq_no ))
             }
 
             fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Input, V::Error> {
@@ -153,11 +162,13 @@ impl<'de> Deserialize<'de> for Input {
 
 #[cfg(test)]
 mod input_tests {
-    use super::Input;
-    use serde_json;
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use logic::parsers::common::TXO;
     use rust_base58::ToBase58;
+    use serde_json;
+
+    use logic::input::{Input, InputConfig};
+    use logic::parsers::common::TXO;
+    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+
 
     fn json_value_to_string(json: serde_json::Value) -> String {
         return serde_json::to_string(&json).unwrap();
@@ -174,11 +185,6 @@ mod input_tests {
         let json_string = json_value_to_string(json);
         let input = Input::from_json(&json_string).unwrap();
         assert_eq!(input, expected_input);
-    }
-
-    fn assert_invalid_serialize(input: Input, error_message_starts_with: &str) {
-        let invalid = Input::to_json(&input).unwrap_err();
-        assert!(format!("{}", invalid).starts_with(error_message_starts_with));
     }
 
     fn assert_valid_serialize(input: Input, json: serde_json::Value) {
@@ -238,12 +244,13 @@ mod input_tests {
         let input = valid_input();
         assert_valid_deserialize(json, input);
     }
-}
 
-#[cfg(test)]
-mod input_config_test {
-    use logic::input::{Input, InputConfig};
-    use utils::json_conversion::JsonSerialize;
+    #[test]
+    fn serialize_input() {
+        let input = Input::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 5);
+        let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
+        assert_valid_serialize(input, expected);
+    }
 
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]

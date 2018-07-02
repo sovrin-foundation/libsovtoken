@@ -8,8 +8,6 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 extern crate serde_json;
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate log;
 
 use indy::ErrorCode;
 
@@ -17,6 +15,8 @@ use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
+use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
+use sovtoken::utils::constants::txn_fields::OUTPUTS;
 use std::sync::mpsc::channel;
 use indy::utils::results::ResultHandler;
 use std::time::Duration;
@@ -24,7 +24,10 @@ use sovtoken::logic::parsers::common::ResponseOperations;
 use sovtoken::utils::json_conversion::JsonDeserialize;
 use utils::parse_mint_response::ParseMintResponse;
 
+
 mod utils;
+use utils::wallet::Wallet;
+use sovtoken::utils::random::rand_string;
 
 // ***** HELPER METHODS *****
 
@@ -93,8 +96,8 @@ fn  valid_output_json() {
             .unwrap();
 
         let expected = json!({
-            "type": "10000",
-            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+            "type": MINT_PUBLIC,
+            OUTPUTS: [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
         });
         assert_eq!(mint_operation, &expected);
         return ErrorCode::Success as i32;
@@ -121,24 +124,24 @@ fn  valid_output_json() {
 fn valid_output_json_from_libindy() {
     sovtoken::api::sovtoken_init();
     let did = "Th7MpTaRZVRYnPiabds81Y";
-    let wallet_id : i32 = utils::wallet::create_wallet("my_new_wallet");
+    let wallet = Wallet::new(&rand_string(7));
     let outputs_str = VALID_OUTPUT_JSON;
-    let outputs_str_ptr = outputs_str.as_ptr();
     let (sender, receiver) = channel();
 
     let cb = move |ec, req, payment_method| {
         sender.send((ec, req, payment_method)).unwrap();
     };
 
-    let return_error = indy::payments::Payment::build_mint_req_async(wallet_id,
-                                                                     did,
-                                                                     outputs_str,
-                                                                     cb
+    let return_error = indy::payments::Payment::build_mint_req_async(
+        wallet.handle,
+        did,
+        outputs_str,
+        cb
     );
 
     assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
 
-    let (req, _) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
+    let (req, payment_method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
 
     let mint_request_json_value : serde_json::Value = serde_json::from_str(&req).unwrap();
     let mint_operation = mint_request_json_value
@@ -146,39 +149,48 @@ fn valid_output_json_from_libindy() {
         .unwrap();
 
     let expected = json!({
-            "type": "10000",
-            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
-        });
+        "type": MINT_PUBLIC,
+        OUTPUTS: [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+    });
+
+
+    assert_eq!("sov", payment_method);
     assert_eq!(mint_operation, &expected);
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_mint_txn_works() {
-    utils::test::TestUtils::cleanup_storage();
     sovtoken::api::sovtoken_init();
     let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
-    let pool_name = "p1";
-    let wallet_name = "w1";
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();
 
-    indy::pool::Pool::create_ledger_config(pool_name, pool_config).unwrap();
-    indy::wallet::Wallet::create(pool_name, wallet_name, None, None, Some(&json!({"key": "1"}).to_string())).unwrap();
+    let pool_name = utils::pool::create_pool_ledger(pool_config);
+    let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let wallet_handle = indy::wallet::Wallet::open(wallet_name, None, Some(&json!({"key": "1"}).to_string())).unwrap();
-    let pool_handle = indy::pool::Pool::open_ledger(pool_name, None).unwrap();
+    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
 
-    let (did, _) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
-    let (did_2, _) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee2"}).to_string()).unwrap();
-    let (did_3, _) = indy::did::Did::new(wallet_handle, &json!({"seed":"000000000000000000000000Trustee3"}).to_string()).unwrap();
+    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000000"}).to_string()).unwrap();
-    let pa2 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000001"}).to_string()).unwrap();
-    let pa3 = indy::payments::Payment::create_payment_address(wallet_handle, payment_method, &json!({"seed":"00000000000000000000000000000002"}).to_string()).unwrap();
+    let (did, verkey) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let req_nym_1 = indy::ledger::Ledger::build_nym_request(&did_trustee, &did, Some(&verkey), None, Some("TRUSTEE")).unwrap();
+    indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req_nym_1).unwrap();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet_handle, &did,
+    let (did_2, verkey_2) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let req_nym_2 = indy::ledger::Ledger::build_nym_request(&did_trustee, &did_2, Some(&verkey_2), None, Some("TRUSTEE")).unwrap();
+    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req_nym_2).unwrap();
+    println!("res: {}", result);
+
+    let (did_3, verkey_3) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let req_nym_3 = indy::ledger::Ledger::build_nym_request(&did_trustee, &did_3, Some(&verkey_3), None, Some("TRUSTEE")).unwrap();
+    indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req_nym_3).unwrap();
+
+    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
+    let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
+    let pa3 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
+
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet.handle, &did_trustee,
         &json!([
         {
             "paymentAddress": pa1,
@@ -197,12 +209,22 @@ pub fn build_and_submit_mint_txn_works() {
         }
     ]).to_string()).unwrap();
 
-    let sign1 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did, &mint_req).unwrap();
-    let sign2 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did_2, &sign1).unwrap();
-    let sign3 = indy::ledger::Ledger::multi_sign_request(wallet_handle, &did_3, &sign2).unwrap();
+    let sign1 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_trustee, &mint_req).unwrap();
+    let sign2 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did, &sign1).unwrap();
+    let sign3 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &sign2).unwrap();
+    let sign4 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &sign3).unwrap();
 
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &sign3).unwrap();
+    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &sign4).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    utils::test::TestUtils::cleanup_storage();
+    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
+    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
+    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
+
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    let utxos = res_parsed.as_object().unwrap().get("utxo_json").unwrap().as_array().unwrap();
+    assert_eq!(utxos.len(), 1);
+    let value = utxos.get(0).unwrap().as_object().unwrap();
+    assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 5);
+    assert_eq!(value.get("paymentAddress").unwrap().as_str().unwrap(), &pa1);
 }

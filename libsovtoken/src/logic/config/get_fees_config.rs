@@ -61,6 +61,7 @@ mod get_fees_config_test {
     use utils::json_conversion::{JsonSerialize};
     use utils::ffi_support::{str_from_char_ptr};
     use utils::random::rand_string;
+    use utils::constants::general::PROTOCOL_VERSION;
 
     fn initial_get_fee_request() -> Request<GetFeesRequest> {
         let identifier: String = rand_string(21);
@@ -76,7 +77,7 @@ mod get_fees_config_test {
         let get_fee_req_c_string = get_fee_req.serialize_to_cstring().unwrap();
         let get_fee_req_json_str = str_from_char_ptr(get_fee_req_c_string.as_ptr()).unwrap();
         let deserialized_get_fee_request: Request<GetFeesRequest> = serde_json::from_str(get_fee_req_json_str).unwrap();
-        assert_eq!(deserialized_get_fee_request.protocol_version, 1);
+        assert_eq!(deserialized_get_fee_request.protocol_version, PROTOCOL_VERSION);
 
         let operation_json_value: serde_json::Value = serde_json::from_str(&deserialized_get_fee_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);
@@ -86,9 +87,6 @@ mod get_fees_config_test {
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        let get_fees_config = GetFeesRequest {
-            txn_type: GET_FEES.to_string()
-        };
         let request = GetFeesRequest::new().as_request(did);
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }

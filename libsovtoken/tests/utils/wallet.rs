@@ -1,13 +1,13 @@
-#![cfg(test)]
-
 /*!
  * A set of test helpers dealing with the wallet.
  */
 
 extern crate rust_indy_sdk as indy;
-use self::indy::wallet::Wallet;
+extern crate sovtoken;
 
-use std::panic;
+use self::indy::ErrorCode;
+use self::indy::wallet::Wallet as IndyWallet;
+use self::sovtoken::utils::random::rand_string;
 
 static USEFUL_CREDENTIALS : &'static str = r#"
    {
@@ -17,19 +17,71 @@ static USEFUL_CREDENTIALS : &'static str = r#"
    }
 "#;
 
-/** Creates a wallet and opens it.
- *  Will delete the current wallet if it exists. It will then create and open the wallet.
- *  
- *  # Errors
- *  May panic on creating the wallet or opening it.
- */
-pub fn create_wallet(wallet_name : &str) -> i32 {
-   let _ = panic::catch_unwind(| | {
-       Wallet::delete(wallet_name, Some(USEFUL_CREDENTIALS)).unwrap();
-   });
+/**
+A test wallet that deletees itself when it leaves scope.
 
-    Wallet::create("pool_1", wallet_name, None, None, Some(USEFUL_CREDENTIALS)).unwrap();
-    let wallet_id: i32 = Wallet::open(wallet_name, None, Some(USEFUL_CREDENTIALS)).unwrap();
+Use by calling `let wallet = Wallet::new();` and pass the `wallet.handle`.
 
-    return wallet_id;
+```
+use utils::wallet::Wallet;
+// The wallet is opened and created.
+let wallet_1 = Wallet::new();
+{
+    let wallet_2 = Wallet::new();
+    // we have the wallet and wallet handle.
+    assert!(wallet.handle > 0);
+}
+// Now wallet_2 is out of scope, it closes and deletes itself.
+assert!(wallet.handle > 0);
+```
+
+*/
+pub struct Wallet {
+    name: String,
+    pub handle: i32,
+}
+
+impl Wallet {
+    pub fn new(pool_name: &str) -> Wallet {
+        let name = rand_string(20);
+        let mut wallet = Wallet { name, handle: -1 };
+        wallet.create(pool_name).unwrap();
+        wallet.open().unwrap();
+
+        wallet
+    }
+
+    pub fn from_name(name: &str) -> Wallet {
+        let name = name.to_owned();
+        let mut wallet = Wallet { name: name.clone(), handle: -1 };
+        wallet.create(&name).unwrap();
+        wallet.open().unwrap();
+
+        wallet
+    }
+
+    fn open(&mut self) -> Result<i32, ErrorCode> {
+        let handle = IndyWallet::open(&self.name, None, Some(USEFUL_CREDENTIALS))?;
+        self.handle = handle;
+        Ok(handle)
+    }
+
+    fn create(&self, pool_name: &str) -> Result<(), ErrorCode> {
+        IndyWallet::create(pool_name, &self.name, None, None, Some(USEFUL_CREDENTIALS))
+    }
+
+    fn close(&self) -> Result<(), ErrorCode> {
+        IndyWallet::close(self.handle)
+    }
+
+    fn delete(&self) -> Result<(), ErrorCode> {
+        IndyWallet::delete(&self.name, Some(USEFUL_CREDENTIALS))
+    }
+}
+
+impl Drop for Wallet {
+    fn drop(&mut self) {
+        self.close().unwrap();
+        self.delete().unwrap();
+    }
 }

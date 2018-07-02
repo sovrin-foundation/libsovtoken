@@ -49,7 +49,7 @@ impl<'a> Did<'a> {
     */
     pub fn validate(self) -> Result<Self, DidError> {
         let Did(did_string) = self;
-        let res_did = did_string.from_base58();
+        let res_did = did_string.from_base58().map_err(map_err_err!());
 
         match res_did {
             Ok(ref vec) if vec.len() == 32 || vec.len() == 16 => Ok(self),
