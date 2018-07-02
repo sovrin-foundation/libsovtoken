@@ -18,7 +18,7 @@ extern crate sodiumoxide;
 
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
-#[cfg(test)]
+#[cfg(any(test, feature = "integration"))]
 #[macro_use] extern crate lazy_static;
 
 

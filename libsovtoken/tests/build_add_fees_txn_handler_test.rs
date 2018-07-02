@@ -1,4 +1,3 @@
-#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_json;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
@@ -12,11 +11,12 @@ use sovtoken::utils::ffi_support::c_pointer_from_str;
 use std::sync::mpsc::channel;
 use std::time::Duration;
 use sovtoken::logic::parsers::common::TXO;
+use sovtoken::utils::test::callbacks;
 use utils::wallet::Wallet;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {
-    let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
     let did = "mydid1";
     let error_code = sovtoken::api::add_request_fees_handler(
         command_handle,
