@@ -13,6 +13,8 @@ extern crate rand;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
+#[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 
 extern crate rust_base58;
 extern crate sovtoken;
@@ -109,7 +111,7 @@ fn successfully_creates_payment_address_with_no_seed() {
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet = utils::wallet::Wallet::new();
+    let wallet = utils::wallet::Wallet::new("p1");
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet.handle, config_str_ptr, cb);
 
@@ -140,7 +142,7 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet = utils::wallet::Wallet::new();
+    let wallet = utils::wallet::Wallet::new("p1");
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet.handle, config_str_ptr, cb);
     assert_eq!(ErrorCode::Success, ErrorCode::from(return_error), "api call to create_payment_address_handler failed");

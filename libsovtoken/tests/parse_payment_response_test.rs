@@ -29,7 +29,7 @@ static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
             {
                 "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
                 "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
-                "reqId": 1529682415342024
+                "reqId": 152968241
             },
             "protocolVersion": 2,
             "type": "10001"

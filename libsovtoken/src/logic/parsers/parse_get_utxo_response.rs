@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use rust_base58::ToBase58;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO, StateProof, ParsedSP, KeyValuesInSP,
                              KeyValueSimpleData, extract_result_and_state_proof_from_node_reply};
 use utils::json_conversion::{JsonSerialize, JsonDeserialize};
@@ -11,6 +12,7 @@ use serde_json;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::OUTPUTS;
 use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, ReqId};
+use logic::address;
 
 type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 
@@ -69,7 +71,8 @@ impl ParseGetUtxoReply {
             let (address, seq_no, amount) = unspent_output;
 
             let txo = (TXO { address, seq_no }).to_libindy_string()?;
-            let utxo: UTXO = UTXO { payment_address: base.result.address.to_string(), txo, amount, extra: "".to_string() };
+            let payment_address = address::address_from_unqualified_address(&base.result.address.to_string())?;
+            let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
 
             utxos.push(utxo);
         }
@@ -182,7 +185,7 @@ mod parse_get_utxo_responses_tests {
     #[test]
     fn success_parse_get_utxo_reply_from_response() {
 
-        let address: String = rand_string(32);
+        let address: String = "00000000000000000000000000000000".as_bytes().to_base58_check();
         let identifier: String = rand_req_id().to_string();
         let mut outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
 

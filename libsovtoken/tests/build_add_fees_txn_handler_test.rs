@@ -1,5 +1,6 @@
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 pub mod utils;
@@ -34,7 +35,7 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, req
 fn init_wallet_with_address() -> (utils::wallet::Wallet, String) {
     sovtoken::api::sovtoken_init();
 
-    let wallet = Wallet::new();
+    let wallet = Wallet::new("p1");
     let key_config = json!({
         "seed": str::repeat("2", 32),
     });

@@ -42,10 +42,10 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    pub fn new() -> Wallet {
+    pub fn new(pool_name: &str) -> Wallet {
         let name = rand_string(20);
         let mut wallet = Wallet { name, handle: -1 };
-        wallet.create().unwrap();
+        wallet.create(pool_name).unwrap();
         wallet.open().unwrap();
 
         wallet
@@ -53,8 +53,8 @@ impl Wallet {
 
     pub fn from_name(name: &str) -> Wallet {
         let name = name.to_owned();
-        let mut wallet = Wallet { name, handle: -1 };
-        wallet.create().unwrap();
+        let mut wallet = Wallet { name: name.clone(), handle: -1 };
+        wallet.create(&name).unwrap();
         wallet.open().unwrap();
 
         wallet
@@ -66,8 +66,8 @@ impl Wallet {
         Ok(handle)
     }
 
-    fn create(&self) -> Result<(), ErrorCode> {
-        IndyWallet::create("pool_1", &self.name, None, None, Some(USEFUL_CREDENTIALS))
+    fn create(&self, pool_name: &str) -> Result<(), ErrorCode> {
+        IndyWallet::create(pool_name, &self.name, None, None, Some(USEFUL_CREDENTIALS))
     }
 
     fn close(&self) -> Result<(), ErrorCode> {

@@ -137,7 +137,7 @@ mod parse_payment_response_tests {
                 {
                     "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
                     "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
-                    "reqId": 1529682415342024
+                    "reqId": 1529682415
                 },
                 "protocolVersion": 2,
                 "type": "10001"
@@ -183,7 +183,7 @@ mod parse_payment_response_tests {
             {
                 "digest": "228af6a0c773cbbd575bf4e16f9144c2eaa615fa81fdcc3d06b83e20a92e5989",
                 "from": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
-                "reqId": 1529682415342024
+                "reqId": 1529682415
             },
             "protocolVersion": 2,
             "type": "10001"
