@@ -31,6 +31,7 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
+use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
@@ -117,23 +118,6 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
     let ec = handler.create_payment_address_async(wallet_handle, config, payment_closure);
     trace!("api::create_payment_address_handler << result: {:?}", ec);
     return ec as i32;
-}
-
-/// Description
-/// call made to wallet to list payment addresses
-///    * missing from Slava
-///
-/// #Params
-/// param1: description.
-///
-/// #Returns
-/// description. example if json, etc...
-///
-/// #Errors
-/// description of errors
-#[no_mangle]
-pub extern "C" fn list_payment_addresses_handler() -> i32 {
-    return ErrorCode::Success as i32;
 }
 
 /**
@@ -331,7 +315,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
     cb(command_handle, ec as i32, reply_str_ptr);
 
     trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
-    ec as i32
+    return ec as i32;
 }
 
 
@@ -530,7 +514,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     let res = handle_result(utxo_request) as i32;
     trace!("api::build_get_utxo_request_handler << result: {:?}", res);
-    res
+    return res;
 }
 
 /// Description
@@ -660,7 +644,7 @@ pub extern "C" fn build_set_txn_fees_handler(
     cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
 
     trace!("api::build_set_txn_fees_handler << result: {:?}", ErrorCode::Success);
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }
 
 /// Description
@@ -718,7 +702,7 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
 
     let res = handle_result(Ok(request_pointer)) as i32;
     trace!("api::build_get_txn_fees_handler << res: {:?}", res);
-    res
+    return res;
 }
 
 /// Description
@@ -770,7 +754,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
 
     let res = ErrorCode::Success as i32;
     trace!("api::parse_get_txn_fees_response_handler << result: {:?}", res);
-    res
+    return res;
 }
 
 
@@ -829,7 +813,7 @@ pub extern "C" fn build_mint_txn_handler(
     cb(command_handle, ErrorCode::Success as i32, mint_request);
     let res = ErrorCode::Success;
     trace!("api::build_mint_txn_handle << res: {:?}", res);
-    res as i32
+    return res as i32;
 }
 
 #[no_mangle]
@@ -843,7 +827,7 @@ pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
 
     trace!("Called get_utxo_state_proof_parser: <<< res: {:?}", res);
 
-    res
+    return res;
 }
 
 #[no_mangle]
@@ -857,7 +841,7 @@ pub extern "C" fn get_fees_state_proof_parser(reply_from_node: *const c_char,
 
     trace!("Called get_fees_state_proof_parser: <<< res: {:?}", res);
 
-    res
+    return res;
 }
 
 #[no_mangle]
@@ -870,7 +854,7 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     trace!("Called free_parsed_state_proof");
 
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }
 
 /**
@@ -886,8 +870,6 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 pub extern fn sovtoken_init() -> i32 {
 
     super::utils::logger::init_log();
-    use super::utils::constants::txn_types::GET_FEES;
-    use super::utils::constants::txn_types::GET_UTXO;
 
     debug!("sovtoken_init() started");
 

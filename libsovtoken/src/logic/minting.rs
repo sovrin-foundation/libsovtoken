@@ -61,17 +61,30 @@ pub fn build_mint_request(
 
 #[cfg(test)]
 mod test_build_mint_request {
-    use utils::constants::txn_types::MINT_PUBLIC;
-    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use super::*;
     use logic::output::Output;
     use rust_base58::ToBase58;
-    use super::*;
-    
+    use utils::constants::txn_types::MINT_PUBLIC;
+    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use utils::test::default;
+
+    pub fn call_deserialize_inputs<'a>(
+        did: Option<*const c_char>,
+        outputs_json: Option<*const c_char>,
+        cb: Option<JsonCallback>
+    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+        let req_json = did.unwrap_or_else(default::did);
+        let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let cb = cb.unwrap_or(Some(default::empty_callback_string));
+
+        return deserialize_inputs(req_json, outputs_json, cb);
+    }
+
     #[test]
     fn build_mint_request_invalid_address() {
         let outputs = vec![
-                Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
-            ];
+            Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
+        ];
 
         let did = Did::new(&"en32ansFeZNERIouv2xA");
         let result = build_mint_request(did, outputs);
@@ -81,12 +94,12 @@ mod test_build_mint_request {
     #[test]
     fn build_mint_request_valid() {
         let output_config_value = json!([{
-                "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
-                "amount": 12
-            }]);
+            "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+            "amount": 12
+        }]);
 
         let did_str = &"1123456789abcdef".as_bytes().to_base58();
-        let (did, output_config, _) = test_deserialize_inputs::call_deserialize_inputs(
+        let (did, output_config, _) = call_deserialize_inputs(
             Some(c_pointer_from_str(did_str)),
             Some(c_pointer_from_string(output_config_value.to_string())),
             None
@@ -115,21 +128,9 @@ mod test_build_mint_request {
 mod test_deserialize_inputs {
     use super::*;
     use std::ptr;
-    use utils::test::default;
+    use self::test_build_mint_request::call_deserialize_inputs;
     use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
 
-
-    pub fn call_deserialize_inputs<'a>(
-        did: Option<*const c_char>,
-        outputs_json: Option<*const c_char>,
-        cb: Option<JsonCallback>
-    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
-        let req_json = did.unwrap_or_else(default::did);
-        let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
-        let cb = cb.unwrap_or(Some(default::empty_callback_string));
-
-        return deserialize_inputs(req_json, outputs_json, cb);
-    }
 
     #[test]
     fn deserialize_empty_did() {

@@ -10,8 +10,9 @@ use libc::c_char;
 use serde_json;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::OUTPUTS;
+use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, ReqId};
 
-type Outputs_ = Vec<(String, u64, u64)>;
+type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -21,7 +22,7 @@ type Outputs_ = Vec<(String, u64, u64)>;
 pub struct ParseGetUtxoResponse {
     pub op : ResponseOperations,
     #[serde(rename = "protocol_version")]
-    pub protocol_version: Option<i32>,
+    pub protocol_version: Option<ProtocolVersion>,
     pub result : ParseGetUtxoResponseResult,
 }
 
@@ -36,7 +37,7 @@ pub struct ParseGetUtxoResponseResult {
     pub txn_type : String,
     pub address : String,
     pub identifier: String,
-    pub req_id : i64,
+    pub req_id : ReqId,
     pub outputs : Outputs_,
     // TODO: State proof is optional
     #[serde(rename = "state_proof")]
@@ -78,7 +79,7 @@ impl ParseGetUtxoReply {
     }
 
     // Assumes a valid address. The delimeter `:` has to be the same as used on ledger
-    pub fn get_utxo_state_key(address: &str, seq_no: u64) -> String {
+    pub fn get_utxo_state_key(address: &str, seq_no: TxnSeqNo) -> String {
         format!("{}:{}", address, seq_no)
     }
 
@@ -183,7 +184,7 @@ mod parse_get_utxo_responses_tests {
 
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, u64, u64)> = Vec::new();
+        let mut outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
 
         let multi_signature = json!({
             "participants" : ["Gamma", "Alpha", "Delta"],
@@ -233,7 +234,7 @@ mod parse_get_utxo_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let outputs: Vec<(String, u64, u64)> = Vec::new();
+        let outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
 
         let multi_signature = json!({
             "participants" : ["Gamma", "Alpha", "Delta"],

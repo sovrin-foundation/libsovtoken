@@ -5,6 +5,7 @@
 use serde::{de, ser, Deserialize, ser::SerializeTuple, Serialize};
 use std::fmt;
 use logic::parsers::common::TXO;
+use logic::type_aliases::TxnSeqNo;
 
 pub type Inputs = Vec<Input>;
 
@@ -76,7 +77,7 @@ pub struct InputConfig {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Input {
     pub address: String,
-    pub seq_no: u64
+    pub seq_no: TxnSeqNo
 }
 
 impl ToString for Input {
@@ -86,7 +87,7 @@ impl ToString for Input {
 }
 
 impl Input {
-    pub fn new(address: String, seq_no: u64) -> Input {
+    pub fn new(address: String, seq_no: TxnSeqNo) -> Input {
         return Input { address, seq_no};
     }
 
@@ -161,11 +162,13 @@ impl<'de> Deserialize<'de> for Input {
 
 #[cfg(test)]
 mod input_tests {
-    use super::Input;
-    use serde_json;
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use logic::parsers::common::TXO;
     use rust_base58::ToBase58;
+    use serde_json;
+
+    use logic::input::{Input, InputConfig};
+    use logic::parsers::common::TXO;
+    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+
 
     fn json_value_to_string(json: serde_json::Value) -> String {
         return serde_json::to_string(&json).unwrap();
@@ -248,12 +251,6 @@ mod input_tests {
         let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
         assert_valid_serialize(input, expected);
     }
-}
-
-#[cfg(test)]
-mod input_config_test {
-    use logic::input::{Input, InputConfig};
-    use utils::json_conversion::JsonSerialize;
 
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]

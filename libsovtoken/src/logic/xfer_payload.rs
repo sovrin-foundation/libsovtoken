@@ -1,3 +1,5 @@
+//! Common structure and logic used for payments; token transfer and fees
+
 /*!
  * Signing of [`Inputs`] and [`Outputs`]
  * 

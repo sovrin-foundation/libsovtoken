@@ -9,6 +9,7 @@ use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::random::rand_req_id;
 use utils::json_conversion::JsonSerialize;
 use utils::constants::general::PROTOCOL_VERSION;
+use logic::type_aliases::{ProtocolVersion, ReqId};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -16,8 +17,8 @@ pub struct Request<T>
     where T: Serialize
 {
     pub operation: T,
-    pub req_id: u32,
-    pub protocol_version: u32,
+    pub req_id: ReqId,
+    pub protocol_version: ProtocolVersion,
     pub identifier : Option<String>,
 }
 

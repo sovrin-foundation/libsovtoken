@@ -1,3 +1,5 @@
+//! what is this module for?
+
 use indy::ErrorCode;
 use libc::c_char;
 use logic::config::payment_config::PaymentRequest;
