@@ -115,7 +115,6 @@ impl ParseGetUtxoReply {
                       Some(output.2.to_string())));
         }
 
-        // TODO: Make sure JSON serialisation preserves order
         let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData { kvs });
 
         let sp = vec![ParsedSP {
@@ -127,6 +126,7 @@ impl ParseGetUtxoReply {
 
         match serde_json::to_string(&sp) {
             Ok(s) => {
+                trace!("JSON representation of ParsedSP for get utxo {:?}", &s);
                 unsafe { *parsed_sp = c_pointer_from_string(s); }
                 return ErrorCode::Success;
             },

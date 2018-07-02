@@ -25,8 +25,7 @@ use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
-    parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor},
-    common::ParsedSP
+    parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor}
 };
 use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
@@ -866,8 +865,7 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     check_useful_c_ptr!(sp, ErrorCode::CommonInvalidParam1 as i32);
 
-    //TODO: FIXME: ERROR: THIS LINE CAUSES A SIGSEGV! THIS NEED TO BE CHECKED AND FIXED!
-//    unsafe { Box::from_raw(sp as *mut Vec<ParsedSP>); }
+    unsafe { Box::from_raw(sp as *mut &str); }
 
     trace!("Called free_parsed_state_proof");
 

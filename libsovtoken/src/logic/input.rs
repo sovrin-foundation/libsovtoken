@@ -90,10 +90,6 @@ impl Input {
     pub fn new(address: String, seq_no: TxnSeqNo) -> Input {
         return Input { address, seq_no};
     }
-
-    /*pub fn sign_with(self, signature: String) -> Self {
-        return Input::new(self.address, self.seq_no);
-    }*/
 }
 
 impl Serialize for Input {
@@ -255,7 +251,6 @@ mod input_tests {
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]
     fn serializing_payload_struct_output_config() {
-
         let input = Input::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 30);
 
         let fee: InputConfig = InputConfig {

@@ -88,6 +88,7 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
 
     match serde_json::to_string(&sp) {
         Ok(s) => {
+            trace!("JSON representation of ParsedSP for get fees {:?}", &s);
             unsafe { *parsed_sp = c_pointer_from_string(s); }
             return ErrorCode::Success;
         },

@@ -45,7 +45,7 @@ pub fn c_pointer_from_string(string: String) -> *const c_char {
 /**
     method for converting &str to *const c_char
 */
-pub fn c_pointer_from_str(string: &str) -> *const c_char {
+    pub fn c_pointer_from_str(string: &str) -> *const c_char {
     let cstring = CString::new(string).unwrap();
     return Box::new(cstring).into_raw();
 }
