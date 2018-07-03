@@ -50,88 +50,80 @@ pub struct ParseGetUtxoResponseResult {
 /**
    for parse_get_utxo_response_handler output parameter utxo_json
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct ParseGetUtxoReply {
-    pub ver : i32,
-    pub utxo_json : Vec<UTXO>,
+pub type ParseGetUtxoReply = Vec<UTXO>;
+
+/**
+    Converts ParseGetUtxoResponse (which should be input via indy-sdk) to ParseGetUtxoReply
+    please note:  use of this function moves ParseGetUtxoResponse and it cannot be used again
+    after this call
+*/
+pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, ErrorCode> {
+    let mut utxos: Vec<UTXO> = vec![];
+
+    for unspent_output in base.result.outputs {
+
+        let (address, seq_no, amount) = unspent_output;
+
+        let payment_address = address::address_from_unqualified_address(&base.result.address.to_string())?;
+        let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
+        let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
+
+        utxos.push(utxo);
+    }
+
+    return Ok(utxos);
 }
 
+// Assumes a valid address. The delimeter `:` has to be the same as used on ledger
+pub fn get_utxo_state_key(address: &str, seq_no: TxnSeqNo) -> String {
+    format!("{}:{}", address, seq_no)
+}
 
-impl ParseGetUtxoReply {
-    /**
-        Converts ParseGetUtxoResponse (which should be input via indy-sdk) to ParseGetUtxoReply
-        please note:  use of this function moves ParseGetUtxoResponse and it cannot be used again
-        after this call
-    */
-    pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, ErrorCode> {
-        let mut utxos: Vec<UTXO> = vec![];
+pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp: *mut *const c_char) -> ErrorCode {
+    // TODO: The following errors should have logs
+    let (result, state_proof) = match extract_result_and_state_proof_from_node_reply(reply_from_node) {
+        Ok((r, s)) => (r, s),
+        Err(_) => return ErrorCode::CommonInvalidStructure
+    };
 
-        for unspent_output in base.result.outputs {
+    // TODO: No validation of outputs being done. This has to fixed by creating an `Address` with
+    // a single private field called `address` and with implementation defining `new` and a getter.
+    // The `new` method will do the validation.
 
-            let (address, seq_no, amount) = unspent_output;
+    let outputs: Outputs_ = match result.get(OUTPUTS) {
+        Some(outs) => {
+            let outputs: Outputs_ = match serde_json::from_value(outs.to_owned()) {
+                Ok(o) => o,
+                Err(_) => return ErrorCode::CommonInvalidStructure
+            };
+            outputs
+        },
+        None => return ErrorCode::CommonInvalidStructure
+    };
 
-            let txo = (TXO { address, seq_no }).to_libindy_string()?;
-            let payment_address = address::address_from_unqualified_address(&base.result.address.to_string())?;
-            let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
+    let mut kvs: Vec<(String, Option<String>)> = Vec::new();
 
-            utxos.push(utxo);
-        }
-
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply { ver : 1, utxo_json : utxos};
-        return Ok(reply);
+    for output in outputs {
+        kvs.push((get_utxo_state_key(&output.0, output.1),
+                  Some(output.2.to_string())));
     }
 
-    // Assumes a valid address. The delimeter `:` has to be the same as used on ledger
-    pub fn get_utxo_state_key(address: &str, seq_no: TxnSeqNo) -> String {
-        format!("{}:{}", address, seq_no)
-    }
+    let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData { kvs });
 
-    pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp: *mut *const c_char) -> ErrorCode {
-        // TODO: The following errors should have logs
-        let (result, state_proof) = match extract_result_and_state_proof_from_node_reply(reply_from_node) {
-            Ok((r, s)) => (r, s),
-            Err(_) => return ErrorCode::CommonInvalidStructure
-        };
+    let sp = vec![ParsedSP {
+        proof_nodes: state_proof.proof_nodes,
+        root_hash: state_proof.root_hash,
+        kvs_to_verify,
+        multi_signature: state_proof.multi_signature,
+    }];
 
-        // TODO: No validation of outputs being done. This has to fixed by creating an `Address` with
-        // a single private field called `address` and with implementation defining `new` and a getter.
-        // The `new` method will do the validation.
-
-        let outputs: Outputs_ = match result.get(OUTPUTS) {
-            Some(outs) => {
-                let outputs: Outputs_ = match serde_json::from_value(outs.to_owned()) {
-                    Ok(o) => o,
-                    Err(_) => return ErrorCode::CommonInvalidStructure
-                };
-                outputs
-            },
-            None => return ErrorCode::CommonInvalidStructure
-        };
-
-        let mut kvs: Vec<(String, Option<String>)> = Vec::new();
-
-        for output in outputs {
-            kvs.push((ParseGetUtxoReply::get_utxo_state_key(&output.0, output.1),
-                      Some(output.2.to_string())));
-        }
-
-        let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData { kvs });
-
-        let sp = vec![ParsedSP {
-            proof_nodes: state_proof.proof_nodes,
-            root_hash: state_proof.root_hash,
-            kvs_to_verify,
-            multi_signature: state_proof.multi_signature,
-        }];
-
-        match serde_json::to_string(&sp) {
-            Ok(s) => {
-                trace!("JSON representation of ParsedSP for get utxo {:?}", &s);
-                unsafe { *parsed_sp = c_pointer_from_string(s); }
-                return ErrorCode::Success;
-            },
-            Err(_) => return ErrorCode::CommonInvalidStructure
-        }
+    match serde_json::to_string(&sp) {
+        Ok(s) => {
+            trace!("JSON representation of ParsedSP for get utxo {:?}", &s);
+            unsafe { *parsed_sp = c_pointer_from_string(s); }
+            return ErrorCode::Success;
+        },
+        Err(_) => return ErrorCode::CommonInvalidStructure
     }
 }
 
@@ -227,9 +219,9 @@ mod parse_get_utxo_responses_tests {
             result
         };
 
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response).unwrap();
+        let reply: ParseGetUtxoReply = from_response(response).unwrap();
 
-        assert_eq!(outputs_len, reply.utxo_json.len());
+        assert_eq!(outputs_len, reply.len());
 
     }
 
@@ -274,9 +266,9 @@ mod parse_get_utxo_responses_tests {
             result
         };
 
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response).unwrap();
+        let reply: ParseGetUtxoReply = from_response(response).unwrap();
 
-        assert_eq!(outputs_len, reply.utxo_json.len());
+        assert_eq!(outputs_len, reply.len());
     }
 
     // the PARSE_GET_UTXO_RESPONSE_JSON is valid per the documentation.   If serde correctly serializes it
@@ -294,7 +286,7 @@ mod parse_get_utxo_responses_tests {
     fn success_response_json_to_reply_json() {
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
-        let reply: ParseGetUtxoReply = ParseGetUtxoReply::from_response(response).unwrap();
+        let reply: ParseGetUtxoReply = from_response(response).unwrap();
         let reply_json : String = reply.to_json().unwrap();
     }
 
@@ -302,7 +294,7 @@ mod parse_get_utxo_responses_tests {
     fn test_utxo_state_key() {
         let address = "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q";
         let seq_no = 32;
-        let key = ParseGetUtxoReply::get_utxo_state_key(&address, seq_no);
+        let key = get_utxo_state_key(&address, seq_no);
         assert_eq!(key, "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q:32");
     }
 
@@ -343,7 +335,7 @@ mod parse_get_utxo_responses_tests {
 
         let mut new_str_ptr = ::std::ptr::null();
 
-        let return_error = ParseGetUtxoReply::get_utxo_state_proof_extractor(json_str_ptr, &mut new_str_ptr);
+        let return_error = get_utxo_state_proof_extractor(json_str_ptr, &mut new_str_ptr);
         assert_eq!(return_error, ErrorCode::CommonInvalidStructure);
     }
 
@@ -487,7 +479,7 @@ mod parse_get_utxo_responses_tests {
 
         let mut new_str_ptr = ::std::ptr::null();
 
-        let return_error = ParseGetUtxoReply::get_utxo_state_proof_extractor(json_str_ptr, &mut new_str_ptr);
+        let return_error = get_utxo_state_proof_extractor(json_str_ptr, &mut new_str_ptr);
         assert_eq!(return_error, ErrorCode::Success);
 
         let expected_parsed_sp: Vec<ParsedSP> = vec![ParsedSP {
