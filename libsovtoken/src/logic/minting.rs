@@ -65,7 +65,7 @@ mod test_build_mint_request {
     use logic::output::Output;
     use rust_base58::ToBase58;
     use utils::constants::txn_types::MINT_PUBLIC;
-    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use utils::ffi_support::{c_pointer_from_str};
     use utils::test::default;
 
     pub fn call_deserialize_inputs<'a>(
@@ -129,7 +129,7 @@ mod test_deserialize_inputs {
     use super::*;
     use std::ptr;
     use self::test_build_mint_request::call_deserialize_inputs;
-    use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
+    use utils::ffi_support::{c_pointer_from_str};
 
 
     #[test]

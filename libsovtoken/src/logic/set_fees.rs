@@ -45,7 +45,7 @@ mod test_deserialize_inputs {
     use super::*;
     use std::ptr;
     use utils::test::default;
-    use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
+    use utils::ffi_support::{c_pointer_from_str};
 
     pub fn call_deserialize_inputs<'a>(
         did: Option<*const c_char>,
