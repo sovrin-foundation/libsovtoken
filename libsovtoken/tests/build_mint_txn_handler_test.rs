@@ -6,8 +6,6 @@ extern crate serde_derive;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
-#[macro_use]
-extern crate lazy_static;
 
 use indy::ErrorCode;
 

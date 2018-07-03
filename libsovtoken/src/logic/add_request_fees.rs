@@ -138,14 +138,12 @@ fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, cb: Box<Fn(
 #[cfg(test)]
 mod test_deserialize_inputs {
     use libc::c_char;
+    use indy::ErrorCode;
     use serde_json;
     use std::ptr;
-
-    use indy::ErrorCode;
-
-    use utils::default;
-    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use utils::constants::txn_types::XFER_PUBLIC;
+    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use utils::test::default;
 
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
     use super::validate_type_not_transfer;

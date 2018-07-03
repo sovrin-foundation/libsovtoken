@@ -10,5 +10,5 @@ pub mod json_conversion;
 #[macro_use] pub mod logger;
 pub mod random;
 
-#[cfg(test)]
-pub mod default;
+#[cfg(any(test, feature = "integration"))]
+pub mod test;

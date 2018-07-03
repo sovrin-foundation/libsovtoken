@@ -4,8 +4,6 @@
     **These should only be used for testing**
 */
 
-extern crate rust_indy_sdk as indy;
-
 use indy::ErrorCode;
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::sync::Mutex;
@@ -42,10 +40,10 @@ macro_rules! closure_cb {
 }
 
 
-pub fn closure_to_cb_ec_string() -> (Receiver<(ErrorCode, String)>, i32,
-                                     Option<extern fn(command_handle: i32,
-                                                      err: i32,
-                                                      c_str: *const c_char) -> i32>) {
+pub fn cb_ec_string() -> (
+    Receiver<(ErrorCode, String)>,
+    i32,
+    Option<extern fn(command_handle: i32, err: i32, c_str: *const c_char) -> i32>) {
     let (sender, receiver) = channel();
 
     let closure = Box::new(move|error_code, c_str| {
