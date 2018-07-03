@@ -21,7 +21,9 @@ use logic::config::{
 use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
+use rust_base58::{ToBase58, FromBase58};
 use logic::parsers::{
+    parse_get_utxo_response,
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
@@ -391,6 +393,15 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
         debug!("Signed payload >>> {:?}", payload_signed);
 
         let identifier = payload_signed.inputs[0].address.clone();
+        let identifier = identifier.as_bytes().from_base58_check();
+        let identifier = identifier.map(|s| s.to_base58());
+        let identifier = match identifier {
+            Ok(s) => s,
+            Err(e) => {
+                cb(command_handle, ErrorCode::CommonInvalidStructure as i32, c_pointer_from_str(""));
+                return;
+            }
+        };
 
         let payment_request = PaymentRequest::new(payload_signed)
             .as_request(identifier);
@@ -578,7 +589,7 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseGetUtxoReply::from_response
-    let reply: ParseGetUtxoReply = match ParseGetUtxoReply::from_response(response) {
+    let reply: ParseGetUtxoReply = match parse_get_utxo_response::from_response(response) {
         Ok(reply) => reply,
         Err(err) => {
             trace!("api::parse_get_utxo_response_handler << result: {:?}", err);
@@ -838,7 +849,7 @@ pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
 
     check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
 
-    let res = ParseGetUtxoReply::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32;
+    let res = parse_get_utxo_response::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32;
 
     trace!("Called get_utxo_state_proof_parser: <<< res: {:?}", res);
 

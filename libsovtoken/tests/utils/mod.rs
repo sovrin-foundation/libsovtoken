@@ -10,3 +10,5 @@ pub mod callbacks;
 pub mod environment;
 pub mod parse_mint_response;
 pub mod pool;
+pub mod mint;
+pub mod did;
