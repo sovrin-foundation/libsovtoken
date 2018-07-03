@@ -13,7 +13,6 @@ use indy::ErrorCode;
 use logic::add_request_fees;
 use logic::build_payment;
 use logic::config::{
-    payment_config::{PaymentRequest},
     payment_address_config::{PaymentAddressConfig},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
@@ -382,36 +381,12 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
     };
 
     let payload = XferPayload::new(inputs, outputs);
-    let result = payload.sign(&CryptoSdk {}, wallet_handle, Box::new(move |result| {
-        let payload_signed = match result {
-            Err(err) => {
-                cb(command_handle, err as i32, c_pointer_from_str(""));
-                return;
-            }
-            Ok(payload) => payload
-        };
-        debug!("Signed payload >>> {:?}", payload_signed);
 
-        let identifier = payload_signed.inputs[0].address.clone();
-        let identifier = identifier.as_bytes().from_base58_check();
-        let identifier = identifier.map(|s| s.to_base58());
-        let identifier = match identifier {
-            Ok(s) => s,
-            Err(e) => {
-                cb(command_handle, ErrorCode::CommonInvalidStructure as i32, c_pointer_from_str(""));
-                return;
-            }
-        };
-
-        let payment_request = PaymentRequest::new(payload_signed)
-            .as_request(identifier);
-
-        let payment_request = payment_request.serialize_to_cstring().unwrap();
-
-        debug!("payment_request >>> {:?}", payment_request);
-
-        cb(command_handle, ErrorCode::Success as i32, payment_request.as_ptr());
-    }));
+    let result = payload.sign(
+        &CryptoSdk {},
+        wallet_handle,
+        Box::new(move |result| build_payment::handle_signing(command_handle, result, cb))
+    );
 
     let ec = match result {
         Ok(()) => ErrorCode::Success,

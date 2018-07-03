@@ -1,4 +1,3 @@
-#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 extern crate libc;
@@ -10,6 +9,7 @@ pub mod utils;
 use indy::ErrorCode;
 use libc::c_char;
 use sovtoken::utils::ffi_support;
+use sovtoken::utils::test::callbacks;
 use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
@@ -31,7 +31,7 @@ static FAKE_DID : &'static str = "Enfru5LNlA2CnA5n4Hfze";
 
 
 fn call_set_fees(did: &str, fees_json: serde_json::value::Value) -> (ErrorCode, Receiver<(ErrorCode, String)>) {
-    let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let did_pointer = ffi_support::c_pointer_from_str(did);
     let fees_pointer = ffi_support::c_pointer_from_string(fees_json.to_string());
