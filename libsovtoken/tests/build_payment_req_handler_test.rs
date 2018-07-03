@@ -21,7 +21,6 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 use std::sync::mpsc::channel;
-use sovtoken::logic::parsers::common::TXO;
 use rust_base58::{FromBase58, ToBase58};
 
 mod utils;
