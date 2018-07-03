@@ -65,7 +65,7 @@ mod test_build_mint_request {
     use logic::output::Output;
     use rust_base58::ToBase58;
     use utils::constants::txn_types::MINT_PUBLIC;
-    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use utils::ffi_support::{c_pointer_from_str};
     use utils::test::default;
 
     pub fn call_deserialize_inputs<'a>(
@@ -93,7 +93,7 @@ mod test_build_mint_request {
 
     #[test]
     fn build_mint_request_valid() {
-        let output_config_value = json!([{
+        let output_config_pointer = json_c_pointer!([{
             "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
             "amount": 12
         }]);
@@ -101,7 +101,7 @@ mod test_build_mint_request {
         let did_str = &"1123456789abcdef".as_bytes().to_base58();
         let (did, output_config, _) = call_deserialize_inputs(
             Some(c_pointer_from_str(did_str)),
-            Some(c_pointer_from_string(output_config_value.to_string())),
+            Some(output_config_pointer),
             None
         ).unwrap();
 
@@ -129,7 +129,7 @@ mod test_deserialize_inputs {
     use super::*;
     use std::ptr;
     use self::test_build_mint_request::call_deserialize_inputs;
-    use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
+    use utils::ffi_support::{c_pointer_from_str};
 
 
     #[test]
@@ -160,14 +160,14 @@ mod test_deserialize_inputs {
     #[test]
     fn deserialize_outputs_invalid_structure() {
         // Invalid because there is no ver field.
-        let outputs = c_pointer_from_string(json!({
+        let outputs = json_c_pointer!({
             "outputs": [
                 {
                     "address": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
                     "amount": 10
                 }
             ]
-        }).to_string());
+        });
         let result = call_deserialize_inputs(None, Some(outputs), None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }

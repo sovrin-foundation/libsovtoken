@@ -142,7 +142,6 @@ mod test_deserialize_inputs {
     use serde_json;
     use std::ptr;
     use utils::constants::txn_types::XFER_PUBLIC;
-    use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
     use utils::test::default;
 
     use super::{deserialize_inputs, AddRequestFeesCb, DeserializedArguments};
@@ -154,12 +153,12 @@ mod test_deserialize_inputs {
         outputs_json: Option<*const c_char>,
         cb: Option<Option<AddRequestFeesCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
-        let default_req_json = c_pointer_from_string(json!({
+        let default_req_json = json_c_pointer!({
             "protocolVersion": 1,
             "operation": {
                 "type": 2,
             }
-        }).to_string());
+        });
 
         let req_json = req_json.unwrap_or(default_req_json);
         let inputs_json = inputs_json.unwrap_or_else(default::inputs_json_pointer);
@@ -189,9 +188,8 @@ mod test_deserialize_inputs {
         assert_eq!(error, result.unwrap_err());
     }
 
-    fn deserialize_request_json(json: serde_json::value::Value) -> serde_json::Map<String, serde_json::value::Value> {
-        let request_c_pointer = c_pointer_from_string(json.to_string());
-        let (_, _, request, _) = call_deserialize_inputs(Some(request_c_pointer), None, None, None).unwrap();
+    fn deserialize_request_json(json_pointer: *const c_char) -> serde_json::Map<String, serde_json::value::Value> {
+        let (_, _, request, _) = call_deserialize_inputs(Some(json_pointer), None, None, None).unwrap();
         return request;
     }
 
@@ -217,29 +215,29 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_inputs_invalid_inputs_json() {
-        let invalid_json = c_pointer_from_string(json!([
+        let invalid_json = json_c_pointer!([
             {
                 "addres": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
                 "seqNo": 4
             }
-        ]).to_string());
+        ]);
         error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);
     }
 
     #[test]
     fn deserialize_inputs_invalid_outputs_json() {
-        let invalid_json = c_pointer_from_string(json!([
+        let invalid_json = json_c_pointer!([
             {
                 "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
                 "amount": "10"
             }
-        ]).to_string());
+        ]);
         error_deserialize_inputs_ouputs(invalid_json, ErrorCode::CommonInvalidStructure);
     }
 
     #[test]
     fn deserialize_inputs_invalid_request_json() {
-        let invalid_json = c_pointer_from_str("[]");
+        let invalid_json = json_c_pointer!([]);
         error_deserialize_inputs_request(invalid_json, ErrorCode::CommonInvalidStructure);
     }
 
@@ -251,7 +249,7 @@ mod test_deserialize_inputs {
 
     #[test]
     fn no_operation_in_request() {
-        let request = deserialize_request_json(json!({
+        let request = deserialize_request_json(json_c_pointer!({
             "wise_advice": "When life gives you lemons, squeeze them in someone's eyes."
         }));
         let error = validate_type_not_transfer(&request).unwrap_err();
@@ -260,7 +258,7 @@ mod test_deserialize_inputs {
 
     #[test]
     fn no_txn_type_in_operation() {
-        let request = deserialize_request_json(json!({
+        let request = deserialize_request_json(json_c_pointer!({
             "operation": {
                 "remove_wisdom_teeth": "painful"
             }
@@ -271,7 +269,7 @@ mod test_deserialize_inputs {
 
     #[test]
     fn txn_type_is_transfer() {
-        let request = deserialize_request_json(json!({
+        let request = deserialize_request_json(json_c_pointer!({
             "operation": {
                 "type": XFER_PUBLIC,
             }
@@ -284,7 +282,7 @@ mod test_deserialize_inputs {
     fn txn_type_not_transfer() {
         let typ = "30000";
         assert_ne!(typ, XFER_PUBLIC);
-        let request = deserialize_request_json(json!({
+        let request = deserialize_request_json(json_c_pointer!({
             "operation": {
                 "type": typ
             },

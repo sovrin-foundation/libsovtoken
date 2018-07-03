@@ -41,6 +41,34 @@ pub trait JsonSerialize : Serialize + Sized {
 impl<T:Serialize> JsonSerialize for T { }
 
 
+/**
+Wrap the json! macro and outputs a c pointer.
+
+Call it like you would call the json! macro, and
+it returns a c pointer instead of `serde_json::value::Value`.
+
+## Example
+```
+    sovtoken::ffi_support::string_from_char_pointer;
+
+    let c_string_pointer = json_c_pointer!({
+        "nums": [1, 2, 3, 5, 8, 13, 21, 34, 55],
+        "extra": {
+            "info": "You can see this is a Fibonacci sequence."
+        }
+    });
+
+    assert!(string_from_char_pointer(c_string_pointer).is_ok());
+
+```
+*/
+macro_rules! json_c_pointer {
+    ($json:tt) => {{
+        let json = json!($json);
+        let json_string = json.to_string();
+        $crate::utils::ffi_support::c_pointer_from_string(json_string)
+    }}
+}
 
 
 /*
@@ -117,4 +145,48 @@ mod json_conversion_tests {
         assert_eq!("data", dummy_struct.field1);
     }
 
+}
+
+#[cfg(test)]
+mod test_json_c_pointer {
+    use utils::ffi_support::string_from_char_ptr;
+    use serde_json;
+
+    #[test]
+    fn test_array() {
+        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+        let j_ptr = json_c_pointer!(arr);
+        let string = string_from_char_ptr(j_ptr).unwrap();
+        let vec_nums: Vec<u32> = serde_json::from_str(&string).unwrap();
+        assert_eq!(arr.to_vec(), vec_nums);
+    }
+
+    #[test]
+    fn test_object() {
+        #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+        struct T(u32);
+        let t = T(1);
+        let j_ptr = json_c_pointer!(t);
+        let string = string_from_char_ptr(j_ptr).unwrap();
+        let result: T = serde_json::from_str(&string).unwrap();
+        assert_eq!(t, result);
+    }
+
+    #[test]
+    fn test_static_object() {
+        let j_ptr = json_c_pointer!({
+            "key1": 123,
+            "key2": 234,
+            "Within": "the broken stone, the shattered glass, the silent cry",
+            "sub_obj": {
+                "aco": "Some more",
+                "list": ["Finally", "We", "Arrived"]
+            }
+        });
+
+        let string = string_from_char_ptr(j_ptr).unwrap();
+        let json_value: serde_json::value::Value = serde_json::from_str(&string).unwrap();
+        let list = json_value.get("sub_obj").unwrap().get("list").unwrap();
+        assert_eq!("We", list.get(1).unwrap());
+    }
 }

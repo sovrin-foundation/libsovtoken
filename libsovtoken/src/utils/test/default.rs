@@ -16,43 +16,39 @@ use rust_base58::ToBase58;
 pub fn inputs_json_pointer() -> *const c_char {
     let txo_1 = TXO { address: "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC".to_string(), seq_no: 2 };
     let txo_2 = TXO { address: "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC".to_string(), seq_no: 2 };
-    let json = json!([
+    json_c_pointer!([
         txo_1.to_libindy_string().unwrap(),
         txo_2.to_libindy_string().unwrap()
-    ]);
-
-    return c_pointer_from_string(json.to_string());
+    ])
 }
 
 pub fn inputs() -> Inputs {
     let address1 = String::from("pay:sov:iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd");
     let address2 = String::from("pay:sov:BUoojqSQTLuvjkun4y2YoseVF76UZ3uYfHF1dbQyZVbCuTwQo");
 
-    return vec![
+    vec![
         Input::new(address1, 1),
         Input::new(address2, 1),
-    ];
+    ]
 }
 
 pub fn outputs() -> Outputs {
     let address1 = String::from("pay:sov:2naF9c9ZJnSRtpaptpyZxi18tfozozqFRTmxHk9M6wbBc68T9A");
     let address2 = String::from("pay:sov:YissN67riFhQ8W6viqtJoCRHFkXtqxaxeL9UyvCoz8sXq5B5A");
 
-    return vec![
+   vec![
         Output::new(address1, 10, None),
         Output::new(address2, 22, None),
-    ];
+    ]
 }
 
 pub fn outputs_json_pointer() -> *const c_char {
-    let json = json!([
-            {
-                "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
-                "amount": 10
-            }
-        ]);
-
-    return c_pointer_from_string(json.to_string());
+    json_c_pointer!([
+        {
+            "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+            "amount": 10
+        }
+    ])
 }
 
 pub extern fn empty_callback_string(
@@ -60,27 +56,25 @@ pub extern fn empty_callback_string(
     e: i32,
     _: *const c_char
 ) -> i32 {
-    return e;
+   e
 }
 
 pub fn did() -> *const c_char {
     let did = rand_string(16).as_bytes().to_base58();
-    return c_pointer_from_string(did);
+    c_pointer_from_string(did)
 }
 
 pub fn set_fees_json() -> *const c_char {
-    let json = json!({
+    json_c_pointer!({
         txn_types::XFER_PUBLIC: 3,
         "3": 5
-    });
-
-    return c_pointer_from_string(json.to_string());
+    })
 }
 
 pub fn xfer_payload_unsigned() -> XferPayload {
     let inputs = inputs();
     let outputs = outputs();
-    return XferPayload::new(inputs, outputs);
+    XferPayload::new(inputs, outputs)
 }
 
 pub fn xfer_payload_signed() -> XferPayload {
@@ -107,9 +101,9 @@ pub fn xfer_payload_signed() -> XferPayload {
         String::from(sig2),
     ]);
 
-    return XferPayload {
+    XferPayload {
         inputs,
         outputs,
         signatures
-    };
+    }
 }
