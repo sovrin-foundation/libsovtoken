@@ -192,15 +192,15 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
  * ```
  */
 #[no_mangle]
-pub extern "C" fn add_request_fees_handler(command_handle: i32,
-                                           wallet_handle: i32,
-                                           did: *const c_char, // TODO: Need to remove.
-                                           req_json: *const c_char,
-                                           inputs_json: *const c_char,
-                                           outputs_json: *const c_char,
-                                           cb: Option<extern fn(command_handle_: i32,
-                                                               err: i32,
-                                                               req_with_fees_json: *const c_char) -> i32>) -> i32 {
+pub extern "C" fn add_request_fees_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    did: *const c_char, // TODO: Need to remove.
+    req_json: *const c_char,
+    inputs_json: *const c_char,
+    outputs_json: *const c_char,
+    cb: JsonCallback
+) -> i32 {
 
     trace!("api::add_request_fees_handler >> wallet_handle: {:?}, did: {:?}, req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, did, req_json, inputs_json, outputs_json);
     let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
@@ -256,11 +256,12 @@ pub extern "C" fn add_request_fees_handler(command_handle: i32,
 /// CommonInvalidStructure when any of the inputs are invalid
 /// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
-pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
-                                                   req_json: *const c_char,
-                                                   cb: Option<extern fn(command_handle_: i32,
-                                                               err: i32,
-                                                               utxo_json: *const c_char) -> i32>) -> i32 {
+pub extern "C" fn parse_response_with_fees_handler(
+    command_handle: i32,
+    req_json: *const c_char,
+    cb: JsonCallback
+) -> i32 {
+
     trace!("api::parse_response_with_fees_handler >> req_json: {:?}", req_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
@@ -350,14 +351,14 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
  * ```
  */
 #[no_mangle]
-pub extern "C" fn build_payment_req_handler(command_handle: i32,
-                                            wallet_handle: i32,
-                                            submitter_did: *const c_char,
-                                            inputs_json: *const c_char,
-                                            outputs_json: *const c_char,
-                                            cb: Option<extern fn(command_handle_: i32,
-                                                                 err: i32,
-                                                                 payment_req_json: *const c_char) -> i32>) -> i32 {
+pub extern "C" fn build_payment_req_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    submitter_did: *const c_char,
+    inputs_json: *const c_char,
+    outputs_json: *const c_char,
+    cb: JsonCallback
+) -> i32 {
     trace!("api::build_payment_req_handler >> wallet_handle {:?}, submitter_did: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, submitter_did, inputs_json, outputs_json);
     let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
@@ -397,11 +398,11 @@ pub extern "C" fn build_payment_req_handler(command_handle: i32,
 /// CommonInvalidStructure when any of the inputs are invalid
 /// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
-pub extern "C" fn parse_payment_response_handler(command_handle: i32,
-                                                 resp_json: *const c_char,
-                                                 cb: Option<extern fn(command_handle_: i32,
-                                                             err: i32,
-                                                             utxo_json: *const c_char) -> i32>) -> i32 {
+pub extern "C" fn parse_payment_response_handler(
+    command_handle: i32,
+    resp_json: *const c_char,
+    cb: JsonCallback
+) -> i32 {
     trace!("api::parse_payment_response_handler >> resp_json: {:?}", resp_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
@@ -520,11 +521,12 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 /// CommonInvalidStructure when any of the inputs are invalid
 /// CommonInvalidState when any processing of inputs produces invalid results
 #[no_mangle]
-pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
-                                                  resp_json: *const c_char,
-                                                  cb: Option<extern fn(command_handle_: i32,
-                                                                       err: i32,
-                                                                       utxo_json: *const c_char) -> i32>)-> i32 {
+pub extern "C" fn parse_get_utxo_response_handler(
+    command_handle: i32,
+    resp_json: *const c_char,
+    cb: JsonCallback
+)-> i32 {
+
     trace!("api::parse_get_utxo_response_handler >> resp_json: {:?}", resp_json);
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
@@ -647,10 +649,12 @@ pub extern "C" fn build_set_txn_fees_handler(
 /// # Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
-                                             wallet_handle: i32,
-                                             submitter_did: *const c_char,
-                                             cb: Option<extern fn(command_handle_: i32, err: i32, get_txn_fees_json: *const c_char) -> i32>) -> i32 {
+pub extern "C" fn build_get_txn_fees_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    submitter_did: *const c_char,
+    cb: JsonCallback
+) -> i32 {
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
     trace!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, submitter_did);
@@ -705,11 +709,11 @@ pub extern "C" fn build_get_txn_fees_handler(command_handle: i32,
 /// # Errors
 ///
 #[no_mangle]
-pub extern "C" fn parse_get_txn_fees_response_handler(command_handle: i32,
-                                                      resp_json: *const c_char,
-                                                      cb: Option<extern fn(command_handle_: i32,
-                                                                err: i32,
-                                                                fees_json: *const c_char) -> i32>)-> i32{
+pub extern "C" fn parse_get_txn_fees_response_handler(
+    command_handle: i32,
+    resp_json: *const c_char,
+    cb: JsonCallback
+)-> i32{
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     trace!("api::parse_get_txn_fees_response_handler >> resp_json: {:?}", resp_json);
@@ -772,7 +776,8 @@ pub extern "C" fn build_mint_txn_handler(
     wallet_handle: i32,
     submitter_did: *const c_char,
     outputs_json: *const c_char,
-    cb: JsonCallback) -> i32
+    cb: JsonCallback
+) -> i32
 {
     trace!("api::build_mint_txn_handle >> wallet_handle: {:?}, did: {:?}, outputs_json: {:?}", wallet_handle, submitter_did, outputs_json);
     let (did, outputs, cb) = match minting::deserialize_inputs(
