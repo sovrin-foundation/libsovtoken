@@ -20,7 +20,6 @@ use logic::config::{
 use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
-use rust_base58::{ToBase58, FromBase58};
 use logic::parsers::{
     parse_get_utxo_response,
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
