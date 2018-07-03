@@ -61,17 +61,14 @@ pub fn build_mint_request(
 
 #[cfg(test)]
 mod test_build_mint_request {
-    use std::ptr;
-    use rust_base58::ToBase58;
-
     use super::*;
-
     use logic::output::Output;
-    use utils::default;
+    use rust_base58::ToBase58;
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
+    use utils::test::default;
 
-    fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs<'a>(
         did: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
         cb: Option<JsonCallback>
@@ -86,8 +83,8 @@ mod test_build_mint_request {
     #[test]
     fn build_mint_request_invalid_address() {
         let outputs = vec![
-                Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
-            ];
+            Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
+        ];
 
         let did = Did::new(&"en32ansFeZNERIouv2xA");
         let result = build_mint_request(did, outputs);
@@ -97,9 +94,9 @@ mod test_build_mint_request {
     #[test]
     fn build_mint_request_valid() {
         let output_config_value = json!([{
-                "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
-                "amount": 12
-            }]);
+            "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+            "amount": 12
+        }]);
 
         let did_str = &"1123456789abcdef".as_bytes().to_base58();
         let (did, output_config, _) = call_deserialize_inputs(
@@ -125,6 +122,14 @@ mod test_build_mint_request {
         assert_eq!(expected.get("operation"), mint_value.get("operation"));
         assert_eq!(expected.get("identifier"), mint_value.get("identifier"));
     }
+}
+
+#[cfg(test)]
+mod test_deserialize_inputs {
+    use super::*;
+    use std::ptr;
+    use self::test_build_mint_request::call_deserialize_inputs;
+    use utils::ffi_support::{c_pointer_from_str, c_pointer_from_string};
 
 
     #[test]

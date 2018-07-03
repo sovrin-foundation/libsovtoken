@@ -4,7 +4,6 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 extern crate rust_base58;
 
-#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
@@ -14,8 +13,10 @@ use indy::payments::Payment;
 use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::logic::address;
-use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
+use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::test::callbacks;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
@@ -183,7 +184,7 @@ fn success_signed_request() {
         ]
     });
 
-    let (receiver, command_handle, cb) = utils::callbacks::closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
 
     trace!("Calling build_payment_req");

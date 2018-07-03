@@ -12,7 +12,6 @@ extern crate libc;
 extern crate rand;
 
 #[macro_use] extern crate log;
-#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
@@ -30,8 +29,8 @@ use indy::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::logger::*;
+use sovtoken::utils::test::callbacks;
 mod utils;
-use utils::callbacks::closure_to_cb_ec_string;
 use rust_base58::FromBase58;
 
 // ***** HELPER TEST DATA  *****
@@ -106,7 +105,7 @@ fn successfully_creates_payment_address_with_no_seed() {
 
     debug!("logging started for successfully_creates_payment_address_with_no_seed");
 
-    let (receiver, command_handle, cb) = closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
@@ -134,7 +133,7 @@ fn success_callback_is_called() {
 
     trace!("logging started for success_callback_is_called");
 
-    let (receiver, command_handle, cb) = closure_to_cb_ec_string();
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let seed = rand_string(VALID_SEED_LEN);
     let config: PaymentAddressConfig = PaymentAddressConfig { seed, };
