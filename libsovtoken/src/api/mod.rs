@@ -1,8 +1,6 @@
 //! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
 //!
 
-#![allow(unused_variables)]
-
 use std;
 
 use libc::c_char;
@@ -30,22 +28,13 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
+use utils::constants::general::{JsonCallback};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::ffi_support::c_pointer_from_str;
 
-/**
-    Defines a callback to communicate results to Indy-sdk as type
-
-    # Params
-    command_handle : should be the same value as the API inputted command handle
-    err:  results.
-    json_pointer: results data.  format is defined by the API
-*/
-pub type JsonCallback = Option<JsonCallbackUnwrapped>;
-pub type JsonCallbackUnwrapped =  extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -290,7 +279,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 
     let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string).map_err(map_err_err!()) {
         Ok(r) => r,
-        Err(e) => return ErrorCode::CommonInvalidStructure as i32,
+        Err(_) => return ErrorCode::CommonInvalidStructure as i32,
     };
 
     // here is where the magic happens--conversion from input structure to output structure
@@ -305,7 +294,7 @@ pub extern "C" fn parse_response_with_fees_handler(command_handle: i32,
 
     let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
-        Err(e) => return ErrorCode::CommonInvalidState as i32,
+        Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
@@ -432,7 +421,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
     let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {
         Ok(r) => r,
-        Err(e) => return ErrorCode::CommonInvalidStructure as i32,
+        Err(_) => return ErrorCode::CommonInvalidStructure as i32,
     };
 
     // here is where the magic happens--conversion from input structure to output structure
@@ -447,7 +436,7 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
 
     let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
-        Err(e) => return ErrorCode::CommonInvalidState as i32,
+        Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
 
     info!("Parsed payment response: {:?}", reply_str);
@@ -556,7 +545,7 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
     let response: ParseGetUtxoResponse = match ParseGetUtxoResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {
         Ok(r) => r,
-        Err(e) => return ErrorCode::CommonInvalidStructure as i32,
+        Err(_) => return ErrorCode::CommonInvalidStructure as i32,
     };
 
     // here is where the magic happens--conversion from input structure to output structure
@@ -571,7 +560,7 @@ pub extern "C" fn parse_get_utxo_response_handler(command_handle: i32,
 
     let reply_str: String = match reply.to_json().map_err(map_err_err!())  {
         Ok(j) => j,
-        Err(e) => return ErrorCode::CommonInvalidState as i32,
+        Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
     info!("Parsed GET_UTXO response, received: {:?}", reply_str);
 

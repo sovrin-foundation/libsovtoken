@@ -1,11 +1,11 @@
 //! This module is for ???
 
-use api::{JsonCallback, JsonCallbackUnwrapped};
 use indy::ErrorCode;
 use libc::c_char;
 use logic::config::set_fees_config::{SetFees, SetFeesMap};
 use logic::did::Did;
 use serde_json;
+use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 
 
