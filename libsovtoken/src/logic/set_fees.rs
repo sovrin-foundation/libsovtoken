@@ -86,12 +86,12 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_invalid_fees_encapsulated() {
-        let invalid_fees = c_pointer_from_string(json!({
+        let invalid_fees = json_c_pointer!({
             "fees" : {
                 "4": 2,
                 "20000": 5,
             }
-        }).to_string());
+        });
 
         let result = call_deserialize_inputs(None, Some(invalid_fees), None);
 
@@ -100,10 +100,10 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_invalid_fees_string_values() {
-        let invalid_fees = c_pointer_from_string(json!({
+        let invalid_fees = json_c_pointer!({
             "4": "2",
             "20000": "5",
-        }).to_string());
+        });
 
         let result = call_deserialize_inputs(None, Some(invalid_fees), None);
 
@@ -112,10 +112,10 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_invalid_fees_key_not_string_int() {
-        let invalid_fees = c_pointer_from_string(json!({
+        let invalid_fees = json_c_pointer!({
             "XFER_PUBLIC": 5,
             "3": 1,
-        }).to_string());
+        });
 
         let result = call_deserialize_inputs(None, Some(invalid_fees), None);
 
