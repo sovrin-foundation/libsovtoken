@@ -101,3 +101,37 @@ fn add_fees_json() {
     assert_eq!(ErrorCode::Success, ec_callback);
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
 }
+
+#[test]
+pub fn build_and_submit_set_fees() {
+    sovtoken::api::sovtoken_init();
+    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let pc_str = utils::pool::create_pool_config();
+    let pool_config = Some(pc_str.as_str());
+    indy::pool::Pool::set_protocol_version(2).unwrap();
+
+    let pool_name = utils::pool::create_pool_ledger(pool_config);
+    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
+    let wallet = utils::wallet::Wallet::new(&pool_name);
+
+    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+
+    let (did_1, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (did_2, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (did_3, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+
+    let fees = json!({
+        "1": 1,
+        "101": 2
+    }).to_string();
+
+    let set_fees_req = indy::payments::Payment::build_set_txn_fees_req(wallet.handle, &did_trustee, payment_method, &fees).unwrap();
+
+    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_trustee, &set_fees_req).unwrap();
+    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_1, &set_fees_req).unwrap();
+    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &set_fees_req).unwrap();
+    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &set_fees_req).unwrap();
+
+    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &set_fees_req).unwrap();
+    println!("{}", result);
+}
