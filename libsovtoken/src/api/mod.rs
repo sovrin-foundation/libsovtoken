@@ -420,6 +420,8 @@ pub extern "C" fn parse_payment_response_handler(command_handle: i32,
         }
     };
 
+    println!("{:?}", &resp_json_string);
+
     let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {
         Ok(r) => r,

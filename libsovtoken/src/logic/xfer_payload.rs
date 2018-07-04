@@ -176,11 +176,11 @@ trait InputSigner<A: CryptoAPI> {
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.address, input.seq_no], outputs]);
-        debug!("Message to sign >>> {:?}", message_json_value);
-
         let message = serde_json::to_string(&message_json_value).map_err(map_err_err!())
             .map_err(|_| ErrorCode::CommonInvalidStructure)?
             .to_string();
+
+        debug!("Message to sign >>> {:?}", &message);
 
         let input_key = input.to_string();
 

@@ -325,7 +325,8 @@ pub fn build_and_submit_payment_req() {
         }
     ]).to_string();
     let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
+    println!("{:?}", &req);
+    let res = indy::ledger::Ledger::submit_request(pool_handle,&req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
