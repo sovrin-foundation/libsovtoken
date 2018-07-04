@@ -19,6 +19,7 @@ use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::parsers::{
+    parse_get_utxo_response,
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
@@ -369,6 +370,7 @@ pub extern "C" fn build_payment_req_handler(
     };
 
     let payload = XferPayload::new(inputs, outputs);
+
     let result = payload.sign(
         &CryptoSdk {},
         wallet_handle,
@@ -418,6 +420,8 @@ pub extern "C" fn parse_payment_response_handler(
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+
+    println!("{:?}", &resp_json_string);
 
     let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {
@@ -552,7 +556,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseGetUtxoReply::from_response
-    let reply: ParseGetUtxoReply = match ParseGetUtxoReply::from_response(response) {
+    let reply: ParseGetUtxoReply = match parse_get_utxo_response::from_response(response) {
         Ok(reply) => reply,
         Err(err) => {
             trace!("api::parse_get_utxo_response_handler << result: {:?}", err);
@@ -815,7 +819,7 @@ pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
 
     check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
 
-    let res = ParseGetUtxoReply::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32;
+    let res = parse_get_utxo_response::get_utxo_state_proof_extractor(reply_from_node, parsed_sp) as i32;
 
     trace!("Called get_utxo_state_proof_parser: <<< res: {:?}", res);
 

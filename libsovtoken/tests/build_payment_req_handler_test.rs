@@ -2,6 +2,7 @@ extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
+extern crate rust_base58;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
@@ -20,9 +21,11 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 use std::sync::mpsc::channel;
+use rust_base58::{FromBase58, ToBase58};
 
 mod utils;
 use utils::wallet::Wallet;
+use std::collections::HashMap;
 
 
 // ***** HELPER METHODS *****
@@ -175,8 +178,8 @@ fn success_signed_request() {
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
         "signatures": [
-            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
-            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+            "4XFsKCBsuW2e4rUfzy6SxbtyfvyL3WbK8bg1wkm4jLrnbnPmbed8oERdm58pmTG7xEoVZxmYsqHjhYaMqDJH48Dx",
+            "4MrrBDrYzJvj2ADEkz8Lg3kfZeTJmTrYNtALdxyAqhuJ9xBoKrjKgtcYS7nKDBubNsPH1pb6oMqYBQFiGm28ikzX"
         ]
     });
 
@@ -202,7 +205,8 @@ fn success_signed_request() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    assert_eq!(&addresses[0], request.get("identifier").unwrap());
+    let ident = addresses[0].from_base58_check().unwrap().to_base58();
+    assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 }
 
@@ -245,8 +249,8 @@ fn success_signed_request_from_libindy() {
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
         "signatures": [
-            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
-            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+            "4XFsKCBsuW2e4rUfzy6SxbtyfvyL3WbK8bg1wkm4jLrnbnPmbed8oERdm58pmTG7xEoVZxmYsqHjhYaMqDJH48Dx",
+            "4MrrBDrYzJvj2ADEkz8Lg3kfZeTJmTrYNtALdxyAqhuJ9xBoKrjKgtcYS7nKDBubNsPH1pb6oMqYBQFiGm28ikzX"
         ]
     });
 
@@ -273,7 +277,78 @@ fn success_signed_request_from_libindy() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    assert_eq!(&addresses[0], request.get("identifier").unwrap());
+    let ident = addresses[0].from_base58_check().unwrap().to_base58();
+    assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 
+}
+
+#[test]
+pub fn build_and_submit_payment_req() {
+    sovtoken::api::sovtoken_init();
+    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    indy::pool::Pool::set_protocol_version(2).unwrap();
+
+    let pool_config = utils::pool::create_pool_config();
+    let pool_name = utils::pool::create_pool_ledger(Some(&pool_config));
+    let wallet = Wallet::new(&pool_name);
+    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
+
+    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+    let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+
+    let mut mint_cfg = HashMap::new();
+    mint_cfg.insert(pa1.clone(), 30);
+
+    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+
+    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
+    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
+    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
+
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    let utxos = res_parsed.as_array().unwrap();
+    let value = utxos.get(0).unwrap().as_object().unwrap();
+    let utxo = value.get("txo").unwrap().as_str().unwrap();
+
+    let inputs = json!([utxo]).to_string();
+    let outputs = json!([
+        {
+            "paymentAddress": pa2,
+            "amount": 20
+        },
+        {
+            "paymentAddress": pa1,
+            "amount": 10
+        }
+    ]).to_string();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
+    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
+    let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
+
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    let utxos = res_parsed.as_array().unwrap();
+    assert_eq!(utxos.len(), 2);
+
+    let value = utxos.get(0).unwrap().as_object().unwrap();
+    let pa1_rc = value.get("paymentAddress").unwrap().as_str().unwrap();
+    if pa1_rc == pa1 {
+        assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 10);
+    } else if pa1_rc == pa2 {
+        assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 20);
+    } else {
+        assert!(false);
+    }
+
+    let value = utxos.get(1).unwrap().as_object().unwrap();
+    let pa1_rc = value.get("paymentAddress").unwrap().as_str().unwrap();
+    if pa1_rc == pa1 {
+        assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 10);
+    } else if pa1_rc == pa2 {
+        assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 20);
+    } else {
+        assert!(false);
+    }
 }

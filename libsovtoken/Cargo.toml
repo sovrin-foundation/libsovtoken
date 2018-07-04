@@ -32,6 +32,8 @@ sha2 = "0.6.0"
 sha3 = "0.6.0"
 sodiumoxide = {version = "0.0.14"}
 rust-indy-sdk = { git = "https://github.com/mikelodder7/rust-indy-sdk.git" }
+openssl = "0.9.24"
+hex = "0.2.0"
 
 [features]
 default = ["integration"]
