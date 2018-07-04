@@ -21,6 +21,7 @@ use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, Re
 pub struct ParsePaymentResponse {
     pub op : ResponseOperations,
     pub result : ParsePaymentResponseResult,
+//    pub protocol_version: ProtocolVersion,
 }
 
 /**
