@@ -171,9 +171,9 @@ pub fn build_and_submit_mint_txn_works() {
 
     let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
 
-    let (did, verkey) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_2, verkey_2) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_3, verkey_3) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (did, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (did_2, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (did_3, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
     let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
