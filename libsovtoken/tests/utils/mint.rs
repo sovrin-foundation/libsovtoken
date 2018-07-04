@@ -9,9 +9,9 @@ use std::str::FromStr;
 
 pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, did_trustee: &str) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
 
-    let (did, verkey) = utils::did::add_new_trustee_did(wallet_handle, did_trustee, pool_handle)?;
-    let (did_2, verkey_2) = utils::did::add_new_trustee_did(wallet_handle, did_trustee, pool_handle)?;
-    let (did_3, verkey_3) = utils::did::add_new_trustee_did(wallet_handle, did_trustee, pool_handle)?;
+    let (did, _) = utils::did::add_new_trustee_did(wallet_handle, did_trustee, pool_handle)?;
+    let (did_2, _) = utils::did::add_new_trustee_did(wallet_handle, did_trustee, pool_handle)?;
+    let (did_3, _) = utils::did::add_new_trustee_did(wallet_handle, did_trustee, pool_handle)?;
 
     let vec_outputs:Vec<HashMap<&str, serde_json::Value>> = cfg.iter().map(|(pa, am)| {
         let mut map = HashMap::new();

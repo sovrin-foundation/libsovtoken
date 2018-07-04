@@ -20,7 +20,7 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
 #[cfg(any(test, feature = "integration"))]
 #[macro_use] extern crate lazy_static;
-
+extern crate openssl;
 
 
 // define our crate by defining the modules in the project

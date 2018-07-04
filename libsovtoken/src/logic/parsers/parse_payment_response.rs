@@ -20,8 +20,8 @@ use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, Re
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponse {
     pub op : ResponseOperations,
-    pub protocol_version: ProtocolVersion,
     pub result : ParsePaymentResponseResult,
+//    pub protocol_version: ProtocolVersion,
 }
 
 /**
