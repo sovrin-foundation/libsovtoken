@@ -7,7 +7,7 @@ fn main() {
     let libindy_lib_path = env::var("LIBINDY_DIR").unwrap();
     println!("cargo:rustc-link-search=native={}",libindy_lib_path);
 
-    if let Ok(mode) = env::var("LIBINDY_STATIC") {
+    if let Ok(_mode) = env::var("LIBINDY_STATIC") {
         println!("cargo:rustc-link-lib=static=indy");
     } else {
         println!("cargo:rustc-link-lib=dylib=indy");

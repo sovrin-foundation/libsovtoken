@@ -85,7 +85,6 @@ fn build_payment_request_pointer(
 
 #[cfg(test)]
 mod test_deserialize_inputs {
-    use utils::ffi_support::c_pointer_from_string;
     use indy::ErrorCode;
     use libc::c_char;
     use std::ptr;
@@ -130,27 +129,27 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_invalid_inputs() {
-        let inputs_json = c_pointer_from_string(json!({
+        let inputs_json = json_c_pointer!({
             "ver": 1,
             "inputs": {
                 "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81f",
                 "seqNo": 2
             }
-        }).to_string());
+        });
         let result = call_deserialize_inputs(Some(inputs_json), None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_invalid_outputs() {
-        let outputs_json = c_pointer_from_string(json!({
+        let outputs_json = json_c_pointer!({
             "ver": 1,
             "outputs": {
                 "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
                 "amount": 10,
                 "seqNo": 5,
             }
-        }).to_string());
+        });
         let result = call_deserialize_inputs(None, Some(outputs_json), None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
