@@ -201,6 +201,6 @@ mod test_handle_signing {
             "iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd",
             request.operation.get("inputs").unwrap().get(0).unwrap().get(0).unwrap()
         );
-        assert_eq!("iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", request.identifier.unwrap());
+        assert_eq!("7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8G", request.identifier.unwrap());
     }
 }

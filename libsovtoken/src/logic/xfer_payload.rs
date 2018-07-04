@@ -7,6 +7,7 @@
  * [`Outputs`]: Outputs
  */
 #![allow(unused_must_use)]
+extern crate hex;
 
 use indy::IndyHandle;
 use indy::ErrorCode;
@@ -18,7 +19,8 @@ use serde_json;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
-
+use logic::hash::Hash;
+use self::hex::ToHex;
 
 /**
  * Holds `inputs` and `outputs`
@@ -176,11 +178,10 @@ trait InputSigner<A: CryptoAPI> {
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let message_json_value = json!([[input.address, input.seq_no], outputs]);
-        debug!("Message to sign >>> {:?}", message_json_value);
 
-        let message = serde_json::to_string(&message_json_value).map_err(map_err_err!())
-            .map_err(|_| ErrorCode::CommonInvalidStructure)?
-            .to_string();
+        let message = serialize_signature(message_json_value)?;
+
+        debug!("Message to sign >>> {:?}", &message);
 
         let input_key = input.to_string();
 
@@ -203,6 +204,45 @@ trait InputSigner<A: CryptoAPI> {
         } else {
             Err(ec)
         }
+    }
+}
+
+pub fn serialize_signature(v: serde_json::Value) -> Result<String, ErrorCode> {
+    match v {
+        serde_json::Value::Bool(value) => Ok(if value { "True".to_string() } else { "False".to_string() }),
+        serde_json::Value::Number(value) => Ok(value.to_string()),
+        serde_json::Value::String(value) => Ok(value),
+        serde_json::Value::Array(array) => {
+            let mut result = "".to_string();
+            let length = array.len();
+            for (index, element) in array.iter().enumerate() {
+                result += &serialize_signature(element.clone())?;
+                if index < length - 1 {
+                    result += ",";
+                }
+            }
+            Ok(result)
+        }
+        serde_json::Value::Object(map) => {
+            let mut result = "".to_string();
+            let length = map.len();
+            for (index, key) in map.keys().enumerate() {
+                if key == "signature" { continue; } // Skip signature field as in python code
+
+                let mut value = map[key].clone();
+                if key == "raw" || key == "hash" || key == "enc" {
+                    let mut ctx = Hash::new_context()?;
+                    ctx.update(&value.as_str().ok_or(ErrorCode::CommonInvalidState)?.as_bytes()).map_err(|_| ErrorCode::CommonInvalidState)?;
+                    value = serde_json::Value::String(ctx.finish2().map_err(|_| ErrorCode::CommonInvalidState)?.as_ref().to_hex());
+                }
+                result = result + key + ":" + &serialize_signature(value)?;
+                if index < length - 1 {
+                    result += "|";
+                }
+            }
+            Ok(result)
+        }
+        _ => Ok("".to_string())
     }
 }
 

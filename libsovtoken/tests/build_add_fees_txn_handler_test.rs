@@ -67,7 +67,7 @@ fn test_add_fees_to_request_valid() {
        "fees": {
            "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
-           "signatures": ["44CNMo4qHJUkm26NLC4ptxACTMHq3MsPgiPRQfCgP98LBN3zck5DXTWoPScPtX6FNvSBM8NZhwTgFgw25tKXQGii"]
+           "signatures": ["5qqD2vk3nTeG5ZS1jVAvgPozPeSsBw8E8rux2jV8KsoFd1CiAzzpfez7ixMKvUpYaiQdEhsQwXaLNJRHHyF5g24R"]
        },
        "operation": {
            "type": "3"
@@ -108,7 +108,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
        "fees": {
            "inputs": [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
            "outputs": [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
-           "signatures": ["44CNMo4qHJUkm26NLC4ptxACTMHq3MsPgiPRQfCgP98LBN3zck5DXTWoPScPtX6FNvSBM8NZhwTgFgw25tKXQGii"]
+           "signatures": ["5qqD2vk3nTeG5ZS1jVAvgPozPeSsBw8E8rux2jV8KsoFd1CiAzzpfez7ixMKvUpYaiQdEhsQwXaLNJRHHyF5g24R"]
        },
        "operation": {
            "type": "3"

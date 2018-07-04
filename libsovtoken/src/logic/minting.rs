@@ -1,10 +1,10 @@
-use api::{JsonCallback, JsonCallbackUnwrapped};
 use indy::ErrorCode;
 use libc::c_char;
 use logic::address;
 use logic::config::output_mint_config::MintRequest;
 use logic::did::Did;
 use serde_json;
+use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::{string_from_char_ptr};
 use logic::output::Outputs;
 

@@ -21,7 +21,6 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 use std::sync::mpsc::channel;
-use sovtoken::logic::parsers::common::TXO;
 use rust_base58::{FromBase58, ToBase58};
 
 mod utils;
@@ -179,8 +178,8 @@ fn success_signed_request() {
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
         "signatures": [
-            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
-            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+            "4XFsKCBsuW2e4rUfzy6SxbtyfvyL3WbK8bg1wkm4jLrnbnPmbed8oERdm58pmTG7xEoVZxmYsqHjhYaMqDJH48Dx",
+            "4MrrBDrYzJvj2ADEkz8Lg3kfZeTJmTrYNtALdxyAqhuJ9xBoKrjKgtcYS7nKDBubNsPH1pb6oMqYBQFiGm28ikzX"
         ]
     });
 
@@ -250,8 +249,8 @@ fn success_signed_request_from_libindy() {
         ],
         "outputs": [[addresses[2], 10], [addresses[3], 22]],
         "signatures": [
-            "2T9TfJvLg2EkfJRFvN8D9maUEwEBhvg6eCiFL6PUobgzhTXE1m6y1w7KKEw8MQaUPBkgM2APMdwmMM26UYUatmjd",
-            "2rUrhusR7TmkFs9cyNeHoq2EZ6LQH2RvKSZnJMPJHRSEDAb3aj4GxkvX79JASiHLxMmtz1stu4ysjXpUYZGVCSvr"
+            "4XFsKCBsuW2e4rUfzy6SxbtyfvyL3WbK8bg1wkm4jLrnbnPmbed8oERdm58pmTG7xEoVZxmYsqHjhYaMqDJH48Dx",
+            "4MrrBDrYzJvj2ADEkz8Lg3kfZeTJmTrYNtALdxyAqhuJ9xBoKrjKgtcYS7nKDBubNsPH1pb6oMqYBQFiGm28ikzX"
         ]
     });
 
@@ -326,7 +325,7 @@ pub fn build_and_submit_payment_req() {
         }
     ]).to_string();
     let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
+    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
