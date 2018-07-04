@@ -62,11 +62,28 @@ impl Hash {
 /// Here is an example of how to implement `Hashable` for a type
 /// that does not (or cannot) implement `AsRef<[u8]>`:
 ///
-/// ```ignore
+/// ```
+/// extern crate openssl;
+/// extern crate sovtoken;
+/// extern crate rust_indy_sdk as indy;
+/// use self::openssl::hash::{hash2, MessageDigest, Hasher, DigestBytes};
+/// use self::sovtoken::logic::hash::Hashable;
+/// use self::indy::ErrorCode;
+///
+/// struct PublicKey {
+///     key: String
+/// }
+///
+/// impl PublicKey {
+///     pub fn to_bytes(&self) -> Vec<u8> {
+///         self.key.as_bytes().to_vec()
+///     }
+/// }
+///
 /// impl Hashable for PublicKey {
-///     fn update_context(&self, context: &mut Hasher) -> Result<(), CommonError> {
+///     fn update_context(&self, context: &mut Hasher) -> Result<(), ErrorCode> {
 ///         let bytes: Vec<u8> = self.to_bytes();
-///         Ok(context.update(&bytes)?)
+///         Ok(context.update(&bytes).map_err(|_| ErrorCode::CommonInvalidState)?)
 ///     }
 /// }
 /// ```
