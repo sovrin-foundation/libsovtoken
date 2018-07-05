@@ -6,6 +6,8 @@ extern crate serde_derive;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate log;
 
 use indy::ErrorCode;
 
@@ -179,8 +181,7 @@ pub fn build_and_submit_mint_txn_works() {
     let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
     let pa3 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet.handle, &did_trustee,
-        &json!([
+    let output_json = json!([
         {
             "paymentAddress": pa1,
             "amount": 5,
@@ -196,14 +197,21 @@ pub fn build_and_submit_mint_txn_works() {
             "amount": 15,
             "extra": "pa3",
         }
-    ]).to_string()).unwrap();
+    ]).to_string();
 
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet.handle, &did_trustee,
+        &output_json).unwrap();
+    trace!("{:?}", &mint_req);
     let sign1 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_trustee, &mint_req).unwrap();
+    trace!("{:?}", &sign1);
     let sign2 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did, &sign1).unwrap();
+    trace!("{:?}", &sign2);
     let sign3 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &sign2).unwrap();
+    trace!("{:?}", &sign3);
     let sign4 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &sign3).unwrap();
+    trace!("{:?}", &sign4);
 
-    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &sign4).unwrap();
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &sign4).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
     let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
