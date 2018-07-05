@@ -21,7 +21,8 @@ ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH # TODO ??? is it r
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list \
-    && apt-get update && && apt-get install -y --no-install-recommends libssl-dev libindy \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends libssl-dev libindy \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -ms /bin/bash -u $u_id $u_name
@@ -30,4 +31,4 @@ USER $u_name
 # TODO CMD ENTRYPOINT ...
 WORKDIR /home/$u_name
 
-ENV CI_ENV_VERSION=0.9.0
+ENV CI_ENV_VERSION=0.10.0
