@@ -6,6 +6,8 @@ extern crate serde_derive;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate log;
 
 use indy::ErrorCode;
 
@@ -199,15 +201,15 @@ pub fn build_and_submit_mint_txn_works() {
 
     let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet.handle, &did_trustee,
         &output_json).unwrap();
-    println!("{:?}", &mint_req);
+    trace!("{:?}", &mint_req);
     let sign1 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_trustee, &mint_req).unwrap();
-    println!("{:?}", &sign1);
+    trace!("{:?}", &sign1);
     let sign2 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did, &sign1).unwrap();
-    println!("{:?}", &sign2);
+    trace!("{:?}", &sign2);
     let sign3 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &sign2).unwrap();
-    println!("{:?}", &sign3);
+    trace!("{:?}", &sign3);
     let sign4 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &sign3).unwrap();
-    println!("{:?}", &sign4);
+    trace!("{:?}", &sign4);
 
     let result = indy::ledger::Ledger::submit_request(pool_handle, &sign4).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
