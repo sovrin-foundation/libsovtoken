@@ -1,6 +1,6 @@
-extern crate openssl;
+//!  what does this module do?
 
-use self::openssl::hash::{hash2, MessageDigest, Hasher, DigestBytes};
+use openssl::hash::{hash2, MessageDigest, Hasher, DigestBytes};
 use indy::ErrorCode;
 
 pub const HASH_OUTPUT_LEN: usize = 32;
