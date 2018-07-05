@@ -421,7 +421,7 @@ pub extern "C" fn parse_payment_response_handler(
         }
     };
 
-    println!("{:?}", &resp_json_string);
+    trace!("json is: {:?}", &resp_json_string);
 
     let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {

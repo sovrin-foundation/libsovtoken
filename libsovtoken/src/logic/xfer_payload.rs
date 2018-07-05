@@ -7,20 +7,22 @@
  * [`Outputs`]: Outputs
  */
 #![allow(unused_must_use)]
-extern crate hex;
 
-use indy::IndyHandle;
-use indy::ErrorCode;
-use logic::address;
-use logic::indy_sdk_api::crypto_api::CryptoAPI;
-use logic::input::{Input, Inputs};
-use logic::output::{Outputs};
+
+use hex::ToHex;
 use serde_json;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
+
+use indy::IndyHandle;
+use indy::ErrorCode;
+
+use logic::address;
+use logic::indy_sdk_api::crypto_api::CryptoAPI;
+use logic::input::{Input, Inputs};
+use logic::output::{Outputs};
 use logic::hash::Hash;
-use self::hex::ToHex;
 
 /**
  * Holds `inputs` and `outputs`

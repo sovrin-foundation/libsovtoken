@@ -10,8 +10,8 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature,
                              SignatureValues};
+use logic::type_aliases::TokenAmount;
 use utils::json_conversion::JsonSerialize;
-use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
 
 /**
     for parse_payment_response_handler input resp_json
@@ -21,7 +21,6 @@ use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, Re
 pub struct ParsePaymentResponse {
     pub op : ResponseOperations,
     pub result : ParsePaymentResponseResult,
-//    pub protocol_version: ProtocolVersion,
 }
 
 /**
@@ -34,7 +33,7 @@ pub struct ParsePaymentResponseResult {
     pub req_signature: RequireSignature,
     #[serde(rename = "txnMetadata")]
     pub tnx_meta_data: TransactionMetaData,
-    pub ver: TxnVersion,
+    pub ver: String,
     pub audit_path: Vec<String>,
     pub root_hash: String,
 }
@@ -47,7 +46,7 @@ pub struct ParsePaymentResponseResult {
 pub struct Transaction {
     #[serde(rename = "type")]
     pub txn_type : String,
-    pub protocol_version : ProtocolVersion,
+    pub protocol_version : i32,
     #[serde(rename = "metadata")]
     pub meta_data: TransactionMetaData2,
     pub data: TransactionData,
@@ -60,7 +59,7 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     pub extra: Option<String>,
-    pub inputs : Vec<(String, TxnSeqNo)>,
+    pub inputs : Vec<(String, u64)>,
     pub outputs: Vec<(String, TokenAmount)>,
 }
 
@@ -72,7 +71,7 @@ pub struct TransactionData {
 pub struct TransactionMetaData2 {
     pub digest: String,
     pub from: String,
-    pub req_id: ReqId
+    pub req_id: u32
 }
 
 
@@ -93,7 +92,7 @@ pub fn from_response(base : ParsePaymentResponse) -> Result<ParsePaymentReply, E
 
         let (address, amount) = unspent_output;
         let qualified_address: String = add_qualifer_to_address(&address);
-        let seq_no: TxnSeqNo = base.result.tnx_meta_data.seq_no;
+        let seq_no: u64 = base.result.tnx_meta_data.seq_no;
         let txo = (TXO { address: qualified_address.to_string(), seq_no}).to_libindy_string()?;
         let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 
