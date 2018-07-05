@@ -132,6 +132,17 @@ pub fn build_and_submit_set_fees() {
     let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &set_fees_req).unwrap();
     let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &set_fees_req).unwrap();
 
-    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &set_fees_req).unwrap();
-    println!("{}", result);
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &set_fees_req).unwrap();
+
+    let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, &did_trustee, payment_method).unwrap();
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &get_fees_req).unwrap();
+    let parsed_result = indy::payments::Payment::parse_get_txn_fees_response(payment_method, &result).unwrap();
+
+    let parsed_result_json: serde_json::Value = serde_json::from_str(&parsed_result).unwrap();
+    let parsed_result_json = parsed_result_json.as_object().unwrap();
+    assert!(parsed_result_json.contains_key("1"));
+    assert!(parsed_result_json.contains_key("101"));
+    assert!(!parsed_result_json.contains_key("100"));
+    assert_eq!(parsed_result_json.get("1").unwrap().as_u64().unwrap(), 1);
+    assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
 }
