@@ -25,6 +25,17 @@ eg:  assuming you built indy-sdk from source, you will set the environment varia
 
 **Note** anytime you get latest for indy-sdk, you must rebuild the libraries before building libsovtoken, as the libsovtoken build does not compile indy-sdk.
 
+### Set up pool of 4 nodes with payment plugin
+1) Clone the evernym/plugin directory from https://github.com/evernym/plugin .
+
+2) Navigate into the plugin directory.
+
+3) Run the `build_indy_pool.sh` script.
+```
+bash ./build_indy_pool.sh
+```
+
+
 ### Compiling libsovtoken and running tests
 1) Make sure you meet the requirements above, including building the projects, if you elect to use source code.
 2) Gget latest for libsovtoken from master at https://github.com/evernym/libsovtoken.git
