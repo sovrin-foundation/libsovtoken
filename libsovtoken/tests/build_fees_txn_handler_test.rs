@@ -14,7 +14,8 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
-
+use sovtoken::logic::config::set_fees_config::SetFees;
+use sovtoken::logic::request::Request;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _mint_req_json: *const c_char) -> i32 {
@@ -127,11 +128,9 @@ pub fn build_and_submit_set_fees() {
 
     let set_fees_req = indy::payments::Payment::build_set_txn_fees_req(wallet.handle, &did_trustee, payment_method, &fees).unwrap();
 
-    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_trustee, &set_fees_req).unwrap();
-    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_1, &set_fees_req).unwrap();
-    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &set_fees_req).unwrap();
-    let set_fees_req = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &set_fees_req).unwrap();
-
+    let set_fees_req = Request::<SetFees>::multi_sign_request(wallet.handle, &set_fees_req,
+                                                              vec![&did_trustee, &did_1, &did_2, &did_3]).unwrap();
+    
     let result = indy::ledger::Ledger::submit_request(pool_handle, &set_fees_req).unwrap();
 
     let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, &did_trustee, payment_method).unwrap();
