@@ -19,6 +19,7 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier : Option<String>,
 }
 
