@@ -609,7 +609,7 @@ pub extern "C" fn build_set_txn_fees_handler(
 ) -> i32 {
 
     trace!("api::build_set_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}, fees_json: {:?}", wallet_handle, submitter_did, fees_json);
-    let (_did, set_fees, cb) = match set_fees::deserialize_inputs(
+    let (did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
         fees_json,
         cb
@@ -621,7 +621,7 @@ pub extern "C" fn build_set_txn_fees_handler(
         }
     };
 
-    let fees_request = set_fees.as_request();
+    let fees_request = set_fees.as_request(did);
 
     let fees_request_pointer_option = fees_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));
