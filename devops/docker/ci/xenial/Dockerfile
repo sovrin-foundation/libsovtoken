@@ -23,7 +23,8 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
         libindy \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get install -y libssl-dev
 
 RUN useradd -ms /bin/bash -u $u_id $u_name
 USER $u_name
