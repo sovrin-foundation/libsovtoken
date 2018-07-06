@@ -172,11 +172,12 @@ pub fn build_and_submit_mint_txn_works() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
 
-    let (did, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_2, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_3, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (ref did_trustee, _) = trustees[0];
+    let (ref did_1, _) = trustees[1];
+    let (ref did_2, _) = trustees[2];
+    let (ref did_3, _) = trustees[3];
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
     let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
@@ -205,7 +206,7 @@ pub fn build_and_submit_mint_txn_works() {
     trace!("{:?}", &mint_req);
 
     let mint_req = Request::<MintRequest>::multi_sign_request(wallet.handle, &mint_req,
-                                                              vec![&did_trustee, &did, &did_2, &did_3]).unwrap();
+                                                              vec![&did_trustee, &did_1, &did_2, &did_3]).unwrap();
 
     trace!("{:?}", &mint_req);
 

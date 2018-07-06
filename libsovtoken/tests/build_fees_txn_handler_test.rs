@@ -103,6 +103,14 @@ fn add_fees_json() {
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
 }
 
+pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees: &str, did: &str, did_1: &str, did_2: &str, did_3: &str) -> String {
+    let set_fees_req = indy::payments::Payment::build_set_txn_fees_req(wallet_handle, did, payment_method, &fees).unwrap();
+
+    let set_fees_req = Request::<SetFees>::multi_sign_request(wallet_handle, &set_fees_req,
+                                                              vec![did, did_1, did_2, did_3]).unwrap();
+    indy::ledger::Ledger::submit_request(pool_handle, &set_fees_req).unwrap()
+}
+
 #[test]
 pub fn build_and_submit_set_fees() {
     sovtoken::api::sovtoken_init();
@@ -115,23 +123,20 @@ pub fn build_and_submit_set_fees() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
 
-    let (did_1, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_2, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_3, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (ref did_trustee, _) = trustees[0];
+    let (ref did_1, _) = trustees[1];
+    let (ref did_2, _) = trustees[2];
+    let (ref did_3, _) = trustees[3];
 
     let fees = json!({
         "1": 1,
         "101": 2
     }).to_string();
 
-    let set_fees_req = indy::payments::Payment::build_set_txn_fees_req(wallet.handle, &did_trustee, payment_method, &fees).unwrap();
 
-    let set_fees_req = Request::<SetFees>::multi_sign_request(wallet.handle, &set_fees_req,
-                                                              vec![&did_trustee, &did_1, &did_2, &did_3]).unwrap();
-    
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &set_fees_req).unwrap();
+    set_fees(pool_handle, wallet.handle, &payment_method, &fees, &did_trustee, &did_1, &did_2, &did_3);
 
     let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, &did_trustee, payment_method).unwrap();
     let result = indy::ledger::Ledger::submit_request(pool_handle, &get_fees_req).unwrap();
@@ -144,4 +149,12 @@ pub fn build_and_submit_set_fees() {
     assert!(!parsed_result_json.contains_key("100"));
     assert_eq!(parsed_result_json.get("1").unwrap().as_u64().unwrap(), 1);
     assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
+
+    let fees = json!({
+        "1": 0,
+        "101": 0
+    }).to_string();
+
+    set_fees(pool_handle, wallet.handle, &payment_method, &fees, &did_trustee, &did_1, &did_2, &did_3);
+
 }
