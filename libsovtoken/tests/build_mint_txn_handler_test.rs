@@ -28,6 +28,8 @@ use utils::parse_mint_response::ParseMintResponse;
 mod utils;
 use utils::wallet::Wallet;
 use sovtoken::utils::random::rand_string;
+use sovtoken::logic::config::output_mint_config::MintRequest;
+use sovtoken::logic::request::Request;
 
 // ***** HELPER METHODS *****
 
@@ -167,15 +169,15 @@ pub fn build_and_submit_mint_txn_works() {
     indy::pool::Pool::set_protocol_version(2).unwrap();
 
     let pool_name = utils::pool::create_pool_ledger(pool_config);
+    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
+    let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
-
-    let (did, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_2, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
-    let (did_3, _) = utils::did::add_new_trustee_did(wallet.handle, &did_trustee, pool_handle).unwrap();
+    let (ref did_trustee, _) = trustees[0];
+    let (ref did_1, _) = trustees[1];
+    let (ref did_2, _) = trustees[2];
+    let (ref did_3, _) = trustees[3];
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
     let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
@@ -202,16 +204,13 @@ pub fn build_and_submit_mint_txn_works() {
     let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet.handle, &did_trustee,
         &output_json).unwrap();
     trace!("{:?}", &mint_req);
-    let sign1 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_trustee, &mint_req).unwrap();
-    trace!("{:?}", &sign1);
-    let sign2 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did, &sign1).unwrap();
-    trace!("{:?}", &sign2);
-    let sign3 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_2, &sign2).unwrap();
-    trace!("{:?}", &sign3);
-    let sign4 = indy::ledger::Ledger::multi_sign_request(wallet.handle, &did_3, &sign3).unwrap();
-    trace!("{:?}", &sign4);
 
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &sign4).unwrap();
+    let mint_req = Request::<MintRequest>::multi_sign_request(wallet.handle, &mint_req,
+                                                              vec![&did_trustee, &did_1, &did_2, &did_3]).unwrap();
+
+    trace!("{:?}", &mint_req);
+
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
     let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();

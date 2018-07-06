@@ -14,7 +14,8 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
-
+use sovtoken::logic::config::set_fees_config::SetFees;
+use sovtoken::logic::request::Request;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _mint_req_json: *const c_char) -> i32 {
@@ -100,4 +101,60 @@ fn add_fees_json() {
     assert_eq!(ErrorCode::Success, ec_initial);
     assert_eq!(ErrorCode::Success, ec_callback);
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+}
+
+pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees: &str, did: &str, did_1: &str, did_2: &str, did_3: &str) -> String {
+    let set_fees_req = indy::payments::Payment::build_set_txn_fees_req(wallet_handle, did, payment_method, &fees).unwrap();
+
+    let set_fees_req = Request::<SetFees>::multi_sign_request(wallet_handle, &set_fees_req,
+                                                              vec![did, did_1, did_2, did_3]).unwrap();
+    indy::ledger::Ledger::submit_request(pool_handle, &set_fees_req).unwrap()
+}
+
+#[test]
+pub fn build_and_submit_set_fees() {
+    sovtoken::api::sovtoken_init();
+    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let pc_str = utils::pool::create_pool_config();
+    let pool_config = Some(pc_str.as_str());
+    indy::pool::Pool::set_protocol_version(2).unwrap();
+
+    let pool_name = utils::pool::create_pool_ledger(pool_config);
+    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
+    let wallet = utils::wallet::Wallet::new(&pool_name);
+
+    let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
+
+    let (ref did_trustee, _) = trustees[0];
+    let (ref did_1, _) = trustees[1];
+    let (ref did_2, _) = trustees[2];
+    let (ref did_3, _) = trustees[3];
+
+    let fees = json!({
+        "202": 1,
+        "101": 2
+    }).to_string();
+
+
+    set_fees(pool_handle, wallet.handle, &payment_method, &fees, &did_trustee, &did_1, &did_2, &did_3);
+
+    let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, &did_trustee, payment_method).unwrap();
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &get_fees_req).unwrap();
+    let parsed_result = indy::payments::Payment::parse_get_txn_fees_response(payment_method, &result).unwrap();
+
+    let parsed_result_json: serde_json::Value = serde_json::from_str(&parsed_result).unwrap();
+    let parsed_result_json = parsed_result_json.as_object().unwrap();
+    assert!(parsed_result_json.contains_key("202"));
+    assert!(parsed_result_json.contains_key("101"));
+    assert!(!parsed_result_json.contains_key("100"));
+    assert_eq!(parsed_result_json.get("202").unwrap().as_u64().unwrap(), 1);
+    assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
+
+    let fees = json!({
+        "202": 0,
+        "101": 0
+    }).to_string();
+
+    set_fees(pool_handle, wallet.handle, &payment_method, &fees, &did_trustee, &did_1, &did_2, &did_3);
+
 }

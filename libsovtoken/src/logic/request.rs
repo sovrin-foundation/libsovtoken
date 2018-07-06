@@ -4,6 +4,7 @@ use serde::Serialize;
 use serde_json;
 use std::ffi::CString;
 use libc::c_char;
+use indy::{IndyHandle, ErrorCode, ledger::Ledger};
 
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::random::rand_req_id;
@@ -19,6 +20,7 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier : Option<String>,
 }
 
@@ -47,5 +49,13 @@ impl<T> Request<T>
     pub fn serialize_to_pointer(&self) -> Result<*const c_char, serde_json::Error> {
         return self.serialize_to_string()
             .map(|string| c_pointer_from_string(string));
+    }
+
+    pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
+        let mut signed_req: String = req.to_string();
+        for did in dids {
+            signed_req = Ledger::multi_sign_request(wallet_handle, did, &signed_req)?;
+        }
+        Ok(signed_req)
     }
 }
