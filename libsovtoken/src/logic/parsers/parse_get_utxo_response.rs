@@ -24,7 +24,7 @@ type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 pub struct ParseGetUtxoResponse {
     pub op : ResponseOperations,
     #[serde(rename = "protocol_version")]
-    pub protocol_version: Option<ProtocolVersion>,
+    pub protocol_version: Option<u32>,
     pub result : ParseGetUtxoResponseResult,
 }
 
@@ -41,7 +41,6 @@ pub struct ParseGetUtxoResponseResult {
     pub identifier: String,
     pub req_id : ReqId,
     pub outputs : Outputs_,
-    // TODO: State proof is optional
     #[serde(rename = "state_proof")]
     pub state_proof : Option<StateProof>
 }

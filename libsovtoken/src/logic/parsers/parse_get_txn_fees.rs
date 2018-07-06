@@ -27,6 +27,7 @@ use logic::type_aliases::{TokenAmount, ReqId};
 #[serde(rename_all = "camelCase")]
 pub struct ParseGetTxnFeesResponse {
     pub op : ResponseOperations,
+    pub protocol_version: Option<u32>,
     pub result : ParseGetTxnFeesResult
 }
 
