@@ -41,7 +41,6 @@ pub struct ParseGetUtxoResponseResult {
     pub identifier: String,
     pub req_id : ReqId,
     pub outputs : Outputs_,
-    // TODO: State proof is optional
     #[serde(rename = "state_proof")]
     pub state_proof : Option<StateProof>
 }

@@ -13,7 +13,7 @@ use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 use utils::json_conversion::JsonSerialize;
 use indy::ErrorCode;
-use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, ReqId};
+use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion, ReqId};
 
 /**
     for parse_response_with_fees_handler input resp_json
@@ -24,7 +24,7 @@ use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, TxnVersion, Re
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponseWithFees {
     pub op : ResponseOperations,
-    pub protocol_version: ProtocolVersion,
+    pub protocol_version: Option<ProtocolVersion>,
     pub request : ParseResponseWithFeesRequest,
 }
 
@@ -306,6 +306,84 @@ mod parse_response_with_fees_handler_tests {
             }
         }"#;
 
+    static PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION: &'static str = r#"{
+            "op": "REPLY",
+            "request":
+            {
+                "txn":
+                {
+                    "data":
+                    {
+                        "alias": "508867",
+                        "dest": "8Wv7NMbsMiNSmNa3iC6fG7",
+                        "verkey": "56b9wim9b3dYXzzc8wnm8RZePbyuMoWw5XUXxL4Y9gFZ"
+                    },
+                    "metadata":
+                    {
+                        "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                        "reqId": 152969782
+                    },
+                    "protocolVersion": 2,
+                    "type": "1"
+                },
+                "ver": "1",
+                "txnMetadata":
+                {
+                    "seqNo": 13,
+                    "txnTime": 1529697829
+                },
+                "reqSignature":
+                {
+                    "type": "ED25519",
+                    "values":
+                    [
+                        {
+                            "from": "MSjKTWkPLtYoPEaTF1TUDb",
+                            "value": "5Ngg5fQ4NtqdzgN3kSjdRKo6ffeq5sP264TmzxvGGQX3ieJzP9hCeUCu7RkmAhLjzqZ2Z5y8FLSptWxetS8FCmcs"
+                        }
+                    ]
+                },
+                "rootHash": "FePFuqEX6iJ1SP5DkYn9WTXQrThxqevEkxYXyCxyX4Fd",
+                "auditPath":
+                [
+                    "CWQ9keGzhBqyMRLvp7XbMr7da7yUbEU4qGTfJ2KNxMM6",
+                    "2S9HAxKukY2hxUoEC718fhywF3KRfwPnEQvRsoN168EV"
+                ],
+                "fees":
+                {
+                    "inputs":
+                    [
+                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                    ],
+                    "outputs":
+                    [
+                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
+                    ],
+                    "fees": 4,
+                    "ref": "1:13",
+                    "reqSignature":
+                    {
+                        "type": "ED25519",
+                        "values":
+                        [
+                            {
+                                "from": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                                "value": "5Z7ktpfVQAhj2gMFR8L6JnG7fQQJzqWwqrDgXQP1CYf2vrjKPe2a27borFVuAcQh2AttoejgAoTzJ36wfyKxu5ox"
+                            }
+                        ]
+                    },
+                    "txnMetadata":
+                    {
+                        "seqNo": 2,
+                        "txnTime": 1529697829
+                    },
+                    "rootHash": "A8qwQKyKUMd3PnJTKe4bXRzajCUVgSd1J1A7jdahhNW6",
+                    "auditPath": ["Gyw5iBPPs4KSiEoAXQcjv8jw1VWsFjTVyCkm1Zp9E3Pa"]
+                }
+            }
+        }"#;
+
+
     // Tests that valid json with one element in the "output section" is serialized to ParseResponseWithFees tyoe
     #[test]
     fn success_json_to_parse_response_with_fees() {
@@ -349,5 +427,16 @@ mod parse_response_with_fees_handler_tests {
 
         assert_eq!(2, reply.utxo_json.len());
 
+    }
+
+    // This test is for TOK-251
+    #[test]
+    fn success_json_to_parse_response_with_fees_no_protocol_version() {
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION).unwrap();
+
+        // only going to test outputs since we don't use inputs
+        let outputs= response.request.fees.outputs;
+
+        assert_eq!(1, outputs.len());
     }
 }

@@ -12,7 +12,7 @@ use logic::parsers::common::{ResponseOperations, StateProof,
 use utils::json_conversion::JsonDeserialize;
 use utils::ffi_support::c_pointer_from_string;
 use utils::constants::txn_fields::FEES;
-use logic::type_aliases::{TokenAmount, ReqId};
+use logic::type_aliases::{ProtocolVersion, TokenAmount, ReqId};
 
 /**
     Structure for parsing GET_FEES request
@@ -27,6 +27,7 @@ use logic::type_aliases::{TokenAmount, ReqId};
 #[serde(rename_all = "camelCase")]
 pub struct ParseGetTxnFeesResponse {
     pub op : ResponseOperations,
+    pub protocol_version: Option<ProtocolVersion>,
     pub result : ParseGetTxnFeesResult
 }
 

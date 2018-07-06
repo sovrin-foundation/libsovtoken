@@ -1,4 +1,4 @@
-//! Type aliases for vaarious domain specific primitives like transaction seq no, amount, et
+//! Type aliases for various domain specific primitives like transaction seq no, amount, et
 
 pub type TxnSeqNo = u64;
 pub type TokenAmount = u64;
