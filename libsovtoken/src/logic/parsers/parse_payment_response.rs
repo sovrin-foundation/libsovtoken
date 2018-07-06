@@ -10,7 +10,7 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature,
                              SignatureValues};
-use logic::type_aliases::TokenAmount;
+use logic::type_aliases::{TokenAmount, ProtocolVersion};
 use utils::json_conversion::JsonSerialize;
 
 /**
@@ -20,6 +20,7 @@ use utils::json_conversion::JsonSerialize;
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponse {
     pub op : ResponseOperations,
+    pub protocol_version: Option<ProtocolVersion>,
     pub result : ParsePaymentResponseResult,
 }
 
@@ -46,7 +47,7 @@ pub struct ParsePaymentResponseResult {
 pub struct Transaction {
     #[serde(rename = "type")]
     pub txn_type : String,
-    pub protocol_version : i32,
+    pub protocol_version : ProtocolVersion,
     #[serde(rename = "metadata")]
     pub meta_data: TransactionMetaData2,
     pub data: TransactionData,
