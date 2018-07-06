@@ -107,7 +107,7 @@ fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, request_json_m
         match fees {
             Ok(fees) => {
                 let mut map = request_json_map.clone();
-                map.insert(FEES.to_string(), json!(fees));
+                map.insert(FEES.to_string(), json!([fees.inputs, fees.outputs, fees.signatures]));
                 cb(Ok(map.clone()));
             }
             Err(err) => {
