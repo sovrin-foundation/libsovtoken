@@ -13,7 +13,7 @@ use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 use utils::json_conversion::JsonSerialize;
 use indy::ErrorCode;
-use logic::type_aliases::{TokenAmount, TxnSeqNo, TxnVersion, ReqId};
+use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion, ReqId};
 
 /**
     for parse_response_with_fees_handler input resp_json
@@ -24,7 +24,7 @@ use logic::type_aliases::{TokenAmount, TxnSeqNo, TxnVersion, ReqId};
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponseWithFees {
     pub op : ResponseOperations,
-    pub protocol_version: Option<u32>,
+    pub protocol_version: Option<ProtocolVersion>,
     pub request : ParseResponseWithFeesRequest,
 }
 
@@ -68,7 +68,7 @@ pub struct TransactionFees {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-    pub protocol_version : u32,
+    pub protocol_version : ProtocolVersion,
     #[serde(rename = "type")]
     pub txn_type : String,
     #[serde(rename = "metadata")]

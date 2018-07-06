@@ -24,7 +24,7 @@ type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 pub struct ParseGetUtxoResponse {
     pub op : ResponseOperations,
     #[serde(rename = "protocol_version")]
-    pub protocol_version: Option<u32>,
+    pub protocol_version: Option<ProtocolVersion>,
     pub result : ParseGetUtxoResponseResult,
 }
 
