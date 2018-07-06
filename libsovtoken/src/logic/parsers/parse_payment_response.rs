@@ -20,6 +20,7 @@ use utils::json_conversion::JsonSerialize;
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponse {
     pub op : ResponseOperations,
+    pub protocol_version: Option<u32>,
     pub result : ParsePaymentResponseResult,
 }
 
