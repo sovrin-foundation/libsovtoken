@@ -131,7 +131,7 @@ pub fn build_and_submit_set_fees() {
     let (ref did_3, _) = trustees[3];
 
     let fees = json!({
-        "1": 1,
+        "202": 1,
         "101": 2
     }).to_string();
 
@@ -144,14 +144,14 @@ pub fn build_and_submit_set_fees() {
 
     let parsed_result_json: serde_json::Value = serde_json::from_str(&parsed_result).unwrap();
     let parsed_result_json = parsed_result_json.as_object().unwrap();
-    assert!(parsed_result_json.contains_key("1"));
+    assert!(parsed_result_json.contains_key("202"));
     assert!(parsed_result_json.contains_key("101"));
     assert!(!parsed_result_json.contains_key("100"));
-    assert_eq!(parsed_result_json.get("1").unwrap().as_u64().unwrap(), 1);
+    assert_eq!(parsed_result_json.get("202").unwrap().as_u64().unwrap(), 1);
     assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
 
     let fees = json!({
-        "1": 0,
+        "202": 0,
         "101": 0
     }).to_string();
 
