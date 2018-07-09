@@ -11,3 +11,4 @@ pub mod pool;
 pub mod mint;
 pub mod did;
 pub mod wallet;
+pub mod fees;
