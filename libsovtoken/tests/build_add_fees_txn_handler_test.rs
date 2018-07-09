@@ -4,17 +4,17 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 pub mod utils;
 
+use std::sync::mpsc::channel;
+use std::time::Duration;
+use std::collections::HashMap;
 use indy::payments::Payment;
 use indy::{IndyHandle, ErrorCode};
 use indy::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
-use std::sync::mpsc::channel;
-use std::time::Duration;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::test::callbacks;
 use utils::wallet::Wallet;
-use std::collections::HashMap;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {

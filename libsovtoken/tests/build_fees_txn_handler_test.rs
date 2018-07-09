@@ -14,7 +14,6 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
-use sovtoken::logic::request::Request;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _mint_req_json: *const c_char) -> i32 {
