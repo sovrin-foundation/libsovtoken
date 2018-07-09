@@ -183,8 +183,9 @@ pub fn build_and_submit_nym_with_fees() {
     let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
 
     let nym_req = indy::ledger::Ledger::build_nym_request(&did_trustee, &did_new,  Some(&verkey_new), None, None).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, &did_trustee, &nym_req, &inputs, &outputs).unwrap();
-    let nym_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &nym_req_with_fees).unwrap();
+    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, &did_trustee, &nym_req).unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, &did_trustee, &nym_req_signed, &inputs, &outputs).unwrap();
+    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
     let parsed_resp = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
@@ -252,8 +253,9 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
 
     let nym_req = indy::ledger::Ledger::build_nym_request(&did_trustee, &did_new,  Some(&verkey_new), None, None).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, &did_trustee, &nym_req, &inputs, &outputs).unwrap();
-    let nym_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &nym_req_with_fees).unwrap();
+    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, &did_trustee, &nym_req).unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, &did_trustee, &nym_req_signed, &inputs, &outputs).unwrap();
+    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
     let parsed_resp = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
