@@ -163,7 +163,6 @@ fn valid_output_json_from_libindy() {
 #[test]
 pub fn build_and_submit_mint_txn_works() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();
@@ -179,23 +178,21 @@ pub fn build_and_submit_mint_txn_works() {
     let (ref did_2, _) = trustees[2];
     let (ref did_3, _) = trustees[3];
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
-    let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
-    let pa3 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, &json!({}).to_string()).unwrap();
+    let payment_addresses = utils::payment::address::generate_n(&wallet, 3);
 
     let output_json = json!([
         {
-            "paymentAddress": pa1,
+            "paymentAddress": payment_addresses[0],
             "amount": 5,
             "extra": "pa1",
         },
         {
-            "paymentAddress": pa2,
+            "paymentAddress": payment_addresses[1],
             "amount": 10,
             "extra": "pa2",
         },
         {
-            "paymentAddress": pa3,
+            "paymentAddress": payment_addresses[2],
             "amount": 15,
             "extra": "pa3",
         }
@@ -213,7 +210,7 @@ pub fn build_and_submit_mint_txn_works() {
     let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
+    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &payment_addresses[0]).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
     let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
 
@@ -222,5 +219,5 @@ pub fn build_and_submit_mint_txn_works() {
     assert_eq!(utxos.len(), 1);
     let value = utxos.get(0).unwrap().as_object().unwrap();
     assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 5);
-    assert_eq!(value.get("paymentAddress").unwrap().as_str().unwrap(), &pa1);
+    assert_eq!(value.get("paymentAddress").unwrap().as_str().unwrap(), &payment_addresses[0]);
 }
