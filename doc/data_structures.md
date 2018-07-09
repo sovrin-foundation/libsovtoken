@@ -25,7 +25,7 @@ This API call is handled by LibSovToken create_payment_address_handler
     wallet_handle: wallet handle where to save new address
     payment_method: Payment method to use (for example, "sov")
     config: payment address config as json:
-``` JSON
+```
 {
     "seed" : <str>, // allows deterministic creation of payment address
 }
@@ -43,7 +43,7 @@ This API call is handled by LibSovToken add_request_fees_handler.
     submitter_did : DID of request sender
     req_json: initial transaction request as json
     inputs_json: The list of UTXO inputs as json array:
-``` JSON 
+``` 
 [
     <str: txo_string>, 
 ]
@@ -52,7 +52,7 @@ This API call is handled by LibSovToken add_request_fees_handler.
 
 ```
     outputs_json: The list of UTXO outputs as json array:
-``` JSON 
+``` 
 [
     {
         "address" : <str>,   // the payment address
@@ -63,14 +63,14 @@ This API call is handled by LibSovToken add_request_fees_handler.
 
 ```
 Example inputs_json:
-``` JSON 
+``` 
 [
     "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7"
 ]
 
 ```
 Example outputs_json:
-``` JSON 
+``` 
 [
     {
         "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
@@ -82,7 +82,7 @@ Example outputs_json:
 
 ### return:
     req_with_fees_json: modified Indy request with added fees info
-``` JSON
+```
 {
     <req_json>    //initial transaction request
     "fees":
@@ -458,7 +458,7 @@ This API call is handled by LibSovToken build_payment_req_handler. *Note this ha
     wallet_handle: wallet handle
     submitter_did : DID of request sender
     inputs_json: The list of UTXO inputs as json array:
-``` JSON
+```
 [
     <str: txo_string>, 
 ]
@@ -467,7 +467,7 @@ This API call is handled by LibSovToken build_payment_req_handler. *Note this ha
 
 ```
     outputs_json: The list of UTXO outputs as json array:
-``` JSON 
+``` 
 
 [
     {
@@ -479,7 +479,7 @@ This API call is handled by LibSovToken build_payment_req_handler. *Note this ha
 
 ```
 Example inputs_json:
-``` JSON 
+``` 
 [
     "txo:sov:QEb3MVVWv1McB8YpgXAvj8SbZDLRRHaPpWt9jFMgfRss3CYBHnzx2mVXsXyVADzSDw88RAojPpdw88RAojPpdgxLPQyCgxLPQyC1oJUqkrLeU",
     "txo:sov:t3gQdtHYZaEHTL92j81QEpv5aUHmHKPGQwjEud6mbyhuwvTjxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvouG3yHqnK2LvVWVjV",
@@ -487,7 +487,7 @@ Example inputs_json:
 ]
 ```
 Example outputs_json:
-``` JSON 
+``` 
 [
     {
         "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
@@ -511,7 +511,7 @@ Example outputs_json:
 
     payment_req_json
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
-``` JSON 
+``` 
 {
     "identifier": <str>,        // first <source payment address w/o checksum>
     "reqId": <int>,             // a random identifier
@@ -534,7 +534,7 @@ Example outputs_json:
 Example payment_req_json:
     note: output to ledger excludes address prefix "pay:sov"
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
-``` JSON 
+``` 
 {
     "identifier": "6baBEYA94sAphWBA5efEsaA6X2wCdyaH7PXuBtv2H5S1",
     "reqId": 1529682415342024,
@@ -717,7 +717,7 @@ This API call is handled by LibSovToken build_mint_txn_handlerr
     wallet_handle: wallet handle
     submitter_did : DID of request sender
     outputs_json: The list of UTXO outputs as json array:
-``` JSON 
+``` 
 [
     {
     "paymentAddress": <str>, // payment address used as output
@@ -727,7 +727,7 @@ This API call is handled by LibSovToken build_mint_txn_handlerr
 ]
 ```
 Example outputs_json:
-``` JSON 
+``` 
 [
     {
         "paymentAddress": "sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC",
