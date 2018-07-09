@@ -113,7 +113,7 @@ pub fn build_and_submit_set_fees() {
 
     let pool_name = utils::pool::create_pool_ledger(pool_config);
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-    let wallet = utils::wallet::Wallet::new(&pool_name);
+    let wallet = utils::wallet::Wallet::new();
 
     let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
 
