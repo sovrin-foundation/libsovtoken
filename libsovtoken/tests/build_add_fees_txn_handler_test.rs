@@ -4,7 +4,6 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 pub mod utils;
 
-use indy::payments::Payment;
 use indy::{IndyHandle, ErrorCode};
 use indy::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
@@ -36,11 +35,9 @@ fn init_wallet_with_address() -> (utils::wallet::Wallet, String) {
     sovtoken::api::sovtoken_init();
 
     let wallet = Wallet::new("p1");
-    let key_config = json!({
-        "seed": str::repeat("2", 32),
-    });
+    let seed = str::repeat("2", 32);
 
-    let input_address = Payment::create_payment_address(wallet.handle, "sov", &key_config.to_string()).unwrap();
+    let input_address = utils::payment::address::generate(&wallet, Some(&seed));
     return (wallet, input_address);
 }
 

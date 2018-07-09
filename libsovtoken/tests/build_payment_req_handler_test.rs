@@ -9,7 +9,6 @@ extern crate rust_base58;
 #[macro_use] extern crate serde_derive;
 
 use indy::ErrorCode;
-use indy::payments::Payment;
 use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::logic::address;
@@ -42,30 +41,15 @@ const WALLET_HANDLE:i32 = 0;
 const CB : Option<extern fn(_command_handle_: i32, err: i32, payment_req_json: *const c_char) -> i32 > = Some(empty_create_payment_callback);
 
 
-fn generate_payment_addresses(wallet_handle: i32) -> (Vec<String>, Vec<String>) {
-    let seed_1 = json!({
-        "seed": str::repeat("1", 32),
-    }).to_string();
-
-    let seed_2 = json!({
-        "seed": str::repeat("2", 32),
-    }).to_string();
-
-    let seed_3 = json!({
-        "seed": str::repeat("3", 32),
-    }).to_string();
-
-    let seed_4 = json!({
-        "seed": str::repeat("4", 32),
-    }).to_string();
-
-
-    let payment_addresses = vec![
-        Payment::create_payment_address(wallet_handle, "sov", &seed_2).unwrap(),
-        Payment::create_payment_address(wallet_handle, "sov", &seed_3).unwrap(),
-        Payment::create_payment_address(wallet_handle, "sov", &seed_4).unwrap(),
-        Payment::create_payment_address(wallet_handle, "sov", &seed_1).unwrap(),
+fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
+    let seeds = vec![
+        str::repeat("2", 32),
+        str::repeat("3", 32),
+        str::repeat("4", 32),
+        str::repeat("1", 32),
     ];
+
+    let payment_addresses = utils::payment::address::generate_n_seeded(wallet, seeds);
 
     payment_addresses
         .iter()
@@ -150,7 +134,7 @@ fn success_signed_request() {
     let wallet = Wallet::new("p1");
     debug!("wallet id = {:?}", wallet.handle);
 
-    let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
     let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
     let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
 
@@ -220,7 +204,7 @@ fn success_signed_request_from_libindy() {
     let wallet = Wallet::new("p1");
     debug!("wallet id = {:?}", wallet.handle);
 
-    let (payment_addresses, addresses) = generate_payment_addresses(wallet.handle);
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
 
     let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
     let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
@@ -286,7 +270,6 @@ fn success_signed_request_from_libindy() {
 #[test]
 pub fn build_and_submit_payment_req() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
     indy::pool::Pool::set_protocol_version(2).unwrap();
 
     let pool_config = utils::pool::create_pool_config();
@@ -294,17 +277,16 @@ pub fn build_and_submit_payment_req() {
     let wallet = Wallet::new(&pool_name);
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
-    let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+    let payment_addresses = utils::payment::address::generate_n(&wallet, 2);
 
     let mut mint_cfg = HashMap::new();
-    mint_cfg.insert(pa1.clone(), 30);
+    mint_cfg.insert(payment_addresses[0].clone(), 30);
 
     let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
 
     utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
+    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &payment_addresses[0]).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
     let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
 
@@ -316,11 +298,11 @@ pub fn build_and_submit_payment_req() {
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
         {
-            "paymentAddress": pa2,
+            "paymentAddress": payment_addresses[1],
             "amount": 20
         },
         {
-            "paymentAddress": pa1,
+            "paymentAddress": payment_addresses[0],
             "amount": 10
         }
     ]).to_string();
@@ -334,9 +316,9 @@ pub fn build_and_submit_payment_req() {
 
     let value = utxos.get(0).unwrap().as_object().unwrap();
     let pa1_rc = value.get("paymentAddress").unwrap().as_str().unwrap();
-    if pa1_rc == pa1 {
+    if pa1_rc == payment_addresses[0] {
         assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 10);
-    } else if pa1_rc == pa2 {
+    } else if pa1_rc == payment_addresses[1] {
         assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 20);
     } else {
         assert!(false);
@@ -344,9 +326,9 @@ pub fn build_and_submit_payment_req() {
 
     let value = utxos.get(1).unwrap().as_object().unwrap();
     let pa1_rc = value.get("paymentAddress").unwrap().as_str().unwrap();
-    if pa1_rc == pa1 {
+    if pa1_rc == payment_addresses[0] {
         assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 10);
-    } else if pa1_rc == pa2 {
+    } else if pa1_rc == payment_addresses[1] {
         assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 20);
     } else {
         assert!(false);
