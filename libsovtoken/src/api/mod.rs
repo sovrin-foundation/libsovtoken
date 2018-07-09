@@ -20,6 +20,7 @@ use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
 use logic::parsers::{
     parse_get_utxo_response,
+    parse_response_with_fees_handler,
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
@@ -286,7 +287,7 @@ pub extern "C" fn parse_response_with_fees_handler(
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseResponseWithFeesReply::from_response
-    let reply: ParseResponseWithFeesReply = match ParseResponseWithFeesReply::from_response(response) {
+    let reply: ParseResponseWithFeesReply = match parse_response_with_fees_handler::from_response(response) {
         Ok(rep) => rep,
         Err(ec) => {
             trace!("api::parse_response_with_fees_handler << result: {:?}", ec);

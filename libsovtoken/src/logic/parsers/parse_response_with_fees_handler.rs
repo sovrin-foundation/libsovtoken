@@ -24,8 +24,8 @@ use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion, Re
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponseWithFees {
     pub op : ResponseOperations,
+    pub result: ParseResponseWithFeesRequest,
     pub protocol_version: Option<ProtocolVersion>,
-    pub request : ParseResponseWithFeesRequest,
 }
 
 /**
@@ -83,7 +83,7 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetaData2 {
     pub digest: String,
-    pub req_id: ReqId
+    pub req_id: u64//ReqId
 }
 
 /**
@@ -92,7 +92,7 @@ pub struct TransactionMetaData2 {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
-    pub alias: String,
+//    pub alias: String,
     pub dest : String,
     #[serde(rename = "verkey")]
     pub ver_key : String,
@@ -101,41 +101,34 @@ pub struct TransactionData {
 /**
     for parse_response_with_fees_handler output utxo_json
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct ParseResponseWithFeesReply {
-    pub ver : i32,
-    pub utxo_json : Vec<UTXO>,
-}
+pub type ParseResponseWithFeesReply = Vec<UTXO>;
 
-impl ParseResponseWithFeesReply {
-    /**
-        Converts ParseResponseWithFees (which should be input via indy-sdk) to ParseResponseWithFeesReply
-        please note:  use of this function moves ParseResponseWithFees and it cannot be used again
-        after this call
-    */
-    pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFeesReply, ErrorCode> {
-        let mut utxos: Vec<UTXO> = vec![];
+/**
+    Converts ParseResponseWithFees (which should be input via indy-sdk) to ParseResponseWithFeesReply
+    please note:  use of this function moves ParseResponseWithFees and it cannot be used again
+    after this call
+*/
+pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFeesReply, ErrorCode> {
+    let mut utxos: Vec<UTXO> = vec![];
 
-        // according to the documentation, don't need the inputs.  Only the outputs
-        // and seq_no which are part 2 and 3 of the tuple
-        let outputs = &base.request.fees.outputs;
-        let seq_no: TxnSeqNo = base.request.tnx_meta_data.seq_no;
-        
-        for output in outputs {
-            let output_address : String = output.0.to_string();
-            let amount: TokenAmount = output.1;
-            let qualified_address: String = add_qualifer_to_address(&output_address);
+    // according to the documentation, don't need the inputs.  Only the outputs
+    // and seq_no which are part 2 and 3 of the tuple
+    let outputs = &base.result.fees.outputs;
+    let seq_no: TxnSeqNo = base.result.tnx_meta_data.seq_no;
 
-            let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
+    for output in outputs {
+        let output_address : String = output.0.to_string();
+        let amount: TokenAmount = output.1;
+        let qualified_address: String = add_qualifer_to_address(&output_address);
 
-            let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
+        let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
-            utxos.push(utxo);
-        }
+        let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply { ver : 1, utxo_json : utxos};
-        return Ok(reply);
+        utxos.push(utxo);
     }
+
+    return Ok(utxos);
 }
 
 #[cfg(test)]
@@ -152,7 +145,7 @@ mod parse_response_with_fees_handler_tests {
     static PARSE_RESPONSE_WITH_FEES_JSON: &'static str = r#"{
             "op": "REPLY",
             "protocolVersion": 1,
-            "request":
+            "result":
             {
                 "txn":
                 {
@@ -230,7 +223,7 @@ mod parse_response_with_fees_handler_tests {
     static PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON: &'static str = r#"{
             "op": "REPLY",
             "protocolVersion": 1,
-            "request":
+            "result":
             {
                 "txn":
                 {
@@ -308,7 +301,7 @@ mod parse_response_with_fees_handler_tests {
 
     static PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION: &'static str = r#"{
             "op": "REPLY",
-            "request":
+            "result":
             {
                 "txn":
                 {
@@ -390,7 +383,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.request.fees.outputs;
+        let outputs= response.result.fees.outputs;
 
         assert_eq!(1, outputs.len());
     }
@@ -401,7 +394,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.request.fees.outputs;
+        let outputs= response.result.fees.outputs;
 
         assert_eq!(2, outputs.len());
     }
@@ -412,9 +405,9 @@ mod parse_response_with_fees_handler_tests {
     fn success_parse_response_with_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response).unwrap();
+        let reply: ParseResponseWithFeesReply = from_response(response).unwrap();
 
-        assert_eq!(1, reply.utxo_json.len());
+        assert_eq!(1, reply.len());
 
     }
 
@@ -423,9 +416,9 @@ mod parse_response_with_fees_handler_tests {
     #[test]
     fn success_parse_response_with_multiple_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response).unwrap();
+        let reply: ParseResponseWithFeesReply = from_response(response).unwrap();
 
-        assert_eq!(2, reply.utxo_json.len());
+        assert_eq!(2, reply.len());
 
     }
 
@@ -435,7 +428,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.request.fees.outputs;
+        let outputs= response.result.fees.outputs;
 
         assert_eq!(1, outputs.len());
     }
