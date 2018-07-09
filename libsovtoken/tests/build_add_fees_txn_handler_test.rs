@@ -4,15 +4,16 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 pub mod utils;
 
+use std::collections::HashMap;
+use std::sync::mpsc::channel;
+use std::time::Duration;
+
 use indy::{IndyHandle, ErrorCode};
 use indy::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::test::callbacks;
-use std::collections::HashMap;
-use std::sync::mpsc::channel;
-use std::time::Duration;
 use utils::wallet::Wallet;
 
 
