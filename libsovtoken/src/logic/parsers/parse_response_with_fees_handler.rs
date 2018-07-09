@@ -145,7 +145,7 @@ mod parse_response_with_fees_handler_tests {
     static PARSE_RESPONSE_WITH_FEES_JSON: &'static str = r#"{
             "op": "REPLY",
             "protocolVersion": 1,
-            "request":
+            "result":
             {
                 "txn":
                 {
@@ -223,7 +223,7 @@ mod parse_response_with_fees_handler_tests {
     static PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON: &'static str = r#"{
             "op": "REPLY",
             "protocolVersion": 1,
-            "request":
+            "result":
             {
                 "txn":
                 {
@@ -301,7 +301,7 @@ mod parse_response_with_fees_handler_tests {
 
     static PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION: &'static str = r#"{
             "op": "REPLY",
-            "request":
+            "result":
             {
                 "txn":
                 {
