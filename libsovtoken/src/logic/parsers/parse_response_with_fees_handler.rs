@@ -405,9 +405,9 @@ mod parse_response_with_fees_handler_tests {
     fn success_parse_response_with_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response).unwrap();
+        let reply: ParseResponseWithFeesReply = from_response(response).unwrap();
 
-        assert_eq!(1, reply.utxo_json.len());
+        assert_eq!(1, reply.len());
 
     }
 
@@ -416,9 +416,9 @@ mod parse_response_with_fees_handler_tests {
     #[test]
     fn success_parse_response_with_multiple_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
-        let reply: ParseResponseWithFeesReply = ParseResponseWithFeesReply::from_response(response).unwrap();
+        let reply: ParseResponseWithFeesReply = from_response(response).unwrap();
 
-        assert_eq!(2, reply.utxo_json.len());
+        assert_eq!(2, reply.len());
 
     }
 
@@ -428,7 +428,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.request.fees.outputs;
+        let outputs= response.result.fees.outputs;
 
         assert_eq!(1, outputs.len());
     }
