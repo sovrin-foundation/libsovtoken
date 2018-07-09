@@ -107,7 +107,6 @@ mod parse_fees_responses_test {
     use utils::ffi_support::string_from_char_ptr;
 
     #[test]
-    #[ignore]
     fn success_parse_fees_from_reply_response() {
         let get_fees_response =
             r#"{

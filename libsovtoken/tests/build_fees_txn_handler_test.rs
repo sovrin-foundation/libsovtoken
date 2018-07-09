@@ -14,8 +14,6 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
-use sovtoken::logic::config::set_fees_config::SetFees;
-use sovtoken::logic::request::Request;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _mint_req_json: *const c_char) -> i32 {
@@ -103,13 +101,7 @@ fn add_fees_json() {
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
 }
 
-pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees: &str, did: &str, did_1: &str, did_2: &str, did_3: &str) -> String {
-    let set_fees_req = indy::payments::Payment::build_set_txn_fees_req(wallet_handle, did, payment_method, &fees).unwrap();
 
-    let set_fees_req = Request::<SetFees>::multi_sign_request(wallet_handle, &set_fees_req,
-                                                              vec![did, did_1, did_2, did_3]).unwrap();
-    indy::ledger::Ledger::submit_request(pool_handle, &set_fees_req).unwrap()
-}
 
 #[test]
 pub fn build_and_submit_set_fees() {
@@ -135,8 +127,9 @@ pub fn build_and_submit_set_fees() {
         "101": 2
     }).to_string();
 
+    let dids = vec![did_trustee.as_str(), did_1.as_str(), did_2.as_str(), did_3.as_str()];
 
-    set_fees(pool_handle, wallet.handle, &payment_method, &fees, &did_trustee, &did_1, &did_2, &did_3);
+    utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
 
     let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, &did_trustee, payment_method).unwrap();
     let result = indy::ledger::Ledger::submit_request(pool_handle, &get_fees_req).unwrap();
@@ -155,6 +148,6 @@ pub fn build_and_submit_set_fees() {
         "101": 0
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &payment_method, &fees, &did_trustee, &did_1, &did_2, &did_3);
+    utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
 
 }
