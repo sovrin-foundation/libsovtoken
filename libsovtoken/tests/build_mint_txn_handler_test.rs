@@ -171,12 +171,8 @@ pub fn build_and_submit_mint_txn_works() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
-
-    let (ref did_trustee, _) = trustees[0];
-    let (ref did_1, _) = trustees[1];
-    let (ref did_2, _) = trustees[2];
-    let (ref did_3, _) = trustees[3];
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let payment_addresses = utils::payment::address::generate_n(&wallet, 3);
 
@@ -198,20 +194,27 @@ pub fn build_and_submit_mint_txn_works() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet.handle, &did_trustee,
-        &output_json).unwrap();
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(
+        wallet.handle,
+        dids[0],
+        &output_json
+    ).unwrap();
+
     trace!("{:?}", &mint_req);
 
-    let mint_req = Request::<MintRequest>::multi_sign_request(wallet.handle, &mint_req,
-                                                              vec![&did_trustee, &did_1, &did_2, &did_3]).unwrap();
+    let mint_req = Request::<MintRequest>::multi_sign_request(
+        wallet.handle,
+        &mint_req,
+        dids.clone()
+    ).unwrap();
 
     trace!("{:?}", &mint_req);
 
     let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &payment_addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
+    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, dids[0], &payment_addresses[0]).unwrap();
+    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &req).unwrap();
     let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();

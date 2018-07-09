@@ -146,7 +146,7 @@ pub fn build_and_submit_nym_with_fees() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
 
@@ -216,7 +216,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
 

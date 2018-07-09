@@ -115,23 +115,17 @@ pub fn build_and_submit_set_fees() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new(&pool_name);
 
-    let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
-
-    let (ref did_trustee, _) = trustees[0];
-    let (ref did_1, _) = trustees[1];
-    let (ref did_2, _) = trustees[2];
-    let (ref did_3, _) = trustees[3];
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let fees = json!({
         "202": 1,
         "101": 2
     }).to_string();
 
-    let dids = vec![did_trustee.as_str(), did_1.as_str(), did_2.as_str(), did_3.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
 
-    let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, &did_trustee, payment_method).unwrap();
+    let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, dids[0], payment_method).unwrap();
     let result = indy::ledger::Ledger::submit_request(pool_handle, &get_fees_req).unwrap();
     let parsed_result = indy::payments::Payment::parse_get_txn_fees_response(payment_method, &result).unwrap();
 
