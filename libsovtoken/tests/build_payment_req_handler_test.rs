@@ -282,7 +282,7 @@ pub fn build_and_submit_payment_req() {
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(payment_addresses[0].clone(), 30);
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
     utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
 
@@ -353,7 +353,7 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 30);
 
-    let (did_trustee, _) = indy::did::Did::new(wallet.handle, &json!({"seed":"000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
     utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
 
