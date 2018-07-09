@@ -7,7 +7,7 @@
 #![allow(dead_code)]
 #[allow(unused_imports)]
 
-
+extern crate env_logger;
 extern crate libc;
 extern crate rand;
 
@@ -43,6 +43,7 @@ static WALLET_NAME_2: &'static str = "integration_test_wallet_2";
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{}"#;
 static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
+
 
 // ***** HELPER METHODS  *****
 // helper methods
@@ -110,7 +111,7 @@ fn successfully_creates_payment_address_with_no_seed() {
     let config_str = CString::new(VALID_CONFIG_EMPTY_SEED_JSON).unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet = utils::wallet::Wallet::new("p1");
+    let wallet = utils::wallet::Wallet::new();
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet.handle, config_str_ptr, cb);
 
@@ -141,7 +142,7 @@ fn success_callback_is_called() {
     let config_str =  config.serialize_to_cstring().unwrap();
     let config_str_ptr = config_str.as_ptr();
 
-    let wallet = utils::wallet::Wallet::new("p1");
+    let wallet = utils::wallet::Wallet::new();
 
     let return_error = sovtoken::api::create_payment_address_handler(command_handle, wallet.handle, config_str_ptr, cb);
     assert_eq!(ErrorCode::Success, ErrorCode::from(return_error), "api call to create_payment_address_handler failed");

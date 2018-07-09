@@ -36,7 +36,7 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, req
 fn init_wallet_with_address() -> (utils::wallet::Wallet, String) {
     sovtoken::api::sovtoken_init();
 
-    let wallet = Wallet::new("p1");
+    let wallet = Wallet::new();
     let seed = str::repeat("2", 32);
 
     let input_address = utils::payment::address::generate(&wallet, Some(&seed));
@@ -144,7 +144,7 @@ pub fn build_and_submit_nym_with_fees() {
 
     let pool_name = utils::pool::create_pool_ledger(pool_config);
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-    let wallet = utils::wallet::Wallet::new(&pool_name);
+    let wallet = utils::wallet::Wallet::new();
 
     let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
@@ -214,7 +214,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
 
     let pool_name = utils::pool::create_pool_ledger(pool_config);
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-    let wallet = utils::wallet::Wallet::new(&pool_name);
+    let wallet = utils::wallet::Wallet::new();
 
     let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 

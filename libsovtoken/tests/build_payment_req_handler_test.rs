@@ -131,7 +131,7 @@ fn success_signed_request() {
 
     let did = String::from("287asdjkh2323kjnbakjs");
 
-    let wallet = Wallet::new("p1");
+    let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
 
     let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
@@ -201,7 +201,7 @@ fn success_signed_request_from_libindy() {
 
     let did = String::from("Th7MpTaRZVRYnPiabds81Y");
 
-    let wallet = Wallet::new("p1");
+    let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
 
     let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
@@ -274,7 +274,7 @@ pub fn build_and_submit_payment_req() {
 
     let pool_config = utils::pool::create_pool_config();
     let pool_name = utils::pool::create_pool_ledger(Some(&pool_config));
-    let wallet = Wallet::new(&pool_name);
+    let wallet = Wallet::new();
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
 
     let payment_addresses = utils::payment::address::generate_n(&wallet, 2);
@@ -344,7 +344,7 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
 
     let pool_config = utils::pool::create_pool_config();
     let pool_name = utils::pool::create_pool_ledger(Some(&pool_config));
-    let wallet = Wallet::new(&pool_name);
+    let wallet = Wallet::new();
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
 
     let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
