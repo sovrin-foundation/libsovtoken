@@ -41,26 +41,32 @@ pub struct Wallet {
 }
 
 impl Wallet {
-
+    /* constructors */
     pub fn new() -> Wallet {
         let wallet_name : String = rand_string(20);
-        let config = Wallet::create_wallet_config(&wallet_name);
         let mut wallet = Wallet { name : wallet_name , handle: -1 };
-        wallet.create(&config).unwrap();
+        wallet.create().unwrap();
         wallet.open().unwrap();
 
         return wallet;
     }
 
     pub fn from_name(name: &str) -> Wallet {
-        let config = Wallet::create_wallet_config(name);
         let mut wallet = Wallet { name: name.to_string(), handle: -1 };
-        wallet.create(&config).unwrap();
+        wallet.create().unwrap();
         wallet.open().unwrap();
 
         return wallet;
     }
 
+    /* private static method to help create config that is passed to wallet functions */
+    fn create_wallet_config(wallet_name: &str) -> String {
+        let config = json!({ "id" : wallet_name.to_string() }).to_string();
+        return config.to_string();
+    }
+
+    /* private instance methods for open/create/etc...*/
+    
     fn open(&mut self) -> Result<i32, ErrorCode> {
         let config : String = Wallet::create_wallet_config(&self.name);
         let handle = IndyWallet::open(&config, USEFUL_CREDENTIALS)?;
@@ -68,13 +74,9 @@ impl Wallet {
         return Ok(handle);
     }
 
-    fn create_wallet_config(wallet_name: &str) -> String {
-        let config = json!({ "id" : wallet_name.to_string() }).to_string();
-        return config.to_string();
-    }
-
-    fn create(&self, config: &str) -> Result<(), ErrorCode> {
-        IndyWallet::create(&config, USEFUL_CREDENTIALS)
+    fn create(&self) -> Result<(), ErrorCode> {
+        let config = Wallet::create_wallet_config(&self.name);
+        return IndyWallet::create(&config, USEFUL_CREDENTIALS)
     }
 
     fn close(&self) -> Result<(), ErrorCode> {
@@ -83,7 +85,7 @@ impl Wallet {
 
     fn delete(&self) -> Result<(), ErrorCode> {
         let config : String = Wallet::create_wallet_config(&self.name);
-        IndyWallet::delete(&config, USEFUL_CREDENTIALS)
+        return IndyWallet::delete(&config, USEFUL_CREDENTIALS)
     }
 }
 
