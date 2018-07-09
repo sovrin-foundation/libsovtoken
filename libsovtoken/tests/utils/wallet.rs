@@ -2,6 +2,7 @@
  * A set of test helpers dealing with the wallet.
  */
 
+extern crate env_logger;
 extern crate rust_indy_sdk as indy;
 extern crate sovtoken;
 
@@ -11,9 +12,7 @@ use self::sovtoken::utils::random::rand_string;
 
 static USEFUL_CREDENTIALS : &'static str = r#"
    {
-       "key": "12345678901234567890123456789012",
-       "rekey": null,
-       "storage": null
+       "key": "12345678901234567890123456789012"
    }
 "#;
 
@@ -42,32 +41,40 @@ pub struct Wallet {
 }
 
 impl Wallet {
-    pub fn new(pool_name: &str) -> Wallet {
-        let name = rand_string(20);
-        let mut wallet = Wallet { name, handle: -1 };
-        wallet.create(pool_name).unwrap();
+
+    pub fn new() -> Wallet {
+        let wallet_name : String = rand_string(20);
+        let config = Wallet::create_wallet_config(&wallet_name);
+        let mut wallet = Wallet { name : wallet_name , handle: -1 };
+        wallet.create(&config).unwrap();
         wallet.open().unwrap();
 
-        wallet
+        return wallet;
     }
 
     pub fn from_name(name: &str) -> Wallet {
-        let name = name.to_owned();
-        let mut wallet = Wallet { name: name.clone(), handle: -1 };
-        wallet.create(&name).unwrap();
+        let config = Wallet::create_wallet_config(name);
+        let mut wallet = Wallet { name: name.to_string(), handle: -1 };
+        wallet.create(&config).unwrap();
         wallet.open().unwrap();
 
-        wallet
+        return wallet;
     }
 
     fn open(&mut self) -> Result<i32, ErrorCode> {
-        let handle = IndyWallet::open(&self.name, None, Some(USEFUL_CREDENTIALS))?;
+        let config : String = Wallet::create_wallet_config(&self.name);
+        let handle = IndyWallet::open(&config, USEFUL_CREDENTIALS)?;
         self.handle = handle;
-        Ok(handle)
+        return Ok(handle);
     }
 
-    fn create(&self, pool_name: &str) -> Result<(), ErrorCode> {
-        IndyWallet::create(pool_name, &self.name, None, None, Some(USEFUL_CREDENTIALS))
+    fn create_wallet_config(wallet_name: &str) -> String {
+        let config = json!({ "id" : wallet_name.to_string() }).to_string();
+        return config.to_string();
+    }
+
+    fn create(&self, config: &str) -> Result<(), ErrorCode> {
+        IndyWallet::create(&config, USEFUL_CREDENTIALS)
     }
 
     fn close(&self) -> Result<(), ErrorCode> {
@@ -75,7 +82,8 @@ impl Wallet {
     }
 
     fn delete(&self) -> Result<(), ErrorCode> {
-        IndyWallet::delete(&self.name, Some(USEFUL_CREDENTIALS))
+        let config : String = Wallet::create_wallet_config(&self.name);
+        IndyWallet::delete(&config, USEFUL_CREDENTIALS)
     }
 }
 

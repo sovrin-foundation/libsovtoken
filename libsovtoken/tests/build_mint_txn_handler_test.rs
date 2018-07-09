@@ -9,27 +9,29 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
-use indy::ErrorCode;
+mod utils;
 
 use libc::c_char;
+use std::sync::mpsc::channel;
+use std::time::Duration;
 use std::ptr;
 use std::ffi::CString;
+
+use indy::utils::results::ResultHandler;
+use indy::ErrorCode;
+
+use utils::wallet::Wallet;
+use utils::parse_mint_response::ParseMintResponse;
+
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
 use sovtoken::utils::constants::txn_fields::OUTPUTS;
-use std::sync::mpsc::channel;
-use indy::utils::results::ResultHandler;
-use std::time::Duration;
 use sovtoken::logic::parsers::common::ResponseOperations;
 use sovtoken::utils::json_conversion::JsonDeserialize;
-use utils::parse_mint_response::ParseMintResponse;
-
-
-mod utils;
-use utils::wallet::Wallet;
-use sovtoken::utils::random::rand_string;
 use sovtoken::logic::config::output_mint_config::MintRequest;
 use sovtoken::logic::request::Request;
+
+
 
 // ***** HELPER METHODS *****
 
@@ -126,7 +128,7 @@ fn  valid_output_json() {
 fn valid_output_json_from_libindy() {
     sovtoken::api::sovtoken_init();
     let did = "Th7MpTaRZVRYnPiabds81Y";
-    let wallet = Wallet::new(&rand_string(7));
+    let wallet = Wallet::new();
     let outputs_str = VALID_OUTPUT_JSON;
     let (sender, receiver) = channel();
 
@@ -169,7 +171,7 @@ pub fn build_and_submit_mint_txn_works() {
 
     let pool_name = utils::pool::create_pool_ledger(pool_config);
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-    let wallet = utils::wallet::Wallet::new(&pool_name);
+    let wallet = utils::wallet::Wallet::new();
 
     let trustees = utils::did::add_multiple_trustee_dids(4, wallet.handle, pool_handle).unwrap();
 
