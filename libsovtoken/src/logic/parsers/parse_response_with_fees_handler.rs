@@ -73,7 +73,6 @@ pub struct Transaction {
     pub txn_type : String,
     #[serde(rename = "metadata")]
     pub meta_data: TransactionMetaData2,
-    pub data : TransactionData
 }
 
 /**
@@ -84,18 +83,6 @@ pub struct Transaction {
 pub struct TransactionMetaData2 {
     pub digest: String,
     pub req_id: u64//ReqId
-}
-
-/**
-    the nested type "data" in Transaction
-*/
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionData {
-//    pub alias: String,
-//    pub dest : String,
-//    #[serde(rename = "verkey")]
-//    pub ver_key : String,
 }
 
 /**
