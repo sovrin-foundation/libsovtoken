@@ -13,3 +13,4 @@ pub mod pool;
 pub mod mint;
 pub mod wallet;
 pub mod fees;
+pub mod get_utxo;

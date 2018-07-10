@@ -106,7 +106,7 @@ fn add_fees_json() {
 #[test]
 pub fn build_and_submit_set_fees() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();
@@ -133,7 +133,6 @@ pub fn build_and_submit_set_fees() {
     let parsed_result_json = parsed_result_json.as_object().unwrap();
     assert!(parsed_result_json.contains_key("202"));
     assert!(parsed_result_json.contains_key("101"));
-    assert!(!parsed_result_json.contains_key("100"));
     assert_eq!(parsed_result_json.get("202").unwrap().as_u64().unwrap(), 1);
     assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
 

@@ -282,18 +282,12 @@ pub fn build_and_submit_payment_req() {
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(payment_addresses[0].clone(), 30);
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &payment_addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
-
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    let utxo = value.get("txo").unwrap().as_str().unwrap();
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &payment_addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
@@ -306,7 +300,7 @@ pub fn build_and_submit_payment_req() {
             "amount": 10
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
 
@@ -339,7 +333,6 @@ pub fn build_and_submit_payment_req() {
 #[ignore]
 pub fn build_and_submit_payment_req_insufficient_funds() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
     indy::pool::Pool::set_protocol_version(2).unwrap();
 
     let pool_config = utils::pool::create_pool_config();
@@ -347,24 +340,16 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let wallet = Wallet::new();
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
-    let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+    let pa1 = utils::payment::address::generate(&wallet, None);
+    let pa2 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 30);
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
-
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
-
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    let utxo = value.get("txo").unwrap().as_str().unwrap();
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
@@ -377,7 +362,7 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
             "amount": 20
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
