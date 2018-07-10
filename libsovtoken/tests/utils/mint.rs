@@ -2,15 +2,17 @@ extern crate rust_indy_sdk as indy;
 extern crate serde_json;
 
 use std::collections::HashMap;
+use std::str::FromStr;
+
 use indy::ErrorCode;
-use utils;
 use sovtoken::utils::json_conversion::JsonDeserialize;
 use sovtoken::logic::request::Request;
-use std::str::FromStr;
 use sovtoken::logic::config::output_mint_config::MintRequest;
+use utils;
+use utils::did::NymRole;
 
 pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, did_trustee: &str) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
-    let trustees = utils::did::add_multiple_trustee_dids(3, wallet_handle, pool_handle, did_trustee).unwrap();
+    let trustees = utils::did::create_multiple_nym(wallet_handle, pool_handle, did_trustee, 3, NymRole::Trustee).unwrap();
     let mut dids = utils::did::did_str_from_trustees(&trustees);
     dids.insert(0, did_trustee);
 
