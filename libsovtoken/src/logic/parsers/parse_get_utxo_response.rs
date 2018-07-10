@@ -41,7 +41,7 @@ pub struct ParseGetUtxoResponseResult {
     pub identifier: String,
     pub req_id : ReqId,
     pub outputs : Outputs_,
-    #[serde(rename = "state_proof")]
+    #[serde(rename = "state_proof", skip_serializing_if = "Option::is_none")]
     pub state_proof : Option<StateProof>
 }
 
