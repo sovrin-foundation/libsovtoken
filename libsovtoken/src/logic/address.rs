@@ -23,6 +23,7 @@ use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use serde_json;
 use std::{io, str};
 
+// THESE should be moved to utils::constants::general
 pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
 pub static TXO_QUALIFIER: &str = "txo:sov:";
 
