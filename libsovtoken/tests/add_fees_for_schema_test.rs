@@ -26,16 +26,17 @@ pub fn build_and_submit_schema_with_fees() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new();
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 10);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -47,11 +48,9 @@ pub fn build_and_submit_schema_with_fees() {
         "101": 1
     }).to_string();
 
-    let dids = vec![did_trustee.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let (parsed_resp, schema_id, _) = _send_schema_with_fees(&did_trustee, GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    let (parsed_resp, schema_id, _) = _send_schema_with_fees(dids[0], GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
@@ -60,8 +59,8 @@ pub fn build_and_submit_schema_with_fees() {
 
     thread::sleep(time::Duration::from_millis(100));
 
-    let get_schema_req = indy::ledger::Ledger::build_get_schema_request(&did_trustee, &schema_id).unwrap();
-    let get_schema_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &get_schema_req).unwrap();
+    let get_schema_req = indy::ledger::Ledger::build_get_schema_request(dids[0], &schema_id).unwrap();
+    let get_schema_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_schema_req).unwrap();
     let (schema_id_get, _) = indy::ledger::Ledger::parse_get_schema_response(&get_schema_resp).unwrap();
     assert_eq!(schema_id, schema_id_get);
 
@@ -85,16 +84,17 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new();
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 9);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -106,11 +106,9 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
         "101": 1
     }).to_string();
 
-    let dids = vec![did_trustee.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let parsed_err = _send_schema_with_fees(&did_trustee, GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let parsed_err = _send_schema_with_fees(dids[0], GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
 
     let fees = json!({
@@ -133,16 +131,17 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new();
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 10);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -154,13 +153,11 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
         "101": 1
     }).to_string();
 
-    let dids = vec![did_trustee.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    _send_schema_with_fees(&did_trustee, GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    _send_schema_with_fees(dids[0], GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let _parsed_err = _send_schema_with_fees(&did_trustee, &(GVT_SCHEMA_NAME.to_owned() + "1"), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let _parsed_err = _send_schema_with_fees(dids[0], &(GVT_SCHEMA_NAME.to_owned() + "1"), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
     //TODO: this test should fail for a while until we get some vision on a ErrorCodes (both on parsing and new ones)
     assert!(false);

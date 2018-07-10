@@ -23,16 +23,17 @@ pub fn build_and_submit_attrib_with_fees() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new();
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 10);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -44,19 +45,17 @@ pub fn build_and_submit_attrib_with_fees() {
         "100": 1
     }).to_string();
 
-    let dids = vec![did_trustee.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let parsed_resp = _send_attrib_with_fees(&did_trustee, Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
     assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
     assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), pa1);
 
-    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(&did_trustee, &did_trustee, Some("endpoint"), None, None).unwrap();
-    let get_attrib_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &get_attrib_req).unwrap();
+    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(dids[0], dids[0], Some("endpoint"), None, None).unwrap();
+    let get_attrib_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_attrib_req).unwrap();
     let get_attrib_resp_json: serde_json::Value = serde_json::from_str(&get_attrib_resp).unwrap();
     assert_eq!(ATTRIB_RAW_DATA, get_attrib_resp_json.as_object().unwrap().get("result").unwrap().as_object().unwrap().get("data").unwrap().as_str().unwrap());
 
@@ -80,16 +79,17 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new();
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 9);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -101,11 +101,9 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
         "100": 1
     }).to_string();
 
-    let dids = vec![did_trustee.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let parsed_err = _send_attrib_with_fees(&did_trustee, Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
 
     let fees = json!({
@@ -128,16 +126,17 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
     let wallet = utils::wallet::Wallet::new();
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
     let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 10);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -149,23 +148,21 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
         "100": 1
     }).to_string();
 
-    let dids = vec![did_trustee.as_str()];
-
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let parsed_resp = _send_attrib_with_fees(&did_trustee, Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
     assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
     assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), pa1);
 
-    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(&did_trustee, &did_trustee, Some("endpoint"), None, None).unwrap();
-    let get_attrib_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &get_attrib_req).unwrap();
+    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(dids[0], dids[0], Some("endpoint"), None, None).unwrap();
+    let get_attrib_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_attrib_req).unwrap();
     let get_attrib_resp_json: serde_json::Value = serde_json::from_str(&get_attrib_resp).unwrap();
     assert_eq!(ATTRIB_RAW_DATA, get_attrib_resp_json.as_object().unwrap().get("result").unwrap().as_object().unwrap().get("data").unwrap().as_str().unwrap());
 
-    let _parsed_err = _send_attrib_with_fees(&did_trustee, Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let _parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
     //TODO: this test should fail for awhile until we get some vision on a ErrorCodes (both on parsing and new ones)
     assert!(false);
