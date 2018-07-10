@@ -133,7 +133,6 @@ pub fn build_and_submit_set_fees() {
     let parsed_result_json = parsed_result_json.as_object().unwrap();
     assert!(parsed_result_json.contains_key("202"));
     assert!(parsed_result_json.contains_key("101"));
-    assert!(!parsed_result_json.contains_key("100"));
     assert_eq!(parsed_result_json.get("202").unwrap().as_u64().unwrap(), 1);
     assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
 
