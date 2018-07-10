@@ -9,13 +9,8 @@ use sovtoken::utils::json_conversion::JsonDeserialize;
 use sovtoken::logic::request::Request;
 use sovtoken::logic::config::output_mint_config::MintRequest;
 use utils;
-use utils::did::NymRole;
 
-pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, did_trustee: &str) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
-    let trustees = utils::did::create_multiple_nym(wallet_handle, pool_handle, did_trustee, 3, NymRole::Trustee).unwrap();
-    let mut dids = utils::did::did_str_from_trustees(&trustees);
-    dids.insert(0, did_trustee);
-
+pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, trustee_dids: &Vec<&str>) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
     let vec_outputs:Vec<HashMap<&str, serde_json::Value>> = cfg.iter().map(|(pa, am)| {
         let mut map = HashMap::new();
         map.insert("paymentAddress", serde_json::Value::String(pa.clone()));
@@ -23,13 +18,15 @@ pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i
         map
     }).collect();
 
+    let did = trustee_dids[0];
+
     let json = serde_json::to_string(&vec_outputs).unwrap();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet_handle, did_trustee, &json)?;
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet_handle, did, &json)?;
 
-    let mint_req = Request::<MintRequest>::multi_sign_request(wallet_handle, &mint_req, dids)?;
+    let mint_req = Request::<MintRequest>::multi_sign_request(wallet_handle, &mint_req, trustee_dids.to_vec())?;
 
-    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, &did_trustee, &mint_req)?;
+    let result = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, did, &mint_req)?;
 
     utils::parse_mint_response::ParseMintResponse::from_json(&result).map_err(|_| ErrorCode::CommonInvalidStructure)
 }
