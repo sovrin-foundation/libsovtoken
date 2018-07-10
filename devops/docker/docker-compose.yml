@@ -2,6 +2,13 @@ version: "3"
 
 services:
 
+  base:
+    build:
+      context: ./base/$OSNAME
+      args:
+          - INDY_SDK_VERSION
+    image: ${LSTBASE_DOCKER_NAME}:${LSTBASE_DOCKER_TAG}
+
   ci:
     build:
       context: ./ci/$OSNAME
