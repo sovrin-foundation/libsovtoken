@@ -88,12 +88,12 @@ endif
 package: _check_fpm_args $(PRE_PACKAGE_GOALS)
 	$(FPM) $(FPM_ARGS)
 
-image_rust_base_version:
+image_rust_parent_version:
 	$(call check_defined,RUST_DOCKER_VERSION)
 	$(eval BASE_DOCKER_VERSION=$(call docker_from_version,'evernym/base',$(RUST_DOCKERFILE_PATH)))
 	echo $(BASE_DOCKER_VERSION)
 
-image_python3_base_version:
+image_python3_parent_version:
 	$(call check_defined,PYTHON3_DOCKER_VERSION)
 	$(eval BASE_DOCKER_VERSION=$(call docker_from_version,'evernym/base',$(PYTHON3_DOCKERFILE_PATH)))
 	echo $(BASE_DOCKER_VERSION)
@@ -105,11 +105,11 @@ image_base:
 	BASE_DOCKER_VERSION=$(BASE_DOCKER_VERSION) \
 		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build base
 
-image_rust: image_rust_base_version image_base
+image_rust: image_rust_parent_version image_base
 	RUST_DOCKER_VERSION=$(RUST_DOCKER_VERSION) \
 		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build rust
 
-image_python3: image_python3_base_version image_base
+image_python3: image_python3_parent_version image_base
 	PYTHON3_DOCKER_VERSION=$(PYTHON3_DOCKER_VERSION) \
 		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build python3
 

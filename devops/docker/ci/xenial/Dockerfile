@@ -1,34 +1,60 @@
-FROM evernym/rust:0.4.0-xenial
+FROM evernym/libsovtoken:0.1.0-xenial-base
 # TODO LABEL maintainer="Name <email-address>"
 
-ARG u_id=1000
-ARG u_name=user
+ARG indy_stream=master
+ARG indy_plenum_ver=1.4.419
+ARG indy_anoncreds_ver=1.0.32
+ARG indy_node_ver=1.4.480
+ARG python3_indy_crypto_ver=0.4.1
+ARG indy_crypto_ver=0.4.0
+ARG pool_ip=127.0.0.1
 
-ENV LIBINDY_DIR=/usr/lib
-ENV LIBSODIUM_LIB_DIR=/usr/lib
-ENV LIBSODIUM_INC_DIR=/usr/include
+USER root
 
-# install libsodium from the sources
-ENV LIBSODIUM_VERSION=1.0.14
-RUN cd /tmp \
-    && curl https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz \
-    && cd /tmp/libsodium-${LIBSODIUM_VERSION} \
-    && ./configure --prefix=/usr/local/ && make && make install \
-    && ldconfig \
-    && rm -rf /tmp/libsodium-${LIBSODIUM_VERSION}
-# need for libsodium to be reachable via pkg-config (sodiumoxide uses it)
-ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH # TODO ??? is it really needed
-
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
-    && echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends libssl-dev libindy \
+# python env necessary for indy-node
+RUN apt-get update && apt-get install -y \
+	    python3.5 \
+	    python3-pip \
+	    python-setuptools \
+    && pip3 install -U \
+	    setuptools \
+        'pip<10.0.0' \
+        setuptools \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -ms /bin/bash -u $u_id $u_name
-USER $u_name
+RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list \
+    && apt-get update && apt-get install -y \
+	    supervisor \
+        indy-plenum=${indy_plenum_ver} \
+        indy-anoncreds=${indy_anoncreds_ver} \
+        indy-node=${indy_node_ver} \
+        python3-indy-crypto=${python3_indy_crypto_ver} \
+        libindy-crypto=${indy_crypto_ver} \
+    && rm -rf /var/lib/apt/lists/*
 
-# TODO CMD ENTRYPOINT ...
-WORKDIR /home/$u_name
+COPY Evernym_Root_CA.crt /usr/local/share/ca-certificates/Evernym_Root_CA.crt
+COPY repo.corp.evenym.com-sig.key /tmp/repo.corp.evenym.com-sig.key
 
-ENV CI_ENV_VERSION=0.11.0
+#RUN update-ca-certificates \
+#    && apt-key add /tmp/repo.corp.evenym.com-sig.key \
+#    && echo "deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main" >> /etc/apt/sources.list \
+#    && apt-get update && apt-get install -y \
+#        sovtoken \
+#        sovtokenfees \
+#    && rm -rf /var/lib/apt/lists/*
+
+USER indy
+
+RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"")} else print($0)}' /etc/indy/indy_config.py> /tmp/indy_config.py \
+    && mv /tmp/indy_config.py /etc/indy/indy_config.py \
+    && generate_indy_pool_transactions --nodes 4 --clients 5 --nodeNum 1 2 3 4 --ips="$pool_ip,$pool_ip,$pool_ip,$pool_ip" \
+    && chmod -R a+rw /var/lib/indy /var/log/indy /etc/indy
+
+USER root
+
+COPY supervisord.conf /etc/supervisord.conf
+COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
+
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.12.0
+
+ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
