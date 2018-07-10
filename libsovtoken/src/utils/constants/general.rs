@@ -3,6 +3,9 @@
 use std::os::raw::c_char;
 
 pub static PAYMENT_METHOD_NAME: &str = "sov";
+pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
+pub static TXO_QUALIFIER: &str = "txo:sov:";
+
 pub const PROTOCOL_VERSION: u32 = 2;
 
 /**
