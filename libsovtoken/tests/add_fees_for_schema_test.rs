@@ -5,12 +5,11 @@ extern crate sovtoken;
 
 
 mod utils;
-
+use sovtoken::utils::random::rand_string;
 use std::{thread, time};
 use std::collections::HashMap;
 use indy::ErrorCode;
 
-pub const GVT_SCHEMA_NAME: &'static str = "gvt";
 pub const SCHEMA_VERSION: &'static str = "1.0";
 pub const GVT_SCHEMA_ATTRIBUTES: &'static str = r#"["name", "age", "sex", "height"]"#;
 
@@ -50,7 +49,7 @@ pub fn build_and_submit_schema_with_fees() {
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let (parsed_resp, schema_id, _) = _send_schema_with_fees(dids[0], GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    let (parsed_resp, schema_id, _) = _send_schema_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
@@ -108,7 +107,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let parsed_err = _send_schema_with_fees(dids[0], GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let parsed_err = _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
 
     let fees = json!({
@@ -155,9 +154,9 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    _send_schema_with_fees(dids[0], GVT_SCHEMA_NAME, SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let _parsed_err = _send_schema_with_fees(dids[0], &(GVT_SCHEMA_NAME.to_owned() + "1"), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let _parsed_err = _send_schema_with_fees(dids[0],rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
     //TODO: this test should fail for a while until we get some vision on a ErrorCodes (both on parsing and new ones)
     assert!(false);
