@@ -94,8 +94,8 @@ pub struct TransactionMetaData2 {
 pub struct TransactionData {
 //    pub alias: String,
     pub dest : String,
-    #[serde(rename = "verkey")]
-    pub ver_key : String,
+//    #[serde(rename = "verkey")]
+//    pub ver_key : String,
 }
 
 /**

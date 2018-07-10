@@ -286,14 +286,7 @@ pub fn build_and_submit_payment_req() {
 
     utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &payment_addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
-
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    let utxo = value.get("txo").unwrap().as_str().unwrap();
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &payment_addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
@@ -357,14 +350,7 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
 
     utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, &did_trustee, &pa1).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, &did_trustee, &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
-
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    let utxo = value.get("txo").unwrap().as_str().unwrap();
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
