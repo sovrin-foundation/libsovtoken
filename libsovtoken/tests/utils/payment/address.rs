@@ -6,7 +6,7 @@ For integration tests
 
 use indy::payments::Payment;
 use utils::wallet::Wallet;
-use sovtoken::api::PAYMENT_METHOD_NAME;
+use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
 
 /**
 Generate a address and store it in wallet.

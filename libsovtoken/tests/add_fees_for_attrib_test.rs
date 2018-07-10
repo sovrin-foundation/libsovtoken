@@ -14,7 +14,7 @@ pub const ATTRIB_RAW_DATA: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}
 #[test]
 pub fn build_and_submit_attrib_with_fees() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();
@@ -70,7 +70,7 @@ pub fn build_and_submit_attrib_with_fees() {
 #[ignore]
 pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();
@@ -117,7 +117,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
 #[ignore]
 pub fn build_and_submit_attrib_with_fees_double_spend() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();

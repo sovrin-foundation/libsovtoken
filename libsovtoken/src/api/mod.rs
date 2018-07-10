@@ -30,7 +30,7 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
-use utils::constants::general::JsonCallback;
+use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
@@ -868,9 +868,6 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     return ErrorCode::Success as i32;
 }
-
-// THIS should be moved to utils::constants::general
-pub static PAYMENT_METHOD_NAME: &str = "sov";
 
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
