@@ -106,7 +106,7 @@ fn add_fees_json() {
 #[test]
 pub fn build_and_submit_set_fees() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();

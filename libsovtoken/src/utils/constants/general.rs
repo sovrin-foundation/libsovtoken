@@ -2,7 +2,7 @@
 
 use std::os::raw::c_char;
 
-
+pub static PAYMENT_METHOD_NAME: &str = "sov";
 pub const PROTOCOL_VERSION: u32 = 2;
 
 /**
