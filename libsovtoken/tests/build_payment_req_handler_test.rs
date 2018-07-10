@@ -282,11 +282,12 @@ pub fn build_and_submit_payment_req() {
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(payment_addresses[0].clone(), 30);
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
+    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &payment_addresses[0]);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &payment_addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
@@ -299,7 +300,7 @@ pub fn build_and_submit_payment_req() {
             "amount": 10
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
 
@@ -345,11 +346,10 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 30);
 
-    let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
+    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
+    let dids = utils::did::did_str_from_trustees(&trustees);
 
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &did_trustee).unwrap();
-
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, &did_trustee, &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
@@ -362,7 +362,7 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
             "amount": 20
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, &did_trustee, &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
