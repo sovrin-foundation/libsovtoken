@@ -332,7 +332,6 @@ pub fn build_and_submit_payment_req() {
 #[ignore]
 pub fn build_and_submit_payment_req_insufficient_funds() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
     indy::pool::Pool::set_protocol_version(2).unwrap();
 
     let pool_config = utils::pool::create_pool_config();
@@ -340,8 +339,8 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let wallet = Wallet::new();
     let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
-    let pa2 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+    let pa1 = utils::payment::address::generate(&wallet, None);
+    let pa2 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 30);

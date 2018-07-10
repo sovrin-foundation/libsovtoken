@@ -21,7 +21,7 @@ pub fn build_and_submit_nym_with_fees() {
 
     let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+    let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 10);
@@ -91,7 +91,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
 
     let (did_trustee, _) = utils::did::initial_trustee(wallet.handle);
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, payment_method, "{}").unwrap();
+    let pa1 = utils::payment::address::generate(&wallet, None);
 
     let mut mint_cfg = HashMap::new();
     mint_cfg.insert(pa1.clone(), 10);
