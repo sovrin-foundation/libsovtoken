@@ -92,10 +92,7 @@ pub struct TransactionMetaData2 {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
-//    pub alias: String,
     pub dest : String,
-    #[serde(rename = "verkey")]
-    pub ver_key : String,
 }
 
 /**
