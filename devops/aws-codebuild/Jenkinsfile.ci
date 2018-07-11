@@ -27,8 +27,8 @@ pipelineWrapper({
 
             // TODO Aptly on repo.copr.evernym.com removes '+' signs
             // from debian packages making versions not accurate
-            def sovtoken_deb_version = "0.7.05.3_amd64.deb" // for 0.7.0+5.3
-            def sovtokenfees_deb_version = "0.7.05.3_amd64.deb" // for 0.7.0+5.3
+            def sovtoken_deb_version = "0.7.05.3" // for 0.7.0+5.3
+            def sovtokenfees_deb_version = "0.7.05.3" // for 0.7.0+5.3
 
             sh """
                 cd ./devops/docker/ci/xenial/
