@@ -6,7 +6,7 @@ extern crate sovtoken;
 mod utils;
 
 use std::collections::HashMap;
-use utils::get_utxo;
+use utils::payment::get_utxo;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
@@ -23,7 +23,7 @@ pub fn build_and_submit_nym_with_fees() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let utxo = utils::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -75,7 +75,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let utxo = utils::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{

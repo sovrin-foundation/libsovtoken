@@ -212,7 +212,7 @@ pub fn build_and_submit_mint_txn_works() {
     let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let utxos = utils::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
+    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
     assert_eq!(utxos[0].amount, 5);
     assert_eq!(utxos[0].payment_address, payment_addresses[0]);
 }
