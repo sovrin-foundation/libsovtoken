@@ -25,7 +25,7 @@ use rust_base58::{FromBase58, ToBase58};
 
 mod utils;
 use utils::wallet::Wallet;
-use std::collections::HashMap;
+use utils::setup::{SetupConfig, Setup};
 
 
 // ***** HELPER METHODS *****
@@ -270,23 +270,15 @@ fn success_signed_request_from_libindy() {
 
 #[test]
 pub fn build_and_submit_payment_req() {
-    sovtoken::api::sovtoken_init();
-    indy::pool::Pool::set_protocol_version(2).unwrap();
-
-    let pool_config = utils::pool::create_pool_config();
-    let pool_name = utils::pool::create_pool_ledger(Some(&pool_config));
     let wallet = Wallet::new();
-    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-
-    let payment_addresses = utils::payment::address::generate_n(&wallet, 2);
-
-    let mut mint_cfg = HashMap::new();
-    mint_cfg.insert(payment_addresses[0].clone(), 30);
-
-    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
-    let dids = utils::did::did_str_from_trustees(&trustees);
-
-    utils::mint::mint_tokens(mint_cfg, pool_handle, wallet.handle, &dids).unwrap();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 2,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![30])
+    });
+    let Setup {addresses: payment_addresses, pool_handle, trustees, ..} = setup;
+    let dids = trustees.dids();
 
     let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &payment_addresses[0]);
 
@@ -333,33 +325,26 @@ pub fn build_and_submit_payment_req() {
 #[test]
 #[ignore]
 pub fn build_and_submit_payment_req_insufficient_funds() {
-    sovtoken::api::sovtoken_init();
-    indy::pool::Pool::set_protocol_version(2).unwrap();
-
-    let pool_config = utils::pool::create_pool_config();
-    let pool_name = utils::pool::create_pool_ledger(Some(&pool_config));
     let wallet = Wallet::new();
-    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 2,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![30])
+    });
+    let Setup {addresses, pool_handle, trustees, ..} = setup;
+    let dids = trustees.dids();
 
-    let pa1 = utils::payment::address::generate(&wallet, None);
-    let pa2 = utils::payment::address::generate(&wallet, None);
-
-    let mut mint_cfg = HashMap::new();
-    mint_cfg.insert(pa1.clone(), 30);
-
-    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
-    let dids = utils::did::did_str_from_trustees(&trustees);
-
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &pa1);
+    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
         {
-            "paymentAddress": pa2,
+            "paymentAddress": addresses[1],
             "amount": 20
         },
         {
-            "paymentAddress": pa1,
+            "paymentAddress": addresses[0],
             "amount": 20
         }
     ]).to_string();

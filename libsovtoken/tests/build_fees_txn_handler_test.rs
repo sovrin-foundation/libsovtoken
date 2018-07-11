@@ -14,6 +14,8 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
+use utils::setup::{Setup, SetupConfig};
+use utils::wallet::Wallet;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _mint_req_json: *const c_char) -> i32 {
@@ -105,18 +107,16 @@ fn add_fees_json() {
 
 #[test]
 pub fn build_and_submit_set_fees() {
-    sovtoken::api::sovtoken_init();
     let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
-    let pc_str = utils::pool::create_pool_config();
-    let pool_config = Some(pc_str.as_str());
-    indy::pool::Pool::set_protocol_version(2).unwrap();
-
-    let pool_name = utils::pool::create_pool_ledger(pool_config);
-    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-    let wallet = utils::wallet::Wallet::new();
-
-    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
-    let dids = utils::did::did_str_from_trustees(&trustees);
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 0,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None
+    });
+    let Setup {pool_handle, trustees, ..} = setup;
+    let dids = trustees.dids();
 
     let fees = json!({
         "202": 1,
