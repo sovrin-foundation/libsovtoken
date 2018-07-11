@@ -7,8 +7,8 @@ mod utils;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 
-use std::collections::HashMap;
 use indy::ErrorCode;
+use sovtoken::logic::parsers::common::UTXO;
 
 pub const ATTRIB_RAW_DATA_2: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
 pub const ATTRIB_RAW_DATA: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
@@ -42,10 +42,10 @@ pub fn build_and_submit_attrib_with_fees() {
 
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
-    assert_eq!(parsed_resp_json.len(), 1);
-    assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
-    assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), addresses[0]);
+    let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
+    assert_eq!(parsed_utxos.len(), 1);
+    assert_eq!(parsed_utxos[0].amount, 9);
+    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
@@ -126,10 +126,10 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
 
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
-    assert_eq!(parsed_resp_json.len(), 1);
-    assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
-    assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), addresses[0]);
+    let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
+    assert_eq!(parsed_utxos.len(), 1);
+    assert_eq!(parsed_utxos[0].amount, 9);
+    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
