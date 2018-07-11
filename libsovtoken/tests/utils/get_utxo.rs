@@ -1,17 +1,19 @@
 extern crate rust_indy_sdk as indy;
 extern crate serde_json;
+extern crate sovtoken;
 
-pub fn get_first_utxo_for_payment_address(wallet_handle: i32, pool_handle: i32, did: &str, pa: &str) -> (String, u64, String) {
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet_handle, did, pa).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, did, &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
+use sovtoken::logic::parsers::common::UTXO;
+use utils::wallet::Wallet;
 
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    (
-        value.get("txo").unwrap().as_str().unwrap().to_string(),
-        value.get("amount").unwrap().as_u64().unwrap(),
-        value.get("paymentAddress").unwrap().as_str().unwrap().to_string()
-    )
+pub fn get_first_utxo_txo_for_payment_address(wallet: &Wallet, pool_handle: i32, did: &str, address: &str) -> String {
+    let mut utxos = send_get_utxo_request(wallet, pool_handle, did, address);
+    let utxo = utxos.remove(0);
+    utxo.txo
+}
+
+pub fn send_get_utxo_request(wallet: &Wallet, pool_handle: i32, did: &str, address: &str) -> Vec<UTXO> {
+    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, did, address).unwrap();
+    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, did, &req).unwrap();
+    let parsed_resp = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
+    serde_json::from_str(&parsed_resp).unwrap()
 }
