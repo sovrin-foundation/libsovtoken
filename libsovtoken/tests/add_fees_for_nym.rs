@@ -6,6 +6,7 @@ extern crate sovtoken;
 mod utils;
 
 use std::collections::HashMap;
+use utils::payment::get_utxo;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
@@ -22,14 +23,7 @@ pub fn build_and_submit_nym_with_fees() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, dids[0], &addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
-
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    let utxo = value.get("txo").unwrap().as_str().unwrap();
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -81,14 +75,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, dids[0], &addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
-
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    let utxo = value.get("txo").unwrap().as_str().unwrap();
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -121,14 +108,10 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
-    let (req, method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, dids[0], &addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &req).unwrap();
-    let res = indy::payments::Payment::parse_get_utxo_response(&method, &res).unwrap();
+    let utxos = get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
+    let utxo = &utxos[0];
 
-    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-    let utxos = res_parsed.as_array().unwrap();
     assert_eq!(utxos.len(), 1);
-    let value = utxos.get(0).unwrap().as_object().unwrap();
-    assert_eq!(value.get("paymentAddress").unwrap().as_str().unwrap(), addresses[0]);
-    assert_eq!(value.get("amount").unwrap().as_u64().unwrap(), 9);
+    assert_eq!(utxo.payment_address, addresses[0]);
+    assert_eq!(utxo.amount, 9);
 }

@@ -28,7 +28,7 @@ pub fn build_and_submit_schema_with_fees() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &addresses[0]);
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -78,7 +78,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &addresses[0]);
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
@@ -116,7 +116,7 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
     let Setup {addresses, pool_handle, trustees, ..} = setup;
     let dids = trustees.dids();
 
-    let (utxo, _, _) = utils::get_utxo::get_first_utxo_for_payment_address(wallet.handle, pool_handle, dids[0], &addresses[0]);
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
