@@ -148,7 +148,6 @@ pub struct Entity
 impl Entity {
     fn new((did, verkey): (String, String)) -> Self
     {
-        println!("did: {}, verkey: {}", did, verkey);
         Entity {
             did,
             verkey
