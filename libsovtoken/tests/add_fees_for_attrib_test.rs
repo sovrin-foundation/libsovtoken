@@ -9,6 +9,8 @@ use utils::setup::{Setup, SetupConfig};
 
 use indy::ErrorCode;
 use sovtoken::logic::parsers::common::UTXO;
+use sovtoken::utils::constants::txn_types::ATTRIB;
+
 
 pub const ATTRIB_RAW_DATA_2: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
 pub const ATTRIB_RAW_DATA: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
@@ -29,13 +31,11 @@ pub fn build_and_submit_attrib_with_fees() {
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
-    let outputs = json!([{
-        "paymentAddress": addresses[0],
-        "amount": 9
-    }]).to_string();
+    // No change amount in fees
+    let outputs = json!([]).to_string();
 
     let fees = json!({
-        "100": 1
+        ATTRIB: 10
     }).to_string();
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
@@ -43,16 +43,16 @@ pub fn build_and_submit_attrib_with_fees() {
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
     let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
-    assert_eq!(parsed_utxos.len(), 1);
-    assert_eq!(parsed_utxos[0].amount, 9);
-    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
+    assert_eq!(parsed_utxos.len(), 0);
+    /*assert_eq!(parsed_utxos[0].amount, 9);
+    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);*/
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
     assert_eq!(ATTRIB_RAW_DATA, data);
 
     let fees = json!({
-        "100": 0
+        ATTRIB: 0
     }).to_string();
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
@@ -90,7 +90,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
 
     let fees = json!({
-        "100": 0
+        ATTRIB: 0
     }).to_string();
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
@@ -141,7 +141,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     assert!(false);
 
     let fees = json!({
-        "100": 0
+        ATTRIB: 0
     }).to_string();
 
     utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
