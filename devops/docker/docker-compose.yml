@@ -1,4 +1,4 @@
-version: "3"
+version: "3.4"
 
 services:
 
@@ -12,4 +12,5 @@ services:
   ci:
     build:
       context: ./ci/$OSNAME
+      network: host
     image: ${CI_DOCKER_NAME}:${CI_DOCKER_TAG}

@@ -41,6 +41,7 @@ FPM_P_VENDOR := Evernym
 FPM_P_DESCRIPTION := libsovtoken writen in Rust
 FPM_P_NAME = $(LIBNAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
+FPM_P_DEPENDS = libindy
 FPM_P_OUTPUT_DIR = $(LIB_TARGET_DIR)
 FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 
@@ -96,6 +97,7 @@ image_ci_version:
 	echo $(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION',$(CI_DOCKERFILE_PATH))
 
 image_ci: image_ci_parent_version image_lstbase
+	$(eval DOCKER_OPTS=--network host)
 	$(eval DOCKER_TAG=$(if $(CI_DOCKER_TAG),$(CI_DOCKER_TAG), \
 		$(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION', \
 			$(CI_DOCKERFILE_PATH))-$(OSNAME)-ci))
@@ -117,15 +119,15 @@ rust_version:
 
 test_dry: $(SRC_DIR) rust_version
 	echo "Running tests in dry mode (compile, but don't run tests)"
-	cd $< && cargo clean && RUST_TEST_THREADS=1 RUST_BACKTRACE=1 cargo test $(CARGO_FLAGS) --no-run
+	cd $< && cargo clean && cargo update && RUST_TEST_THREADS=1 RUST_BACKTRACE=1 cargo test $(CARGO_FLAGS) --no-run
 
 test: $(SRC_DIR) rust_version
 	echo "Running tests"
-	cd $< && cargo clean && RUST_TEST_THREADS=1 RUST_BACKTRACE=1 RUST_LOG=trace cargo test $(CARGO_FLAGS)
+	cd $< && cargo clean && cargo update && RUST_TEST_THREADS=1 RUST_BACKTRACE=1 RUST_LOG=trace cargo test $(CARGO_FLAGS)
 
 build $(LIBS): $(SRC_DIR) rust_version
 	echo "Compiling the project"
-	cd $< && cargo clean && cargo build $(CARGO_FLAGS)
+	cd $< && cargo clean && cargo update && cargo build $(CARGO_FLAGS)
 
 pre_package: $(LIB_DYNAMIC)
 	rm -f $(LIB_TARGET_DIR)/$(LIBNAME)*$(SRC_VERSION)*.$(FPM_P_OUTPUT_TYPE)

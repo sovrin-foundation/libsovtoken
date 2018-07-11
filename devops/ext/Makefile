@@ -115,7 +115,7 @@ image_python3: image_python3_parent_version image_base
 
 %_in_docker: image_%
 	echo "Re-running goal $* in docker $(DOCKER_NAME):$(DOCKER_TAG)"
-	$(DOCKER) run --rm -t -u $(DOCKER_UID) \
+	$(DOCKER) run --rm $(DOCKER_OPTS) -t -u $(DOCKER_UID) \
 		-v $(PROJECT_DIR):/tmp/$(PROJECT_NAME) \
 		$(DOCKER_NAME):$(DOCKER_TAG) \
 		/bin/bash -cl \
