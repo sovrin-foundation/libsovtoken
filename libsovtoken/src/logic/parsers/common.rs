@@ -96,9 +96,9 @@ pub struct TransactionMetaData {
 */
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StateProof {
-    pub multi_signature : serde_json::Value,
-    pub root_hash : String,
-    pub proof_nodes : String
+    pub multi_signature : Option<serde_json::Value>,
+    pub root_hash : Option<String>,
+    pub proof_nodes : Option<String>
 }
 
 /**
@@ -219,11 +219,22 @@ mod common_tests {
     #[test]
     fn test_extraction_with_state_proof_present_with_insufficient_keys() {
         // Remove key `proof_nodes` from `state_proof`
-        let invalid_json1 = r#"{ "op" : "REPLY", "result": {"reqId": 83955, "state_proof": {"root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "multi_signature": {"participants": ["Gamma", "Delta", "Beta"], "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"}}, "type": "20001", "identifier": "6ouriXMZkLeHsuXrN1X1fd", "fees": {"1": 4, "10001": 8}}}"#;
-        test_invalid_json(invalid_json1);
+        let json1 = r#"{ "op" : "REPLY", "result": {"reqId": 83955, "state_proof": {"root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "multi_signature": {"participants": ["Gamma", "Delta", "Beta"], "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"}}, "type": "20001", "identifier": "6ouriXMZkLeHsuXrN1X1fd", "fees": {"1": 4, "10001": 8}}}"#;
+        let json_str = CString::new(json1).unwrap();
+        let json_str_ptr = json_str.as_ptr();
+        let (_, state_proof) = extract_result_and_state_proof_from_node_reply(json_str_ptr).unwrap();
+        assert!(state_proof.multi_signature.is_some());
+        assert!(state_proof.root_hash.is_some());
+        assert!(state_proof.proof_nodes.is_none());
+
         // Remove key `root_hash` from `state_proof`
-        let invalid_json2 = r#"{ "op" : "REPLY", "result": {"reqId": 83955, "state_proof": {"multi_signature": {"participants": ["Gamma", "Delta", "Beta"], "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"}}, "type": "20001", "identifier": "6ouriXMZkLeHsuXrN1X1fd", "fees": {"1": 4, "10001": 8}}}"#;
-        test_invalid_json(invalid_json2);
+        let json2 = r#"{ "op" : "REPLY", "result": {"reqId": 83955, "state_proof": {"multi_signature": {"participants": ["Gamma", "Delta", "Beta"], "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"}}, "type": "20001", "identifier": "6ouriXMZkLeHsuXrN1X1fd", "fees": {"1": 4, "10001": 8}}}"#;
+        let json_str = CString::new(json2).unwrap();
+        let json_str_ptr = json_str.as_ptr();
+        let (_, state_proof) = extract_result_and_state_proof_from_node_reply(json_str_ptr).unwrap();
+        assert!(state_proof.multi_signature.is_some());
+        assert!(state_proof.root_hash.is_none());
+        assert!(state_proof.proof_nodes.is_none());
     }
 
     #[test]
@@ -236,7 +247,7 @@ mod common_tests {
             json_str_ptr).unwrap();
 
         let expected_state_proof = StateProof {
-            multi_signature : json!({
+            multi_signature : Some(json!({
                 "participants": ["Gamma", "Delta", "Beta"],
                 "value": {
                     "timestamp": 1530059419,
@@ -246,9 +257,9 @@ mod common_tests {
                     "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy",
                 },
                 "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"
-            }),
-            root_hash : String::from("5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms"),
-            proof_nodes : String::from("29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ==")
+            })),
+            root_hash : Some(String::from("5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms")),
+            proof_nodes : Some(String::from("29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="))
         };
 
         let expected_result = json!({

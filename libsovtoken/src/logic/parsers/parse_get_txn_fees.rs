@@ -79,12 +79,24 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData {
         kvs: vec![(String::from(FEES), Some(fees.to_string()))]
     });
+    let proof_nodes = match state_proof.proof_nodes {
+        Some(o) => o,
+        None => return ErrorCode::CommonInvalidStructure
+    };
+    let root_hash = match state_proof.root_hash {
+        Some(o) => o,
+        None => return ErrorCode::CommonInvalidStructure
+    };
+    let multi_signature = match state_proof.multi_signature {
+        Some(o) => o,
+        None => return ErrorCode::CommonInvalidStructure
+    };
 
     let sp = vec![ParsedSP {
-        proof_nodes: state_proof.proof_nodes,
-        root_hash: state_proof.root_hash,
+        proof_nodes,
+        root_hash,
         kvs_to_verify,
-        multi_signature: state_proof.multi_signature,
+        multi_signature,
     }];
 
     match serde_json::to_string(&sp) {
