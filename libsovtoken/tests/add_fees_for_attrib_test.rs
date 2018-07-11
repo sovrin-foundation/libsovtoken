@@ -7,8 +7,8 @@ mod utils;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 
-use std::collections::HashMap;
 use indy::ErrorCode;
+use sovtoken::logic::parsers::common::UTXO;
 
 pub const ATTRIB_RAW_DATA_2: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
 pub const ATTRIB_RAW_DATA: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
@@ -42,15 +42,14 @@ pub fn build_and_submit_attrib_with_fees() {
 
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
-    assert_eq!(parsed_resp_json.len(), 1);
-    assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
-    assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), addresses[0]);
+    let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
+    assert_eq!(parsed_utxos.len(), 1);
+    assert_eq!(parsed_utxos[0].amount, 9);
+    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
 
-    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(dids[0], dids[0], Some("endpoint"), None, None).unwrap();
-    let get_attrib_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_attrib_req).unwrap();
-    let get_attrib_resp_json: serde_json::Value = serde_json::from_str(&get_attrib_resp).unwrap();
-    assert_eq!(ATTRIB_RAW_DATA, get_attrib_resp_json.as_object().unwrap().get("result").unwrap().as_object().unwrap().get("data").unwrap().as_str().unwrap());
+    let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
+    let data = get_data_from_attrib_reply(get_attrib_resp);
+    assert_eq!(ATTRIB_RAW_DATA, data);
 
     let fees = json!({
         "100": 0
@@ -127,15 +126,14 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
 
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
-    assert_eq!(parsed_resp_json.len(), 1);
-    assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
-    assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), addresses[0]);
+    let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
+    assert_eq!(parsed_utxos.len(), 1);
+    assert_eq!(parsed_utxos[0].amount, 9);
+    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
 
-    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(dids[0], dids[0], Some("endpoint"), None, None).unwrap();
-    let get_attrib_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_attrib_req).unwrap();
-    let get_attrib_resp_json: serde_json::Value = serde_json::from_str(&get_attrib_resp).unwrap();
-    assert_eq!(ATTRIB_RAW_DATA, get_attrib_resp_json.as_object().unwrap().get("result").unwrap().as_object().unwrap().get("data").unwrap().as_str().unwrap());
+    let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
+    let data = get_data_from_attrib_reply(get_attrib_resp);
+    assert_eq!(ATTRIB_RAW_DATA, data);
 
     let _parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
@@ -155,4 +153,18 @@ fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, poo
     let (attrib_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, did, &attrib_req_signed, inputs, outputs).unwrap();
     let attrib_resp = indy::ledger::Ledger::submit_request(pool_handle, &attrib_req_with_fees).unwrap();
     indy::payments::Payment::parse_response_with_fees(&pm, &attrib_resp)
+}
+
+fn send_get_attrib_req(wallet: &Wallet, pool_handle: i32, did: &str, target: &str, attribute: Option<&str>) -> String {
+    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(did, target, attribute, None, None).unwrap();
+    indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, did, &get_attrib_req).unwrap()
+}
+
+fn get_data_from_attrib_reply(reply: String) -> String {
+    let reply_value: serde_json::Value = serde_json::from_str(&reply).unwrap();
+    reply_value
+        .get("result").unwrap()
+        .get("data").unwrap()
+        .as_str().unwrap()
+        .to_owned()
 }
