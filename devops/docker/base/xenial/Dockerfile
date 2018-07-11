@@ -28,9 +28,17 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -ms /bin/bash -u $u_id $u_name
+ENV TEST_USER=$u_name
+ENV TEST_USER_UID=$u_id
+
+# fill cargo cache to speed up docker containers
+COPY Cargo.toml /tmp/libsovtoken/
+RUN chown -R ${u_name}:${u_name} /tmp/libsovtoken/
 USER $u_name
+RUN cd /tmp/libsovtoken \
+    && cargo update \
+    && rm -rf /tmp/libsovtoken/
 
 # TODO CMD ENTRYPOINT ...
-WORKDIR /home/$u_name
 
-ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.1.0
+ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.2.0
