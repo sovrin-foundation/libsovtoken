@@ -9,6 +9,7 @@ use std::{thread, time};
 use std::collections::HashMap;
 use indy::ErrorCode;
 use sovtoken::utils::random::rand_string;
+use utils::payment::fees;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
@@ -40,7 +41,7 @@ pub fn build_and_submit_schema_with_fees() {
         "101": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let (parsed_resp, schema_id, _, schema_resp) = _send_schema_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
@@ -61,7 +62,7 @@ pub fn build_and_submit_schema_with_fees() {
         "101": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
@@ -90,7 +91,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
         "101": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let parsed_err = _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
@@ -99,7 +100,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
         "101": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
@@ -128,7 +129,7 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
         "101": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
@@ -141,7 +142,7 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
         "100": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 fn _send_schema_with_fees(did: &str,

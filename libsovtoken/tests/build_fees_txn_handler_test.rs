@@ -14,6 +14,7 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
+use utils::payment::fees;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
@@ -123,8 +124,8 @@ pub fn build_and_submit_set_fees() {
         "101": 2
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
-    let current_fees = utils::fees::get_fees(&wallet, pool_handle, dids[0]);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+    let current_fees = fees::get_fees(&wallet, pool_handle, dids[0]);
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
     assert_eq!(current_fees_value["101"].as_u64().unwrap(), 2);
@@ -135,6 +136,6 @@ pub fn build_and_submit_set_fees() {
         "101": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
 
 }
