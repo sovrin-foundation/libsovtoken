@@ -22,6 +22,7 @@ use indy::ErrorCode;
 
 use utils::wallet::Wallet;
 use utils::parse_mint_response::ParseMintResponse;
+use utils::setup::{Setup, SetupConfig};
 
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
@@ -164,19 +165,15 @@ fn valid_output_json_from_libindy() {
 
 #[test]
 pub fn build_and_submit_mint_txn_works() {
-    sovtoken::api::sovtoken_init();
-    let pc_str = utils::pool::create_pool_config();
-    let pool_config = Some(pc_str.as_str());
-    indy::pool::Pool::set_protocol_version(2).unwrap();
-
-    let pool_name = utils::pool::create_pool_ledger(pool_config);
-    let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();
-    let wallet = utils::wallet::Wallet::new();
-
-    let trustees = utils::did::initial_trustees(4, wallet.handle, pool_handle).unwrap();
-    let dids = utils::did::did_str_from_trustees(&trustees);
-
-    let payment_addresses = utils::payment::address::generate_n(&wallet, 3);
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 3,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None
+    });
+    let Setup {addresses: payment_addresses, pool_handle, trustees, ..} = setup;
+    let dids = trustees.dids();
 
     let output_json = json!([
         {
