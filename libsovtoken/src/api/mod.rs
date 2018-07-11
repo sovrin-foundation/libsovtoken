@@ -30,7 +30,7 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
-use utils::constants::general::{JsonCallback};
+use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
@@ -66,7 +66,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  config_str: *const c_char,
                                                  cb: JsonCallback) -> i32 {
-    trace!("api::create_payment_address_handler >> wallet_handle: {:?}, config_str: {:?}", wallet_handle, config_str);
+
+    trace!("api::create_payment_address_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if config_str.is_null() {
@@ -81,6 +82,8 @@ pub extern "C" fn create_payment_address_handler(command_handle: i32,
             return ErrorCode::CommonInvalidStructure as i32
         },
     };
+
+    debug!("api::create_payment_address_handler >> wallet_handle: {:?}, config_str: {:?}", wallet_handle, json_config_str);
 
     // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
     // like { } as valid.  if we get any kind of serialization failure assume we can use the default
@@ -204,7 +207,7 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler >> wallet_handle: {:?}, did: {:?}, req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, did, req_json, inputs_json, outputs_json);
+    trace!("api::add_request_fees_handler called >> did (address) {:?}", did);
     let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -264,7 +267,7 @@ pub extern "C" fn parse_response_with_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::parse_response_with_fees_handler >> req_json: {:?}", req_json);
+    trace!("api::parse_response_with_fees_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if req_json.is_null() {
@@ -279,6 +282,8 @@ pub extern "C" fn parse_response_with_fees_handler(
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+
+    debug!("api::parse_response_with_fees_handler >> req_json: {:?}", resp_json_string);
 
     let response: ParseResponseWithFees = match ParseResponseWithFees::from_json(&resp_json_string).map_err(map_err_err!()) {
         Ok(r) => r,
@@ -361,7 +366,7 @@ pub extern "C" fn build_payment_req_handler(
     outputs_json: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-    trace!("api::build_payment_req_handler >> wallet_handle {:?}, submitter_did: {:?}, inputs_json: {:?}, outputs_json: {:?}", wallet_handle, submitter_did, inputs_json, outputs_json);
+    trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", submitter_did);
     let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -406,7 +411,7 @@ pub extern "C" fn parse_payment_response_handler(
     resp_json: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-    trace!("api::parse_payment_response_handler >> resp_json: {:?}", resp_json);
+    trace!("api::parse_payment_response_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if resp_json.is_null() {
@@ -422,7 +427,7 @@ pub extern "C" fn parse_payment_response_handler(
         }
     };
 
-    trace!("json is: {:?}", &resp_json_string);
+    debug!("api::parse_payment_response_handler >> resp_json: {:?}", &resp_json_string);
 
     let response: ParsePaymentResponse = match ParsePaymentResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {
@@ -473,7 +478,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  submitter_did: *const c_char,
                                                  payment_address: *const c_char,
                                                  cb: JsonCallback)-> i32 {
-    trace!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, submitter_did: {:?}, payment_address: {:?}", wallet_handle, submitter_did, payment_address);
+    trace!("api::build_get_utxo_request_handler called");
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
     let payment_address = match str_from_char_ptr(payment_address) {
@@ -491,6 +496,8 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
             return ErrorCode::CommonInvalidStructure as i32
         }
     };
+
+    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, submitter_did: {:?}, payment_address: {:?}", wallet_handle, did, payment_address);
 
     let did = match did.validate() {
         Ok(did_valid) => did_valid,
@@ -532,7 +539,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
     cb: JsonCallback
 )-> i32 {
 
-    trace!("api::parse_get_utxo_response_handler >> resp_json: {:?}", resp_json);
+    trace!("api::parse_get_utxo_response_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     if resp_json.is_null() {
@@ -548,6 +555,8 @@ pub extern "C" fn parse_get_utxo_response_handler(
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+
+    debug!("api::parse_get_utxo_response_handler >> resp_json: {:?}", resp_json_string);
 
     let response: ParseGetUtxoResponse = match ParseGetUtxoResponse::from_json(&resp_json_string)
         .map_err(map_err_err!()) {
@@ -609,7 +618,7 @@ pub extern "C" fn build_set_txn_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::build_set_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}, fees_json: {:?}", wallet_handle, submitter_did, fees_json);
+    trace!("api::build_set_txn_fees_handler called >> wallet_handle {}", wallet_handle);
     let (did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
         fees_json,
@@ -662,7 +671,7 @@ pub extern "C" fn build_get_txn_fees_handler(
 ) -> i32 {
 
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-    trace!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, submitter_did);
+    trace!("api::build_get_txn_fees_handler called");
 
     if cb.is_none() {
         return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32;
@@ -676,6 +685,8 @@ pub extern "C" fn build_get_txn_fees_handler(
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+
+    debug!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, did);
 
     let did = match did.validate() {
         Ok(d) => d,
@@ -721,7 +732,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
 )-> i32{
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
-    trace!("api::parse_get_txn_fees_response_handler >> resp_json: {:?}", resp_json);
+    trace!("api::parse_get_txn_fees_response_handler called");
     if resp_json.is_null() {
         return ErrorCode::CommonInvalidStructure as i32;
     }
@@ -733,7 +744,10 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+
+    debug!("api::parse_get_txn_fees_response_handler >> resp_json: {:?}", resp_json_string);
     debug!("Deserialized parse_get_txn_fees_response_handler arguments");
+
     let fees_json_obj =
         match parse_fees_from_get_txn_fees_response(resp_json_string){
             Ok(s) => {
@@ -784,7 +798,7 @@ pub extern "C" fn build_mint_txn_handler(
     cb: JsonCallback
 ) -> i32
 {
-    trace!("api::build_mint_txn_handle >> wallet_handle: {:?}, did: {:?}, outputs_json: {:?}", wallet_handle, submitter_did, outputs_json);
+    trace!("api::build_mint_txn_handle called >> wallet_handle {}", wallet_handle);
     let (did, outputs, cb) = match minting::deserialize_inputs(
         submitter_did,
         outputs_json,
@@ -796,6 +810,7 @@ pub extern "C" fn build_mint_txn_handler(
             return e as i32
         },
     };
+
     debug!("Deserialized build_mint_txn_handler arguments.");
 
     let mint_request = match minting::build_mint_request(did, outputs) {
@@ -853,8 +868,6 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     return ErrorCode::Success as i32;
 }
-
-pub static PAYMENT_METHOD_NAME: &str = "sov";
 
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk

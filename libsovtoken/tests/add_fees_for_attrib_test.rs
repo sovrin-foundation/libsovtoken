@@ -15,7 +15,7 @@ pub const ATTRIB_RAW_DATA: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}
 
 #[test]
 pub fn build_and_submit_attrib_with_fees() {
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -62,7 +62,7 @@ pub fn build_and_submit_attrib_with_fees() {
 #[test]
 #[ignore]
 pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -100,7 +100,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
 #[test]
 #[ignore]
 pub fn build_and_submit_attrib_with_fees_double_spend() {
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,

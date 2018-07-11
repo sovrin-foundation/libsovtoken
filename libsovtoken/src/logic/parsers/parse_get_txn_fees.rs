@@ -51,7 +51,7 @@ pub struct ParseGetTxnFeesResult {
     pub txn_type : String,
     pub fees : HashMap<String, TokenAmount>,
     // This is being renamed back to the snake case because that is what the JSON object key expects
-    #[serde(rename = "state_proof")]
+    #[serde(rename = "state_proof", skip_serializing_if = "Option::is_none")]
     pub state_proof : Option<StateProof>
 }
 

@@ -46,7 +46,10 @@ FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 
 # docker related variables
 DOCKER_NAME ?= evernym/libsovtoken
-DOCKER_TAG ?=
+CI_DOCKER_TAG ?=
+LSTBASE_DOCKER_TAG ?=
+
+LSTBASE_DOCKERFILE_PATH = docker/base/$(OSNAME)/Dockerfile
 CI_DOCKERFILE_PATH = docker/ci/$(OSNAME)/Dockerfile
 
 EXPORT_ENV += OSNAME RELEASE CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
@@ -59,24 +62,53 @@ include ext/Makefile
 
 export OSNAME
 
-image_ci_base_version:
-	$(eval RUST_DOCKER_VERSION=$(call docker_from_version,'evernym/rust',$(CI_DOCKERFILE_PATH)))
+
+##########################
+# libsovtoken base image #
+# ###################### #
+
+image_lstbase_parent_version:
+	$(eval RUST_DOCKER_VERSION=$(call docker_from_version,'evernym/rust', \
+		$(LSTBASE_DOCKERFILE_PATH)))
 	echo $(RUST_DOCKER_VERSION)
 
-image_ci_version:
-	echo $(call docker_env_value,'CI_ENV_VERSION',$(CI_DOCKERFILE_PATH))
+image_lstbase_version:
+	echo $(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION',$(LSTBASE_DOCKERFILE_PATH))
 
-image_ci: image_ci_base_version image_rust
-ifeq ($(DOCKER_TAG),)
-	$(eval DOCKER_TAG=$(call docker_env_value,'CI_ENV_VERSION',$(CI_DOCKERFILE_PATH))-$(OSNAME)-ci)
-endif
+image_lstbase: image_lstbase_parent_version image_rust
+	$(eval DOCKER_TAG=$(if $(LSTBASE_DOCKER_TAG),$(LSTBASE_DOCKER_TAG), \
+		$(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION', \
+			$(LSTBASE_DOCKERFILE_PATH))-$(OSNAME)-base))
+	OSNAME=$(OSNAME) \
+	LSTBASE_DOCKER_NAME=$(DOCKER_NAME) \
+	LSTBASE_DOCKER_TAG=$(DOCKER_TAG) \
+		docker-compose -f docker/docker-compose.yml build base
+
+##########################
+# libsovtoken ci image #
+# ###################### #
+
+image_ci_parent_version:
+	$(eval LSTBASE_DOCKER_TAG=$(call docker_from_tag,'evernym/libsovtoken',$(CI_DOCKERFILE_PATH)))
+	echo $(LSTBASE_DOCKER_TAG)
+
+image_ci_version:
+	echo $(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION',$(CI_DOCKERFILE_PATH))
+
+image_ci: image_ci_parent_version image_lstbase
+	$(eval DOCKER_TAG=$(if $(CI_DOCKER_TAG),$(CI_DOCKER_TAG), \
+		$(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION', \
+			$(CI_DOCKERFILE_PATH))-$(OSNAME)-ci))
 	OSNAME=$(OSNAME) \
 	CI_DOCKER_NAME=$(DOCKER_NAME) \
 	CI_DOCKER_TAG=$(DOCKER_TAG) \
 		docker-compose -f docker/docker-compose.yml build ci
+######
 
-CI_IMAGE_BASED_TARGETS = test_dry test build $(LIBS) package publish_crate clean
+LSTBASE_IMAGE_BASED_TARGETS = build $(LIBS) package publish_crate clean
+$(patsubst %,image_%, $(LSTBASE_IMAGE_BASED_TARGETS)): image_lstbase
 
+CI_IMAGE_BASED_TARGETS = test_dry test
 $(patsubst %,image_%, $(CI_IMAGE_BASED_TARGETS)): image_ci
 
 rust_version:

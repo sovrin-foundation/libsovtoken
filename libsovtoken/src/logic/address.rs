@@ -17,14 +17,13 @@
 */
 
 use rust_base58::{ToBase58, FromBase58, CHECKSUM_LEN};
-use indy::ErrorCode;
-use logic::parsers::common::TXO;
-use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use serde_json;
 use std::{io, str};
 
-pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
-pub static TXO_QUALIFIER: &str = "txo:sov:";
+use indy::ErrorCode;
+use logic::parsers::common::TXO;
+use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+use utils::constants::general::{PAYMENT_ADDRESS_QUALIFIER, TXO_QUALIFIER};
 
 // Following lengths are in bytes
 pub const VERKEY_LEN: usize = 32;
@@ -227,6 +226,7 @@ pub fn strip_qualifier_from_address(address : &str) -> String {
 #[cfg(test)]
 pub mod address_tests {
     use utils::random::rand_bytes;
+    use utils::constants::general::PAYMENT_ADDRESS_QUALIFIER;
 
     use super::*;
 

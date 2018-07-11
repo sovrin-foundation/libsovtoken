@@ -10,7 +10,7 @@ use std::collections::HashMap;
 #[test]
 pub fn build_and_submit_nym_with_fees() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();
@@ -79,7 +79,7 @@ pub fn build_and_submit_nym_with_fees() {
 #[ignore]
 pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     sovtoken::api::sovtoken_init();
-    let payment_method = sovtoken::api::PAYMENT_METHOD_NAME;
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let pc_str = utils::pool::create_pool_config();
     let pool_config = Some(pc_str.as_str());
     indy::pool::Pool::set_protocol_version(2).unwrap();

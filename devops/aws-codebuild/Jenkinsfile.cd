@@ -18,9 +18,9 @@ pipelineWrapper({
         def cratePVersion
         def goals = ['package']
 
-        def ciImageTag
+        def buildImageTag
         def osname = 'xenial'
-        def prTag = "ci-$osname" // use ci project
+        def prTag = "cd-$osname"
 
         stage('Checkout sources from SCM') {
             checkout scm
@@ -62,9 +62,9 @@ pipelineWrapper({
         }
 
         stage("$osname: Resolve image tag") {
-            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_ci_version -s")
-            ciImageTag = "${_imgVersion}-${osname}-ci"
-            logger.info("CI docker image tag: $ciImageTag")
+            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lstbase_version -s")
+            buildImageTag = "${_imgVersion}-${osname}-cd"
+            logger.info("CD docker image tag: $buildImageTag")
         }
 
         stage('Upload source to S3') {
@@ -72,25 +72,22 @@ pipelineWrapper({
         }
 
         awsCBHelper.build() {
-            projectTag = "ci-$osname"
-
-            // TODO shouldn't create/update CodeBuild project assuming that CI did this before
-            // and no changes in settings have appeared
+            projectTag = prTag
 
             // build spec for env image
             envBuildSrc = ['devops'] // TODO make more accurate
             envBuildCmds = [
                 'export PROJECT_DIR=$PWD',
-                'make -C devops image_ci'
+                'make -C devops image_lstbase'
             ]
             envBuildEnvv = [
                 [name: 'OSNAME', value: osname],
                 [name: 'DOCKER_NAME', value: "$awsCBHelper.buildCtx.projectName"],
-                [name: 'DOCKER_TAG', value: ciImageTag],
+                [name: 'LSTBASE_DOCKER_TAG', value: buildImageTag],
             ]
 
             // env and build spec
-            imageTag = ciImageTag
+            imageTag = buildImageTag
             buildspec = 'devops/aws-codebuild/buildspec.yml'
             envv = [
                 [name: 'OSNAME', value: osname],
