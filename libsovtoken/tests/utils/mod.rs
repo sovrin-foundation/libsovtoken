@@ -9,6 +9,7 @@ pub mod did;
 pub mod environment;
 pub mod fees;
 pub mod get_utxo;
+pub mod ledger;
 pub mod mint;
 pub mod parse_mint_response;
 pub mod payment;

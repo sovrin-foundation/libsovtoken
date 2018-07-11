@@ -7,6 +7,7 @@ extern crate rust_base58;
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
+extern crate rust_indy_sdk;
 
 use indy::ErrorCode;
 use indy::utils::results::ResultHandler;
