@@ -6,6 +6,7 @@ extern crate sovtoken;
 mod utils;
 
 use std::collections::HashMap;
+use utils::payment::fees;
 use utils::payment::get_utxo;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
@@ -35,7 +36,7 @@ pub fn build_and_submit_nym_with_fees() {
         "1": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
 
@@ -59,7 +60,7 @@ pub fn build_and_submit_nym_with_fees() {
         "1": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
@@ -87,7 +88,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
         "1": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
 
@@ -106,7 +107,7 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
         "1": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let utxos = get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
     let utxo = &utxos[0];

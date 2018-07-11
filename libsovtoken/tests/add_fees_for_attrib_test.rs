@@ -4,8 +4,9 @@ extern crate rust_indy_sdk as indy;
 extern crate sovtoken;
 
 mod utils;
-use utils::wallet::Wallet;
+use utils::payment::fees;
 use utils::setup::{Setup, SetupConfig};
+use utils::wallet::Wallet;
 
 use indy::ErrorCode;
 use sovtoken::logic::parsers::common::UTXO;
@@ -38,7 +39,7 @@ pub fn build_and_submit_attrib_with_fees() {
         "100": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
@@ -55,7 +56,7 @@ pub fn build_and_submit_attrib_with_fees() {
         "100": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
@@ -84,7 +85,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
         "100": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
@@ -93,7 +94,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
         "100": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
@@ -122,7 +123,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
         "100": 1
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
@@ -144,7 +145,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
         "100": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
