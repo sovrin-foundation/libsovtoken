@@ -21,6 +21,22 @@ pipelineWrapper({
             checkout scm
         }
 
+        stage('Download sovtoken debs') {
+            // TODO remove that code once repo.corp evernym.com
+            // become available from AWS CodeBuild
+
+            // TODO Aptly on repo.copr.evernym.com removes '+' signs
+            // from debian packages making versions not accurate
+            def sovtoken_deb_version = "0.7.05.3_amd64.deb" // for 0.7.0+5.3
+            def sovtokenfees_deb_version = "0.7.05.3_amd64.deb" // for 0.7.0+5.3
+
+            sh """
+                cd ./devops/docker/ci/xenial/
+                wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
+                wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtokenfees/sovtokenfees_${sovtoken_deb_version}_amd64.deb
+            """
+        }
+
         def utils = evLibrary.Utils.new(this)
         // TODO Cargo.toml is necessary only for variable in makefile which is not used for that context, thus
         // shouldn't be taken into account when deciding to rebuild docker images
@@ -59,9 +75,9 @@ pipelineWrapper({
                         'export PROJECT_DIR=$PWD',
                         'make -C devops image_ci'
                     ]
+                    envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
                     envBuildEnvv = [
                         [name: 'OSNAME', value: osname],
-                        [name: 'DOCKER_NAME', value: "$awsCBHelper.buildCtx.projectName"],
                         [name: 'CI_DOCKER_TAG', value: buildImageTag],
                     ]
 

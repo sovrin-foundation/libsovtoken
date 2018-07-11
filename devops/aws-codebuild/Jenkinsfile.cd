@@ -80,9 +80,9 @@ pipelineWrapper({
                 'export PROJECT_DIR=$PWD',
                 'make -C devops image_lstbase'
             ]
+            envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
             envBuildEnvv = [
                 [name: 'OSNAME', value: osname],
-                [name: 'DOCKER_NAME', value: "$awsCBHelper.buildCtx.projectName"],
                 [name: 'LSTBASE_DOCKER_TAG', value: buildImageTag],
             ]
 
