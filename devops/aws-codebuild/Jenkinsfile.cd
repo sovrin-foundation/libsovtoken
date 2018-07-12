@@ -75,7 +75,7 @@ pipelineWrapper({
             projectTag = prTag
 
             // build spec for env image
-            envBuildSrc = ['devops'] // TODO make more accurate
+            envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
             envBuildCmds = [
                 'export PROJECT_DIR=$PWD',
                 'make -C devops image_lstbase'

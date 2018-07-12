@@ -75,7 +75,7 @@ pipelineWrapper({
                     ]
 
                     // build spec for env image
-                    envBuildSrc = ['devops'] // TODO make more accurate
+                    envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
                     envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
                     envBuildCmds = [
                         'export PROJECT_DIR=$PWD',
