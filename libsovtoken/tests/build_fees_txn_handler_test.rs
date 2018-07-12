@@ -116,8 +116,8 @@ pub fn build_and_submit_set_fees() {
         num_users: 0,
         mint_tokens: None
     });
-    let Setup {pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
 
     let fees = json!({
         "202": 1,

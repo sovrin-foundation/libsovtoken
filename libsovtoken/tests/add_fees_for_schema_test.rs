@@ -26,8 +26,10 @@ pub fn build_and_submit_schema_with_fees() {
         num_users: 0,
         mint_tokens: Some(vec![10])
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -76,8 +78,10 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
         num_users: 0,
         mint_tokens: Some(vec![9])
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -114,8 +118,10 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
         num_users: 0,
         mint_tokens: Some(vec![10])
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
