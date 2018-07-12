@@ -359,3 +359,50 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
 }
+
+#[test]
+#[ignore]
+pub fn build_and_submit_payment_req_with_spent_utxo() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 3,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![30, 10])
+    });
+    let Setup {addresses, pool_handle, trustees, ..} = setup;
+    let dids = trustees.dids();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[1]);
+
+    let inputs = json!([utxo_2]).to_string();
+    let outputs = json!([
+        {
+            "paymentAddress": addresses[0],
+            "amount": 10
+        }
+    ]).to_string();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
+    indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
+
+    //lets try to spend spent utxo while there are enough funds on the unspent one
+    let inputs = json!([utxo_2, utxo]).to_string();
+    let outputs = json!([{
+        "paymentAddress": addresses[2],
+        "amount": 20
+    }]).to_string();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
+    //TODO: it shouldn't be an err, it should be just a response to parse. When it will not timeout, uncomment the next line and fix the error code in assert
+    let err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
+//    assert_eq!(err, ErrorCode::PaymentUTXOAlreadySpentError);
+
+    //utxo should stay unspent!
+    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
+    assert_eq!(utxos.len(), 2);
+    let first_old = utxos[0].txo == utxo;
+    let second_old = utxos[1].txo == utxo;
+    assert!(first_old || second_old);
+}
