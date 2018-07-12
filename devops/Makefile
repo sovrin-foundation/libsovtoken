@@ -55,7 +55,11 @@ CI_DOCKERFILE_PATH = docker/ci/$(OSNAME)/Dockerfile
 
 EXPORT_ENV += OSNAME RELEASE CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
 
-.PHONY: all rust_version test_dry test build pre_package clean
+.PHONY: all \
+		image_lstbase_parent_version image_lstbase_version image_lstbase \
+		image_ci_parent_version image_ci_version image_ci \
+		rust_version test_dry test build pre_package publish_crate clean
+
 
 all: test_dry test package
 
@@ -76,7 +80,10 @@ image_lstbase_parent_version:
 image_lstbase_version:
 	echo $(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION',$(LSTBASE_DOCKERFILE_PATH))
 
-image_lstbase: image_lstbase_parent_version image_rust
+docker/base/$(OSNAME)/Cargo.toml: $(SRC_DIR)/Cargo.toml docker/base/$(OSNAME)
+	$(CP) -f $< $@ 
+
+image_lstbase: image_lstbase_parent_version image_rust docker/base/$(OSNAME)/Cargo.toml
 	$(eval DOCKER_TAG=$(if $(LSTBASE_DOCKER_TAG),$(LSTBASE_DOCKER_TAG), \
 		$(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION', \
 			$(LSTBASE_DOCKERFILE_PATH))-$(OSNAME)-base))
