@@ -3,12 +3,22 @@
 */
 
 use libc::c_char;
-use utils::ffi_support::str_from_char_ptr;
 use std::char;
-use std::error::Error;
-use std::fmt;
 use rust_base58::{FromBase58Error, FromBase58};
+use utils::ffi_support::str_from_char_ptr;
 
+/**
+    Enum which holds possible errors with the did.
+
+    The possible errors include:
+    - `DidError::InvalidLength<usize>`
+    - `DidError::InvalidChar<char>`
+*/
+#[derive(Debug, PartialEq, Eq)]
+pub enum DidError {
+    InvalidLength(usize),
+    InvalidChar(char),
+}
 
 /**
     A struct which holds the did.
@@ -67,41 +77,31 @@ impl<'a> From<Did<'a>> for String {
 }
 
 
-/**
-    Enum which holds possible errors with the did.
-
-    The possible errors include:
-    - `DidError::InvalidLength<usize>`
-    - `DidError::InvalidChar<char>`
-*/
-#[derive(Debug, PartialEq, Eq)]
-pub enum DidError {
-    InvalidLength(usize),
-    InvalidChar(char),
-}
-
-impl fmt::Display for DidError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return write!(f, "{}", self);
-    }
-}
-
-impl Error for DidError {
-    fn description(&self) -> &str {
-        match self {
-            &DidError::InvalidLength(_) => "Invalid did length.",
-            &DidError::InvalidChar(_) => "Invalid char in did.",
-        }
-    }
-}
-
-
 #[cfg(test)]
 mod test_did_validation {
-    use super::*;
-    use utils::ffi_support::c_pointer_from_str;
+
     use rust_base58::ToBase58;
+    use std::error::Error;
+    use std::fmt;
     use std::ptr;
+
+    use utils::ffi_support::c_pointer_from_str;
+    use super::*;
+
+    impl fmt::Display for DidError {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            return write!(f, "{}", self);
+        }
+    }
+
+    impl Error for DidError {
+        fn description(&self) -> &str {
+            match self {
+                &DidError::InvalidLength(_) => "Invalid did length.",
+                &DidError::InvalidChar(_) => "Invalid char in did.",
+            }
+        }
+    }
 
     #[test]
     fn did_invalid_length() {
