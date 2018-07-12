@@ -5,6 +5,7 @@ services:
   base:
     build:
       context: ./base/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - INDY_SDK_VERSION
     image: ${LSTBASE_DOCKER_NAME}:${LSTBASE_DOCKER_TAG}
@@ -12,5 +13,5 @@ services:
   ci:
     build:
       context: ./ci/$OSNAME
-      network: host
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
     image: ${CI_DOCKER_NAME}:${CI_DOCKER_TAG}
