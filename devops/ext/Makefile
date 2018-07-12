@@ -113,10 +113,13 @@ image_python3: image_python3_parent_version image_base
 	PYTHON3_DOCKER_VERSION=$(PYTHON3_DOCKER_VERSION) \
 		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build python3
 
-%_in_docker: image_%
+# target default implementation
+%_in_docker_opts: ;
+
+%_in_docker: image_% %_in_docker_opts
 	echo "Re-running goal $* in docker $(DOCKER_NAME):$(DOCKER_TAG)"
-	$(DOCKER) run --rm $(DOCKER_OPTS) -t -u $(DOCKER_UID) \
-		-v $(PROJECT_DIR):/tmp/$(PROJECT_NAME) \
+	$(DOCKER) run --rm -t -u $(DOCKER_UID) \
+		-v $(PROJECT_DIR):/tmp/$(PROJECT_NAME) $(DOCKER_OPTS) \
 		$(DOCKER_NAME):$(DOCKER_TAG) \
 		/bin/bash -cl \
 			'MAKEFLAGS="$(MAKEFLAGS)" $(foreach var,$(EXPORT_ENV),$(var)="$($(var))") \
