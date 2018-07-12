@@ -83,6 +83,8 @@ pub enum DidError {
 mod test_did_validation {
 
     use rust_base58::ToBase58;
+    use std::error::Error;
+    use std::fmt;
     use std::ptr;
 
     use utils::ffi_support::c_pointer_from_str;
