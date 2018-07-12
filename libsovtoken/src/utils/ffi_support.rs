@@ -110,9 +110,10 @@ mod ffi_support_tests {
     use std::ptr;
     use std::ffi::CString;
     use serde_json::Value;
+    use indy::ErrorCode;
     use utils::general::ResultExtension;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr, c_pointer_from_string, string_from_char_ptr};
-    use indy::ErrorCode;
+
 
     static VALID_DUMMY_JSON: &'static str = r#"{"field1":"data"}"#;
 

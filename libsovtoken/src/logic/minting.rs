@@ -1,15 +1,23 @@
-use indy::ErrorCode;
+//!
+
 use libc::c_char;
+use serde_json;
+
+
+use indy::ErrorCode;
+
 use logic::address;
 use logic::config::output_mint_config::MintRequest;
 use logic::did::Did;
-use serde_json;
+use logic::output::Outputs;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::{string_from_char_ptr};
-use logic::output::Outputs;
 
 type DeserializedArguments<'a> = (Did<'a>, Outputs, JsonCallbackUnwrapped);
 
+/**
+
+*/
 pub fn deserialize_inputs<'a>(
     did: *const c_char,
     outputs_json: *const c_char,
@@ -61,12 +69,14 @@ pub fn build_mint_request(
 
 #[cfg(test)]
 mod test_build_mint_request {
-    use super::*;
-    use logic::output::Output;
     use rust_base58::ToBase58;
+
+    use logic::output::Output;
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_str};
     use utils::test::default;
+
+    use super::*;
 
     pub fn call_deserialize_inputs<'a>(
         did: Option<*const c_char>,
