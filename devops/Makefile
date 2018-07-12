@@ -53,6 +53,8 @@ LSTBASE_DOCKER_TAG ?=
 LSTBASE_DOCKERFILE_PATH = docker/base/$(OSNAME)/Dockerfile
 CI_DOCKERFILE_PATH = docker/ci/$(OSNAME)/Dockerfile
 
+DOCKER_BUILD_NETWORK ?= host
+
 EXPORT_ENV += OSNAME RELEASE CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
 
 .PHONY: all \
@@ -81,13 +83,14 @@ image_lstbase_version:
 	echo $(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION',$(LSTBASE_DOCKERFILE_PATH))
 
 docker/base/$(OSNAME)/Cargo.toml: $(SRC_DIR)/Cargo.toml docker/base/$(OSNAME)
-	$(CP) -f $< $@ 
+	$(CP) -f $< $@
 
 image_lstbase: image_lstbase_parent_version image_rust docker/base/$(OSNAME)/Cargo.toml
 	$(eval DOCKER_TAG=$(if $(LSTBASE_DOCKER_TAG),$(LSTBASE_DOCKER_TAG), \
 		$(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION', \
 			$(LSTBASE_DOCKERFILE_PATH))-$(OSNAME)-base))
 	OSNAME=$(OSNAME) \
+	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
 	LSTBASE_DOCKER_NAME=$(DOCKER_NAME) \
 	LSTBASE_DOCKER_TAG=$(DOCKER_TAG) \
 		docker-compose -f docker/docker-compose.yml build base
@@ -104,14 +107,15 @@ image_ci_version:
 	echo $(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION',$(CI_DOCKERFILE_PATH))
 
 image_ci: image_ci_parent_version image_lstbase
-	$(eval DOCKER_OPTS=--network host)
 	$(eval DOCKER_TAG=$(if $(CI_DOCKER_TAG),$(CI_DOCKER_TAG), \
 		$(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION', \
 			$(CI_DOCKERFILE_PATH))-$(OSNAME)-ci))
 	OSNAME=$(OSNAME) \
+	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
 	CI_DOCKER_NAME=$(DOCKER_NAME) \
 	CI_DOCKER_TAG=$(DOCKER_TAG) \
 		docker-compose -f docker/docker-compose.yml build ci
+
 ######
 
 LSTBASE_IMAGE_BASED_TARGETS = build $(LIBS) package publish_crate clean
@@ -119,6 +123,8 @@ $(patsubst %,image_%, $(LSTBASE_IMAGE_BASED_TARGETS)): image_lstbase
 
 CI_IMAGE_BASED_TARGETS = test_dry test
 $(patsubst %,image_%, $(CI_IMAGE_BASED_TARGETS)): image_ci
+
+######
 
 rust_version:
 	cargo --version
