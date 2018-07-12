@@ -355,6 +355,7 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
 }
 
 #[test]
+#[ignore]
 pub fn build_and_submit_payment_req_with_spent_utxo() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
@@ -387,10 +388,10 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "amount": 20
     }]).to_string();
     let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
-    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap_err();
+    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     //TODO: it shouldn't be an err, it should be just a response to parse. When it will not timeout, uncomment the next line and fix the error code in assert
-//    let err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
-    assert_eq!(res, ErrorCode::PoolLedgerTimeout);
+    let err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
+//    assert_eq!(err, ErrorCode::PaymentUTXOAlreadySpentError);
 
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
