@@ -275,7 +275,8 @@ pub fn build_and_submit_payment_req() {
         num_addresses: 2,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![30])
+        mint_tokens: Some(vec![30]),
+        fees: None,
     });
     let payment_addresses = &setup.addresses;
     let pool_handle = setup.pool_handle;
@@ -332,7 +333,8 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
         num_addresses: 2,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![30])
+        mint_tokens: Some(vec![30]),
+        fees: None,
     });
     let addresses = &setup.addresses;
     let pool_handle = setup.pool_handle;

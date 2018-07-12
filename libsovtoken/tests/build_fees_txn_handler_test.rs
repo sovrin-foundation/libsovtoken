@@ -114,7 +114,8 @@ pub fn build_and_submit_set_fees() {
         num_addresses: 0,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: None
+        mint_tokens: None,
+        fees: None,
     });
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();

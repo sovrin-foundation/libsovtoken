@@ -3,11 +3,15 @@ use std::iter::FromIterator;
 
 use indy;
 use sovtoken;
+use sovtoken::logic::parsers::common::ResponseOperations;
+use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
 use utils::did;
 use utils::mint;
+use utils::payment::fees;
 use utils::payment::address as gen_address;
 use utils::pool;
 use utils::wallet::Wallet;
+use serde_json;
 
 const PROTOCOL_VERSION: usize = 2;
 
@@ -31,7 +35,8 @@ pub struct SetupConfig
     pub num_trustees: u8,
     pub num_users: u8,
     pub num_addresses: usize,
-    pub mint_tokens: Option<Vec<u64>>
+    pub mint_tokens: Option<Vec<u64>>,
+    pub fees: Option<serde_json::Value>,
 }
 
 
@@ -40,16 +45,19 @@ The data created from the [`SetupConfig`]
 
 [`SetupConfig`]: SetupConfig
 */
-pub struct Setup
+pub struct Setup<'a>
 {
     pub addresses: Vec<String>,
+    pub fees: Option<serde_json::Value>,
     pub node_count: u8,
     pub pool_handle: i32,
     pub trustees: Entities,
     pub users: Entities,
+    prev_fees: Option<String>,
+    wallet: &'a Wallet,
 }
 
-impl Setup
+impl<'a> Setup<'a>
 {
 
     /**
@@ -69,7 +77,11 @@ impl Setup
         let addresses = Setup::create_addresses(wallet, config.num_addresses);
         let trustees = Setup::create_trustees(wallet, pool_handle, config.num_trustees);
 
-        let users = {
+        let users;
+        let mut prev_fees = None;
+        let mut fees = None;
+
+        {
             let trustee_dids = trustees.dids();
 
             if let Some(token_vec) = config.mint_tokens {
@@ -77,15 +89,23 @@ impl Setup
                 Setup::mint(wallet, pool_handle, &trustee_dids, &addresses, token_vec);
             }
 
-            Setup::create_users(wallet, pool_handle, trustee_dids[0], config.num_users)
+            users = Setup::create_users(wallet, pool_handle, trustee_dids[0], config.num_users);
+            if let Some(f) = config.fees {
+                prev_fees = Some(fees::get_fees(wallet, pool_handle, trustee_dids[0]));
+                fees::set_fees(pool_handle, wallet.handle, PAYMENT_METHOD_NAME, &f.to_string(), &trustee_dids);
+                fees = Some(f);
+            }
         };
 
         Setup {
             addresses,
+            fees,
             node_count: 4,
             pool_handle,
+            prev_fees,
             trustees,
             users,
+            wallet,
         }
     }
 
@@ -132,7 +152,47 @@ impl Setup
             .zip(token_vec.into_iter())
             .collect();
 
-        mint::mint_tokens(map, pool_handle, wallet.handle, dids).unwrap();
+       let mint_rep = mint::mint_tokens(map, pool_handle, wallet.handle, dids).unwrap();
+       assert_eq!(mint_rep.op, ResponseOperations::REPLY);
+    }
+
+    fn fees_reset_json(prev_fees: Option<String>, fees: Option<serde_json::Value>) -> Option<String>
+    {
+        if fees.is_some() {
+            type FeesMap = HashMap<String, u64>;
+
+            let prev_fees: FeesMap = serde_json::from_str(&prev_fees.unwrap()).unwrap();
+            let fees: FeesMap = serde_json::from_value(fees.unwrap()).unwrap();
+            
+            let mut map = HashMap::new();
+            
+            for k in fees.keys() {
+                map.insert(k, 0);
+            }
+            
+            for (k, v) in prev_fees.iter() {
+                map.insert(k, *v);
+            }
+            
+            Some(serde_json::to_string(&map).unwrap())
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> Drop for Setup<'a> {
+    fn drop(&mut self) {
+        if let Some(reset_fees) = Setup::fees_reset_json(self.prev_fees.take(), self.fees.take()) {
+            let dids = self.trustees.dids();
+            fees::set_fees(
+                self.pool_handle,
+                self.wallet.handle,
+                PAYMENT_METHOD_NAME,
+                &reset_fees,
+                &dids
+            );
+        }
     }
 }
 
