@@ -7,6 +7,18 @@ use std::char;
 use rust_base58::{FromBase58Error, FromBase58};
 use utils::ffi_support::str_from_char_ptr;
 
+/**
+    Enum which holds possible errors with the did.
+
+    The possible errors include:
+    - `DidError::InvalidLength<usize>`
+    - `DidError::InvalidChar<char>`
+*/
+#[derive(Debug, PartialEq, Eq)]
+pub enum DidError {
+    InvalidLength(usize),
+    InvalidChar(char),
+}
 
 /**
     A struct which holds the did.
@@ -62,20 +74,6 @@ impl<'a> From<Did<'a>> for String {
     fn from(did: Did<'a>) -> String {
         return String::from(did.0);
     }
-}
-
-
-/**
-    Enum which holds possible errors with the did.
-
-    The possible errors include:
-    - `DidError::InvalidLength<usize>`
-    - `DidError::InvalidChar<char>`
-*/
-#[derive(Debug, PartialEq, Eq)]
-pub enum DidError {
-    InvalidLength(usize),
-    InvalidChar(char),
 }
 
 
