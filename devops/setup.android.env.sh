@@ -65,6 +65,7 @@ generate_arch_flags(){
 }
 
 download_and_unzip_dependencies_for_all_architectures(){
+    mkdir -p ${ANDROID_BUILD_FOLDER}
     #TODO Get dependencies in more optimized way
     pushd ${ANDROID_BUILD_FOLDER}
         if [ ! -d "indy-android-dependencies" ] ; then

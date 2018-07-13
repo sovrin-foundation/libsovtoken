@@ -2,8 +2,6 @@
 
 
 WORKDIR=${PWD}
-export LIBINDY_DIR=${HOME}/Work/repos/faisal00813/indy-sdk/android_build/libindy_x86/lib
-INDY_DIR=${LIBINDY_DIR}
 export INDY_PREBUILT_DEPS_DIR=${HOME}/Work/repos/faisal00813/indy-sdk/android_build/libindy_x86/lib
 CI_DIR="$(realpath "${WORKDIR}/../devops")"
 BUILD_FOLDER="$(realpath "${WORKDIR}/../android_build")"
