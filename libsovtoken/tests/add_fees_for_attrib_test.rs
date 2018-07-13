@@ -9,6 +9,8 @@ use utils::wallet::Wallet;
 
 use indy::ErrorCode;
 use sovtoken::logic::parsers::common::UTXO;
+use sovtoken::utils::constants::txn_types::ATTRIB;
+
 
 pub const ATTRIB_RAW_DATA_2: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
 pub const ATTRIB_RAW_DATA: &'static str = r#"{"endpoint":{"ha":"127.0.0.1:5555"}}"#;
@@ -50,6 +52,37 @@ pub fn build_and_submit_attrib_with_fees() {
 }
 
 #[test]
+pub fn build_and_submit_attrib_with_fees_and_no_change() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: Some(json!({
+            "100": 10
+        })),
+    });
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]).to_string();
+    let outputs = json!([]).to_string();
+
+    let parsed_resp = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+
+    let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
+    assert_eq!(parsed_utxos.len(), 0);
+
+    let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
+    let data = get_data_from_attrib_reply(get_attrib_resp);
+    assert_eq!(ATTRIB_RAW_DATA_2, data);
+}
+
+#[test]
 #[ignore]
 pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
     let wallet = Wallet::new();
@@ -59,7 +92,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
         num_users: 0,
         mint_tokens: Some(vec![9]),
         fees: Some(json!({
-            "100": 1
+            ATTRIB: 1
         })),
     });
     let addresses = &setup.addresses;
@@ -88,7 +121,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
         num_users: 0,
         mint_tokens: Some(vec![10]),
         fees: Some(json!({
-            "100": 1
+            ATTRIB: 1
         })),
     });
     let addresses = &setup.addresses;
