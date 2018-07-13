@@ -21,6 +21,8 @@ phases:
   pre_build:
     commands:
       - echo Pre-Build started on `date`
+      # create soft link dockerfile like 'start_pool'
+      - libsovtoken-ci-entrypoint.sh
       - mkdir -p /tmp/artifacts/logs
   build:
     commands:
