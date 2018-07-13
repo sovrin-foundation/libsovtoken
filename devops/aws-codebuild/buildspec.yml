@@ -39,15 +39,12 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
-      - printenv
       - echo Preparing artifacts
       - |
         set -ex
-        if [ "$CODEBUILD_BUILD_SUCCEEDING" == "1" ]; then
-            for art in $ARTIFACTS; do
-                cp -vR -t /tmp/artifacts $art || true
-            done
-        fi
+        for art in $ARTIFACTS; do
+            cp -vR -t /tmp/artifacts $art || true
+        done
       - find /tmp/artifacts
 
 artifacts:
