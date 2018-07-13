@@ -53,7 +53,6 @@ pub struct Setup<'a>
     pub pool_handle: i32,
     pub trustees: Entities,
     pub users: Entities,
-    prev_fees: Option<String>,
     wallet: &'a Wallet,
 }
 
@@ -78,7 +77,6 @@ impl<'a> Setup<'a>
         let trustees = Setup::create_trustees(wallet, pool_handle, config.num_trustees);
 
         let users;
-        let mut prev_fees = None;
         let mut fees = None;
 
         {
@@ -91,7 +89,6 @@ impl<'a> Setup<'a>
 
             users = Setup::create_users(wallet, pool_handle, trustee_dids[0], config.num_users);
             if let Some(f) = config.fees {
-                prev_fees = Some(fees_utils::get_fees(wallet, pool_handle, trustee_dids[0]));
                 fees_utils::set_fees(pool_handle, wallet.handle, PAYMENT_METHOD_NAME, &f.to_string(), &trustee_dids);
                 fees = Some(f);
             }
@@ -102,7 +99,6 @@ impl<'a> Setup<'a>
             fees,
             node_count: 4,
             pool_handle,
-            prev_fees,
             trustees,
             users,
             wallet,
@@ -156,12 +152,10 @@ impl<'a> Setup<'a>
        assert_eq!(mint_rep.op, ResponseOperations::REPLY);
     }
 
-    fn fees_reset_json(prev_fees: Option<String>, fees: Option<serde_json::Value>) -> Option<String>
+    fn fees_reset_json(fees: Option<serde_json::Value>) -> Option<String>
     {
         if fees.is_some() {
             type FeesMap = HashMap<String, u64>;
-
-            let prev_fees: FeesMap = serde_json::from_str(&prev_fees.unwrap()).unwrap();
             let fees: FeesMap = serde_json::from_value(fees.unwrap()).unwrap();
             
             let mut map = HashMap::new();
@@ -170,9 +164,6 @@ impl<'a> Setup<'a>
                 map.insert(k, 0);
             }
             
-            for (k, v) in prev_fees.iter() {
-                map.insert(k, *v);
-            }
             
             Some(serde_json::to_string(&map).unwrap())
         } else {
@@ -183,7 +174,7 @@ impl<'a> Setup<'a>
 
 impl<'a> Drop for Setup<'a> {
     fn drop(&mut self) {
-        if let Some(reset_fees) = Setup::fees_reset_json(self.prev_fees.take(), self.fees.take()) {
+        if let Some(reset_fees) = Setup::fees_reset_json(self.fees.take()) {
             let dids = self.trustees.dids();
             fees_utils::set_fees(
                 self.pool_handle,
