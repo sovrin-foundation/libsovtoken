@@ -14,6 +14,7 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
+use utils::payment::fees;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
@@ -113,34 +114,29 @@ pub fn build_and_submit_set_fees() {
         num_addresses: 0,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: None
+        mint_tokens: None,
+        fees: None,
     });
-    let Setup {pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
 
     let fees = json!({
         "202": 1,
         "101": 2
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+    let current_fees = fees::get_fees(&wallet, pool_handle, dids[0]);
+    let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
-    let get_fees_req = indy::payments::Payment::build_get_txn_fees_req(wallet.handle, dids[0], payment_method).unwrap();
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &get_fees_req).unwrap();
-    let parsed_result = indy::payments::Payment::parse_get_txn_fees_response(payment_method, &result).unwrap();
-
-    let parsed_result_json: serde_json::Value = serde_json::from_str(&parsed_result).unwrap();
-    let parsed_result_json = parsed_result_json.as_object().unwrap();
-    assert!(parsed_result_json.contains_key("202"));
-    assert!(parsed_result_json.contains_key("101"));
-    assert_eq!(parsed_result_json.get("202").unwrap().as_u64().unwrap(), 1);
-    assert_eq!(parsed_result_json.get("101").unwrap().as_u64().unwrap(), 2);
+    assert_eq!(current_fees_value["101"].as_u64().unwrap(), 2);
+    assert_eq!(current_fees_value["202"].as_u64().unwrap(), 1);
 
     let fees = json!({
         "202": 0,
         "101": 0
     }).to_string();
 
-    utils::fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
 
 }

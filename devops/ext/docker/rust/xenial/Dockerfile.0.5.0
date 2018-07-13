@@ -1,4 +1,4 @@
-FROM evernym/base:0.2.0-xenial
+FROM evernym/base:0.3.0-xenial
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG RUST_VERSION
@@ -15,4 +15,4 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --default-tool
 
 # TODO CMD ENTRYPOINT ...
 
-ENV RUST_ENV_VERSION=0.4.0
+ENV RUST_ENV_VERSION=0.5.0

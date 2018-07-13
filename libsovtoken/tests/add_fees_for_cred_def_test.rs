@@ -17,16 +17,20 @@ pub const GVT_SCHEMA_ATTRIBUTES: &'static str = r#"["name", "age", "sex", "heigh
 
 #[test]
 pub fn build_and_submit_cred_def_with_fees() {
-    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![10])
+        mint_tokens: Some(vec![10]),
+        fees: Some(json!({
+            "102": 1
+        })),
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -35,12 +39,6 @@ pub fn build_and_submit_cred_def_with_fees() {
         "paymentAddress": addresses[0],
         "amount": 9
     }]).to_string();
-
-    let fees = json!({
-        "102": 1
-    }).to_string();
-
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     let (parsed_resp, cred_def_id, _) = _send_cred_def_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
@@ -55,27 +53,24 @@ pub fn build_and_submit_cred_def_with_fees() {
     let get_cred_def_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_cred_def_req).unwrap();
     let (cred_def_id_get, _) = indy::ledger::Ledger::parse_get_cred_def_response(&get_cred_def_resp).unwrap();
     assert_eq!(cred_def_id, cred_def_id_get);
-
-    let fees = json!({
-        "102": 0
-    }).to_string();
-
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
 #[ignore]
 pub fn build_and_submit_cred_def_with_fees_insufficient_funds() {
-    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![9])
+        mint_tokens: Some(vec![9]),
+        fees: Some(json!({
+            "102": 1
+        })),
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -85,35 +80,27 @@ pub fn build_and_submit_cred_def_with_fees_insufficient_funds() {
         "amount": 9
     }]).to_string();
 
-    let fees = json!({
-        "102": 1
-    }).to_string();
-
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
-
     let parsed_err = _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
-
-    let fees = json!({
-        "102": 0
-    }).to_string();
-
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 #[test]
 #[ignore]
 pub fn build_and_submit_cred_def_with_fees_double_spend() {
-    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![10])
+        mint_tokens: Some(vec![10]),
+        fees: Some(json!({
+            "102": 1
+        })),
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -122,12 +109,6 @@ pub fn build_and_submit_cred_def_with_fees_double_spend() {
         "paymentAddress": addresses[0],
         "amount": 9
     }]).to_string();
-
-    let fees = json!({
-        "102": 1
-    }).to_string();
-
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 
     _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
@@ -135,12 +116,6 @@ pub fn build_and_submit_cred_def_with_fees_double_spend() {
     //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
     //TODO: this test should fail for a while until we get some vision on a ErrorCodes (both on parsing and new ones)
     assert!(false);
-
-    let fees = json!({
-        "100": 0
-    }).to_string();
-
-    utils::fees::set_fees(pool_handle, wallet.handle, payment_method, &fees, &dids);
 }
 
 fn _send_cred_def_with_fees(did: &str,

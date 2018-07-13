@@ -13,6 +13,7 @@ env:
     CARGO_TARGET_DIR: "target"
     # optional
     ARTIFACTS: ""
+    INDY_POOL_LOG_LEVEL: ""
 #  parameter-store:
 #    CARGO_LOGIN_TOKEN: "cargoLoginToken"
 
@@ -21,6 +22,8 @@ phases:
   pre_build:
     commands:
       - echo Pre-Build started on `date`
+      # create soft link dockerfile like 'start_pool'
+      - libsovtoken-ci-entrypoint.sh
       - mkdir -p /tmp/artifacts/logs
   build:
     commands:
@@ -31,7 +34,7 @@ phases:
         set -ex
         for goal in $MAKE_GOALS; do
             echo "Making '$goal'"
-            /bin/bash -c "set -o pipefail; make -C devops $goal 2>&1 | tee /tmp/artifacts/logs/${OSNAME}.${goal}.out"
+            /bin/bash -c "set -o pipefail; make -C devops $goal 2>&1 | tee /tmp/artifacts/logs/${OSNAME}.${goal}.log"
         done
   post_build:
     commands:
@@ -40,7 +43,7 @@ phases:
       - |
         set -ex
         for art in $ARTIFACTS; do
-            cp -vR -t /tmp/artifacts $art
+            cp -vR -t /tmp/artifacts $art || true
         done
       - find /tmp/artifacts
 

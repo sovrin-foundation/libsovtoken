@@ -7,7 +7,6 @@ Without this, we are warned of all unused code in each integration test.
 
 pub mod did;
 pub mod environment;
-pub mod fees;
 pub mod ledger;
 pub mod mint;
 pub mod parse_mint_response;

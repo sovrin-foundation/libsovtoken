@@ -75,7 +75,7 @@ pipelineWrapper({
             projectTag = prTag
 
             // build spec for env image
-            envBuildSrc = ['devops'] // TODO make more accurate
+            envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
             envBuildCmds = [
                 'export PROJECT_DIR=$PWD',
                 'make -C devops image_lstbase'
@@ -99,9 +99,10 @@ pipelineWrapper({
 
             onArtifacts = {
                 this.stage("$osname: Archive logs") {
-                    utils.archiveArtifacts("logs/*.out*") {
+                    utils.archiveArtifacts("logs/*.log*") {
                         truncate = true
                         allowEmptyArchive = true
+                        truncateFileSuffix = 'trunc.log'
                     }
                 }
             }

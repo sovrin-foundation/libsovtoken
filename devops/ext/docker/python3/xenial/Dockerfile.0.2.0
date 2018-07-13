@@ -1,4 +1,4 @@
-FROM evernym/base:0.2.0-xenial
+FROM evernym/base:0.3.0-xenial
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG PYTHON3_VERSION
@@ -6,7 +6,7 @@ ARG PYTHON3_VERSION
 ENV PYTHON3_VERSION=${PYTHON3_VERSION:-3.5}
 
 # python
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         python${PYTHON3_VERSION} \
         python3-pip \
         python-setuptools \
@@ -20,4 +20,4 @@ RUN pip3 install -U \
 
 # TODO CMD ENTRYPOINT ...
 
-ENV PYTHON3_ENV_VERSION=0.1.0
+ENV PYTHON3_ENV_VERSION=0.2.0
