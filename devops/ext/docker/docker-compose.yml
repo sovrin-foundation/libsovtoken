@@ -1,4 +1,4 @@
-version: "3"
+version: "3.4"
 
 services:
 
@@ -6,13 +6,14 @@ services:
     build:
       dockerfile: Dockerfile.${BASE_DOCKER_VERSION}
       context: base/$OSNAME
-    # TODO ${VAR:-} raises error in docker-compose < 1.21.0
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
     image: evernym/base:${BASE_DOCKER_VERSION}-${OSNAME}
 
   rust:
     build:
       dockerfile: Dockerfile.${RUST_DOCKER_VERSION}
       context: rust/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - RUST_VERSION
     image: evernym/rust:${RUST_DOCKER_VERSION}-${OSNAME}
@@ -21,6 +22,7 @@ services:
     build:
       dockerfile: Dockerfile.${PYTHON3_DOCKER_VERSION}
       context: python3/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - PYTHON3_VERSION
     image: evernym/python3:${PYTHON3_DOCKER_VERSION}-${OSNAME}
