@@ -6,8 +6,6 @@ use std::path::Path;
 
 fn main() {
 
-//    let libindy_lib_path = env::var("LIBINDY_DIR").unwrap();
-//    println!("cargo:rustc-link-search=native={}",libindy_lib_path);
 
     if let Ok(_mode) = env::var("LIBINDY_STATIC") {
         println!("cargo:rustc-link-lib=static=indy");
@@ -24,6 +22,14 @@ fn main() {
             Err(..) => panic!("Missing required environment variable LIBINDY_DIR")
         };
 
+        println!("cargo:rustc-link-search=native={}",libindy_lib_path);
+
+        if let Ok(_mode) = env::var("LIBINDY_STATIC") {
+            println!("cargo:rustc-link-lib=static=indy");
+        } else {
+            println!("cargo:rustc-link-lib=dylib=indy");
+        }
+
         let openssl = match env::var("OPENSSL_LIB_DIR") {
             Ok(val) => val,
             Err(..) => match env::var("OPENSSL_DIR") {
@@ -32,16 +38,11 @@ fn main() {
             }
         };
 
-        println!("cargo:rustc-link-search=native={}",libindy_lib_path);
-        if let Ok(_mode) = env::var("LIBINDY_STATIC") {
-            println!("cargo:rustc-link-lib=static=indy");
-        } else {
-            println!("cargo:rustc-link-lib=dylib=indy");
-        }
         let sodium = match env::var("SODIUM_LIB_DIR") {
             Ok(val) => val,
             Err(..) => panic!("Missing required environment variable SODIUM_LIB_DIR")
         };
+
         println!("cargo:rustc-link-search=native={}", openssl);
         println!("cargo:rustc-link-lib=dylib=crypto");
         println!("cargo:rustc-link-lib=dylib=ssl");
