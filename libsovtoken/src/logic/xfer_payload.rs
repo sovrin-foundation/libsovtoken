@@ -97,7 +97,7 @@ impl XferPayload {
         self._sign(crypto_api, wallet_handle, cb)
     }
 
-    pub fn _sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    fn _sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         for output in &mut self.outputs {
             output.address = address::unqualified_address_from_address(&output.address)?;
         }
