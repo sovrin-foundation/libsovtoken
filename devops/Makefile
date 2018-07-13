@@ -18,6 +18,9 @@ endif
 # project variables
 SRC_DIR_NAME := libsovtoken
 SRC_DIR := $(PROJECT_DIR)/$(SRC_DIR_NAME)
+# TODO
+#  - fail make run if the folloing fails
+#  - src version is not needed for all targets
 SRC_VERSION := $(shell grep '^version = "[^"]\+"' $(SRC_DIR)/Cargo.toml | cut -d '"' -f 2)
 
 # cargo related variables
@@ -66,6 +69,18 @@ EXPORT_ENV += OSNAME RELEASE CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
 all: test_dry test package
 
 include ext/Makefile
+
+# log variables
+$(call log_var,RELEASE)
+$(call log_var,OSNAME)
+$(call log_var,PROJECT_DIR)
+$(call log_var,CARGO_TARGET_DIR)
+$(call log_var,CRATE_P_VERSION)
+$(call log_var,FPM_P_VERSION)
+$(call log_var,DOCKER_NAME)
+$(call log_var,CI_DOCKER_TAG)
+$(call log_var,LSTBASE_DOCKER_TAG)
+$(call log_var,DOCKER_BUILD_NETWORK)
 
 export OSNAME
 
