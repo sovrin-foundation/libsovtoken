@@ -72,6 +72,7 @@ pipelineWrapper({
                     envv = [
                         [name: 'OSNAME', value: osname],
                         [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                        [name: 'ARTIFACTS', value: '/tmp/node*.log /var/log/indy/sandbox/Node*.log'],
                     ]
                     computeType = 'medium'
 
@@ -90,10 +91,17 @@ pipelineWrapper({
 
                     onArtifacts = {
                         this.stage("$osname: Archive artifacts") {
+                            // make targets' logs
                             utils.archiveArtifacts("logs/*.log*") {
                                 truncate = true
                                 allowEmptyArchive = true
                                 truncateFileSuffix = 'trunc.log'
+                            }
+                            // nodes' logs
+                            // TODO make CodeBuild place node's logs in dir like nodes/logs/
+                            utils.archiveArtifacts("*.log*") {
+                                truncate = false
+                                allowEmptyArchive = true
                             }
                         }
                     }
