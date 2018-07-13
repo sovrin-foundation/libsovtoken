@@ -66,7 +66,6 @@ pub fn build_and_submit_schema_with_fees() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();

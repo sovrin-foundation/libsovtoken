@@ -323,7 +323,6 @@ pub fn build_and_submit_payment_req() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_payment_req_insufficient_funds() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {

@@ -9,6 +9,7 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature,
                              SignatureValues};
+use logic::parsers::error_code_parser;
 use logic::input::Inputs;
 use logic::output::{Outputs, Output};
 use utils::json_conversion::JsonSerialize;
@@ -24,8 +25,9 @@ use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion, Re
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponseWithFees {
     pub op : ResponseOperations,
-    pub result: ParseResponseWithFeesRequest,
+    pub result: Option<ParseResponseWithFeesRequest>,
     pub protocol_version: Option<ProtocolVersion>,
+    pub reason: Option<String>,
 }
 
 /**
@@ -96,26 +98,36 @@ pub type ParseResponseWithFeesReply = Vec<UTXO>;
     after this call
 */
 pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFeesReply, ErrorCode> {
-    let mut utxos: Vec<UTXO> = vec![];
+    match base.op {
+        ResponseOperations::REPLY => {
+            let result = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
+            let mut utxos: Vec<UTXO> = vec![];
 
-    // according to the documentation, don't need the inputs.  Only the outputs
-    // and seq_no which are part 2 and 3 of the tuple
-    let outputs = &base.result.fees.outputs;
-    let seq_no: TxnSeqNo = base.result.tnx_meta_data.seq_no;
+            // according to the documentation, don't need the inputs.  Only the outputs
+            // and seq_no which are part 2 and 3 of the tuple
+            let outputs = &result.fees.outputs;
+            let seq_no: TxnSeqNo = result.tnx_meta_data.seq_no;
 
-    for output in outputs {
-        let output_address : String = output.0.to_string();
-        let amount: TokenAmount = output.1;
-        let qualified_address: String = add_qualifer_to_address(&output_address);
+            for output in outputs {
+                let output_address : String = output.0.to_string();
+                let amount: TokenAmount = output.1;
+                let qualified_address: String = add_qualifer_to_address(&output_address);
 
-        let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
+                let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
-        let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
+                let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
 
-        utxos.push(utxo);
+                utxos.push(utxo);
+            }
+
+            Ok(utxos)
+        }
+        ResponseOperations::REQNACK | ResponseOperations::REJECT => {
+            let reason = base.reason.ok_or(ErrorCode::CommonInvalidStructure)?;
+            Err(error_code_parser::parse_error_code_from_string(&reason))
+        }
     }
 
-    return Ok(utxos);
 }
 
 #[cfg(test)]
@@ -370,7 +382,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.fees.outputs;
+        let outputs= response.result.unwrap().fees.outputs;
 
         assert_eq!(1, outputs.len());
     }
@@ -381,7 +393,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.fees.outputs;
+        let outputs= response.result.unwrap().fees.outputs;
 
         assert_eq!(2, outputs.len());
     }
@@ -415,7 +427,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.fees.outputs;
+        let outputs= response.result.unwrap().fees.outputs;
 
         assert_eq!(1, outputs.len());
     }

@@ -10,6 +10,7 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature,
                              SignatureValues};
+use logic::parsers::error_code_parser;
 use logic::type_aliases::{TokenAmount, ProtocolVersion};
 use utils::json_conversion::JsonSerialize;
 
@@ -19,9 +20,10 @@ use utils::json_conversion::JsonSerialize;
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponse {
-    pub op : ResponseOperations,
+    pub op: ResponseOperations,
     pub protocol_version: Option<ProtocolVersion>,
-    pub result : ParsePaymentResponseResult,
+    pub result: Option<ParsePaymentResponseResult>,
+    pub reason: Option<String>,
 }
 
 /**
@@ -46,8 +48,8 @@ pub struct ParsePaymentResponseResult {
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     #[serde(rename = "type")]
-    pub txn_type : String,
-    pub protocol_version : ProtocolVersion,
+    pub txn_type: String,
+    pub protocol_version: ProtocolVersion,
     #[serde(rename = "metadata")]
     pub meta_data: TransactionMetaData2,
     pub data: TransactionData,
@@ -60,7 +62,7 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     pub extra: Option<String>,
-    pub inputs : Vec<(String, u64)>,
+    pub inputs: Vec<(String, u64)>,
     pub outputs: Vec<(String, TokenAmount)>,
 }
 
@@ -72,7 +74,7 @@ pub struct TransactionData {
 pub struct TransactionMetaData2 {
     pub digest: String,
     pub from: String,
-    pub req_id: u32
+    pub req_id: u32,
 }
 
 
@@ -86,27 +88,32 @@ pub type ParsePaymentReply = Vec<UTXO>;
     please note:  use of this function moves ParsePaymentResponse and it cannot be used again
     after this call
 */
-pub fn from_response(base : ParsePaymentResponse) -> Result<ParsePaymentReply, ErrorCode> {
-    let mut utxos: Vec<UTXO> = vec![];
+pub fn from_response(base: ParsePaymentResponse) -> Result<ParsePaymentReply, ErrorCode> {
+    match base.op {
+        ResponseOperations::REPLY => {
+            let result = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
+            let mut utxos: Vec<UTXO> = vec![];
+            for unspent_output in result.txn.data.outputs {
+                let (address, amount) = unspent_output;
+                let qualified_address: String = add_qualifer_to_address(&address);
+                let seq_no: u64 = result.tnx_meta_data.seq_no;
+                let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
+                let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
 
-    for unspent_output in base.result.txn.data.outputs {
-
-        let (address, amount) = unspent_output;
-        let qualified_address: String = add_qualifer_to_address(&address);
-        let seq_no: u64 = base.result.tnx_meta_data.seq_no;
-        let txo = (TXO { address: qualified_address.to_string(), seq_no}).to_libindy_string()?;
-        let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
-
-        utxos.push(utxo);
+                utxos.push(utxo);
+            }
+            Ok(utxos)
+        }
+        ResponseOperations::REJECT | ResponseOperations::REQNACK => {
+            let reason = base.reason.ok_or(ErrorCode::CommonInvalidStructure)?;
+            Err(error_code_parser::parse_error_code_from_string(&reason))
+        }
     }
-
-    Ok(utxos)
 }
 
 #[cfg(test)]
 mod parse_payment_response_tests {
     #[allow(unused_imports)]
-
     use logic::parsers::common::{ResponseOperations, UTXO, TXO};
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
@@ -202,7 +209,6 @@ mod parse_payment_response_tests {
     // into ParsePaymentResponse then we know the ParsePaymentResponse structure matches
     #[test]
     fn success_parse_payment_response_from_json() {
-
         let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
 
         assert_eq!(response.op, ResponseOperations::REPLY);
@@ -213,12 +219,9 @@ mod parse_payment_response_tests {
     #[test]
     fn success_response_json_to_reply_json() {
         let response: ParsePaymentResponse = ParsePaymentResponse::from_json(PARSE_PAYMENT_RESPONSE_JSON).unwrap();
-        let number_of_outputs: usize = response.result.txn.data.outputs.len();
+        let number_of_outputs: usize = response.result.as_ref().unwrap().txn.data.outputs.len();
         let reply: ParsePaymentReply = from_response(response).unwrap();
 
         assert_eq!(reply.len(), number_of_outputs);
-
     }
-
-
 }
