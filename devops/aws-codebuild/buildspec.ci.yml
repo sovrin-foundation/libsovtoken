@@ -14,8 +14,7 @@ env:
     # optional
     ARTIFACTS: ""
     INDY_POOL_LOG_LEVEL: ""
-#  parameter-store:
-#    CARGO_LOGIN_TOKEN: "cargoLoginToken"
+    INDY_POOL_DIRS: "/tmp /var/lib/indy/sandbox /var/log/indy/sandbox"
 
 phases:
 
@@ -24,7 +23,7 @@ phases:
       - echo Pre-Build started on `date`
       # create soft link dockerfile like 'start_pool'
       - libsovtoken-ci-entrypoint.sh
-      - mkdir -p /tmp/artifacts/logs
+      - mkdir -p /tmp/artifacts/logs/pool
   build:
     commands:
       - echo Build started on `date`
@@ -42,6 +41,15 @@ phases:
       - echo Preparing artifacts
       - |
         set -ex
+        # nodes' logs and validators info for failed builds
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" != "1" -a -n "$INDY_POOL_DIRS" ]; then
+            find $INDY_POOL_DIRS -maxdepth 1 -type f \
+                \( -iname \node*.log -o -iname \node*.json \) \
+                -exec zip -j '{}'.zip '{}' \; \
+                -exec mv '{}'.zip /tmp/artifacts/logs/pool \; \
+            || true
+        fi
+        # additional artifacts
         for art in $ARTIFACTS; do
             cp -vR -t /tmp/artifacts $art || true
         done

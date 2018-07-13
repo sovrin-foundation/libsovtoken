@@ -72,8 +72,8 @@ pipelineWrapper({
                     envv = [
                         [name: 'OSNAME', value: osname],
                         [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                        [name: 'INDY_POOL_LOG_LEVEL', value: "10"],
-                        [name: 'ARTIFACTS', value: '/tmp/node*.log /var/log/indy/sandbox/Node*.log'],
+                        [name: 'INDY_POOL_LOG_LEVEL', value: '10'],
+                        [name: 'INDY_POOL_DIRS', value: '/tmp /var/lib/indy/sandbox /var/log/indy/sandbox'],
                     ]
                     computeType = 'medium'
 
@@ -98,9 +98,8 @@ pipelineWrapper({
                                 allowEmptyArchive = true
                                 truncateFileSuffix = 'trunc.log'
                             }
-                            // nodes' logs
-                            // TODO make CodeBuild place node's logs in dir like nodes/logs/
-                            utils.archiveArtifacts("*.log*") {
+                            // nodes' logs and validators info
+                            utils.archiveArtifacts("logs/pool/*") {
                                 truncate = false
                                 allowEmptyArchive = true
                             }
