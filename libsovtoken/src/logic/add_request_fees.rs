@@ -130,7 +130,7 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
     let fees = XferPayload::new(inputs, outputs);
-    fees.sign(&CryptoSdk{}, wallet_handle, cb)?;
+    fees.sign_fees(&CryptoSdk{}, wallet_handle, cb)?;
     Ok(())
 }
 

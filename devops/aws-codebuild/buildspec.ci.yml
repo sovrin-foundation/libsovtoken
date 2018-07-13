@@ -13,15 +13,17 @@ env:
     CARGO_TARGET_DIR: "target"
     # optional
     ARTIFACTS: ""
-#  parameter-store:
-#    CARGO_LOGIN_TOKEN: "cargoLoginToken"
+    INDY_POOL_LOG_LEVEL: ""
+    INDY_POOL_DIRS: "/tmp /var/lib/indy/sandbox /var/log/indy/sandbox"
 
 phases:
 
   pre_build:
     commands:
       - echo Pre-Build started on `date`
-      - mkdir -p /tmp/artifacts/logs
+      # create soft link dockerfile like 'start_pool'
+      - libsovtoken-ci-entrypoint.sh
+      - mkdir -p /tmp/artifacts/logs/pool
   build:
     commands:
       - echo Build started on `date`
@@ -31,7 +33,7 @@ phases:
         set -ex
         for goal in $MAKE_GOALS; do
             echo "Making '$goal'"
-            /bin/bash -c "set -o pipefail; make -C devops $goal 2>&1 | tee /tmp/artifacts/logs/${OSNAME}.${goal}.out"
+            /bin/bash -c "set -o pipefail; make -C devops $goal 2>&1 | tee /tmp/artifacts/logs/${OSNAME}.${goal}.log"
         done
   post_build:
     commands:
@@ -39,8 +41,17 @@ phases:
       - echo Preparing artifacts
       - |
         set -ex
+        # nodes' logs and validators info for failed builds
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" != "1" -a -n "$INDY_POOL_DIRS" ]; then
+            find $INDY_POOL_DIRS -maxdepth 1 -type f \
+                \( -iname \node*.log -o -iname \node*.json \) \
+                -exec zip -j '{}'.zip '{}' \; \
+                -exec mv '{}'.zip /tmp/artifacts/logs/pool \; \
+            || true
+        fi
+        # additional artifacts
         for art in $ARTIFACTS; do
-            cp -vR -t /tmp/artifacts $art
+            cp -vR -t /tmp/artifacts $art || true
         done
       - find /tmp/artifacts
 

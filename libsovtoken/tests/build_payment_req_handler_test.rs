@@ -275,10 +275,13 @@ pub fn build_and_submit_payment_req() {
         num_addresses: 2,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![30])
+        mint_tokens: Some(vec![30]),
+        fees: None,
     });
-    let Setup {addresses: payment_addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
 
@@ -330,10 +333,13 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
         num_addresses: 2,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![30])
+        mint_tokens: Some(vec![30]),
+        fees: None,
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -362,10 +368,12 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         num_addresses: 3,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![30, 10])
+        mint_tokens: Some(vec![30, 10]),
+        fees: None,
     });
-    let Setup {addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[1]);
@@ -390,8 +398,8 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
     let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     //TODO: it shouldn't be an err, it should be just a response to parse. When it will not timeout, uncomment the next line and fix the error code in assert
-    let err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
-//    assert_eq!(err, ErrorCode::PaymentUTXOAlreadySpentError);
+    let _err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
+//    assert_eq!(_err, ErrorCode::PaymentUTXOAlreadySpentError);
 
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);

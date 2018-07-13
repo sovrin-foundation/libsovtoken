@@ -18,6 +18,7 @@ PRE_PACKAGE_GOALS ?=
 check_non_empty = $(if $(1),$(1),$(error $(2)))
 check_defined = $(if $(value $1),, $(error Undefined $1$(if $2,	($2))$(if $(value @), \
                     required by target '$@')))
+log_var = $(info Value of $1 is [$($1)])
 
 docker_env_value = $(call check_non_empty,$(shell grep '^ENV $(1)=' $(2) | cut -d '=' -f 2), \
 				   "Value for ENV $(1) not found in dockerfile $(2)")
@@ -113,10 +114,13 @@ image_python3: image_python3_parent_version image_base
 	PYTHON3_DOCKER_VERSION=$(PYTHON3_DOCKER_VERSION) \
 		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build python3
 
-%_in_docker: image_%
+# target default implementation
+%_in_docker_opts: ;
+
+%_in_docker: image_% %_in_docker_opts
 	echo "Re-running goal $* in docker $(DOCKER_NAME):$(DOCKER_TAG)"
-	$(DOCKER) run --rm $(DOCKER_OPTS) -t -u $(DOCKER_UID) \
-		-v $(PROJECT_DIR):/tmp/$(PROJECT_NAME) \
+	$(DOCKER) run --rm -t -u $(DOCKER_UID) \
+		-v $(PROJECT_DIR):/tmp/$(PROJECT_NAME) $(DOCKER_OPTS) \
 		$(DOCKER_NAME):$(DOCKER_TAG) \
 		/bin/bash -cl \
 			'MAKEFLAGS="$(MAKEFLAGS)" $(foreach var,$(EXPORT_ENV),$(var)="$($(var))") \

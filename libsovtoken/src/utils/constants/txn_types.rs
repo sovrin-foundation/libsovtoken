@@ -35,3 +35,8 @@ pub const SET_FEES: &'static str = "20000";
 */
 
 pub const GET_FEES: &'static str = "20001";
+
+
+pub const NYM: &'static str = "1";
+
+pub const ATTRIB: &'static str = "100";

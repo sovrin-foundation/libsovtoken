@@ -21,22 +21,6 @@ pipelineWrapper({
             checkout scm
         }
 
-        stage('Download sovtoken debs') {
-            // TODO remove that code once repo.corp evernym.com
-            // become available from AWS CodeBuild
-
-            // TODO Aptly on repo.copr.evernym.com removes '+' signs
-            // from debian packages making versions not accurate
-            def sovtoken_deb_version = "0.7.05.3" // for 0.7.0+5.3
-            def sovtokenfees_deb_version = "0.7.05.3" // for 0.7.0+5.3
-
-            sh """
-                cd ./devops/docker/ci/xenial/
-                wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
-                wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtokenfees/sovtokenfees_${sovtoken_deb_version}_amd64.deb
-            """
-        }
-
         def utils = evLibrary.Utils.new(this)
         // TODO Cargo.toml is necessary only for variable in makefile which is not used for that context, thus
         // shouldn't be taken into account when deciding to rebuild docker images
@@ -52,6 +36,27 @@ pipelineWrapper({
                 def buildImageTag
                 def prTag = "ci-$osname"
 
+                if (osname == 'xenial') {
+                    stage('Download plugin debs') {
+                        // TODO remove that code once repo.corp evernym.com
+                        // become available from AWS CodeBuild
+
+                        // TODO Aptly on repo.copr.evernym.com removes '+' signs
+                        // from debian packages making versions in filenames
+                        // not accurate (it concatenates them):
+                        //  debian package version: <src_version>+<release_version>
+                        //  debian package name:    <src_version><release_version>
+                        def sovtoken_deb_version = "0.7.07.10"
+                        def sovtokenfees_deb_version = "0.7.07.10"
+
+                        sh """
+                            cd ./devops/docker/ci/xenial/
+                            wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
+                            wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtokenfees/sovtokenfees_${sovtoken_deb_version}_amd64.deb
+                        """
+                    }
+                }
+
                 stage("$osname: Resolve image tag") {
                     def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_ci_version -s")
                     buildImageTag = "${_imgVersion}-${osname}-ci"
@@ -63,14 +68,18 @@ pipelineWrapper({
 
                     // env and build spec
                     imageTag = buildImageTag
-                    buildspec = 'devops/aws-codebuild/buildspec.yml'
+                    buildspec = 'devops/aws-codebuild/buildspec.ci.yml'
                     envv = [
                         [name: 'OSNAME', value: osname],
                         [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                        [name: 'INDY_POOL_LOG_LEVEL', value: '10'],
+                        [name: 'INDY_POOL_DIRS', value: '/tmp /var/lib/indy/sandbox /var/log/indy/sandbox'],
                     ]
+                    computeType = 'medium'
 
                     // build spec for env image
-                    envBuildSrc = ['devops'] // TODO make more accurate
+                    envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                    envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
                     envBuildCmds = [
                         'export PROJECT_DIR=$PWD',
                         'make -C devops image_ci'
@@ -83,8 +92,15 @@ pipelineWrapper({
 
                     onArtifacts = {
                         this.stage("$osname: Archive artifacts") {
-                            utils.archiveArtifacts("logs/*.out*") {
+                            // make targets' logs
+                            utils.archiveArtifacts("logs/*.log*") {
                                 truncate = true
+                                allowEmptyArchive = true
+                                truncateFileSuffix = 'trunc.log'
+                            }
+                            // nodes' logs and validators info
+                            utils.archiveArtifacts("logs/pool/*") {
+                                truncate = false
                                 allowEmptyArchive = true
                             }
                         }
