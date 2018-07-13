@@ -92,7 +92,6 @@ pipelineWrapper({
             envv = [
                 [name: 'OSNAME', value: osname],
                 [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                [name: 'INDY_POOL_LOG_LEVEL', value: "10"],
                 [name: 'ARTIFACTS', value: 'libsovtoken/target/release/libsovtoken*.*'],
                 [name: 'FPM_P_VERSION', value: debPVersion],
                // [name: 'CRATE_P_VERSION', value: cratePVersion],
