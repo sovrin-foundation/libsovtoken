@@ -3,6 +3,10 @@ set -e
 
 GEN_ARGS="--nodes 4 --clients 5 --nodeNum 1 2 3 4 --ips=$POOL_IP,$POOL_IP,$POOL_IP,$POOL_IP"
 
+if [ -n "${INDY_POOL_LOG_LEVEL}" ]; then
+    echo -ne "\nlogLevel=${INDY_POOL_LOG_LEVEL}\n" >> /etc/indy/indy_config.py
+fi
+
 if [[ "$(id -u)" = '0' ]]; then
     gosu indy generate_indy_pool_transactions $GEN_ARGS
     gosu indy /usr/bin/supervisord
