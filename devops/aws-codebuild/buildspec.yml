@@ -33,7 +33,7 @@ phases:
         set -ex
         for goal in $MAKE_GOALS; do
             echo "Making '$goal'"
-            /bin/bash -c "set -o pipefail; make -C devops $goal 2>&1 | tee /tmp/artifacts/logs/${OSNAME}.${goal}.out"
+            /bin/bash -c "set -o pipefail; make -C devops $goal 2>&1 | tee /tmp/artifacts/logs/${OSNAME}.${goal}.log"
         done
   post_build:
     commands:
