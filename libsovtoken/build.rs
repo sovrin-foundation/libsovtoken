@@ -6,6 +6,12 @@ use std::path::Path;
 
 fn main() {
 
+    let libindy_lib_path = match env::var("LIBINDY_DIR"){
+        Ok(val) => val,
+        Err(..) => panic!("Missing required environment variable LIBINDY_DIR")
+    };
+
+    println!("cargo:rustc-link-search=native={}",libindy_lib_path);
 
     if let Ok(_mode) = env::var("LIBINDY_STATIC") {
         println!("cargo:rustc-link-lib=static=indy");
@@ -16,19 +22,6 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     println!("target={}", target);
     if target.contains("linux-android") {
-
-        let libindy_lib_path = match env::var("LIBINDY_DIR"){
-            Ok(val) => val,
-            Err(..) => panic!("Missing required environment variable LIBINDY_DIR")
-        };
-
-        println!("cargo:rustc-link-search=native={}",libindy_lib_path);
-
-        if let Ok(_mode) = env::var("LIBINDY_STATIC") {
-            println!("cargo:rustc-link-lib=static=indy");
-        } else {
-            println!("cargo:rustc-link-lib=dylib=indy");
-        }
 
         let openssl = match env::var("OPENSSL_LIB_DIR") {
             Ok(val) => val,
