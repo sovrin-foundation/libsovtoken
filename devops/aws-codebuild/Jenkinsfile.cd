@@ -88,7 +88,7 @@ pipelineWrapper({
 
             // env and build spec
             imageTag = buildImageTag
-            buildspec = 'devops/aws-codebuild/buildspec.yml'
+            buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
             envv = [
                 [name: 'OSNAME', value: osname],
                 [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
