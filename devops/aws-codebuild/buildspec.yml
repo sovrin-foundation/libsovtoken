@@ -13,6 +13,7 @@ env:
     CARGO_TARGET_DIR: "target"
     # optional
     ARTIFACTS: ""
+    INDY_POOL_LOG_LEVEL: ""
 #  parameter-store:
 #    CARGO_LOGIN_TOKEN: "cargoLoginToken"
 
@@ -42,7 +43,7 @@ phases:
       - |
         set -ex
         for art in $ARTIFACTS; do
-            cp -vR -t /tmp/artifacts $art
+            cp -vR -t /tmp/artifacts $art || true
         done
       - find /tmp/artifacts
 
