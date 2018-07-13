@@ -71,6 +71,7 @@ all: test_dry test package
 include ext/Makefile
 
 # log variables
+ifdef DEBUG
 $(call log_var,RELEASE)
 $(call log_var,OSNAME)
 $(call log_var,PROJECT_DIR)
@@ -81,6 +82,7 @@ $(call log_var,DOCKER_NAME)
 $(call log_var,CI_DOCKER_TAG)
 $(call log_var,LSTBASE_DOCKER_TAG)
 $(call log_var,DOCKER_BUILD_NETWORK)
+endif
 
 export OSNAME
 
