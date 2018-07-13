@@ -7,7 +7,7 @@ use sovtoken::logic::parsers::common::ResponseOperations;
 use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
 use utils::did;
 use utils::mint;
-use utils::payment::fees;
+use utils::payment::fees as fees_utils;
 use utils::payment::address as gen_address;
 use utils::pool;
 use utils::wallet::Wallet;
@@ -91,8 +91,8 @@ impl<'a> Setup<'a>
 
             users = Setup::create_users(wallet, pool_handle, trustee_dids[0], config.num_users);
             if let Some(f) = config.fees {
-                prev_fees = Some(fees::get_fees(wallet, pool_handle, trustee_dids[0]));
-                fees::set_fees(pool_handle, wallet.handle, PAYMENT_METHOD_NAME, &f.to_string(), &trustee_dids);
+                prev_fees = Some(fees_utils::get_fees(wallet, pool_handle, trustee_dids[0]));
+                fees_utils::set_fees(pool_handle, wallet.handle, PAYMENT_METHOD_NAME, &f.to_string(), &trustee_dids);
                 fees = Some(f);
             }
         };
@@ -185,7 +185,7 @@ impl<'a> Drop for Setup<'a> {
     fn drop(&mut self) {
         if let Some(reset_fees) = Setup::fees_reset_json(self.prev_fees.take(), self.fees.take()) {
             let dids = self.trustees.dids();
-            fees::set_fees(
+            fees_utils::set_fees(
                 self.pool_handle,
                 self.wallet.handle,
                 PAYMENT_METHOD_NAME,
