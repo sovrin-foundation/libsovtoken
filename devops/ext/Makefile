@@ -18,6 +18,7 @@ PRE_PACKAGE_GOALS ?=
 check_non_empty = $(if $(1),$(1),$(error $(2)))
 check_defined = $(if $(value $1),, $(error Undefined $1$(if $2,	($2))$(if $(value @), \
                     required by target '$@')))
+log_var = $(info Value of $1 is [$($1)])
 
 docker_env_value = $(call check_non_empty,$(shell grep '^ENV $(1)=' $(2) | cut -d '=' -f 2), \
 				   "Value for ENV $(1) not found in dockerfile $(2)")
