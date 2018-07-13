@@ -112,12 +112,7 @@ impl XferPayload {
         XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), Box::new(move |signatures| {
             match signatures {
                 Ok(signatures) => {
-                    let mut payload = self.clone();
-                    let signatures = payload.inputs.iter()
-                        .filter_map(|i| signatures.get(&i.to_string()))
-                        .map(|s| s.to_string())
-                        .collect();
-                    payload.signatures = Some(signatures);
+                    let payload = Self::_clone_payload_add_signatures(&self, signatures);
                     info!("Built XFER payload: {:?}", payload);
                     cb(Ok(payload));
                 }
@@ -126,13 +121,24 @@ impl XferPayload {
                     cb(Err(err));
                 }
             };
-        }
-        )
-        )?;
+        }))?;
 
         let res = Ok(());
         trace!("logic::xfer_payload::xfer_payload::sign << result: {:?}", res);
         res
+    }
+
+    fn _clone_payload_add_signatures(prev: &Self, signatures: HashMap<String, String>) -> Self {
+        let signatures = signatures
+            .into_iter()
+            .map(|s| s.1)
+            .collect();
+        
+        XferPayload {
+            inputs: prev.inputs.clone(),
+            outputs: prev.outputs.clone(),
+            signatures: Some(signatures),
+        }
     }
 }
 
@@ -140,10 +146,6 @@ trait InputSigner<A: CryptoAPI> {
     fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, cb: Box<Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
                    -> Result<(), ErrorCode>
     {
-        if inputs.is_empty() {
-            cb(Ok(HashMap::new()));
-            return Ok(());
-        }
         let inputs_result: Arc<Mutex<HashMap<String, String>>> = Default::default();
 
         let res_cnt = inputs.len();
@@ -351,13 +353,6 @@ mod test_xfer_payload {
         let signature = sign_input_sync(&inputs[0], &outputs).unwrap();
         let expected = String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned");
         assert_eq!(expected, signature);
-    }
-
-    #[test]
-    fn sign_multi_input_valid_empty_inputs() {
-        let (_, outputs) = inputs_outputs_valid();
-        let signatures = sign_inputs_sync(&Vec::new(), &outputs).unwrap();
-        assert!(signatures.is_empty());
     }
 
     #[test]
