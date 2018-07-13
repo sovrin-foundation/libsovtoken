@@ -73,6 +73,7 @@ pipelineWrapper({
                         [name: 'OSNAME', value: osname],
                         [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
                     ]
+                    computeType = 'medium'
 
                     // build spec for env image
                     envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
