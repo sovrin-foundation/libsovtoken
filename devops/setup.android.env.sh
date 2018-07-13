@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-CI_DIR=$(cd `dirname $0` && pwd)
-INDY_WORKDIR="$(realpath "${CI_DIR}/..")"
-ANDROID_BUILD_FOLDER="$(realpath "${CI_DIR}/../android_build")"
+DEVOPS_DIR=$(cd `dirname $0` && pwd)
+SOVTOKEN_DIR="$(realpath "${DEVOPS_DIR}/..")"
+ANDROID_BUILD_FOLDER="$(realpath "${DEVOPS_DIR}/../android_build")"
 export TOOLCHAIN_PREFIX=${ANDROID_BUILD_FOLDER}/toolchains
 ## set this variable to 1 if you want to download the prebuilt binaries
 
@@ -79,7 +79,14 @@ download_and_unzip_dependencies_for_all_architectures(){
         export LIBZMQ_DIR=${ANDROID_BUILD_FOLDER}/indy-android-dependencies/prebuilt/zmq/libzmq_${TARGET_ARCH}
 	popd
 }
-
+create_cargo_config(){
+mkdir -p ${SOVTOKEN_DIR}/.cargo
+cat << EOF > ${SOVTOKEN_DIR}/.cargo/config
+[target.${TRIPLET}]
+ar = "$(realpath ${AR})"
+linker = "$(realpath ${CC})"
+EOF
+}
 
 
 create_standalone_toolchain_and_rust_target(){
