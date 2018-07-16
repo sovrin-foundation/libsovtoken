@@ -53,7 +53,7 @@ mod deserialize_arguments_test {
         let config_json = config_json.unwrap_or_else(default::create_address_config);
         let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
-        deserialize_arguments(config_json, cb);
+        deserialize_arguments(config_json, cb)
     }
 
     #[test]
