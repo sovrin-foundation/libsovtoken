@@ -14,10 +14,12 @@ pub fn build_and_submit_get_utxo_request() {
         num_addresses: 1,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![10])
+        mint_tokens: Some(vec![10]),
+        fees: None
     });
-    let Setup {addresses: payment_addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
 
     let (get_utxo_req, payment_method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, dids[0], &payment_addresses[0]).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
@@ -37,10 +39,12 @@ pub fn build_and_submit_get_utxo_request_no_utxo() {
         num_addresses: 1,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: None
+        mint_tokens: None,
+        fees: None,
     });
-    let Setup {addresses: payment_addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
 
     let (get_utxo_req, payment_method) = indy::payments::Payment::build_get_utxo_request(wallet.handle, dids[0], &payment_addresses[0]).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();

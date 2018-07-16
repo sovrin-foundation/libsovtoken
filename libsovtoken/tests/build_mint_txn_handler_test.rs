@@ -170,10 +170,13 @@ pub fn build_and_submit_mint_txn_works() {
         num_addresses: 3,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: None
+        mint_tokens: None,
+        fees: None,
     });
-    let Setup {addresses: payment_addresses, pool_handle, trustees, ..} = setup;
-    let dids = trustees.dids();
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
 
     let output_json = json!([
         {
