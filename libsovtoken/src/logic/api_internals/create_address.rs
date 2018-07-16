@@ -4,11 +4,12 @@ Logic for the [`create_payment_address_handler`].
 [`create_payment_address_handler`]: sovtoken::api::create_payment_address_handler
 */
 
-use indy::ErrorCode;
 use std::os::raw::c_char;
+
+use indy::ErrorCode;
 use logic::config::payment_address_config::PaymentAddressConfig;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
-use utils::ffi_support::string_from_char_ptr;
+use utils::ffi_support::{string_from_char_ptr, cstring_from_str, c_pointer_from_str};
 use utils::json_conversion::JsonDeserialize;
 
 type DeserializedArguments = (PaymentAddressConfig, JsonCallbackUnwrapped);
@@ -38,6 +39,25 @@ pub fn deserialize_arguments(
     debug!("api::create_payment_address_handler PaymentAddressConfig >> {:?}", config);
 
     Ok((config, cb))
+}
+
+/**
+Create a callback for address creation.
+*/
+pub fn create_address_cb(command_handle: i32, cb: JsonCallbackUnwrapped) -> impl Fn(String, ErrorCode) {
+    move | payment_address: String, error_code: ErrorCode | {
+        if error_code != ErrorCode::Success {
+            error!("create payment address failed ErrorCode={:?}", error_code);
+            cb(command_handle, ErrorCode::CommonInvalidState as i32, c_pointer_from_str(""));
+            return;
+        }
+
+        debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
+        let payment_address_cstring = cstring_from_str(payment_address);
+        let payment_address_ptr = payment_address_cstring.as_ptr();
+
+        cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);   
+    }
 }
 
 #[cfg(test)]
@@ -104,9 +124,49 @@ mod deserialize_arguments_test {
 
 
     #[test]
-    fn valid_arguments()
+    fn test_valid_arguments()
     {
         let result = call_deserialize_arguments(None, None);
         assert!(result.is_ok());
+    }
+}
+
+#[cfg(test)]
+mod create_address_cb_test {
+    use super::*;
+    use utils::test::callbacks;
+    use std::sync::mpsc::RecvError;
+
+    fn call_callback(address: String, error_code: ErrorCode)
+        -> Result<(ErrorCode, String), RecvError>
+    {
+        let (receiver, command_handle, cb) = callbacks::cb_ec_string();
+        create_address_cb(command_handle, cb.unwrap())(address, error_code);
+        receiver.recv()
+    }
+
+    #[test]
+    fn test_cb_called_on_error()
+    {
+        let result = call_callback(
+            String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja"),
+            ErrorCode::CommonInvalidState
+        ).unwrap();
+
+        assert_eq!(ErrorCode::CommonInvalidState, result.0);
+        assert_eq!("", result.1);
+    }
+
+    #[test]
+    fn test_cb_called_on_success()
+    {
+        let address = String::from("pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja");
+        let result = call_callback(
+            address.clone(),
+            ErrorCode::Success
+        ).unwrap();
+
+        assert_eq!(ErrorCode::Success, result.0);
+        assert_eq!(address, result.1);
     }
 }

@@ -1,8 +1,6 @@
 //! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
 //!
 
-use std;
-
 use libc::c_char;
 
 use indy::payments::Payment;
@@ -32,7 +30,7 @@ use logic::xfer_payload::XferPayload;
 
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
+use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::ffi_support::c_pointer_from_str;
@@ -75,22 +73,9 @@ pub extern "C" fn create_payment_address_handler(
         Err(e) => return e as i32
     };
 
-    let payment_closure = move | payment_address : String, err: ErrorCode | {
+    let payment_closure = create_address::create_address_cb(command_handle, cb);
 
-        if err != ErrorCode::Success {
-            error!("create payment address failed ErrorCode={:?}", err);
-            cb(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null());
-            return;
-        }
-
-        debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
-        let payment_address_cstring = cstring_from_str(payment_address);
-        let payment_address_ptr = payment_address_cstring.as_ptr();
-
-        cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);
-    };
-
-    let handler = CreatePaymentHandler::new(CryptoSdk {} );
+    let handler = CreatePaymentHandler::new(CryptoSdk {});
     let ec = handler.create_payment_address_async(wallet_handle, config, payment_closure);
     trace!("api::create_payment_address_handler << result: {:?}", ec);
     return ec as i32;
