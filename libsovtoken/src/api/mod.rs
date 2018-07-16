@@ -9,9 +9,9 @@ use indy::payments::Payment;
 use indy::ledger::Ledger;
 use indy::ErrorCode;
 use logic::add_request_fees;
+use logic::api_internals::create_address;
 use logic::build_payment;
 use logic::config::{
-    payment_address_config::{PaymentAddressConfig},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
@@ -62,34 +62,17 @@ use utils::ffi_support::c_pointer_from_str;
 /// # Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn create_payment_address_handler(command_handle: i32,
-                                                 wallet_handle: i32,
-                                                 config_str: *const c_char,
-                                                 cb: JsonCallback) -> i32 {
+pub extern "C" fn create_payment_address_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    config_str: *const c_char,
+    cb: JsonCallback
+) -> i32 {
 
     trace!("api::create_payment_address_handler called");
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
-
-    if config_str.is_null() {
-        trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
-
-    let json_config_str: String = match string_from_char_ptr(config_str) {
-        Some(s) => s,
-        None => {
-            trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-            return ErrorCode::CommonInvalidStructure as i32
-        },
-    };
-
-    debug!("api::create_payment_address_handler >> wallet_handle: {:?}, config_str: {:?}", wallet_handle, json_config_str);
-
-    // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
-    // like { } as valid.  if we get any kind of serialization failure assume we can use the default
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str).map_err(map_err_trace!()) {
-        Ok(c) => c,
-        Err(_) => PaymentAddressConfig { seed : "".to_string()},
+    let (config, cb) = match create_address::deserialize_arguments(config_str, cb) {
+        Ok(tup) => tup,
+        Err(e) => return e as i32
     };
 
     let payment_closure = move | payment_address : String, err: ErrorCode | {
