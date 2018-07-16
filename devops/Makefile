@@ -108,6 +108,7 @@ image_lstbase: image_lstbase_parent_version image_rust docker/base/$(OSNAME)/Car
 			$(LSTBASE_DOCKERFILE_PATH))-$(OSNAME)-base))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
+	DOCKER_UID=$(DOCKER_UID) \
 	LSTBASE_DOCKER_NAME=$(DOCKER_NAME) \
 	LSTBASE_DOCKER_TAG=$(DOCKER_TAG) \
 		docker-compose -f docker/docker-compose.yml build base
