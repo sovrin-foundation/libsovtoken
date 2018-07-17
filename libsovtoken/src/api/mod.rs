@@ -6,8 +6,10 @@ use libc::c_char;
 use indy::payments::Payment;
 use indy::ledger::Ledger;
 use indy::ErrorCode;
-use logic::add_request_fees;
-use logic::api_internals::create_address;
+use logic::api_internals::{
+    add_request_fees,
+    create_address
+};
 use logic::build_payment;
 use logic::config::{
     get_fees_config::GetFeesRequest,
