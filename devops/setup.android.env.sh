@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 DEVOPS_DIR=$(cd `dirname $0` && pwd)
-SOVTOKEN_DIR="$(realpath "${DEVOPS_DIR}/..")"
-ANDROID_BUILD_FOLDER="$(realpath "${DEVOPS_DIR}/../android_build")"
+SOVTOKEN_DIR="${DEVOPS_DIR}/.."
+ANDROID_BUILD_FOLDER="${DEVOPS_DIR}/../android_build"
 export TOOLCHAIN_PREFIX=${ANDROID_BUILD_FOLDER}/toolchains
 ## set this variable to 1 if you want to download the prebuilt binaries
 
@@ -84,8 +84,8 @@ create_cargo_config(){
 mkdir -p ${SOVTOKEN_DIR}/.cargo
 cat << EOF > ${SOVTOKEN_DIR}/.cargo/config
 [target.${TRIPLET}]
-ar = "$(realpath ${AR})"
-linker = "$(realpath ${CC})"
+ar = "${AR}"
+linker = "${CC}"
 EOF
 }
 
@@ -117,7 +117,7 @@ download_and_setup_toolchain(){
             fi
         popd
         pushd ${TOOLCHAIN_PREFIX}
-            ln -nsf $(realpath ${TOOLCHAIN_PLATFORM_PREFIX}) standalone_toolchains
+            ln -nsf ${TOOLCHAIN_PLATFORM_PREFIX} standalone_toolchains
             export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r16b
         popd
 
@@ -137,7 +137,7 @@ download_and_setup_toolchain(){
         popd
 
         pushd ${TOOLCHAIN_PREFIX}
-            ln -nsf $(realpath ${TOOLCHAIN_PLATFORM_PREFIX}) standalone_toolchains
+            ln -nsf ${TOOLCHAIN_PLATFORM_PREFIX} standalone_toolchains
             export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r16b
         popd
     fi
