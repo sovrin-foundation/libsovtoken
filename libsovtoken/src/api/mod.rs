@@ -33,8 +33,6 @@ use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use utils::ffi_support::c_pointer_from_str;
-
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -175,11 +173,11 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler called >> did (address) {:?}", did);
+    trace!("api::add_request_fees_handler called did (address) >> {:?}", did);
     let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
-            trace!("api::add_request_fees_handler << result: {:?}", error_code);
+            trace!("api::add_request_fees_handler result >> {:?}", error_code);
             return error_code as i32;
         }
     };
@@ -190,27 +188,29 @@ pub extern "C" fn add_request_fees_handler(
         outputs.
     */
     if let Err(_) = add_request_fees::validate_type_not_transfer(&request_json_map) {
-        error!("Can't add fees to a transfer request");
+        error!("api::add_request_fees_handler Can't add fees to a transfer request");
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
-    match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map, Box::new(move |res| {
-        info!("Request with fees: {:?}", res);
-        match res {
-            Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
-            Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
-        };
-    })) {
+    let result = add_request_fees::add_fees_to_request_and_serialize(
+        wallet_handle,
+        inputs,
+        outputs,
+        request_json_map,
+        Box::new(add_request_fees::closure_cb_response(command_handle, cb))
+    );
+    
+    match result {
         Err(e) => {
-            error!("Received error adding fees to request_json'");
+            error!("api::add_request_fees_handler Received error adding fees to request_json");
             return e as i32;
         }
-        _ => ()
+        _ => {
+            let res = ErrorCode::Success;
+            trace!("api::add_request_fees_handler result >> {:?}", res);
+            return res as i32;
+        }
     };
-
-    let res = ErrorCode::Success;
-    trace!("api::add_request_fees_handler << result: {:?}", res);
-    return res as i32;
 }
 
 
