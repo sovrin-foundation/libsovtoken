@@ -56,7 +56,6 @@ pub fn build_and_submit_nym_with_fees() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_nym_with_fees_insufficient_funds() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
@@ -131,8 +130,8 @@ pub fn build_and_submit_nym_with_fees_utxo_already_spent() {
     let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
     let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, dids[0], &nym_req_signed, &inputs, &outputs).unwrap();
     let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
-    let _err = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap_err();
-    //assert_eq!(_err, ErrorCode::PaymentSourceDoesNotExistError);
+    let err = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap_err();
+    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]

@@ -112,10 +112,8 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
 
     _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
 
-    let _parsed_err = _send_schema_with_fees(dids[0],rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
-    //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
-    //TODO: this test should fail for a while until we get some vision on a ErrorCodes (both on parsing and new ones)
-    assert!(false);
+    let err = _send_schema_with_fees(dids[0],rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 fn _send_schema_with_fees(did: &str,
