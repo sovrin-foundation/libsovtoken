@@ -59,8 +59,9 @@ RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"
 
 USER root
 
-
 # sovtoken and sovtokenfees
+# bump this env var if you need to avoid caching for apt-based installation
+ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
 ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
 # TODO workaround to copy optional files *.deb
 # fix that once that issue is resovled
