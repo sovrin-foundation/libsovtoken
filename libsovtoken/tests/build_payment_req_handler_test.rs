@@ -360,7 +360,6 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_payment_req_with_spent_utxo() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {

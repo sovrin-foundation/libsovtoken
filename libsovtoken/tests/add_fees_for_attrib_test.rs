@@ -111,7 +111,6 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_attrib_with_fees_double_spend() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
