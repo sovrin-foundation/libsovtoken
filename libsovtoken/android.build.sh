@@ -57,6 +57,18 @@ setup_dependencies(){
                     SODIUM_DIR=$5
                 fi
             fi
+            if [ -z "${ZMQ_DIR}" ]; then
+                ZMQ_DIR="ZMQ_${TARGET_ARCH}"
+                if [ -d "${ZMQ_DIR}" ] ; then
+                    echo "Found ${ZMQ_DIR}"
+                elif [ -z "$5" ]; then
+                    echo STDERR "Missing ZMQ_DIR argument and environment variable"
+                    echo STDERR "e.g. set ZMQ_DIR=<path> for environment or zmq_${TARGET_ARCH}"
+                    exit 1
+                else
+                    ZMQ_DIR=$5
+                fi
+            fi
     fi
 
     if [ -z "${INDY_DIR}" ]; then

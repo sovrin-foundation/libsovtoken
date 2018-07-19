@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DEVOPS_DIR=$(cd `dirname $0` && pwd)
-SOVTOKEN_DIR="${DEVOPS_DIR}/.."
+SOVTOKEN_DIR="${DEVOPS_DIR}/../libsovtoken"
 ANDROID_BUILD_FOLDER="${DEVOPS_DIR}/../android_build"
 export TOOLCHAIN_PREFIX=${ANDROID_BUILD_FOLDER}/toolchains
 ## set this variable to 1 if you want to download the prebuilt binaries
@@ -43,7 +43,7 @@ generate_arch_flags(){
         export TARGET_API="16"
         export TRIPLET="armv7-linux-androideabi"
         export ABI="armeabi-v7a"
-        export TOOLCHAIN_TRIPLET= "arm-linux-androideabi"
+        export TOOLCHAIN_TRIPLET="arm-linux-androideabi"
     fi
 
     if [ $1 == "arm64" ]; then
@@ -88,7 +88,6 @@ ar = "${AR}"
 linker = "${CC}"
 EOF
 }
-
 
 create_standalone_toolchain_and_rust_target(){
     #will only create toolchain if not already created
