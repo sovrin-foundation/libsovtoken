@@ -6,6 +6,7 @@
 
 pub mod add_request_fees;
 pub mod address;
+pub mod api_internals;
 pub mod build_payment;
 pub mod config;
 pub mod did;
