@@ -16,7 +16,7 @@ use utils::json_conversion::JsonSerialize;
      The seed should be 32 bytes, thats what libsodium requires. Seed can be optional, in that case libsodium generates a random 32 byte seed
 
 */
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PaymentAddressConfig {
     pub seed : String,
 }
