@@ -345,7 +345,7 @@ pub extern "C" fn build_payment_req_handler(
 
     let payload = XferPayload::new(inputs, outputs);
 
-    let result = payload.sign(
+    let result = payload.sign_transfer(
         &CryptoSdk {},
         wallet_handle,
         Box::new(move |result| build_payment::handle_signing(command_handle, result, cb))
