@@ -8,6 +8,7 @@ services:
       network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - INDY_SDK_VERSION
+          - u_id=${DOCKER_UID}
     image: ${LSTBASE_DOCKER_NAME}:${LSTBASE_DOCKER_TAG}
 
   ci:

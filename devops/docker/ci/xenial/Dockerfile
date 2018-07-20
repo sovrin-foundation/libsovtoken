@@ -1,4 +1,4 @@
-FROM evernym/libsovtoken:0.3.0-xenial-base
+FROM evernym/libsovtoken:0.4.0-xenial-base
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -59,8 +59,9 @@ RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"
 
 USER root
 
-
 # sovtoken and sovtokenfees
+# bump this env var if you need to avoid caching for apt-based installation
+ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
 ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
 # TODO workaround to copy optional files *.deb
 # fix that once that issue is resovled
@@ -86,4 +87,4 @@ RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovto
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.15.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.17.0

@@ -1,17 +1,17 @@
 //! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
 //!
 
-use std;
-
 use libc::c_char;
 
 use indy::payments::Payment;
 use indy::ledger::Ledger;
 use indy::ErrorCode;
-use logic::add_request_fees;
+use logic::api_internals::{
+    add_request_fees,
+    create_address
+};
 use logic::build_payment;
 use logic::config::{
-    payment_address_config::{PaymentAddressConfig},
     get_fees_config::GetFeesRequest,
     get_utxo_config::*,
 };
@@ -32,11 +32,9 @@ use logic::xfer_payload::XferPayload;
 
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
-use utils::ffi_support::{str_from_char_ptr, cstring_from_str, string_from_char_ptr, c_pointer_from_string};
+use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use utils::ffi_support::c_pointer_from_str;
-
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -62,52 +60,22 @@ use utils::ffi_support::c_pointer_from_str;
 /// # Errors
 /// description of errors
 #[no_mangle]
-pub extern "C" fn create_payment_address_handler(command_handle: i32,
-                                                 wallet_handle: i32,
-                                                 config_str: *const c_char,
-                                                 cb: JsonCallback) -> i32 {
+pub extern "C" fn create_payment_address_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    config_str: *const c_char,
+    cb: JsonCallback
+) -> i32 {
 
     trace!("api::create_payment_address_handler called");
-    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
-
-    if config_str.is_null() {
-        trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-        return ErrorCode::CommonInvalidStructure as i32;
-    }
-
-    let json_config_str: String = match string_from_char_ptr(config_str) {
-        Some(s) => s,
-        None => {
-            trace!("api::create_payment_address_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-            return ErrorCode::CommonInvalidStructure as i32
-        },
+    let (config, cb) = match create_address::deserialize_arguments(config_str, cb) {
+        Ok(tup) => tup,
+        Err(e) => return e as i32
     };
 
-    debug!("api::create_payment_address_handler >> wallet_handle: {:?}, config_str: {:?}", wallet_handle, json_config_str);
+    let payment_closure = create_address::create_address_cb(command_handle, cb);
 
-    // indy-sdk accepts { } for valid seed info to create a key.  Serde deseralization does not
-    // like { } as valid.  if we get any kind of serialization failure assume we can use the default
-    let config: PaymentAddressConfig = match PaymentAddressConfig::from_json(&json_config_str).map_err(map_err_trace!()) {
-        Ok(c) => c,
-        Err(_) => PaymentAddressConfig { seed : "".to_string()},
-    };
-
-    let payment_closure = move | payment_address : String, err: ErrorCode | {
-
-        if err != ErrorCode::Success {
-            error!("create payment address failed ErrorCode={:?}", err);
-            cb(command_handle, ErrorCode::CommonInvalidState as i32, std::ptr::null());
-            return;
-        }
-
-        debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
-        let payment_address_cstring = cstring_from_str(payment_address);
-        let payment_address_ptr = payment_address_cstring.as_ptr();
-
-        cb(command_handle, ErrorCode::Success as i32, payment_address_ptr);
-    };
-
-    let handler = CreatePaymentHandler::new(CryptoSdk {} );
+    let handler = CreatePaymentHandler::new(CryptoSdk {});
     let ec = handler.create_payment_address_async(wallet_handle, config, payment_closure);
     trace!("api::create_payment_address_handler << result: {:?}", ec);
     return ec as i32;
@@ -207,11 +175,11 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler called >> did (address) {:?}", did);
+    trace!("api::add_request_fees_handler called did (address) >> {:?}", did);
     let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
-            trace!("api::add_request_fees_handler << result: {:?}", error_code);
+            trace!("api::add_request_fees_handler result >> {:?}", error_code);
             return error_code as i32;
         }
     };
@@ -222,27 +190,29 @@ pub extern "C" fn add_request_fees_handler(
         outputs.
     */
     if let Err(_) = add_request_fees::validate_type_not_transfer(&request_json_map) {
-        error!("Can't add fees to a transfer request");
+        error!("api::add_request_fees_handler Can't add fees to a transfer request");
         return ErrorCode::CommonInvalidStructure as i32;
     }
 
-    match add_request_fees::add_fees_to_request_and_serialize(wallet_handle, inputs, outputs, request_json_map, Box::new(move |res| {
-        info!("Request with fees: {:?}", res);
-        match res {
-            Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
-            Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
-        };
-    })) {
+    let result = add_request_fees::add_fees_to_request_and_serialize(
+        wallet_handle,
+        inputs,
+        outputs,
+        request_json_map,
+        Box::new(add_request_fees::closure_cb_response(command_handle, cb))
+    );
+    
+    match result {
         Err(e) => {
-            error!("Received error adding fees to request_json'");
+            error!("api::add_request_fees_handler Received error adding fees to request_json");
             return e as i32;
         }
-        _ => ()
+        _ => {
+            let res = ErrorCode::Success;
+            trace!("api::add_request_fees_handler result >> {:?}", res);
+            return res as i32;
+        }
     };
-
-    let res = ErrorCode::Success;
-    trace!("api::add_request_fees_handler << result: {:?}", res);
-    return res as i32;
 }
 
 
@@ -377,7 +347,7 @@ pub extern "C" fn build_payment_req_handler(
 
     let payload = XferPayload::new(inputs, outputs);
 
-    let result = payload.sign(
+    let result = payload.sign_transfer(
         &CryptoSdk {},
         wallet_handle,
         Box::new(move |result| build_payment::handle_signing(command_handle, result, cb))

@@ -107,3 +107,7 @@ pub fn xfer_payload_signed() -> XferPayload {
         signatures
     }
 }
+
+pub fn create_address_config() -> *const c_char {
+    json_c_pointer!({})
+}
