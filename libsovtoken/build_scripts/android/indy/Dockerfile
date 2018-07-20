@@ -7,7 +7,6 @@ ARG cross_compile
 ARG openssl_dir
 ARG sodium_dir
 ARG libzmq_dir
-ARG final
 
 ENV TARGET_ARCH ${target_arch}
 ENV TARGET_API ${target_api}
@@ -27,7 +26,6 @@ ENV CXX=${TOOLCHAIN_DIR}/bin/${CROSS_COMPILE}-clang++
 ENV CXXLD=${TOOLCHAIN_DIR}/bin/${CROSS_COMPILE}-ld
 ENV RANLIB=${TOOLCHAIN_DIR}/bin/${CROSS_COMPILE}-ranlib
 ENV TARGET=android
-ENV FINAL=${final}
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update -y && apt-get -qq install -y zip unzip libtool curl wget python3 pkg-config libzmq3-dev 2>&1 > /dev/null
 RUN useradd -m -d /home/indy_user -s /bin/bash indy_user

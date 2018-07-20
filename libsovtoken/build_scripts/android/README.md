@@ -17,7 +17,10 @@ Choose an architecture to build for <arm|arm64|x86>, the triplet will be
 cd indy
 ./build.sh <target-arch>
 cd ../libsovtoken
-./build.sh <target-arch> $PWD/../indy/indy-sdk/target/<target-arch-triplet>/release
+mkdir libindy_<target-arch>
+cp ../indy/indy-sdk/libindy/target/<target-arch-triplet>/release/libindy.so libindy_<target-arch>/
+cp ../indy/indy-sdk/libindy/target/<target-arch-triplet>/release/libindy.a libindy_<target-arch>/
+./build.sh <target-arch>
 ```
 
 The binaries will be in **libsovtoken/libsovtoken/target/<target-arch-triplet/release**
