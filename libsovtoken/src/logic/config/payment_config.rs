@@ -44,7 +44,7 @@ use logic::xfer_payload::XferPayload;
         ];
 
         let transfer_data = XferPayload::new(inputs, outputs);
-            // .sign(&CryptoSdk {}, wallet.handle)
+            // .sign_transfer(&CryptoSdk {}, wallet.handle)
             // .unwrap();
 
         let payment = PaymentRequest::new(transfer_data);

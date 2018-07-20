@@ -28,18 +28,21 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
         libindy \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -ms /bin/bash -u $u_id $u_name
-ENV TEST_USER=$u_name
+
+RUN if [ "$u_id" != "0" ]; then \
+        useradd -ms /bin/bash -u $u_id $u_name; \
+    fi
+
 ENV TEST_USER_UID=$u_id
 
 # fill cargo cache to speed up docker containers
 COPY Cargo.toml /tmp/libsovtoken/
-RUN chown -R ${u_name}:${u_name} /tmp/libsovtoken/
-USER $u_name
+RUN chown -R ${u_id}:${u_id} /tmp/libsovtoken/
+USER $u_id
 RUN cd /tmp/libsovtoken \
     && cargo update \
     && rm -rf /tmp/libsovtoken/
 
 # TODO CMD ENTRYPOINT ...
 
-ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.3.0
+ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.4.0
