@@ -39,31 +39,14 @@ x86_64-apple-ios
 ```
 4. Restart your terminal for environment variables to take effect and cd into libsovtoken/libsovtoken/build_scripts/ios/mac
 1. Run the script `source ./mac.02.libindy.env.sh`
-1. Run these scripts if needed if `./mac.03.libindy.build.sh` fails:
+1.
+    a) Run the script `./mac.03.libindy.build.sh`
+
+    b) Run these scripts if needed if `./mac.03.libindy.build.sh` fails:
     - `./mac.08.libssl.libcrypto.build.sh`
     - `./mac.09.libzmq.libsodium.build.sh`
     - `./mac.10.libminiz.libsqlite3.combine.sh`
-1. Run the script `./mac.03.libindy.build.sh`
 1. Run the script `./mac.14.libsovtoken.build.sh` (Test failures do not prevent the .a files from being correctly built)
 If you get the error
 error: failed to add native library /usr/local/lib/libindy.a: File too small to be an archive
-then that means the build.rs file in the libsovtoken/libsovtoken folder is setup incorrectly.
-You must comment out the lines that look like this, then rerun the script...
-        let libindy_lib_path = match env::var("LIBINDY_DIR"){
-            Ok(val) => val,
-            Err(..) => panic!("Missing required environment variable LIBINDY_DIR")
-        };
-
-        let openssl = match env::var("OPENSSL_LIB_DIR") {
-            Ok(val) => val,
-            Err(..) => match env::var("OPENSSL_DIR") {
-                Ok(dir) => Path::new(&dir[..]).join("/lib").to_string_lossy().into_owned(),
-                Err(..) => panic!("Missing required environment variables OPENSSL_DIR or OPENSSL_LIB_DIR")
-            }
-        };
-
-        println!("cargo:rustc-link-search=native={}",libindy_lib_path);
-        println!("cargo:rustc-link-lib=static=indy");
-        println!("cargo:rustc-link-search=native={}", openssl);
-        println!("cargo:rustc-link-lib=static=crypto");
-        println!("cargo:rustc-link-lib=static=ssl");
+then that means it was trying link against the universal library and needs the target-arch specific library.
