@@ -129,9 +129,11 @@ impl XferPayload {
     }
 
     fn clone_payload_add_signatures(prev: &Self, signatures: HashMap<String, String>) -> Self {
-        let signatures = signatures
-            .into_iter()
-            .map(|s| s.1)
+        let signatures = prev.inputs
+            .iter()
+            .map(|input_address| signatures.get(&input_address.to_string()))
+            .filter(|signature| signature.is_some())
+            .map(|signature| signature.unwrap().to_owned())
             .collect();
         
         XferPayload {
@@ -495,5 +497,41 @@ mod test_xfer_payload {
 
         assert_eq!(expected_inputs, signed_payload.inputs);
         assert_eq!(expected_outputs, signed_payload.outputs);
+    }
+
+    /*
+    This test was created as a result of a bug where the signature ordering was
+    arbitrary. This isn't a perfect test, but it does increase confidence.
+    */
+    #[test]
+    fn sign_multi_input_preserve_ordering() {
+        let attempts = 5;
+        let wallet_handle = 1;
+        let (mut inputs, outputs) = inputs_outputs_valid_qualified();   
+        inputs.reverse();
+
+        let expected_signatures = vec![
+            String::from("GyPZzuu8S1KMs5p6iE1wBzjQsFtaB7eigssW4YbdXdtesigned"),
+            String::from("31VzUm5vZRfWPk38W3YJaNjrkUeD6tELmjxv42cp7Vnksigned"),
+        ];
+        let payload = XferPayload::new(inputs, outputs);
+
+        let (sender, receiver) = channel();
+        let sender = Arc::new(Mutex::new(sender));
+
+        for _ in 0..attempts {
+            let sender = sender.clone();
+            let cb = move |result| { sender.lock().unwrap().send(result); };
+            payload.clone().sign_transfer(
+                &CryptoApiHandler{},
+                wallet_handle,
+                Box::new(cb)
+            ).unwrap();
+        }
+
+        for _ in 0..attempts {
+            let signed_payload = receiver.recv().unwrap().unwrap();
+            assert_eq!(expected_signatures, signed_payload.signatures.unwrap());
+        }
     }
 }
