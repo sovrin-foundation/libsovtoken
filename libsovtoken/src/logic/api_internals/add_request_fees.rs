@@ -6,10 +6,11 @@ use logic::xfer_payload::XferPayload;
 use logic::input::Inputs;
 use logic::output::Outputs;
 use serde_json;
-use utils::ffi_support::{string_from_char_ptr};
+use utils::ffi_support::{string_from_char_ptr, c_pointer_from_string, c_pointer_from_str};
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use utils::constants::txn_types::XFER_PUBLIC;
 use utils::constants::txn_fields::FEES;
+use utils::constants::general::JsonCallbackUnwrapped;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
@@ -92,6 +93,19 @@ pub fn add_fees_to_request_and_serialize(
     }));
     trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> result: {:?}", res);
     res
+}
+
+/**
+Creates a callback for when the signing is complete and fees are added.
+*/
+pub fn closure_cb_response(command_handle: i32, cb: JsonCallbackUnwrapped) -> impl Fn(Result<String, ErrorCode>) {
+    move |res| {
+        trace!("add_request_fees::closure_cb_response Request with fees >> {:?}", res);
+        match res {
+            Ok(res) => cb(command_handle, ErrorCode::Success as i32, c_pointer_from_string(res)),
+            Err(e) => cb(command_handle, e as i32, c_pointer_from_str("")),
+        };
+    }    
 }
 
 
@@ -291,5 +305,34 @@ mod test_deserialize_inputs {
 
         let validated = validate_type_not_transfer(&request);
         assert!(validated.is_ok());
+    }
+}
+
+#[cfg(test)]
+mod closure_cb_response_test {
+    use super::*;
+    use utils::test::callbacks;
+    use std::sync::mpsc::RecvError;
+
+    fn call_callback(result: Result<String, ErrorCode>)
+        -> Result<(ErrorCode, String), RecvError>
+    {
+        let (receiver, command_handle, cb) = callbacks::cb_ec_string();
+        closure_cb_response(command_handle, cb.unwrap())(result);
+        receiver.recv()
+    }
+    
+    #[test]
+    fn test_cb_called_on_error() {
+        let result = call_callback(Err(ErrorCode::CommonInvalidState)).unwrap();
+        assert_eq!(ErrorCode::CommonInvalidState, result.0);
+        assert_eq!(String::from(""), result.1);
+    }
+
+    #[test]
+    fn test_cb_called_on_success() {
+        let result = call_callback(Ok(String::from("Heyahh"))).unwrap();
+        assert_eq!(ErrorCode::Success, result.0);
+        assert_eq!(String::from("Heyahh"), result.1);
     }
 }
