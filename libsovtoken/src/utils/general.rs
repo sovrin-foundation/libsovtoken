@@ -42,10 +42,14 @@ pub fn some_or_none_option_u8(data : &[u8]) -> Option<&[u8]> {
 ///  to ease the work of dealing with strings
 pub trait StringUtils {
     fn from_right(&self, count : usize) -> String;
+    fn replace_char_at(&self, position: usize, c: char) -> String;
 }
 
 /// this impl adds StringUtils to any str
 impl<'a> StringUtils for &'a str {
+    /**
+        returns right most portion of a string
+    */
     fn from_right(&self, count : usize) -> String {
         let len = self.chars().count();
 
@@ -61,6 +65,21 @@ impl<'a> StringUtils for &'a str {
         return right_most.to_owned();
     }
 
+    /**
+        returns a string with the character at position changed to replaced
+
+        position: zero based index of element to be replace
+        replace: char which will be placed in position
+    */
+    fn replace_char_at(&self, position: usize, replace: char) -> String {
+        // Taken from https://stackoverflow.com/a/27320653
+        let mut replacable : String = String::with_capacity(self.len());
+        for (index, keep) in self.char_indices() {
+            replacable.push(if index == position { replace } else { keep });
+        }
+
+        return replacable;
+    }
 }
 
 /*
@@ -113,5 +132,29 @@ mod general_tests {
         let result = copy.from_right(75);
 
         assert_eq!(data, result, "from_right test failed");
+    }
+
+    #[test]
+    fn success_replace_2nd() {
+        let source : String = "abc".to_string();
+        let result : String = "adc".to_string();
+
+        assert_eq!(result, source.as_str().replace_char_at(1, 'd'));
+    }
+
+    #[test]
+    fn success_replace_1st() {
+        let source : String = "abc".to_string();
+        let result : String = "dbc".to_string();
+
+        assert_eq!(result, source.as_str().replace_char_at(0, 'd'));
+    }
+
+    #[test]
+    fn success_replace_empty_str() {
+        let source : String = "".to_string();
+        let result : String = "".to_string();
+
+        assert_eq!(result, source.as_str().replace_char_at(0, 'd'));
     }
 }

@@ -225,8 +225,10 @@ pub fn strip_qualifier_from_address(address : &str) -> String {
 
 #[cfg(test)]
 pub mod address_tests {
-    use utils::random::rand_bytes;
+
     use utils::constants::general::PAYMENT_ADDRESS_QUALIFIER;
+    use utils::general::StringUtils;
+    use utils::random::rand_bytes;
 
     use super::*;
 
@@ -252,13 +254,8 @@ pub mod address_tests {
         qualified_address_from_verkey(&gen_random_base58_verkey()).unwrap()
     }
 
-    fn replace_char_at(s: &str, idx: usize, c: char) -> String {
-        // Taken from https://stackoverflow.com/a/27320653
-        let mut r = String::with_capacity(s.len());
-        for (i, d) in s.char_indices() {
-            r.push(if i == idx { c } else { d });
-        }
-        r
+    fn replace_char_at(s: &str, position: usize, char: char) -> String {
+        return s.replace_char_at(position, char);
     }
 
     #[test]

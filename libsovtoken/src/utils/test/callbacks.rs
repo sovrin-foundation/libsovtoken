@@ -12,8 +12,6 @@ use std::collections::HashMap;
 use std::os::raw::c_char;
 use std::ffi::CStr;
 
-// use indy::ErrorCode;
-
 type Callbacks<F> = Mutex<HashMap<i32, Box<F>>>;
 
 macro_rules! closure_cb {
