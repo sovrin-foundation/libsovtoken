@@ -40,45 +40,45 @@ if [ -z "${GIT_INSTALL}" ] ; then
     exit 1
 fi
 
-if [ -z "${OPENSSL_DIR}" ]; then
-    OPENSSL_DIR="openssl_${TARGET_ARCH}"
-    if [ -d "${OPENSSL_DIR}" ] ; then
-        echo "Found ${OPENSSL_DIR}"
+if [ -z "${ANDROID_OPENSSL_DIR}" ]; then
+    ANDROID_OPENSSL_DIR="openssl_${TARGET_ARCH}"
+    if [ -d "${ANDROID_OPENSSL_DIR}" ] ; then
+        echo "Found ${ANDROID_OPENSSL_DIR}"
     elif [ -z "$3" ]; then
         if [ ! -d "${INDY_PREBUILT}/openssl/openssl_${TARGET_ARCH}" ] ; then
             download_and_unzip_dependency "openssl" "${TARGET_ARCH}"
         fi
-        OPENSSL_DIR="${INDY_PREBUILT}/openssl/openssl_${TARGET_ARCH}"
+        ANDROID_OPENSSL_DIR="${INDY_PREBUILT}/openssl/openssl_${TARGET_ARCH}"
     else
-        OPENSSL_DIR=$3
+        ANDROID_OPENSSL_DIR=$3
     fi
 fi
 
-if [ -z "${SODIUM_DIR}" ]; then
-    SODIUM_DIR="libsodium_${TARGET_ARCH}"
-    if [ -d "${SODIUM_DIR}" ] ; then
-        echo "Found ${SODIUM_DIR}"
+if [ -z "${ANDROID_SODIUM_DIR}" ]; then
+    ANDROID_SODIUM_DIR="libsodium_${TARGET_ARCH}"
+    if [ -d "${ANDROID_SODIUM_DIR}" ] ; then
+        echo "Found ${ANDROID_SODIUM_DIR}"
     elif [ -z "$4" ]; then
         if [ ! -d "${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}" ] ; then
             download_and_unzip_dependency "sodium" "${TARGET_ARCH}" 
         fi
-        SODIUM_DIR="${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}"
+        ANDROID_SODIUM_DIR="${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}"
     else
-        SODIUM_DIR=$4
+        ANDROID_SODIUM_DIR=$4
     fi    
 fi
 
-if [ -z "${LIBZMQ_DIR}" ] ; then
-    LIBZMQ_DIR="libzmq_${TARGET_ARCH}" 
-    if [ -d "${LIBZMQ_DIR}" ] ; then
-        echo "Found ${LIBZMQ_DIR}"
+if [ -z "${ANDROID_LIBZMQ_DIR}" ] ; then
+    ANDROID_LIBZMQ_DIR="libzmq_${TARGET_ARCH}"
+    if [ -d "${ANDROID_LIBZMQ_DIR}" ] ; then
+        echo "Found ${ANDROID_LIBZMQ_DIR}"
     elif [ -z "$5" ] ; then
         if [ ! -d "${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}" ] ; then
             download_and_unzip_dependency "zmq" "${TARGET_ARCH}" 
         fi
-        LIBZMQ_DIR="${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}"
+        ANDROID_LIBZMQ_DIR="${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}"
     else
-        LIBZMQ_DIR=$5
+        ANDROID_LIBZMQ_DIR=$5
     fi
 fi
 
@@ -108,6 +108,6 @@ fi
 rm -f "indy-sdk/libindy/Cargo.lock"
 DOCKER_IMAGE_ID=$(docker image ls | grep libindy-android-${TARGET_ARCH})
 if [ -z "${DOCKER_IMAGE_ID}" ] ; then
-    docker build -t libindy-android-${TARGET_ARCH}:latest . --build-arg target_arch=${TARGET_ARCH} --build-arg target_api=${TARGET_API} --build-arg cross_compile=${CROSS_COMPILE} --build-arg openssl_dir=${OPENSSL_DIR} --build-arg sodium_dir=${SODIUM_DIR} --build-arg libzmq_dir=${LIBZMQ_DIR} --build-arg final=${FINAL}
+    docker build -t libindy-android-${TARGET_ARCH}:latest . --build-arg target_arch=${TARGET_ARCH} --build-arg target_api=${TARGET_API} --build-arg cross_compile=${CROSS_COMPILE} --build-arg openssl_dir=${ANDROID_OPENSSL_DIR} --build-arg sodium_dir=${ANDROID_SODIUM_DIR} --build-arg libzmq_dir=${ANDROID_LIBZMQ_DIR}
 fi
 docker run --user indy_user -v ${PWD}/indy-sdk:/indy-sdk -w /indy-sdk/libindy -t libindy-android-${TARGET_ARCH}:latest cargo build --release --target=${CROSS_COMPILE}
