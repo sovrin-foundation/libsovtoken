@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 
-
 WORKDIR=${PWD}
-export INDY_PREBUILT_DEPS_DIR=${HOME}/Work/repos/faisal00813/indy-sdk/android_build/libindy_x86/lib
-CI_DIR="$(realpath "${WORKDIR}/../devops")"
-BUILD_FOLDER="$(realpath "${WORKDIR}/../android_build")"
-DOWNLOAD_PREBUILTS="0"
+CI_DIR="${WORKDIR}/../devops"
+BUILD_FOLDER="${WORKDIR}/../android_build"
+DOWNLOAD_PREBUILTS=0
+#export INDY_PREBUILT_DEPS_DIR=${HOME}/Work/repos/faisal00813/indy-sdk/android_build/libindy_x86/lib
 
 while getopts ":d" opt; do
     case ${opt} in
-        d) export DOWNLOAD_PREBUILTS="1";;
+        d) DOWNLOAD_PREBUILTS=1;;
         \?);;
     esac
 done
 shift $((OPTIND -1))
 
+echo "DOWNLOAD_PREBUILTS=${DOWNLOAD_PREBUILTS}"
 TARGET_ARCH=$1
 
 if [ -z "${TARGET_ARCH}" ]; then
@@ -25,8 +25,10 @@ fi
 
 source ${CI_DIR}/setup.android.env.sh
 
+BUILD_LIBINDY=0
+
 setup_dependencies(){
-    if [ "${DOWNLOAD_PREBUILTS}" == "1" ]; then
+    if [ ${DOWNLOAD_PREBUILTS} -eq 1 ]; then
         download_and_unzip_dependencies_for_all_architectures
         else
             echo "not downloading prebuilt dependencies. Dependencies locations have to be passed"
@@ -55,13 +57,23 @@ setup_dependencies(){
                     SODIUM_DIR=$5
                 fi
             fi
+            if [ -z "${ZMQ_DIR}" ]; then
+                ZMQ_DIR="ZMQ_${TARGET_ARCH}"
+                if [ -d "${ZMQ_DIR}" ] ; then
+                    echo "Found ${ZMQ_DIR}"
+                elif [ -z "$5" ]; then
+                    echo STDERR "Missing ZMQ_DIR argument and environment variable"
+                    echo STDERR "e.g. set ZMQ_DIR=<path> for environment or zmq_${TARGET_ARCH}"
+                    exit 1
+                else
+                    ZMQ_DIR=$5
+                fi
+            fi
     fi
 
     if [ -z "${INDY_DIR}" ]; then
-        echo STDERR "Missing INDY_DIR argument"
-        echo STDERR "Should have path to directory containing libindy binaries"
-        echo "Sample : ./build.withoutdocker.sh x86 16 i686-linux-android <ABSOLUTE_PATH_TO_LIBINDY_BINARIES_DIR>"
-        exit 1
+        BUILD_LIBINDY=1
+        INDY_DIR="${BUILD_FOLDER}/indy-sdk"
     fi
 }
 
@@ -100,6 +112,17 @@ printenv
     echo "Indy path ${INDY_DIR}"
     echo "Artifacts will be in ${LIBVCX_BUILDS}"
     echo "**************************************************"
+    
+    if [ ${BUILD_LIBINDY} -eq 1 ] ; then
+        if [ ! -d "${INDY_DIR}" ] ; then
+            echo "Cloning indy-sdk master branch"
+            git clone --depth 1 https://github.com/hyperledger/indy-sdk.git ${INDY_DIR}
+        fi
+        pushd ${INDY_DIR}/libindy
+        cargo build --release --target=${TRIPLET}
+        popd
+    fi
+    export LIBINDY_DIR="${INDY_DIR}/libindy/target/${TRIPLET}/release"
     pushd ${WORKDIR}
 #    export LIBINDY_STATIC=1
 #        rm -rf target/${TRIPLET}

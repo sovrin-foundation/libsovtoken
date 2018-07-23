@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 DEVOPS_DIR=$(cd `dirname $0` && pwd)
-SOVTOKEN_DIR="$(realpath "${DEVOPS_DIR}/..")"
-ANDROID_BUILD_FOLDER="$(realpath "${DEVOPS_DIR}/../android_build")"
+SOVTOKEN_DIR="${DEVOPS_DIR}/../libsovtoken"
+ANDROID_BUILD_FOLDER="${DEVOPS_DIR}/../android_build"
 export TOOLCHAIN_PREFIX=${ANDROID_BUILD_FOLDER}/toolchains
 ## set this variable to 1 if you want to download the prebuilt binaries
 
@@ -43,7 +43,7 @@ generate_arch_flags(){
         export TARGET_API="16"
         export TRIPLET="armv7-linux-androideabi"
         export ABI="armeabi-v7a"
-        export TOOLCHAIN_TRIPLET= "arm-linux-androideabi"
+        export TOOLCHAIN_TRIPLET="arm-linux-androideabi"
     fi
 
     if [ $1 == "arm64" ]; then
@@ -84,11 +84,10 @@ create_cargo_config(){
 mkdir -p ${SOVTOKEN_DIR}/.cargo
 cat << EOF > ${SOVTOKEN_DIR}/.cargo/config
 [target.${TRIPLET}]
-ar = "$(realpath ${AR})"
-linker = "$(realpath ${CC})"
+ar = "${AR}"
+linker = "${CC}"
 EOF
 }
-
 
 create_standalone_toolchain_and_rust_target(){
     #will only create toolchain if not already created
@@ -117,7 +116,7 @@ download_and_setup_toolchain(){
             fi
         popd
         pushd ${TOOLCHAIN_PREFIX}
-            ln -nsf $(realpath ${TOOLCHAIN_PLATFORM_PREFIX}) standalone_toolchains
+            ln -nsf ${TOOLCHAIN_PLATFORM_PREFIX} standalone_toolchains
             export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r16b
         popd
 
@@ -137,7 +136,7 @@ download_and_setup_toolchain(){
         popd
 
         pushd ${TOOLCHAIN_PREFIX}
-            ln -nsf $(realpath ${TOOLCHAIN_PLATFORM_PREFIX}) standalone_toolchains
+            ln -nsf ${TOOLCHAIN_PLATFORM_PREFIX} standalone_toolchains
             export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r16b
         popd
     fi

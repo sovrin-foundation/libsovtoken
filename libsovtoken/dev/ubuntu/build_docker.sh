@@ -61,21 +61,6 @@ __usage() {
 EOT
 }
 
-__complete_build_file() {
-cat >> "${BUILD_DIR}/build.sh" << EOF
-${CMD}
-
-if [ ! -L "/home/token_user/.cargo/git" ] ; then
-    rm -rf /rust/git
-    mv /home/token_user/.cargo/git /rust/git
-fi
-if [ ! -L "/home/token_user/.cargo/registry" ] ; then
-    rm -rf /rust/registry
-    mv /home/token_user/.cargo/registry /rust/registry
-fi
-EOF
-}
-
 __echocmd() {
     echo $1
     eval $1
@@ -196,7 +181,7 @@ DOCKER_IMAGE_ID=$(docker image ls | grep ${DOCKERIMAGE} | perl -pe 's/\s+/ /g' |
 if [ "${RUST_DIR:0:1}" = '/' ] ; then
     BUILD_DIR=${RUST_DIR}
 else
-    BUILD_DIR="${PWD}/${RUST_DIR}"
+    BUILD_DIR=$(perl -e 'use Cwd "abs_path"; print abs_path(shift)' "${PWD}/${RUST_DIR}")
 fi
 
 echo "Using libsovtoken in ${BUILD_DIR}"
@@ -218,34 +203,29 @@ EOT
     else
         echo "" > "${INDY_INSTALL}"
     fi
+    if [ -d "playground" ] ; then
+        rm -rf playground
+    fi
+    cargo new --lib playground
+    cp ../../Cargo.toml playground/
+    cp ../../build.rs playground/
     __echocmd "docker build -f ${DOCKERFILE} -t ${DOCKERIMAGE}:latest ${BUILD_DIR}/dev/ubuntu --build-arg indy_install=indy_install.sh"
     rm -f "${INDY_INSTALL}"
+    rm -rf playground
 else
     echo "Using existing docker image ${DOCKERIMAGE}:latest"
 fi
 
 rm -f "${BUILD_DIR}/build.sh"
-if [ -d "${HOME}/.dockercargo" ] ; then
-    find "${HOME}/.dockercargo" -name .cargo-index-lock | xargs rm -f
-else
-    mkdir -p ${HOME}/.dockercargo
-    chmod 777 ${HOME}/.dockercargo
-fi
 
-if [ ${RUST_FLUSH_CACHE} -eq 0 ] ; then
+if [ ${RUST_FLUSH_CACHE} -eq 1 ] ; then
     cat > "${BUILD_DIR}/build.sh" << EOF
-if [ -d "/rust/git" ] ; then
-    echo "Reusing cargo/git"
-    ln -fs /rust/git /home/token_user/.cargo/git
-fi
-if [ -d "/rust/registry" ] ; then
-    echo "Reusing cargo/registry"
-    ln -fs /rust/registry /home/token_user/.cargo/registry
-fi
+rm -rf /home/token_user/.cargo/git
+rm -rf /home/token_user/.cargo/registry
 EOF
 fi
 
-DK_CMD="docker run --cpus=${CPUS} --rm -w /data -v ${HOME}/.dockercargo:/rust"
+DK_CMD="docker run --user token_user:token_user --cpus=${CPUS} --rm -w /data"
 
 if [ "${INDY_INSTALL_METHOD}" == "build" ] ; then
     CLEAN_CMD=""
@@ -269,8 +249,6 @@ export LIBINDY_DIR=/usr/lib
 export RUST_TEST_THREADS=1
 EOF
 fi
-
-__complete_build_file
 
 DK_CMD="${DK_CMD} -v \"${BUILD_DIR}:/data\" -t ${DOCKERIMAGE}:latest bash build.sh"
 
