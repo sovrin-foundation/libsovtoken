@@ -16,3 +16,7 @@ Cargo.lock
 
 # Mac directory attributes
 *.DS_Store
+*.deb
+*.zip
+libindy.so
+libindy.a
