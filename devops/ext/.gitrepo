@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:evernym/jenkins-shared.git
 	branch = devops-shared
-	commit = 3106f029495f8dd2aea5a5442ad16d16499ceb7b
-	parent = 40e130dab2e1701763e8687cd615ee98d853e98b
+	commit = 1738a5da0b80eaa736d24e3ff1e57bb41811a585
+	parent = 707d873b45e06fb2d6598d534bc606bd598e1f44
 	cmdver = 0.3.1
