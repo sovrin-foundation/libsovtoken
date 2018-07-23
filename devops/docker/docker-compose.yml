@@ -9,10 +9,10 @@ services:
       args:
           - INDY_SDK_VERSION
           - u_id=${DOCKER_UID}
-    image: ${LSTBASE_DOCKER_NAME}:${LSTBASE_DOCKER_TAG}
+    image: ${LST_BASE_DOCKER_NAME}:${LST_BASE_DOCKER_TAG}
 
   ci:
     build:
       context: ./ci/$OSNAME
       network: ${DOCKER_BUILD_NETWORK:-bridge}
-    image: ${CI_DOCKER_NAME}:${CI_DOCKER_TAG}
+    image: ${LST_CI_DOCKER_NAME}:${LST_CI_DOCKER_TAG}

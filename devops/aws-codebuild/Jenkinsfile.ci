@@ -58,7 +58,7 @@ pipelineWrapper({
                 }
 
                 stage("$osname: Resolve image tag") {
-                    def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_ci_version -s")
+                    def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_ci_version -s")
                     buildImageTag = "${_imgVersion}-${osname}-ci"
                     logger.info("CI docker image tag: $buildImageTag")
                 }
@@ -82,12 +82,12 @@ pipelineWrapper({
                     envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
                     envBuildCmds = [
                         'export PROJECT_DIR=$PWD',
-                        'make -C devops image_ci'
+                        'make -C devops image_lst_ci'
                     ]
                     envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
                     envBuildEnvv = [
                         [name: 'OSNAME', value: osname],
-                        [name: 'CI_DOCKER_TAG', value: buildImageTag],
+                        [name: 'LST_CI_DOCKER_TAG', value: buildImageTag],
                     ]
 
                     onArtifacts = {

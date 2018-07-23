@@ -50,19 +50,16 @@ FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 
 # docker related variables
 DOCKER_NAME ?= evernym/libsovtoken
-CI_DOCKER_TAG ?=
-LSTBASE_DOCKER_TAG ?=
-
-LSTBASE_DOCKERFILE_PATH = docker/base/$(OSNAME)/Dockerfile
-CI_DOCKERFILE_PATH = docker/ci/$(OSNAME)/Dockerfile
+LST_CI_DOCKER_TAG ?=
+LST_BASE_DOCKER_TAG ?=
 
 DOCKER_BUILD_NETWORK ?= host
 
 EXPORT_ENV += OSNAME RELEASE CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
 
 .PHONY: all \
-		image_lstbase_parent_version image_lstbase_version image_lstbase \
-		image_ci_parent_version image_ci_version image_ci \
+		image_lst_base \
+		image_lst_ci \
 		rust_version test_dry test build pre_package publish_crate clean
 
 
@@ -79,68 +76,65 @@ $(call log_var,CARGO_TARGET_DIR)
 $(call log_var,CRATE_P_VERSION)
 $(call log_var,FPM_P_VERSION)
 $(call log_var,DOCKER_NAME)
-$(call log_var,CI_DOCKER_TAG)
-$(call log_var,LSTBASE_DOCKER_TAG)
+$(call log_var,LST_CI_DOCKER_TAG)
+$(call log_var,LST_BASE_DOCKER_TAG)
 $(call log_var,DOCKER_BUILD_NETWORK)
 endif
 
 export OSNAME
 
 
+_image_lst_%_version:
+	$(eval _i_version=$*-$(OSNAME)-$(call docker_env_value,LIBSOVTOKEN_$(call to_upper,$*)_ENV_VERSION,docker/$*/$(OSNAME)/Dockerfile))
+
+
+_image_lst_%_tag: _image_lst_%_version
+	$(eval _stem=$(call to_upper,$*))
+	$(eval _i_tag=$(if $(value LST_$(_stem)_DOCKER_TAG),$(value LST_$(_stem)_DOCKER_TAG),$(_i_version)))
+
+image_lst_%_version: _image_lst_%_version
+	echo $(_i_version)
+
 ##########################
 # libsovtoken base image #
 # ###################### #
 
-image_lstbase_parent_version:
-	$(eval RUST_DOCKER_VERSION=$(call docker_from_version,'evernym/rust', \
-		$(LSTBASE_DOCKERFILE_PATH)))
-	echo $(RUST_DOCKER_VERSION)
-
-image_lstbase_version:
-	echo $(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION',$(LSTBASE_DOCKERFILE_PATH))
-
 docker/base/$(OSNAME)/Cargo.toml: $(SRC_DIR)/Cargo.toml docker/base/$(OSNAME)
 	$(CP) -f $< $@
 
-image_lstbase: image_lstbase_parent_version image_rust docker/base/$(OSNAME)/Cargo.toml
-	$(eval DOCKER_TAG=$(if $(LSTBASE_DOCKER_TAG),$(LSTBASE_DOCKER_TAG), \
-		$(call docker_env_value,'LIBSOVTOKEN_BASE_ENV_VERSION', \
-			$(LSTBASE_DOCKERFILE_PATH))-$(OSNAME)-base))
+image_lst_base_parent:
+	$(eval _base_i=$(call check_non_empty,$(call docker_parent_parts,docker/base/$(OSNAME)/Dockerfile,$(LIB_IMG_NAME))))
+	MAKEFLAGS="$(MAKEFLAGS)" $(MAKE) image_dockerbase_$(word 2,$(_base_i))
+
+image_lst_base: image_lst_base_parent _image_lst_base_tag docker/base/$(OSNAME)/Cargo.toml
+	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
 	DOCKER_UID=$(DOCKER_UID) \
-	LSTBASE_DOCKER_NAME=$(DOCKER_NAME) \
-	LSTBASE_DOCKER_TAG=$(DOCKER_TAG) \
+	LST_BASE_DOCKER_NAME=$(DOCKER_NAME) \
+	LST_BASE_DOCKER_TAG=$(_i_tag) \
 		docker-compose -f docker/docker-compose.yml build base
 
 ##########################
 # libsovtoken ci image #
 # ###################### #
 
-image_ci_parent_version:
-	$(eval LSTBASE_DOCKER_TAG=$(call docker_from_tag,'evernym/libsovtoken',$(CI_DOCKERFILE_PATH)))
-	echo $(LSTBASE_DOCKER_TAG)
-
-image_ci_version:
-	echo $(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION',$(CI_DOCKERFILE_PATH))
-
-image_ci: image_ci_parent_version image_lstbase
-	$(eval DOCKER_TAG=$(if $(CI_DOCKER_TAG),$(CI_DOCKER_TAG), \
-		$(call docker_env_value,'LIBSOVTOKEN_CI_ENV_VERSION', \
-			$(CI_DOCKERFILE_PATH))-$(OSNAME)-ci))
+image_lst_ci: image_lst_base _image_lst_ci_tag 
+	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
-	CI_DOCKER_NAME=$(DOCKER_NAME) \
-	CI_DOCKER_TAG=$(DOCKER_TAG) \
+	LST_CI_DOCKER_NAME=$(DOCKER_NAME) \
+	LST_CI_DOCKER_TAG=$(_i_tag) \
 		docker-compose -f docker/docker-compose.yml build ci
+
 
 ######
 
-LSTBASE_IMAGE_BASED_TARGETS = build $(LIBS) package publish_crate clean
-$(patsubst %,image_%, $(LSTBASE_IMAGE_BASED_TARGETS)): image_lstbase
+LST_BASE_IMAGE_BASED_TARGETS = build $(LIBS) package publish_crate clean
+$(patsubst %,image_%, $(LST_BASE_IMAGE_BASED_TARGETS)): image_lst_base
 
 CI_IMAGE_BASED_TARGETS = test_dry test
-$(patsubst %,image_%, $(CI_IMAGE_BASED_TARGETS)): image_ci
+$(patsubst %,image_%, $(CI_IMAGE_BASED_TARGETS)): image_lst_ci
 
 ######
 

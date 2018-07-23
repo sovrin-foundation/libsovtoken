@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.${BASE_DOCKER_VERSION}
       context: base/$OSNAME
       network: ${DOCKER_BUILD_NETWORK:-bridge}
-    image: evernym/base:${BASE_DOCKER_VERSION}-${OSNAME}
+    image: evernym/dockerbase:base-${OSNAME}-${BASE_DOCKER_VERSION}
 
   rust:
     build:
@@ -16,7 +16,7 @@ services:
       network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - RUST_VERSION
-    image: evernym/rust:${RUST_DOCKER_VERSION}-${OSNAME}
+    image: evernym/dockerbase:rust-${OSNAME}-${RUST_DOCKER_VERSION}
 
   python3:
     build:
@@ -25,4 +25,4 @@ services:
       network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - PYTHON3_VERSION
-    image: evernym/python3:${PYTHON3_DOCKER_VERSION}-${OSNAME}
+    image: evernym/dockerbase:python3-${OSNAME}-${PYTHON3_DOCKER_VERSION}

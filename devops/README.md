@@ -58,8 +58,8 @@ CD pipeline stages:
 - `test` runs tests: `cargo test`
 - `build` runs `cargo build`
 - `publish_crate` publishes the code to crates.io performing cargo `login`, `package` and `publish` commands
-- `image_ci` builds docker image with necessary environment for performing both CI and CD tasks
-- `image_ci_version` prints current version of the docker image (dockerfile) built by `image_ci` target
+- `image_lst_ci` builds docker image with necessary environment for performing both CI and CD tasks
+- `image_lst_ci_version` prints current version of the docker image (dockerfile) built by `image_lst_ci` target
 - please refer to [ext/README.md](ext/README.md) for list of targets inherited from there
 
 
@@ -73,6 +73,6 @@ Each target could be run in two ways - with or without `_in_docker` postfix: e.g
 - `CARGO_TARGET_DIR`: sets [CARGO_TARGET_DIR](https://doc.rust-lang.org/cargo/reference/environment-variables.html) environment variable. Default: `target/$(OSNAME)`
 - `CRATE_P_VERSION`: if set overwrites `version` field of `[package]` section in [Cargo.toml](../libsovtoken/Cargo.toml) before crate publishing. Default: not set
 - `CARGO_LOGIN_TOKEN`: token to perform `cargo login` during crate publishing. Default: not set
-- `DOCKER_NAME`: name of the image built by `image_ci` target. Default: `evernym/libsovtoken`
-- `DOCKER_TAG`: tag of the image built by `image_ci` target. Default: `<VERSION>-$(OSNAME)-ci`, where `VERSION` is value of `CI_ENV_VERSION` environment variable in accordant dockerfile
+- `DOCKER_NAME`: name of the image built by `image_lst_ci` target. Default: `evernym/libsovtoken`
+- `DOCKER_TAG`: tag of the image built by `image_lst_ci` target. Default: `<VERSION>-$(OSNAME)-ci`, where `VERSION` is value of `CI_ENV_VERSION` environment variable in accordant dockerfile
 - please refer to [ext/README.md](ext/README.md) for list of environment variables inherited from there

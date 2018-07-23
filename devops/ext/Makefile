@@ -14,6 +14,8 @@ endif
 PROJECT_NAME ?= $(notdir $(PROJECT_DIR))
 PRE_PACKAGE_GOALS ?=
 
+LIB_IMG_NAME=evernym/dockerbase
+
 # based on https://stackoverflow.com/questions/10858261/abort-makefile-if-variable-not-set
 check_non_empty = $(if $(1),$(1),$(error $(2)))
 check_defined = $(if $(value $1),, $(error Undefined $1$(if $2,	($2))$(if $(value @), \
@@ -22,9 +24,12 @@ log_var = $(info Value of $1 is [$($1)])
 
 docker_env_value = $(call check_non_empty,$(shell grep '^ENV $(1)=' $(2) | cut -d '=' -f 2), \
 				   "Value for ENV $(1) not found in dockerfile $(2)")
+# TODO what about multi-staged builds
+docker_parent_parts = $(shell sed -n -e 's/FROM[[:space:]]\+\($(if $(2),$(subst /,\/,$(2)),[^[:space:]]\+)\):\([^[:space:]]\+\)/\1 \2/p' -e 'q' $(1))
 docker_from_tag = $(call check_non_empty,$(shell grep '^FROM $(1):' $(2) | cut -d ':' -f 2), \
 					"Tag for FROM $(1) not found in dockerfile $(2)")
 docker_from_version = $(firstword $(subst -, ,$(call docker_from_tag,$(1),$(2))))
+to_upper = $(shell echo $(1) | awk '{print toupper($$0)}')
 
 # TODO DRY refactor: make common callable logic
 BASE_DOCKERFILE_PATH = $(_THIS_MK_ABS_DIR)/docker/base/$(OSNAME)/Dockerfile.$(BASE_DOCKER_VERSION)
@@ -89,30 +94,19 @@ endif
 package: _check_fpm_args $(PRE_PACKAGE_GOALS)
 	$(FPM) $(FPM_ARGS)
 
-image_rust_parent_version:
-	$(call check_defined,RUST_DOCKER_VERSION)
-	$(eval BASE_DOCKER_VERSION=$(call docker_from_version,'evernym/base',$(RUST_DOCKERFILE_PATH)))
-	echo $(BASE_DOCKER_VERSION)
+image_dockerbase_tag_spec_%:
+	$(eval _data=$(subst -, ,$*))
+	$(eval _i_type=$(call check_non_empty,$(word 1,$(_data)),"image type is not found in stem $*"))
+	$(eval _i_osname=$(call check_non_empty,$(word 2,$(_data)),"image osname is not in stem $*"))
+	$(eval _i_version=$(call check_non_empty,$(word 3,$(_data)),"image version is not in stem $*"))
 
-image_python3_parent_version:
-	$(call check_defined,PYTHON3_DOCKER_VERSION)
-	$(eval BASE_DOCKER_VERSION=$(call docker_from_version,'evernym/base',$(PYTHON3_DOCKERFILE_PATH)))
-	echo $(BASE_DOCKER_VERSION)
-
-# TODO refactor that once compose provides support for images
-# build order: https://github.com/docker/compose/issues/5228
-image_base:
-	$(call check_defined,BASE_DOCKER_VERSION)
-	BASE_DOCKER_VERSION=$(BASE_DOCKER_VERSION) \
-		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build base
-
-image_rust: image_rust_parent_version image_base
-	RUST_DOCKER_VERSION=$(RUST_DOCKER_VERSION) \
-		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build rust
-
-image_python3: image_python3_parent_version image_base
-	PYTHON3_DOCKER_VERSION=$(PYTHON3_DOCKER_VERSION) \
-		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build python3
+image_dockerbase_%: image_dockerbase_tag_spec_%
+	$(eval _path=$(_THIS_MK_ABS_DIR)/docker/$(_i_type)/$(_i_osname)/Dockerfile.$(_i_version))
+	$(eval _base_i=$(call docker_parent_parts,$(_path),$(LIB_IMG_NAME)))
+	$(if $(_base_i),MAKEFLAGS="$(MAKEFLAGS)" $(MAKE) -C $(PROJECT_DIR)/$(ROOT_MK_REL_DIR) -f $(ROOT_MK_REL_PATH) image_dockerbase_$(word 2,$(_base_i)))
+	OSNAME=$(_i_osname) \
+	$(call to_upper,$(_i_type))_DOCKER_VERSION=$(_i_version) \
+		docker-compose -f $(_THIS_MK_ABS_DIR)/docker/docker-compose.yml build $(_i_type)
 
 # target default implementation
 %_in_docker_opts: ;

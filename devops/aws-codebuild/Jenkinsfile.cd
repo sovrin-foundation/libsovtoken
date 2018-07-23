@@ -62,7 +62,7 @@ pipelineWrapper({
         }
 
         stage("$osname: Resolve image tag") {
-            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lstbase_version -s")
+            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_base_version -s")
             buildImageTag = "${_imgVersion}-${osname}-cd"
             logger.info("CD docker image tag: $buildImageTag")
         }
@@ -78,12 +78,12 @@ pipelineWrapper({
             envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
             envBuildCmds = [
                 'export PROJECT_DIR=$PWD',
-                'make -C devops image_lstbase'
+                'make -C devops image_lst_base'
             ]
             envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
             envBuildEnvv = [
                 [name: 'OSNAME', value: osname],
-                [name: 'LSTBASE_DOCKER_TAG', value: buildImageTag],
+                [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
             ]
 
             // env and build spec
