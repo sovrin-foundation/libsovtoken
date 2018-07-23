@@ -5,6 +5,7 @@
 use rust_base58::ToBase58;
 use logic::parsers::common::{ResponseOperations, UTXO, TXO, StateProof, ParsedSP, KeyValuesInSP,
                              KeyValueSimpleData, extract_result_and_state_proof_from_node_reply};
+use logic::parsers::error_code_parser;
 use utils::json_conversion::{JsonSerialize, JsonDeserialize};
 use indy::ErrorCode;
 use libc::c_char;
@@ -25,7 +26,8 @@ pub struct ParseGetUtxoResponse {
     pub op : ResponseOperations,
     #[serde(rename = "protocol_version")]
     pub protocol_version: Option<ProtocolVersion>,
-    pub result : ParseGetUtxoResponseResult,
+    pub result : Option<ParseGetUtxoResponseResult>,
+    pub reason: Option<String>,
 }
 
 /**
@@ -57,20 +59,29 @@ pub type ParseGetUtxoReply = Vec<UTXO>;
     after this call
 */
 pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, ErrorCode> {
-    let mut utxos: Vec<UTXO> = vec![];
+    match base.op {
+        ResponseOperations::REPLY => {
+            let result = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
+            let mut utxos: Vec<UTXO> = vec![];
 
-    for unspent_output in base.result.outputs {
+            for unspent_output in result.outputs {
 
-        let (address, seq_no, amount) = unspent_output;
+                let (address, seq_no, amount) = unspent_output;
 
-        let payment_address = address::address_from_unqualified_address(&base.result.address.to_string())?;
-        let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
-        let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
+                let payment_address = address::address_from_unqualified_address(&result.address.to_string())?;
+                let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
+                let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
 
-        utxos.push(utxo);
+                utxos.push(utxo);
+            }
+
+            Ok(utxos)
+        }
+        ResponseOperations::REQNACK | ResponseOperations::REJECT => {
+            let reason = base.reason.ok_or(ErrorCode::CommonInvalidStructure)?;
+            Err(error_code_parser::parse_error_code_from_string(&reason))
+        }
     }
-
-    return Ok(utxos);
 }
 
 // Assumes a valid address. The delimeter `:` has to be the same as used on ledger
@@ -227,7 +238,8 @@ mod parse_get_utxo_responses_tests {
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse {
             op : ResponseOperations::REPLY,
             protocol_version: Some(1),
-            result
+            result: Some(result),
+            reason: None,
         };
 
         let reply: ParseGetUtxoReply = from_response(response).unwrap();
@@ -274,7 +286,8 @@ mod parse_get_utxo_responses_tests {
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse {
             op : ResponseOperations::REPLY,
             protocol_version: Some(1),
-            result
+            result: Some(result),
+            reason: None,
         };
 
         let reply: ParseGetUtxoReply = from_response(response).unwrap();
