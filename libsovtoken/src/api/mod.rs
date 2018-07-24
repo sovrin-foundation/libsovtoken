@@ -2,6 +2,7 @@
 //!
 
 use libc::c_char;
+use indy;
 
 use indy::payments::Payment;
 use indy::ledger::Ledger;
@@ -18,9 +19,11 @@ use logic::config::{
 use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use logic::minting;
+use logic::verify;
 use logic::parsers::{
     parse_get_utxo_response,
     parse_response_with_fees_handler,
+    parse_verify,
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
@@ -30,7 +33,7 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
-use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME};
+use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
@@ -113,7 +116,7 @@ pub extern "C" fn create_payment_address_handler(
  * ```JSON
  * [
  *      {
- *          "paymentAddress": <str: payment_address>,
+ *          "recipient": <str: payment_address>,
  *          "amount": <int>
  *          "extra": <str>
  *      }
@@ -142,7 +145,7 @@ pub extern "C" fn create_payment_address_handler(
  * ```JSON
  * [
  *      {
- *          "paymentAddress": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
+ *          "recipient": "pay:sov:x39ETFpHu2WDGIKLMwxSWRilgyN9yfuPx8l6ZOev3ztG1MJ6",
  *          "amount": "10"
  *      }
  * ]
@@ -172,11 +175,12 @@ pub extern "C" fn add_request_fees_handler(
     req_json: *const c_char,
     inputs_json: *const c_char,
     outputs_json: *const c_char,
+    extra: *const c_char,
     cb: JsonCallback
 ) -> i32 {
 
     trace!("api::add_request_fees_handler called did (address) >> {:?}", did);
-    let (inputs, outputs, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, cb) {
+    let (inputs, outputs, extra, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
             trace!("api::add_request_fees_handler result >> {:?}", error_code);
@@ -198,6 +202,7 @@ pub extern "C" fn add_request_fees_handler(
         wallet_handle,
         inputs,
         outputs,
+        extra,
         request_json_map,
         Box::new(add_request_fees::closure_cb_response(command_handle, cb))
     );
@@ -305,7 +310,7 @@ pub extern "C" fn parse_response_with_fees_handler(
  * ```JSON
  * [
  *      {
- *          "paymentAddress": <str: payment_address>,
+ *          "recipient": <str: payment_address>,
  *          "amount": <int>
  *          "extra": <str>
  *      }
@@ -334,10 +339,11 @@ pub extern "C" fn build_payment_req_handler(
     submitter_did: *const c_char,
     inputs_json: *const c_char,
     outputs_json: *const c_char,
+    extra: *const c_char,
     cb: JsonCallback
 ) -> i32 {
     trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", submitter_did);
-    let (inputs, outputs, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, cb) {
+    let (inputs, outputs, extra, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
             trace!("api::build_payment_req_handler << result: {:?}", error_code);
@@ -345,7 +351,7 @@ pub extern "C" fn build_payment_req_handler(
         }
     };
 
-    let payload = XferPayload::new(inputs, outputs);
+    let payload = XferPayload::new(inputs, outputs, extra);
 
     let result = payload.sign_transfer(
         &CryptoSdk {},
@@ -709,7 +715,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
     let resp_json_string = match string_from_char_ptr(resp_json) {
         Some(s) => s,
         None => {
-            error!("Failed to convert inputs_json pointer to string");
+            error!("Failed to convert resp_json pointer to string");
             trace!("api::parse_get_txn_fees_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
             return ErrorCode::CommonInvalidStructure as i32;
         }
@@ -753,7 +759,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
  * ```JSON
  * [
  *      {
- *          "paymentAddress": <str: payment_address>,
+ *          "recipient": <str: payment_address>,
  *          "amount": <int>
  *          "extra": <str>
  *      }
@@ -765,13 +771,15 @@ pub extern "C" fn build_mint_txn_handler(
     wallet_handle: i32,
     submitter_did: *const c_char,
     outputs_json: *const c_char,
+    extra: *const c_char,
     cb: JsonCallback
 ) -> i32
 {
     trace!("api::build_mint_txn_handle called >> wallet_handle {}", wallet_handle);
-    let (did, outputs, cb) = match minting::deserialize_inputs(
+    let (did, outputs, extra, cb) = match minting::deserialize_inputs(
         submitter_did,
         outputs_json,
+        extra,
         cb
     ) {
         Ok(tup) => tup,
@@ -783,7 +791,7 @@ pub extern "C" fn build_mint_txn_handler(
 
     debug!("Deserialized build_mint_txn_handler arguments.");
 
-    let mint_request = match minting::build_mint_request(did, outputs) {
+    let mint_request = match minting::build_mint_request(did, outputs, extra) {
         Ok(json) => json,
         Err(e) => {
             trace!("api::build_mint_txn_handle << res: {:?}", e);
@@ -796,6 +804,80 @@ pub extern "C" fn build_mint_txn_handler(
     let res = ErrorCode::Success;
     trace!("api::build_mint_txn_handle << res: {:?}", res);
     return res as i32;
+}
+
+#[no_mangle]
+pub extern "C" fn build_verify_req_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    did: *const c_char,
+    txo: *const c_char,
+    cb: JsonCallback
+) -> i32 {
+    trace!("api::build_verify_req called >> wallet_handle {}", wallet_handle);
+
+    let (did, txo, cb) = match verify::deserialize(did, txo, cb) {
+        Ok(a) => a,
+        Err(ec) => {
+            trace!("api::build_verify_req << res {:?}", ec);
+            return ec as i32;
+        }
+    };
+
+    let res = indy::ledger::Ledger::build_get_txn_request_async(
+        &String::from(did),
+        Some(LEDGER_ID),
+        txo.seq_no as i32,
+        move |ec, res| {
+            trace!("api::build_verify_req cb << ec: {:?}, res: {:?}", ec, res);
+            cb(command_handle, ec as i32, c_pointer_from_string(res));
+        }
+    );
+
+    trace!("api::build_verify_req << res {:?}", res);
+
+    res as i32
+}
+
+#[no_mangle]
+pub extern "C" fn parse_verify_response_handler(
+    command_handle: i32,
+    resp_json: *const c_char,
+    cb: JsonCallback
+) -> i32 {
+    check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
+
+    trace!("api::parse_verify_response_handler called");
+    if resp_json.is_null() {
+        return ErrorCode::CommonInvalidStructure as i32;
+    }
+
+    let resp_json_string = match string_from_char_ptr(resp_json) {
+        Some(s) => s,
+        None => {
+            error!("Failed to convert resp_json pointer to string");
+            trace!("api::parse_verify_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
+            return ErrorCode::CommonInvalidStructure as i32;
+        }
+    };
+
+    debug!("api::parse_verify_response_handler >> resp_json: {:?}", resp_json_string);
+
+    let result = match parse_verify::parse_response(&resp_json_string) {
+        Ok(e) => e,
+        Err(ec) => {
+            trace!("api::parse_verify_response_handler << result: {:?}", ec);
+            return ec as i32;
+        }
+    };
+
+    let ec = ErrorCode::Success;
+
+    trace!("api::parse_verify_response_handler << result: {:?}", result);
+    let result = c_pointer_from_string(result);
+    cb(command_handle, ErrorCode::Success as i32, result);
+
+    ec as i32
 }
 
 #[no_mangle]
@@ -856,19 +938,21 @@ pub extern fn sovtoken_init() -> i32 {
     debug!("sovtoken_init() started");
     debug!("Going to call Payment::register");
 
-    if let Err(e) = Payment::register(
+    if let Err(e) = Payment::register_method(
         PAYMENT_METHOD_NAME,
-        create_payment_address_handler,
-        add_request_fees_handler,
-        parse_response_with_fees_handler,
-        build_get_utxo_request_handler,
-        parse_get_utxo_response_handler,
-        build_payment_req_handler,
-        parse_payment_response_handler,
-        build_mint_txn_handler,
-        build_set_txn_fees_handler,
-        build_get_txn_fees_handler,
-        parse_get_txn_fees_response_handler
+        Some(create_payment_address_handler),
+        Some(add_request_fees_handler),
+        Some(parse_response_with_fees_handler),
+        Some(build_get_utxo_request_handler),
+        Some(parse_get_utxo_response_handler),
+        Some(build_payment_req_handler),
+        Some(parse_payment_response_handler),
+        Some(build_mint_txn_handler),
+        Some(build_set_txn_fees_handler),
+        Some(build_get_txn_fees_handler),
+        Some(parse_get_txn_fees_response_handler),
+        Some(build_verify_req_handler),
+        Some(parse_verify_response_handler),
     ) {
         debug!("Payment::register failed with {:?}", e);
         return e as i32

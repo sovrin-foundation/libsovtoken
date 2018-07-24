@@ -40,10 +40,10 @@ use logic::xfer_payload::XferPayload;
         ];
 
         let outputs = vec![
-            Output::new(address3, 10, None)
+            Output::new(address3, 10)
         ];
 
-        let transfer_data = XferPayload::new(inputs, outputs);
+        let transfer_data = XferPayload::new(inputs, outputs, None);
             // .sign_transfer(&CryptoSdk {}, wallet.handle)
             // .unwrap();
 
@@ -101,10 +101,10 @@ mod payment_request_test {
 
     fn initial_xfer_request() -> Request<PaymentRequest> {
         let identifier: String = rand_string(21);
-        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
+        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10);
         let input = Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"),30);
     
-        let mut payload = XferPayload::new(vec![input], vec![output]);
+        let mut payload = XferPayload::new(vec![input], vec![output], None);
         payload.signatures = Some(vec![String::from("239asdkj3298uadkljasd98u234ijasdlkj")]);
         return PaymentRequest::new(payload).as_request(identifier);
     }

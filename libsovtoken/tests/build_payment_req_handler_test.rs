@@ -76,6 +76,7 @@ fn errors_with_no_call_back() {
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 ptr::null(),
+                                                                ptr::null(),
                                                                 None);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_payment_req_handler'");
 }
@@ -86,6 +87,7 @@ fn errors_with_no_call_back() {
 fn errors_with_no_inputs_json() {
     let return_error = sovtoken::api::build_payment_req_handler(COMMAND_HANDLE,
                                                                 WALLET_HANDLE,
+                                                                ptr::null(),
                                                                 ptr::null(),
                                                                 ptr::null(),
                                                                 ptr::null(),
@@ -103,6 +105,7 @@ fn errors_with_no_outputs_json() {
                                                                 WALLET_HANDLE,
                                                                 ptr::null(),
                                                                 input_json_ptr,
+                                                                ptr::null(),
                                                                 ptr::null(),
                                                                 CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_payment_req_handler'");
@@ -122,6 +125,7 @@ fn errors_with_no_submitter_did_json() {
                                                                 ptr::null(),
                                                                 input_json_ptr,
                                                                 output_json_ptr,
+                                                                ptr::null(),
                                                                 CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_payment_req_handler'");
 }
@@ -145,13 +149,12 @@ fn success_signed_request() {
 
     let outputs = json!([
             {
-                "paymentAddress": payment_addresses[2],
+                "recipient": payment_addresses[2],
                 "amount": 10
             },
             {
-                "paymentAddress": payment_addresses[3],
-                "amount": 22,
-                "extra": "extra data"
+                "recipient": payment_addresses[3],
+                "amount": 22
             }
         ]);
 
@@ -179,6 +182,7 @@ fn success_signed_request() {
         c_pointer_from_string(did),
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
+        ptr::null(),
         cb
     );
 
@@ -216,13 +220,12 @@ fn success_signed_request_from_libindy() {
 
     let outputs = json!([
             {
-                "paymentAddress": payment_addresses[2],
+                "recipient": payment_addresses[2],
                 "amount": 10
             },
             {
-                "paymentAddress": payment_addresses[3],
-                "amount": 22,
-                "extra": "extra data"
+                "recipient": payment_addresses[3],
+                "amount": 22
             }
         ]);
 
@@ -253,6 +256,7 @@ fn success_signed_request_from_libindy() {
         &did,
         &inputs.to_string(),
         &outputs.to_string(),
+        None,
         closure
     );
 
@@ -288,15 +292,15 @@ pub fn build_and_submit_payment_req() {
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
         {
-            "paymentAddress": payment_addresses[1],
+            "recipient": payment_addresses[1],
             "amount": 20
         },
         {
-            "paymentAddress": payment_addresses[0],
+            "recipient": payment_addresses[0],
             "amount": 10
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
 
@@ -305,7 +309,7 @@ pub fn build_and_submit_payment_req() {
     assert_eq!(utxos.len(), 2);
 
     let value = utxos.get(0).unwrap().as_object().unwrap();
-    let pa1_rc = value.get("paymentAddress").unwrap().as_str().unwrap();
+    let pa1_rc = value.get("recipient").unwrap().as_str().unwrap();
     if pa1_rc == payment_addresses[0] {
         assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 10);
     } else if pa1_rc == payment_addresses[1] {
@@ -315,7 +319,7 @@ pub fn build_and_submit_payment_req() {
     }
 
     let value = utxos.get(1).unwrap().as_object().unwrap();
-    let pa1_rc = value.get("paymentAddress").unwrap().as_str().unwrap();
+    let pa1_rc = value.get("recipient").unwrap().as_str().unwrap();
     if pa1_rc == payment_addresses[0] {
         assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 10);
     } else if pa1_rc == payment_addresses[1] {
@@ -345,15 +349,15 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let inputs = json!([utxo]).to_string();
     let outputs = json!([
         {
-            "paymentAddress": addresses[1],
+            "recipient": addresses[1],
             "amount": 20
         },
         {
-            "paymentAddress": addresses[0],
+            "recipient": addresses[0],
             "amount": 20
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
@@ -379,21 +383,21 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
     let inputs = json!([utxo_2]).to_string();
     let outputs = json!([
         {
-            "paymentAddress": addresses[0],
+            "recipient": addresses[0],
             "amount": 10
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
 
     //lets try to spend spent utxo while there are enough funds on the unspent one
     let inputs = json!([utxo_2, utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[2],
+        "recipient": addresses[2],
         "amount": 20
     }]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     let err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
     assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
@@ -401,7 +405,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxos.len(), 2);
-    let first_old = utxos[0].txo == utxo;
-    let second_old = utxos[1].txo == utxo;
+    let first_old = utxos[0].receipt == utxo;
+    let second_old = utxos[1].receipt == utxo;
     assert!(first_old || second_old);
 }

@@ -29,8 +29,8 @@ pub enum ResponseOperations {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UTXO {
-    pub payment_address: String,
-    pub txo: String,
+    pub recipient: String,
+    pub receipt: String,
     pub amount: TokenAmount,
     pub extra: String,
 }

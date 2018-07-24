@@ -70,7 +70,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
                 let payment_address = address::address_from_unqualified_address(&result.address.to_string())?;
                 let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
-                let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
+                let utxo: UTXO = UTXO { recipient: payment_address, receipt: txo, amount, extra: "".to_string() };
 
                 utxos.push(utxo);
             }
