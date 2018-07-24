@@ -110,4 +110,4 @@ DOCKER_IMAGE_ID=$(docker image ls | grep libindy-android-${TARGET_ARCH})
 if [ -z "${DOCKER_IMAGE_ID}" ] ; then
     docker build -t libindy-android-${TARGET_ARCH}:latest . --build-arg target_arch=${TARGET_ARCH} --build-arg target_api=${TARGET_API} --build-arg cross_compile=${CROSS_COMPILE} --build-arg openssl_dir=${ANDROID_OPENSSL_DIR} --build-arg sodium_dir=${ANDROID_SODIUM_DIR} --build-arg libzmq_dir=${ANDROID_LIBZMQ_DIR}
 fi
-docker run --user indy_user -v ${PWD}/indy-sdk:/indy-sdk -w /indy-sdk/libindy -t libindy-android-${TARGET_ARCH}:latest cargo build --release --target=${CROSS_COMPILE}
+docker run --rm --user indy_user -v ${PWD}/indy-sdk:/indy-sdk -w /indy-sdk/libindy -t libindy-android-${TARGET_ARCH}:latest cargo build --release --target=${CROSS_COMPILE}
