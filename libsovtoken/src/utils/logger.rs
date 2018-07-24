@@ -2,13 +2,10 @@
 //! functions and macros in libsovtoken
 
 use std::env;
-use std::sync::{Once, ONCE_INIT};
 use std::io::Write;
 
 use env_logger::{Builder, fmt};
 use log::{Record, Level, Metadata, Log, LevelFilter};
-
-static LOGGER_INIT: Once = ONCE_INIT;
 
 /**
     Routes logging to console all of the time regardless of RUST_LOG setting.  helpful for unit tests
@@ -42,8 +39,8 @@ impl Log for ConsoleLogger {
     and RUST_LOG env setting.
 */
 pub fn init_log() {
-    LOGGER_INIT.call_once(|| {
-        let format = |buf: &mut fmt::Formatter, record: &Record| {
+    Builder::new()
+        .format(|buf: &mut fmt::Formatter, record: &Record| {
             writeln!(
                 buf,
                 "{:>5}|{:<30}|{:>35}:{:<4}| {}",
@@ -53,17 +50,11 @@ pub fn init_log() {
                 record.line().unwrap(),
                 record.args()
             )
-        };
-
-        let mut builder = Builder::new();
-        builder.format(format).filter(None, LevelFilter::Off);
-
-        if env::var("RUST_LOG").is_ok() {
-            builder.parse(&env::var("RUST_LOG").unwrap());
-        }
-
-        builder.init();
-    });
+        })
+        .filter(None, LevelFilter::Off)
+        .parse(env::var("RUST_LOG").as_ref().map(String::as_str).unwrap_or(""))
+        .try_init()
+        .ok();
 }
 
 macro_rules! _map_err {
