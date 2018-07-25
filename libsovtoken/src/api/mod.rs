@@ -806,6 +806,15 @@ pub extern "C" fn build_mint_txn_handler(
     return res as i32;
 }
 
+/// Build a verify transaction request.
+///
+/// # Parameters
+/// wallet_handle
+/// did
+/// txo -- txo to get transaction
+///
+/// # Returns
+/// Request to send to ledger for verification of transaction
 #[no_mangle]
 pub extern "C" fn build_verify_req_handler(
     command_handle: i32,
@@ -839,6 +848,21 @@ pub extern "C" fn build_verify_req_handler(
     res as i32
 }
 
+/// Parse response of verification of txo
+///
+/// # Parameters
+/// resp_json -- response from ledger
+///
+/// # Return
+/// txn_json: {
+///     sources: [<str>, ]
+///     receipts: [ {
+///         recipient: <str>, // payment address of recipient
+///         receipt: <str>, // receipt that can be used for payment referencing and verification
+///         amount: <int>, // amount
+///     } ],
+///     extra: <str>, //optional data
+/// }
 #[no_mangle]
 pub extern "C" fn parse_verify_response_handler(
     command_handle: i32,
