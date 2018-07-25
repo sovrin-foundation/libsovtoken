@@ -175,6 +175,6 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     let utxo = &utxos[0];
 
     assert_eq!(utxos.len(), 1);
-    assert_eq!(utxo.recipient, addresses[0]);
+    assert_eq!(utxo.payment_address, addresses[0]);
     assert_eq!(utxo.amount, 9);
 }

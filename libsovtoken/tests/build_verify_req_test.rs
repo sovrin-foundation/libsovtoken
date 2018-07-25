@@ -74,6 +74,7 @@ pub fn build_and_submit_verify_on_xfer() {
 }
 
 #[test]
+#[ignore]
 pub fn build_and_submit_verify_on_fees() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {

@@ -28,7 +28,7 @@ pub fn build_and_submit_get_utxo_request() {
     let res_parsed: Vec<serde_json::Value> = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.len(), 1);
     let utxo = res_parsed.get(0).unwrap().as_object().unwrap();
-    assert_eq!(utxo.get("recipient").unwrap().as_str().unwrap(), payment_addresses[0]);
+    assert_eq!(utxo.get("paymentAddress").unwrap().as_str().unwrap(), payment_addresses[0]);
     assert_eq!(utxo.get("amount").unwrap().as_u64().unwrap(), 10);
 }
 

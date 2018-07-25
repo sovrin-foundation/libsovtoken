@@ -405,7 +405,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxos.len(), 2);
-    let first_old = utxos[0].receipt == utxo;
-    let second_old = utxos[1].receipt == utxo;
+    let first_old = utxos[0].source == utxo;
+    let second_old = utxos[1].source == utxo;
     assert!(first_old || second_old);
 }

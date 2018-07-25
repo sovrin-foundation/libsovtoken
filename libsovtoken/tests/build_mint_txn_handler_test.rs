@@ -217,7 +217,7 @@ pub fn build_and_submit_mint_txn_works() {
     assert_eq!(response.op, ResponseOperations::REPLY);
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
     assert_eq!(utxos[0].amount, 5);
-    assert_eq!(utxos[0].recipient, payment_addresses[0]);
+    assert_eq!(utxos[0].payment_address, payment_addresses[0]);
 }
 
 #[test]
@@ -276,5 +276,5 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
     assert_eq!(utxos.len(), 1);
     assert_eq!(utxos[0].amount, 5);
-    assert_eq!(utxos[0].recipient, payment_addresses[0]);
+    assert_eq!(utxos[0].payment_address, payment_addresses[0]);
 }

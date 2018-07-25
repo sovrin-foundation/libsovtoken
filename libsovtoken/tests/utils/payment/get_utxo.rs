@@ -2,13 +2,13 @@ extern crate rust_indy_sdk as indy;
 extern crate serde_json;
 extern crate sovtoken;
 
-use sovtoken::logic::parsers::common::UTXO;
+use sovtoken::logic::parsers::parse_get_utxo_response::UTXO;
 use utils::wallet::Wallet;
 
 pub fn get_first_utxo_txo_for_payment_address(wallet: &Wallet, pool_handle: i32, did: &str, address: &str) -> String {
     let mut utxos = send_get_utxo_request(wallet, pool_handle, did, address);
     let utxo = utxos.remove(0);
-    utxo.receipt
+    utxo.source
 }
 
 pub fn send_get_utxo_request(wallet: &Wallet, pool_handle: i32, did: &str, address: &str) -> Vec<UTXO> {

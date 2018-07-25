@@ -192,7 +192,7 @@ trait InputSigner<A: CryptoAPI> {
         wallet_handle: IndyHandle,
         input: &Input,
         outputs: &Outputs,
-        extra: &Option<String>,
+        _extra: &Option<String>,
         cb: Box<Arc<Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
