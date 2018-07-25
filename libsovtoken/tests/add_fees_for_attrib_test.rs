@@ -83,7 +83,6 @@ pub fn build_and_submit_attrib_with_fees_and_no_change() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
@@ -112,7 +111,6 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
 }
 
 #[test]
-#[ignore]
 pub fn build_and_submit_attrib_with_fees_double_spend() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
@@ -148,10 +146,8 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     let data = get_data_from_attrib_reply(get_attrib_resp);
     assert_eq!(ATTRIB_RAW_DATA, data);
 
-    let _parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
-    //assert_eq!(parsed_err, ErrorCode::PaymentUTXODoesNotExist);
-    //TODO: this test should fail for awhile until we get some vision on a ErrorCodes (both on parsing and new ones)
-    assert!(false);
+    let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    assert_eq!(parsed_err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
