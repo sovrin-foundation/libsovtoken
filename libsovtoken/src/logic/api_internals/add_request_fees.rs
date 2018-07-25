@@ -265,8 +265,8 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_inputs_valid() {
-        let result = call_deserialize_inputs(None, None, None, None, None).unwrap();
-//        assert!(result.is_ok());
+        let result = call_deserialize_inputs(None, None, None, None, None);
+        assert!(result.is_ok());
     }
 
     #[test]
