@@ -11,13 +11,13 @@ download_and_unzip_dependency() {
     if [ ! -d "indy-android-dependencies" ] ; then
         git clone --depth 1 https://github.com/evernym/indy-android-dependencies.git
     fi
-    pushd ${INDY_PREBUILT}/$1
+    command pushd ${INDY_PREBUILT}/$1 > /dev/null
     PREFIX=$(ls | grep "$1_$2.zip")
     PREFIX=${PREFIX/.zip/}
     if [ ! -d "${PREFIX}" ] ; then
         unzip -o -qq "${PREFIX}.zip"
     fi
-    popd
+    command popd > /dev/null
 }
 
 
@@ -42,12 +42,35 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
         if [ -d "${ANDROID_LIBINDY_DIR}" ] ; then
             echo "Found ${ANDROID_LIBINDY_DIR}"
         elif [ -z "$2" ] ; then
-            echo STDERR "Missing ANDROID_LIBINDY_DIR argument and environment variable"
-            echo STDERR "e.g. set ANDROID_LIBINDY_DIR=<path> for environment or libindy_${TARGET_ARCH}"
-            exit 1
+            mkdir -p ${ANDROID_LIBINDY_DIR}
+            command pushd ${ANDROID_LIBINDY_DIR} > /dev/null
+            LIBINDY_FILE=$(curl -s https://repo.corp.evernym.com/filely/android/ | grep libindy | egrep "${TARGET_ARCH}\>" | cut -d '"' -f 2 | sort -r | head -n 1)
+            if [ -z "${LIBINDY_FILE}" ] ; then
+                echo "Unable to download prebuilt libindy"
+                exit 1
+            fi
+            wget -q --no-check-certificate "https://repo.corp.evernym.com/filely/android/${LIBINDY_FILE}"
+            if [ ! -f ${LIBINDY_FILE} ] ; then
+                echo "Unable to download file from https://repo.corp.evernym.com/filely/android/${LIBINDY_FILE}"
+                exit 1
+            fi
+            unzip -qq ${LIBINDY_FILE}
+            command popd > /dev/null
+            #echo STDERR "Missing ANDROID_LIBINDY_DIR argument and environment variable"
+            #echo STDERR "e.g. set ANDROID_LIBINDY_DIR=<path> for environment or libindy_${TARGET_ARCH}"
+            #exit 1
         else
             ANDROID_LIBINDY_DIR=$2
         fi
+    fi
+
+    if [ ! -f "${ANDROID_LIBINDY_DIR}/libindy.a" ] ; then
+        echo "${ANDROID_LIBINDY_DIR}/libindy.a does not exist"
+        exit 1
+    fi
+    if [ ! -f "${ANDROID_LIBINDY_DIR}/libindy.so" ] ; then
+        echo "${ANDROID_LIBINDY_DIR}/libindy.so does not exist"
+        exit 1
     fi
     
     if [ -z "${ANDROID_OPENSSL_DIR}" ]; then
