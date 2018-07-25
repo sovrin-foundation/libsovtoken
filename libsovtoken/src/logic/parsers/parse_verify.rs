@@ -8,6 +8,7 @@ use indy::ErrorCode;
 use logic::parsers::common::UTXO;
 use logic::parsers::common::TXO;
 use logic::type_aliases::TxnSeqNo;
+use logic::address;
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -57,7 +58,7 @@ pub struct ParseVerifyResponseResultDataTxnData {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct VerifyResult {
-    pub sources: Option<Vec<TXO>>,
+    pub sources: Option<Vec<String>>,
     pub receipts: Option<Vec<UTXO>>,
     pub extra: Option<String>
 }
@@ -81,21 +82,23 @@ fn parse_verify(resp: &str) -> Result<VerifyResult, ErrorCode> {
         .data
         .ok_or(ErrorCode::CommonInvalidStructure)?;
 
-    let mut sources: Vec<TXO> = vec![];
+    let mut sources: Vec<String> = vec![];
     let mut receipts: Vec<UTXO> = vec![];
     let extra = data.extra;
 
     if let Some(inputs) = data.inputs {
         for input in inputs {
-            sources.push(TXO { address: input.address, seq_no: input.seq_no })
+            let address = address::address_from_unqualified_address(&input.address.to_string())?;
+            sources.push(TXO { address, seq_no: input.seq_no }.to_libindy_string()?)
         }
     }
 
     if let Some(outputs) = data.outputs {
         for output in outputs {
+            let address = address::address_from_unqualified_address(&output.recipient.to_string())?;
             receipts.push(UTXO {
-                recipient: output.recipient.clone(),
-                receipt: TXO { address: output.recipient, seq_no }.to_libindy_string()?,
+                recipient: address.clone(),
+                receipt: TXO { address, seq_no }.to_libindy_string()?,
                 amount: output.amount,
                 extra: extra.as_ref().unwrap_or(&"".to_string()).to_string(),
             })

@@ -4,8 +4,10 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 
 mod utils;
+use indy::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
+use sovtoken::logic::parsers::common::TXO;
 
 #[test]
 pub fn build_and_submit_verify_on_mint() {
@@ -26,10 +28,9 @@ pub fn build_and_submit_verify_on_mint() {
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
     let res = indy::payments::Payment::parse_verify_response(&payment_method, &res).unwrap();
 
-    println!("{:?}", res);
-//    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-//    assert!(res_parsed.as_object().unwrap().get("sources").is_none());
-//    assert!(res_parsed.as_object().unwrap().get("recipients").unwrap().as_object().get("receipt").unwrap().)
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    assert!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().is_empty());
+    assert_eq!(res_parsed.as_object().unwrap().get("receipts").unwrap().as_array().unwrap().get(0).unwrap().as_object().unwrap().get("receipt").unwrap().as_str().unwrap(), txo);
 }
 
 #[test]
@@ -67,10 +68,9 @@ pub fn build_and_submit_verify_on_xfer() {
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
     let res = indy::payments::Payment::parse_verify_response(&payment_method, &res).unwrap();
 
-    println!("{:?}", res);
-//    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-//    assert!(res_parsed.as_object().unwrap().get("sources").is_none());
-//    assert!(res_parsed.as_object().unwrap().get("recipients").unwrap().as_object().get("receipt").unwrap().)
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    assert_eq!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().get(0).unwrap().as_str().unwrap(), txo);
+    assert_eq!(res_parsed.as_object().unwrap().get("receipts").unwrap().as_array().unwrap().get(0).unwrap().as_object().unwrap().get("receipt").unwrap().as_str().unwrap(), new_utxo);
 }
 
 #[test]
@@ -109,12 +109,34 @@ pub fn build_and_submit_verify_on_fees() {
     let value = utxos.get(0).unwrap().as_object().unwrap();
     let new_utxo = value.get("receipt").unwrap().as_str().unwrap();
 
-    let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &txo).unwrap();
+    let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &new_utxo).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
     let res = indy::payments::Payment::parse_verify_response(&payment_method, &res).unwrap();
 
-    println!("{:?}", res);
-//    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
-//    assert!(res_parsed.as_object().unwrap().get("sources").is_none());
-//    assert!(res_parsed.as_object().unwrap().get("recipients").unwrap().as_object().get("receipt").unwrap().)
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    assert_eq!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().get(0).unwrap().as_str().unwrap(), txo);
+    assert_eq!(res_parsed.as_object().unwrap().get("receipts").unwrap().as_array().unwrap().get(0).unwrap().as_object().unwrap().get("receipt").unwrap().as_str().unwrap(), new_utxo);
+}
+
+#[test]
+pub fn build_and_submit_verify_req_for_unexistant_utxo() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None,
+        fees: None,
+    });
+
+    let pool_handle = setup.pool_handle;
+    let payment_addresses = &setup.addresses;
+    let dids = setup.trustees.dids();
+    let txo = TXO { address: payment_addresses[0].to_string(), seq_no: 999999 }.to_libindy_string().unwrap();
+
+    let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &txo).unwrap();
+    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
+    let err = indy::payments::Payment::parse_verify_response(&payment_method, &res).unwrap_err();
+
+    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
