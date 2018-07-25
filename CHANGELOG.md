@@ -9,6 +9,8 @@
     * that requires signed commits
 * Bugfixes
 
+Note: This release requires the user to have libindy installed locally from [the github repository](https://github.com/hyperledger/indy-sdk). For this release, the github commit required begins 8c080f037d58
+
 
 ## 0.7.0
 Initial release
