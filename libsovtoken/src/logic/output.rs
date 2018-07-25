@@ -59,7 +59,7 @@ pub struct OutputConfig {
     use sovtoken::utils::json_conversion::JsonSerialize;
     use sovtoken::logic::output::Output;
     let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
-    let output = Output::new(address, 5, None);
+    let output = Output::new(address, 5);
     let json = Output::to_json(&output).unwrap();
     assert_eq!(json, r#"["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",5]"#);
     ```
@@ -67,22 +67,20 @@ pub struct OutputConfig {
 */
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Output {
-    pub address: String,
-    pub amount: TokenAmount,
-    // This is wrong, there should be no extra in output
-    pub extra: Option<String>,
+    pub recipient: String,
+    pub amount: TokenAmount
 }
 
 impl Output {
-    pub fn new(address: String, amount: TokenAmount, extra: Option<String>) -> Output {
-        return Output { address, amount, extra };
+    pub fn new(address: String, amount: TokenAmount) -> Output {
+        return Output { recipient: address, amount };
     }
 }
 
 impl Serialize for Output {
     fn serialize<S: ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_tuple(2)?;
-        seq.serialize_element(&self.address)?;
+        seq.serialize_element(&self.recipient)?;
         seq.serialize_element(&self.amount)?;
         return seq.end();
     }
@@ -108,33 +106,29 @@ impl<'de> Deserialize<'de> for Output {
                     .next_element()?
                     .ok_or(de::Error::invalid_length(1, &"2"))?;
 
-                let extra = None;
-
-                return Ok(Output::new(address, amount, extra));
+                return Ok(Output::new(address, amount));
             }
 
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Output, V::Error> {
                 let mut address = None;
                 let mut amount = None;
-                let mut extra = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
-                        "paymentAddress" => { address = map.next_value()?; },
+                        "recipient" => { address = map.next_value()?; },
                         "amount" => { amount =  map.next_value()?; },
-                        "extra" => { extra = map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let address = address.ok_or(de::Error::missing_field("paymentAddress"))?;
+                let address = address.ok_or(de::Error::missing_field("recipient"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
-                return Ok(Output::new(address, amount, extra));
+                return Ok(Output::new(address, amount));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["paymentAddress", "amount", "extra"];
+        const FIELDS: &'static [&'static str] = &["recipient", "amount"];
         return deserializer.deserialize_struct("Output", FIELDS, OutputVisitor);
     }
 }
@@ -169,15 +163,9 @@ mod output_tests {
         return serde_json::to_string(&json).unwrap();
     }
 
-    fn output_with_extra() -> Output {
+    fn output() -> Output {
         let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
-        let extra = Some(String::from("ewt3eioSSDziqDGehdJLSEwanzZNsgaawqp"));
-        return Output::new(address, 10, extra);
-    }
-
-    fn output_without_extra() -> Output {
-        let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
-        return Output::new(address, 10, None);
+        return Output::new(address, 10);
     }
 
     #[test]
@@ -189,58 +177,22 @@ mod output_tests {
     #[test]
     fn deserialize_output_tuple() {
         let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
-        let expected = Output::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
+        let expected = Output::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10);
         assert_valid_deserialize(json, expected);
     }
 
     #[test]
     fn deserialize_invalid_output_object() {
         let json = json!({
-            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
-            "extra": "eifjoaiandvskasn",
+            "recipient": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"
         });
         assert_invalid_deserialize(json, "missing field `amount`");
-    }
-
-    #[test]
-    fn deserialize_output_object_without_extra() {
-        let json = json!({
-            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
-            "amount": 10,
-        });
-        let output = output_without_extra();
-        assert_valid_deserialize(json, output);
-    }
-
-    #[test]
-    fn deserialize_output_object_with_extra() {
-        let json = json!({
-            "paymentAddress": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
-            "amount": 10,
-            "extra": "ewt3eioSSDziqDGehdJLSEwanzZNsgaawqp",
-        });
-        let output = output_with_extra();
-        assert_valid_deserialize(json, output);
-    }
-
-    #[test]
-    fn serialize_output_without_extra() {
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
-        let output = output_without_extra();
-        assert_valid_serialize(output, json);
-    }
-
-    #[test]
-    fn serialize_output_with_extra() {
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
-        let output = output_with_extra();
-        assert_valid_serialize(output, json);
     }
 
     // this test ensures that the deserialized JSON is serialized correctly
     #[test]
     fn serializing_fee_struct_output_config() {
-        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10, None);
+        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10);
 
         let fee: OutputConfig = OutputConfig {
             ver: 1,

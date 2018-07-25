@@ -14,7 +14,7 @@ use utils::constants::general::JsonCallbackUnwrapped;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
-type DeserializedArguments = (Inputs, Outputs, SerdeMap, AddRequestFeesCb);
+type DeserializedArguments = (Inputs, Outputs, Option<String>, SerdeMap, AddRequestFeesCb);
 
 /**
  * Deserializes arguments of [`add_request_fees_handler`]
@@ -23,6 +23,7 @@ pub fn deserialize_inputs (
     req_json: *const c_char,
     inputs_json: *const c_char,
     outputs_json: *const c_char,
+    extra: *const c_char,
     cb: Option<AddRequestFeesCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
     trace!("logic::add_request_fees::deserialize_inputs >> req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", req_json, inputs_json, outputs_json);
@@ -37,6 +38,9 @@ pub fn deserialize_inputs (
 
     let outputs_json = string_from_char_ptr(outputs_json).ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
+
+    let extra = string_from_char_ptr(extra);
+    debug!("Converted extra pointer to string >>> {:?}", extra);
 
     let inputs: Inputs = serde_json::from_str(&inputs_json).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized input_json >>> {:?}", inputs);
@@ -54,6 +58,7 @@ pub fn deserialize_inputs (
     return Ok((
         inputs,
         outputs,
+        extra,
         request_json_map.to_owned(),
         cb,
     ));
@@ -80,11 +85,12 @@ pub fn add_fees_to_request_and_serialize(
     wallet_handle: i32,
     inputs: Inputs,
     outputs: Outputs,
+    extra: Option<String>,
     request_json_map: SerdeMap,
     cb: Box<Fn(Result<String, ErrorCode>) + Send + Sync>
 ) -> Result<(), ErrorCode> {
     trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> wallet_handle: {:?}, inputs: {:?}, outputs: {:?}, request_json_map: {:?}", wallet_handle, inputs, outputs, request_json_map);
-    let res = add_fees(wallet_handle, inputs, outputs, request_json_map, Box::new(move |request_json_map_updated|{
+    let res = add_fees(wallet_handle, inputs, outputs, extra, request_json_map, Box::new(move |request_json_map_updated|{
         let rm_fees = request_json_map_updated.map(|request_json_map_with_fees| serialize_request_with_fees(request_json_map_with_fees));
         match rm_fees {
             Ok(some) => cb(some),
@@ -115,8 +121,8 @@ pub fn closure_cb_response(command_handle: i32, cb: JsonCallbackUnwrapped) -> im
     KEEP all public methods above
 */
 
-fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
-    signed_fees(wallet_handle, inputs, outputs, Box::new(move |fees| {
+fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<String>, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    signed_fees(wallet_handle, inputs, outputs, extra, Box::new(move |fees| {
         trace!("Added fees to request_json.");
         match fees {
             Ok(fees) => {
@@ -142,8 +148,8 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
     return Ok(serialized_request_with_fees);
 } 
 
-fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
-    let fees = XferPayload::new(inputs, outputs);
+fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<String>, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    let fees = XferPayload::new(inputs, outputs, extra);
     fees.sign_fees(&CryptoSdk{}, wallet_handle, cb)?;
     Ok(())
 }
@@ -165,6 +171,7 @@ mod test_deserialize_inputs {
         req_json: Option<*const c_char>,
         inputs_json: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
+        extra: Option<*const c_char>,
         cb: Option<Option<AddRequestFeesCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
         let default_req_json = json_c_pointer!({
@@ -177,33 +184,34 @@ mod test_deserialize_inputs {
         let req_json = req_json.unwrap_or(default_req_json);
         let inputs_json = inputs_json.unwrap_or_else(default::inputs_json_pointer);
         let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let extra = extra.unwrap_or(ptr::null());
         let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
-        return deserialize_inputs(req_json, inputs_json, outputs_json, cb);
+        return deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb);
     }
 
     fn error_deserialize_inputs_inputs(inputs: *const c_char, error: ErrorCode) {
-        let result = call_deserialize_inputs(None, Some(inputs), None, None);
+        let result = call_deserialize_inputs(None, Some(inputs), None, None, None);
         assert_eq!(error, result.unwrap_err());
     }
 
     fn error_deserialize_inputs_ouputs(outputs: *const c_char, error: ErrorCode) {
-        let result = call_deserialize_inputs(None, None, Some(outputs), None);
+        let result = call_deserialize_inputs(None, None, Some(outputs), None, None);
         assert_eq!(error, result.unwrap_err());
     }
 
     fn error_deserialize_inputs_request(request: *const c_char, error: ErrorCode) {
-        let result = call_deserialize_inputs(Some(request), None, None, None);
+        let result = call_deserialize_inputs(Some(request), None, None, None, None);
         assert_eq!(error, result.unwrap_err());
     }
 
     fn error_deserialize_inputs_cb(cb: Option<AddRequestFeesCb>, error: ErrorCode) {
-        let result = call_deserialize_inputs(None, None, None, Some(cb));
+        let result = call_deserialize_inputs(None, None, None, None, Some(cb));
         assert_eq!(error, result.unwrap_err());
     }
 
     fn deserialize_request_json(json_pointer: *const c_char) -> serde_json::Map<String, serde_json::value::Value> {
-        let (_, _, request, _) = call_deserialize_inputs(Some(json_pointer), None, None, None).unwrap();
+        let (_, _, _, request, _) = call_deserialize_inputs(Some(json_pointer), None, None, None, None).unwrap();
         return request;
     }
 
@@ -257,7 +265,7 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_inputs_valid() {
-        let result = call_deserialize_inputs(None, None, None, None);
+        let result = call_deserialize_inputs(None, None, None, None, None);
         assert!(result.is_ok());
     }
 

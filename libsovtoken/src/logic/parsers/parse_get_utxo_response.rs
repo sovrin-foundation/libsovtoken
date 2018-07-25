@@ -3,7 +3,7 @@
 #![allow(unused_imports)]
 
 use rust_base58::ToBase58;
-use logic::parsers::common::{ResponseOperations, UTXO, TXO, StateProof, ParsedSP, KeyValuesInSP,
+use logic::parsers::common::{ResponseOperations, TXO, StateProof, ParsedSP, KeyValuesInSP,
                              KeyValueSimpleData, extract_result_and_state_proof_from_node_reply};
 use logic::parsers::error_code_parser;
 use utils::json_conversion::{JsonSerialize, JsonDeserialize};
@@ -47,6 +47,20 @@ pub struct ParseGetUtxoResponseResult {
     pub state_proof : Option<StateProof>
 }
 
+/**
+    UTXO is the structure for the data member utxo_json
+
+    used by [`ParsePaymentReply`], [`ParseGetUtxoReply`], [`ParseResponseWithFeesReply`]
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct UTXO {
+    pub payment_address: String,
+    pub source: String,
+    pub amount: TokenAmount,
+    pub extra: String,
+}
+
 
 /**
    for parse_get_utxo_response_handler output parameter utxo_json
@@ -70,7 +84,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
                 let payment_address = address::address_from_unqualified_address(&result.address.to_string())?;
                 let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
-                let utxo: UTXO = UTXO { payment_address, txo, amount, extra: "".to_string() };
+                let utxo: UTXO = UTXO { payment_address, source: txo, amount, extra: "".to_string() };
 
                 utxos.push(utxo);
             }
