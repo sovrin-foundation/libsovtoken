@@ -28,9 +28,10 @@ if [ -z "${TARGET_ARCH}" ]; then
 fi
 
 case ${TARGET_ARCH} in
-    arm) CROSS_COMPILE="arm-linux-androideabi" ;;
-    arm64) CROSS_COMPILE="aarch64-linux-android" ;;
-    x86) CROSS_COMPILE="i686-linux-android" ;;
+    arm)    CROSS_COMPILE="armv7-linux-androideabi" ;;
+    arm64)  CROSS_COMPILE="aarch64-linux-android" ;;
+    x86)    CROSS_COMPILE="i686-linux-android" ;;
+    x86_64) CROSS_COMPILE="x86_64-linux-android" ;;
     \?) echo STDERR "Unknown TARGET_ARCH"
         exit 1
         ;;
@@ -44,7 +45,12 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
         elif [ -z "$2" ] ; then
             mkdir -p ${ANDROID_LIBINDY_DIR}
             command pushd ${ANDROID_LIBINDY_DIR} > /dev/null
-            LIBINDY_FILE=$(curl -s https://repo.corp.evernym.com/filely/android/ | grep libindy | egrep "${TARGET_ARCH}\>" | cut -d '"' -f 2 | sort -r | head -n 1)
+
+            LIBINDY_FILE="$3"
+            if [ -z "${LIBINDY_FILE}" ] ; then
+                LIBINDY_FILE=$(curl -s https://repo.corp.evernym.com/filely/android/ | grep libindy | egrep "${TARGET_ARCH}\>" | cut -d '"' -f 2 | sort -r | head -n 1)
+            fi
+
             if [ -z "${LIBINDY_FILE}" ] ; then
                 echo "Unable to download prebuilt libindy"
                 exit 1
@@ -77,13 +83,13 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
         ANDROID_OPENSSL_DIR="openssl_${TARGET_ARCH}"
         if [ -d "${ANDROID_OPENSSL_DIR}" ] ; then
             echo "Found ${ANDROID_OPENSSL_DIR}"
-        elif [ -z "$3" ]; then
+        elif [ -z "$4" ]; then
             if [ ! -d "${INDY_PREBUILT}/openssl/openssl_${TARGET_ARCH}" ] ; then
                 download_and_unzip_dependency "openssl" "${TARGET_ARCH}"
             fi
             ANDROID_OPENSSL_DIR="${INDY_PREBUILT}/openssl/openssl_${TARGET_ARCH}"
         else
-            ANDROID_OPENSSL_DIR=$3
+            ANDROID_OPENSSL_DIR=$4
         fi
     fi
     
@@ -91,13 +97,13 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
         ANDROID_SODIUM_DIR="libsodium_${TARGET_ARCH}"
         if [ -d "${ANDROID_SODIUM_DIR}" ] ; then
             echo "Found ${ANDROID_SODIUM_DIR}"
-        elif [ -z "$4" ]; then
+        elif [ -z "$5" ]; then
             if [ ! -d "${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}" ] ; then
                 download_and_unzip_dependency "sodium" "${TARGET_ARCH}" 
             fi
             ANDROID_SODIUM_DIR="${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}"
         else
-            ANDROID_SODIUM_DIR=$4
+            ANDROID_SODIUM_DIR=$5
         fi    
     fi
     
@@ -105,13 +111,13 @@ if [ -z "${DOCKER_IMAGE_ID}" ] ; then
         ANDROID_LIBZMQ_DIR="libzmq_${TARGET_ARCH}"
         if [ -d "${ANDROID_LIBZMQ_DIR}" ] ; then
             echo "Found ${ANDROID_LIBZMQ_DIR}"
-        elif [ -z "$5" ] ; then
+        elif [ -z "$6" ] ; then
             if [ ! -d "${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}" ] ; then
                 download_and_unzip_dependency "zmq" "${TARGET_ARCH}" 
             fi
             ANDROID_LIBZMQ_DIR="${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}"
         else
-            ANDROID_LIBZMQ_DIR=$5
+            ANDROID_LIBZMQ_DIR=$6
         fi
     fi
     

@@ -10,25 +10,26 @@ download_and_unzip_dependency() {
     if [ ! -d "indy-android-dependencies" ] ; then
         git clone --depth 1 https://github.com/evernym/indy-android-dependencies.git
     fi
-    pushd ${INDY_PREBUILT}/$1
+    command pushd ${INDY_PREBUILT}/$1 > /dev/null
     PREFIX=$(ls | grep "$1_$2.zip")
     PREFIX=${PREFIX/.zip/}
     if [ ! -d "${PREFIX}" ] ; then
         unzip -o -qq "${PREFIX}.zip"
     fi
-    popd
+    command popd > /dev/null
 }
 
 if [ -z "${TARGET_ARCH}" ]; then
     echo STDERR "Missing TARGET_ARCH argument"
     echo STDERR "e.g. x86 or arm"
-    exit 1 
+    exit 1
 fi
 
 case ${TARGET_ARCH} in
     arm) CROSS_COMPILE="arm-linux-androideabi" ;;
     arm64) CROSS_COMPILE="aarch64-linux-android" ;;
     x86) CROSS_COMPILE="i686-linux-android" ;;
+    x86_64) CROSS_COMPILE="x86_64-linux-android" ;;
     \?) echo STDERR "Unknown TARGET_ARCH"
         exit 1
         ;;
@@ -58,23 +59,23 @@ if [ -z "${ANDROID_SODIUM_DIR}" ]; then
     ANDROID_SODIUM_DIR="libsodium_${TARGET_ARCH}"
     if [ -d "${ANDROID_SODIUM_DIR}" ] ; then
         echo "Found ${ANDROID_SODIUM_DIR}"
-    elif [ -z "$4" ]; then
+    elif [ -z "$5" ]; then
         if [ ! -d "${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}" ] ; then
-            download_and_unzip_dependency "sodium" "${TARGET_ARCH}" 
+            download_and_unzip_dependency "sodium" "${TARGET_ARCH}"
         fi
         ANDROID_SODIUM_DIR="${INDY_PREBUILT}/sodium/libsodium_${TARGET_ARCH}"
     else
         ANDROID_SODIUM_DIR=$4
-    fi    
+    fi
 fi
 
 if [ -z "${ANDROID_LIBZMQ_DIR}" ] ; then
     ANDROID_LIBZMQ_DIR="libzmq_${TARGET_ARCH}"
     if [ -d "${ANDROID_LIBZMQ_DIR}" ] ; then
         echo "Found ${ANDROID_LIBZMQ_DIR}"
-    elif [ -z "$5" ] ; then
+    elif [ -z "$6" ] ; then
         if [ ! -d "${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}" ] ; then
-            download_and_unzip_dependency "zmq" "${TARGET_ARCH}" 
+            download_and_unzip_dependency "zmq" "${TARGET_ARCH}"
         fi
         ANDROID_LIBZMQ_DIR="${INDY_PREBUILT}/zmq/libzmq_${TARGET_ARCH}"
     else
@@ -84,21 +85,25 @@ fi
 
 if [ ! -f "android-ndk-r16b-linux-x86_64.zip" ] ; then
     echo "Downloading android-ndk-r16b-linux-x86_64.zip"
-    wget -q https://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip 
+    wget -q https://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip
 fi
 
 _INDY_SDK_REPO="https://github.com/hyperledger/indy-sdk.git"
 
 if [ ! -d "indy-sdk" ] ; then
     echo "git cloning indy-sdk"
-    git clone --depth 1 --branch ${GIT_INSTALL} ${_INDY_SDK_REPO}
+
+    git clone --branch ${GIT_INSTALL} ${_INDY_SDK_REPO}
+
+    command pushd indy-sdk > /dev/null
+    git checkout `cat ../../libindy.commit.sha1.hash.txt`
+    command popd > /dev/null
 else
     echo "Skipping git clone of indy-sdk"
-    _GIT_BRANCH=$(git --git-dir indy-sdk/.git branch | head -n 1 | sed -e 's/^..//g')
-    echo "Current branch set to ${_GIT_BRANCH}"
-    GIT_INSTALL="${GIT_INSTALL//\//\/\/}"
-    echo "GIT_INSTALL set to ${GIT_INSTALL}"
-    _MATCH=$(echo "${_GIT_BRANCH}" | egrep "${GIT_INSTALL}")
+    _GIT_COMMIT=$(cat ../../libindy.commit.sha1.hash.txt)
+    _GIT_HEAD=$(git --git-dir indy-sdk/.git log -1 | head -n 1 | cut -d ' ' -f 2)
+    echo "Current head set to ${_GIT_HEAD}"
+    _MATCH=$(echo "${_GIT_HEAD}" | grep "${_GIT_COMMIT}")
 
     if [ -z "${_MATCH}" ] ; then
         echo STDERR "Branch is not set properly in indy-sdk/.git"
