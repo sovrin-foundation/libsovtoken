@@ -85,6 +85,7 @@ RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovto
 
 
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.18.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.19.0

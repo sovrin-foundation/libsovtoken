@@ -1,0 +1,34 @@
+ANDROID_BUILD_DIR := _build_android
+ANDROID_PREBUILT_DIR=$(ANDROID_BUILD_DIR)/prebuilt
+ANDROID_PREBUILT_3RD_DIR=$(ANDROID_BUILD_DIR)/indy-android-dependencies
+
+ANDROID_ARCHS ?= arm arm64 x86
+
+.PHONY: $(ANDROID_PREBUILT_3RD_DIR)_pull
+
+$(ANDROID_BUILD_DIR) $(ANDROID_PREBUILT_DIR):
+	mkdir -p $@
+
+$(ANDROID_PREBUILT_3RD_DIR): | $(ANDROID_PREBUILT_DIR)
+	cd $(ANDROID_PREBUILT_DIR) && git clone --depth 1 https://github.com/evernym/indy-android-dependencies.git
+
+# TODO activate pulling changes if needed
+#$(ANDROID_PREBUILT_3RD_DIR)_pull: | $(ANDROID_PREBUILT_3RD_DIR)
+#	git --git-dir $(ANDROID_PREBUILT_3RD_DIR)/.git --work-tree $(ANDROID_PREBUILT_3RD_DIR) pull --depth 1
+
+$(ANDROID_PREBUILT_DIR)/%.zip: $(ANDROID_PREBUILT_3RD_DIR)/prebuilt/%.zip
+	mkdir -p $(@D)
+	$(CP) $(ANDROID_PREBUILT_3RD_DIR)/prebuilt/$*.zip $(@D)/$(*F).zip
+
+$(ANDROID_PREBUILT_DIR)/%/libindy.so $(ANDROID_PREBUILT_DIR)/%/libindy.a: image_lst_libindy_android
+
+
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/%.zip $(ANDROID_PREBUILT_DIR)/%/libindy.so $(ANDROID_PREBUILT_DIR)/%/libindy.a
+prebuilt_%: $(ANDROID_PREBUILT_DIR)/openssl/openssl_%.zip \
+			$(ANDROID_PREBUILT_DIR)/sodium/libsodium_%.zip \
+			$(ANDROID_PREBUILT_DIR)/zmq/libzmq_%.zip ;
+#	\
+#			$(ANDROID_PREBUILT_DIR)/%/libindy.so \
+#			$(ANDROID_PREBUILT_DIR)/%/libindy.a ;
+
+build_android: $(patsubst %,prebuilt_%,$(ANDROID_ARCHS)) 

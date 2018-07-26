@@ -16,3 +16,20 @@ services:
       context: ./ci/$OSNAME
       network: ${DOCKER_BUILD_NETWORK:-bridge}
     image: ${LST_CI_DOCKER_NAME}:${LST_CI_DOCKER_TAG}
+
+  android_ndk:
+    build:
+      context: ./android_ndk/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
+      args:
+          - PYTHON3_VERSION
+          - ANDROID_NDK_VERSION
+    image: ${LST_ANDROID_NDK_DOCKER_NAME}:${LST_ANDROID_NDK_DOCKER_TAG}
+
+  libindy_android:
+    build:
+      context: ./libindy_android/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
+      args:
+          - u_id=${DOCKER_UID}
+    image: ${LST_LIBINDY_ANDROID_DOCKER_NAME}:${LST_LIBINDY_ANDROID_DOCKER_TAG}

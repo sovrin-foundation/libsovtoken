@@ -26,3 +26,13 @@ services:
       args:
           - PYTHON3_VERSION
     image: evernym/dockerbase:python3-${OSNAME}-${PYTHON3_DOCKER_VERSION}
+
+  android_ndk:
+    build:
+      dockerfile: Dockerfile.${ANDROID_NDK_DOCKER_VERSION}
+      context: android_ndk/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
+      args:
+          - PYTHON3_VERSION
+          - ANDROID_NDK_VERSION
+    image: evernym/dockerbase:android_ndk-${OSNAME}-${ANDROID_NDK_DOCKER_VERSION}
