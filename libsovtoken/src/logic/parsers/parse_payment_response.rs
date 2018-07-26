@@ -98,7 +98,7 @@ pub fn from_response(base: ParsePaymentResponse) -> Result<ParsePaymentReply, Er
                 let qualified_address: String = add_qualifer_to_address(&address);
                 let seq_no: u64 = result.tnx_meta_data.seq_no;
                 let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
-                let utxo: UTXO = UTXO { payment_address: qualified_address, txo, amount, extra: "".to_string() };
+                let utxo: UTXO = UTXO { recipient: qualified_address, receipt: txo, amount, extra: "".to_string() };
 
                 utxos.push(utxo);
             }

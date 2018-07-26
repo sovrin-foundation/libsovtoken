@@ -35,7 +35,7 @@ pub fn build_and_submit_attrib_with_fees() {
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[0],
+        "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
@@ -44,7 +44,7 @@ pub fn build_and_submit_attrib_with_fees() {
     let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_utxos.len(), 1);
     assert_eq!(parsed_utxos[0].amount, 9);
-    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
+    assert_eq!(parsed_utxos[0].recipient, addresses[0]);
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
@@ -102,7 +102,7 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[0],
+        "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
@@ -131,7 +131,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[0],
+        "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
@@ -140,7 +140,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_utxos.len(), 1);
     assert_eq!(parsed_utxos[0].amount, 9);
-    assert_eq!(parsed_utxos[0].payment_address, addresses[0]);
+    assert_eq!(parsed_utxos[0].recipient, addresses[0]);
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
@@ -153,7 +153,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
 fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
     let attrib_req = indy::ledger::Ledger::build_attrib_request(did, did,  None, data, None).unwrap();
     let attrib_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &attrib_req).unwrap();
-    let (attrib_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, did, &attrib_req_signed, inputs, outputs).unwrap();
+    let (attrib_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, did, &attrib_req_signed, inputs, outputs, None).unwrap();
     let attrib_resp = indy::ledger::Ledger::submit_request(pool_handle, &attrib_req_with_fees).unwrap();
     indy::payments::Payment::parse_response_with_fees(&pm, &attrib_resp)
 }
