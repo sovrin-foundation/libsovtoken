@@ -7,6 +7,7 @@ pub static PAYMENT_ADDRESS_QUALIFIER: &'static str = "pay:sov:";
 pub static TXO_QUALIFIER: &str = "txo:sov:";
 
 pub const PROTOCOL_VERSION: u32 = 2;
+pub const LEDGER_ID: &str = "1001";
 
 /**
 Defines a callback to communicate results to Indy-sdk as type

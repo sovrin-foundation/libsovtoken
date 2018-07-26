@@ -24,13 +24,13 @@ pub enum ResponseOperations {
 /**
     UTXO is the structure for the data member utxo_json
 
-    used by [`ParsePaymentReply`], [`ParseGetUtxoReply`], [`ParseResponseWithFeesReply`]
+    used by [`ParsePaymentReply`], [`ParseResponseWithFeesReply`]
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UTXO {
-    pub payment_address: String,
-    pub txo: String,
+    pub recipient: String,
+    pub receipt: String,
     pub amount: TokenAmount,
     pub extra: String,
 }
