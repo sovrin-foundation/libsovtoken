@@ -11,14 +11,15 @@ use rust_base58::{ToBase58, FromBase58};
 use serde_json;
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
-type DeserializedArguments = (Inputs, Outputs, BuildPaymentRequestCb);
+type DeserializedArguments = (Inputs, Outputs, Option<String>, BuildPaymentRequestCb);
 
 pub fn deserialize_inputs(
     inputs_json: *const c_char,
     outputs_json: *const c_char,
+    extra: *const c_char,
     cb: Option<BuildPaymentRequestCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
-    trace!("logic::build_payment::deserialize_inputs >> inputs_json: {:?}, outputs_json: {:?}", inputs_json, outputs_json);
+    trace!("logic::build_payment::deserialize_inputs >> inputs_json: {:?}, outputs_json: {:?}, extra: {:?}", inputs_json, outputs_json, extra);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
     let inputs_json = string_from_char_ptr(inputs_json)
@@ -37,8 +38,11 @@ pub fn deserialize_inputs(
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
-    trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}", inputs, outputs);
-    return Ok((inputs, outputs, cb));
+    let extra = string_from_char_ptr(extra);
+    debug!("Deserialized extra >>> {:?}", extra);
+
+    trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
+    return Ok((inputs, outputs, extra, cb));
 }
 
 pub fn handle_signing(
@@ -100,30 +104,32 @@ mod test_deserialize_inputs {
     pub fn call_deserialize_inputs(
         inputs_json: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
+        extra: Option<*const c_char>,
         cb: Option<Option<BuildPaymentRequestCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
         let inputs_json = inputs_json.unwrap_or_else(default::inputs_json_pointer);
         let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let extra = extra.unwrap_or(ptr::null());
         let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
-        return deserialize_inputs(inputs_json, outputs_json, cb);
+        return deserialize_inputs(inputs_json, outputs_json, extra, cb);
     }
 
     #[test]
     fn deserialize_empty_inputs() {
-        let result = call_deserialize_inputs(Some(ptr::null()), None, None);
+        let result = call_deserialize_inputs(Some(ptr::null()), None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_empty_outputs() {
-        let result = call_deserialize_inputs(None, Some(ptr::null()), None);
+        let result = call_deserialize_inputs(None, Some(ptr::null()), None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_empty_callback() {
-        let result = call_deserialize_inputs(None, None, Some(None));
+        let result = call_deserialize_inputs(None, None, None, Some(None));
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
@@ -136,7 +142,7 @@ mod test_deserialize_inputs {
                 "seqNo": 2
             }
         });
-        let result = call_deserialize_inputs(Some(inputs_json), None, None);
+        let result = call_deserialize_inputs(Some(inputs_json), None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
@@ -150,13 +156,13 @@ mod test_deserialize_inputs {
                 "seqNo": 5,
             }
         });
-        let result = call_deserialize_inputs(None, Some(outputs_json), None);
+        let result = call_deserialize_inputs(None, Some(outputs_json), None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_valid() {
-        let result = call_deserialize_inputs(None, None, None);
+        let result = call_deserialize_inputs(None, None, None, None);
         assert!(result.is_ok());
     }
 }

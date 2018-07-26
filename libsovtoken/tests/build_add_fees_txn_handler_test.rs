@@ -16,9 +16,10 @@ use sovtoken::utils::test::callbacks;
 use utils::wallet::Wallet;
 
 
-fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, request: String) -> Result<String, ErrorCode> {
+fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
     let did = "mydid1";
+    let extra = extra.map(c_pointer_from_string).unwrap_or(std::ptr::null());
     let error_code = sovtoken::api::add_request_fees_handler(
         command_handle,
         wallet_handle,
@@ -26,6 +27,7 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, req
         c_pointer_from_string(request),
         c_pointer_from_string(inputs),
         c_pointer_from_string(outputs),
+        extra,
         cb
     );
 
@@ -57,7 +59,7 @@ fn test_add_fees_to_request_valid() {
     let inputs = json!([txo.to_libindy_string().unwrap()]);
     
     let outputs = json!([{
-            "paymentAddress": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "recipient": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
             "amount": 20,
     }]);
 
@@ -76,6 +78,7 @@ fn test_add_fees_to_request_valid() {
         wallet.handle,
         inputs.to_string(),
         outputs.to_string(),
+        None,
         fake_request.to_string()
     ).unwrap();
 
@@ -98,7 +101,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
     let inputs = json!([txo.to_libindy_string().unwrap()]);
 
     let outputs = json!([{
-            "paymentAddress": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "recipient": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
             "amount": 20,
     }]);
 
@@ -125,6 +128,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
         &fake_request.to_string(),
         &inputs.to_string(),
         &outputs.to_string(),
+        None,
         cb
     );
 

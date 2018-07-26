@@ -36,16 +36,16 @@ pub fn build_and_submit_cred_def_with_fees() {
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[0],
+        "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
-    let (parsed_resp, cred_def_id, _) = _send_cred_def_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    let (parsed_resp, cred_def_id, _) = _send_cred_def_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
     assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
-    assert_eq!(parsed_resp_json[0].get("paymentAddress").unwrap().as_str().unwrap(), addresses[0]);
+    assert_eq!(parsed_resp_json[0].get("recipient").unwrap().as_str().unwrap(), addresses[0]);
 
     thread::sleep(time::Duration::from_millis(100));
 
@@ -75,11 +75,11 @@ pub fn build_and_submit_cred_def_with_fees_insufficient_funds() {
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[0],
+        "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
-    let parsed_err = _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let parsed_err = _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
 }
 
@@ -104,13 +104,13 @@ pub fn build_and_submit_cred_def_with_fees_double_spend() {
 
     let inputs = json!([utxo]).to_string();
     let outputs = json!([{
-        "paymentAddress": addresses[0],
+        "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
-    _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap();
+    _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
-    let parsed_err = _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    let parsed_err = _send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
@@ -121,7 +121,8 @@ fn _send_cred_def_with_fees(did: &str,
                             wallet_handle: i32,
                             pool_handle: i32,
                             inputs_json: &str,
-                            outputs_json: &str) -> Result<(String, String, String), ErrorCode> {
+                            outputs_json: &str,
+                            extra: Option<&str>) -> Result<(String, String, String), ErrorCode> {
     let (schema_id, schema_json) = indy::anoncreds::Issuer::create_schema(did, name, version, attrs).unwrap();
     let schema_req = indy::ledger::Ledger::build_schema_request(did, &schema_json).unwrap();
     let schema_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, did, &schema_req).unwrap();
@@ -148,7 +149,8 @@ fn _send_cred_def_with_fees(did: &str,
         did,
         &cred_def_req_signed,
         inputs_json,
-        outputs_json
+        outputs_json,
+        extra
     ).unwrap();
     let cred_def_response_with_fees = indy::ledger::Ledger::submit_request(pool_handle, &cred_def_req_with_fees).unwrap();
 

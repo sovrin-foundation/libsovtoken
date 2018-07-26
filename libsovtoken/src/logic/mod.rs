@@ -19,4 +19,5 @@ pub mod parsers;
 pub mod request;
 pub mod set_fees;
 pub mod type_aliases;
+pub mod verify;
 pub mod xfer_payload;
