@@ -50,7 +50,9 @@ pub struct ParseGetUtxoResponseResult {
 /**
     UTXO is the structure for the data member utxo_json
 
-    used by [`ParsePaymentReply`], [`ParseGetUtxoReply`], [`ParseResponseWithFeesReply`]
+    Do not confuse with [`UTXO`] from common, this one has different field names
+
+    used by [`ParseGetUtxoReply`]
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
