@@ -115,7 +115,7 @@ pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFe
 
                 let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
-                let utxo: UTXO = UTXO { payment_address: qualified_address.to_string(), txo, amount, extra: "".to_string()};
+                let utxo: UTXO = UTXO { recipient: qualified_address.to_string(), receipt: txo, amount, extra: "".to_string()};
 
                 utxos.push(utxo);
             }

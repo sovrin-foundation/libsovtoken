@@ -37,15 +37,15 @@ pub fn outputs() -> Outputs {
     let address2 = String::from("pay:sov:YissN67riFhQ8W6viqtJoCRHFkXtqxaxeL9UyvCoz8sXq5B5A");
 
    vec![
-        Output::new(address1, 10, None),
-        Output::new(address2, 22, None),
+        Output::new(address1, 10),
+        Output::new(address2, 22),
     ]
 }
 
 pub fn outputs_json_pointer() -> *const c_char {
     json_c_pointer!([
         {
-            "paymentAddress": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+            "recipient": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
             "amount": 10
         }
     ])
@@ -74,7 +74,7 @@ pub fn set_fees_json() -> *const c_char {
 pub fn xfer_payload_unsigned() -> XferPayload {
     let inputs = inputs();
     let outputs = outputs();
-    XferPayload::new(inputs, outputs)
+    XferPayload::new(inputs, outputs, None)
 }
 
 pub fn xfer_payload_signed() -> XferPayload {
@@ -92,8 +92,8 @@ pub fn xfer_payload_signed() -> XferPayload {
     ];
 
     let outputs = vec![
-        Output::new(String::from(ver3), 10, None),
-        Output::new(String::from(ver4), 22, None)
+        Output::new(String::from(ver3), 10),
+        Output::new(String::from(ver4), 22)
     ];
 
     let signatures = Some(vec![
@@ -104,6 +104,7 @@ pub fn xfer_payload_signed() -> XferPayload {
     XferPayload {
         inputs,
         outputs,
+        extra: None,
         signatures
     }
 }

@@ -40,7 +40,7 @@ use sovtoken::logic::request::Request;
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-static VALID_OUTPUT_JSON: &'static str = r#"[{"paymentAddress":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":10}]"#;
+static VALID_OUTPUT_JSON: &'static str = r#"[{"recipient":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":10}]"#;
 
 // ***** UNIT TESTS ****
 
@@ -48,7 +48,7 @@ static VALID_OUTPUT_JSON: &'static str = r#"[{"paymentAddress":"pay:sov:dctKSXBb
 // receive an error when no callback is provided
 #[test]
 fn errors_with_no_call_back() {
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), None);
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), ptr::null(), None);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_mint_txn_handler'");
 }
 
@@ -63,7 +63,7 @@ fn errors_with_no_outputs_json() {
         return ErrorCode::Success as i32;
     }
 
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), Some(cb_no_json));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), ptr::null(), Some(cb_no_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_mint_txn_handler'");
     unsafe { assert!(! CALLBACK_CALLED) }
 }
@@ -81,7 +81,7 @@ fn errors_with_invalid_outputs_json() {
 
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, Some(cb_invalid_json));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, ptr::null(), Some(cb_invalid_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe { assert!(! CALLBACK_CALLED) }
 }
@@ -116,6 +116,7 @@ fn  valid_output_json() {
         1,
         did,
         outputs_str_ptr,
+        ptr::null(),
         Some(valid_output_json_cb)
     );
                                                             
@@ -141,6 +142,7 @@ fn valid_output_json_from_libindy() {
         wallet.handle,
         did,
         outputs_str,
+        None,
         cb
     );
 
@@ -180,26 +182,24 @@ pub fn build_and_submit_mint_txn_works() {
 
     let output_json = json!([
         {
-            "paymentAddress": payment_addresses[0],
+            "recipient": payment_addresses[0],
             "amount": 5,
-            "extra": "pa1",
         },
         {
-            "paymentAddress": payment_addresses[1],
+            "recipient": payment_addresses[1],
             "amount": 10,
-            "extra": "pa2",
         },
         {
-            "paymentAddress": payment_addresses[2],
+            "recipient": payment_addresses[2],
             "amount": 15,
-            "extra": "pa3",
         }
     ]).to_string();
 
     let (mint_req, _) = indy::payments::Payment::build_mint_req(
         wallet.handle,
         dids[0],
-        &output_json
+        &output_json,
+        None,
     ).unwrap();
 
     trace!("{:?}", &mint_req);
@@ -237,26 +237,24 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
 
     let output_json = json!([
         {
-            "paymentAddress": payment_addresses[0],
+            "recipient": payment_addresses[0],
             "amount": 5,
-            "extra": "pa1",
         },
         {
-            "paymentAddress": payment_addresses[1],
+            "recipient": payment_addresses[1],
             "amount": 10,
-            "extra": "pa2",
         },
         {
-            "paymentAddress": payment_addresses[2],
+            "recipient": payment_addresses[2],
             "amount": 15,
-            "extra": "pa3",
         }
     ]).to_string();
 
     let (mint_req, _) = indy::payments::Payment::build_mint_req(
         wallet.handle,
         dids[0],
-        &output_json
+        &output_json,
+        None
     ).unwrap();
 
     trace!("{:?}", &mint_req);
