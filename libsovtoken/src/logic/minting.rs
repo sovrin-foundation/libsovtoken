@@ -8,14 +8,15 @@ use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::{string_from_char_ptr};
 use logic::output::Outputs;
 
-type DeserializedArguments<'a> = (Did<'a>, Outputs, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Did<'a>, Outputs, Option<String>, JsonCallbackUnwrapped);
 
 pub fn deserialize_inputs<'a>(
     did: *const c_char,
     outputs_json: *const c_char,
+    extra: *const c_char,
     cb: JsonCallback
 ) -> Result<DeserializedArguments<'a>, ErrorCode> {
-    trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}", did, outputs_json);
+    trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}, extra: {:?}", did, outputs_json, extra);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
@@ -33,23 +34,27 @@ pub fn deserialize_inputs<'a>(
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     debug!("Deserialized output_json >>> {:?}", outputs);
 
-    trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}", did, outputs);
-    return Ok((did, outputs, cb));
+    let extra = string_from_char_ptr(extra);
+    debug!("Deserialized extra >>> {:?}", extra);
+
+    trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}, extra: {:?}", did, outputs, extra);
+    return Ok((did, outputs, extra, cb));
 }
 
 pub fn build_mint_request(
     did: Did,
-    mut outputs: Outputs
+    mut outputs: Outputs,
+    extra: Option<String>,
 ) -> Result<*const c_char, ErrorCode> {
     trace!("logic::minting::build_mint_request >> did: {:?}, outputs: {:?}", did, outputs);
 
     for output in &mut outputs {
-        let address = address::unqualified_address_from_address(&output.address)?;
-        output.address = address;
+        let address = address::unqualified_address_from_address(&output.recipient)?;
+        output.recipient = address;
     }
     trace!("Stripped pay:sov: from outputs");
 
-    let mint_request = MintRequest::from_config(outputs, did);
+    let mint_request = MintRequest::from_config(outputs, did, extra);
     info!("Built a mint request >>> {:?}", mint_request);
 
     let ptr = mint_request.serialize_to_pointer()
@@ -62,6 +67,7 @@ pub fn build_mint_request(
 #[cfg(test)]
 mod test_build_mint_request {
     use super::*;
+    use std::ptr::null;
     use logic::output::Output;
     use rust_base58::ToBase58;
     use utils::constants::txn_types::MINT_PUBLIC;
@@ -71,41 +77,44 @@ mod test_build_mint_request {
     pub fn call_deserialize_inputs<'a>(
         did: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
+        extra: Option<*const c_char>,
         cb: Option<JsonCallback>
     ) -> Result<DeserializedArguments<'a>, ErrorCode> {
         let req_json = did.unwrap_or_else(default::did);
         let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
+        let extra = extra.unwrap_or(null());
         let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
-        return deserialize_inputs(req_json, outputs_json, cb);
+        return deserialize_inputs(req_json, outputs_json, extra, cb);
     }
 
     #[test]
     fn build_mint_request_invalid_address() {
         let outputs = vec![
-            Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12, None)
+            Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12)
         ];
 
         let did = Did::new(&"en32ansFeZNERIouv2xA");
-        let result = build_mint_request(did, outputs);
+        let result = build_mint_request(did, outputs, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn build_mint_request_valid() {
         let output_config_pointer = json_c_pointer!([{
-            "paymentAddress": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+            "recipient": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
             "amount": 12
         }]);
 
         let did_str = &"1123456789abcdef".as_bytes().to_base58();
-        let (did, output_config, _) = call_deserialize_inputs(
+        let (did, output_config, _, _) = call_deserialize_inputs(
             Some(c_pointer_from_str(did_str)),
             Some(output_config_pointer),
+            None,
             None
         ).unwrap();
 
-        let result = build_mint_request(did.into(), output_config).unwrap();
+        let result = build_mint_request(did.into(), output_config, None).unwrap();
         let mint_request_json = string_from_char_ptr(result).unwrap();
         let mint_value: serde_json::value::Value = serde_json::from_str(&mint_request_json).unwrap();
 
@@ -134,26 +143,26 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_empty_did() {
-        let result = call_deserialize_inputs(Some(ptr::null()), None, None);
+        let result = call_deserialize_inputs(Some(ptr::null()), None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_empty_outputs() {
-        let result = call_deserialize_inputs(None, Some(ptr::null()), None);
+        let result = call_deserialize_inputs(None, Some(ptr::null()), None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_empty_callback() {
-        let result = call_deserialize_inputs(None, None, Some(None));
+        let result = call_deserialize_inputs(None, None, None, Some(None));
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_did_invalid_length() {
         let did = c_pointer_from_str("MyFakeDidWithALengthThatIsTooLong");
-        let result = call_deserialize_inputs(Some(did), None, None);
+        let result = call_deserialize_inputs(Some(did), None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
@@ -168,13 +177,13 @@ mod test_deserialize_inputs {
                 }
             ]
         });
-        let result = call_deserialize_inputs(None, Some(outputs), None);
+        let result = call_deserialize_inputs(None, Some(outputs), None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_valid_arguments() {
-        let result = call_deserialize_inputs(None, None, None);
+        let result = call_deserialize_inputs(None, None, None, None);
         assert!(result.is_ok());
     }
 

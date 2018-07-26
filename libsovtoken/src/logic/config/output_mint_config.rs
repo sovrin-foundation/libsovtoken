@@ -21,6 +21,8 @@ pub struct MintRequest {
     #[serde(rename = "type")]
     txn_type: String,
     outputs: Vec<(Output)>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    extra: Option<String>,
 }
 
 impl MintRequest {
@@ -28,10 +30,11 @@ impl MintRequest {
     /**
      * Creates a new `MintRequest` with `outputs`
      */
-    pub fn new(outputs: Vec<Output>, identifier : Did ) -> Request<MintRequest> {
+    pub fn new(outputs: Vec<Output>, identifier : Did, extra: Option<String>) -> Request<MintRequest> {
         let mint = MintRequest {
             txn_type: MINT_PUBLIC.to_string(),
-            outputs: outputs,
+            outputs,
+            extra,
         };
 
         return Request::new(mint, Some(String::from(identifier)));
@@ -41,8 +44,8 @@ impl MintRequest {
      * Creates a new `MintRequest` from an [`OutputConfig`].
      * [`OutputConfig`]: ../general/struct.OutputConfig.html
      */
-    pub fn from_config(mint_config: Outputs, identifier : Did) -> Request<MintRequest> {
-        return MintRequest::new(mint_config, identifier);
+    pub fn from_config(mint_config: Outputs, identifier : Did, extra: Option<String>) -> Request<MintRequest> {
+        return MintRequest::new(mint_config, identifier, extra);
     }
 }
 
@@ -60,7 +63,7 @@ mod output_mint_config_test {
 
     #[test]
     fn serializing_mint_struct_config() {
-        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
+        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let mint : OutputConfig = OutputConfig {
             ver: 1,
             outputs: vec![output],
@@ -71,9 +74,9 @@ mod output_mint_config_test {
     fn initial_mint_request() -> Request<MintRequest> {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
+        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let outputs = vec![output];
-        return MintRequest::new(outputs, did);
+        return MintRequest::new(outputs, did, None);
     }
 
     fn assert_mint_request<F>(expected: serde_json::Value, f: F)
@@ -94,9 +97,9 @@ mod output_mint_config_test {
     fn create_request_with_mint_config() {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10, None);
+        let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let outputs = vec![output];
-        let request = MintRequest::from_config(outputs.clone(), did);
+        let request = MintRequest::from_config(outputs.clone(), did, None);
         assert_eq!(request.operation.outputs, outputs);
     }
 
