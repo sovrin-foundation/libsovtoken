@@ -1,4 +1,4 @@
-FROM evernym/libsovtoken:0.4.0-xenial-base
+FROM evernym/libsovtoken:0.5.0-xenial-base
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
