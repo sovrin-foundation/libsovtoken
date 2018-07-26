@@ -63,8 +63,8 @@ pub fn parse_payment_response_works() {
     let resp: Vec<serde_json::Value> = serde_json::from_str(&resp).unwrap();
     assert_eq!(resp.len(), 4);
     for utxo in resp {
-        utxo["paymentAddress"].as_str().unwrap();
-        utxo["txo"].as_str().unwrap();
+        utxo["recipient"].as_str().unwrap();
+        utxo["receipt"].as_str().unwrap();
         utxo["amount"].as_u64().unwrap();
     }
 }
