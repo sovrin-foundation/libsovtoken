@@ -59,3 +59,21 @@ if [ "$CLEAN_BUILD" = "cleanbuild" ]; then
 fi
 
 cargo lipo --release --verbose --targets="${IOS_TARGETS}"
+
+for arch in ${IOS_TARGETS[@]}; do
+    if [ -f ./target.$arch/release/libindy.a ] ; then
+        mv ./target/$arch/release/libindy.a ./target/$arch/libindy.a
+    fi
+done
+
+if [ -f ./target/universal/release/libindy.a ] ; then
+    cp ./target/universal/release/libindy.a ./target/universal/libindy.a
+fi
+
+BUILD_TIME=$(date -u "+%Y%m%d%H%M")
+GIT_REV=$(git rev-parse --short HEAD)
+LIBINDY_VER=$(grep ^version Cargo.toml | head -n 1 | cut -d '"' -f 2)
+mv target libindy
+zip -qq "libindy_${LIBINDY_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" `find libindy -type f -name "libindy.a" | egrep '(ios|universal)' | egrep -v 'deps|debug|release'`
+mv libindy/"libindy_${LIBINDY_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" .
+mv libindy target
