@@ -12,12 +12,13 @@ Libsovtoken can be built without docker by running `build.nondocker.sh`
 It can be built in docker by running `build.sh`.
 
 Artifacts for each android ABI will be built and zipped together.
+
 | ABI | Arch-Triplet |
 | --- | ------------ |
-| arm | arm-linux-androideabi |
+| arm   | arm-linux-androideabi |
 | armv7 | armv7-linux-androideabi |
 | arm64 | aarch64-linux-android |
-| x86 | i686-linux-android |
+| x86   | i686-linux-android |
 | x86_64 | x86_64-linux-android |
 
 The zip file format will be
