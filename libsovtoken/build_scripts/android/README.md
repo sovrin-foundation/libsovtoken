@@ -1,28 +1,73 @@
 ## Libsovtoken Android Building
 -------------------------------
-Steps to build libindy and libsovtoken for Android
+Steps to build libsovtoken for Android
 
-With Docker
-Prebuilt binaries exist for each of the _C_ dependencies:
+Prebuilt binaries exist for each of the dependencies:
 - OpenSSL
 - Libsodium
 - ZMQ
+- Libindy
 
-These don't need to be built and the build folders for these exist in case its necessary.
-These are built using the same method as indy and libsovtoken using the *build.sh* and its arguments.
-Libindy is a necessary dependency that must be built until a prebuilt artifact exists.
-Choose an architecture to build for <arm|arm64|x86>, the triplet will be
-<arm-linux-androideabi|aarch64-linux-android|i686-linux-android> and run these commands:
+Libsovtoken can be built without docker by running `build.nondocker.sh`
+It can be built in docker by running `build.sh`.
+
+Artifacts for each android ABI will be built and zipped together.
+| ABI | Arch-Triplet |
+| --- | ------------ |
+| arm | arm-linux-androideabi |
+| armv7 | armv7-linux-androideabi |
+| arm64 | aarch64-linux-android |
+| x86 | i686-linux-android |
+| x86_64 | x86_64-linux-android |
+
+The zip file format will be
+
+**libsovtoken_<Cargo.toml-version>-yyyymmddHHMM-<git_short_rev>_<target_arch>.zip**
+
+where `<Cargo.toml-version>` is what is in the *libsovtoken/Cargo.toml* under \[package]
+version = "..."
+
+where YYYY is the 4 digit year, mm is the two digit month, dd is the two digit day of the month, HH is the two digit UTC hour, MM is the two digit minute.
+
+where `<git_short_rev>` is what is returned by `git rev-parse --short HEAD`
+
+where `<target_arch>` is the target built. It will always be all for now, but is noted here in case a single ABI is needed.
+
+The file can be uploaded to **Kraken** using the following command
 ```bash
-cd indy
-./build.sh <target-arch>
-cd ../libsovtoken
-mkdir libindy_<target-arch>
-cp ../indy/indy-sdk/libindy/target/<target-arch-triplet>/release/libindy.so libindy_<target-arch>/
-cp ../indy/indy-sdk/libindy/target/<target-arch-triplet>/release/libindy.a libindy_<target-arch>/
-./build.sh <target-arch>
+curl -u <USERNAME> -X POST -F file=@./<LOCAL_PATH_TO_ZIP> https://kraken.corp.evernym.com/repo/<repo>/upload
 ```
 
-The binaries will be in **libsovtoken/libsovtoken/target/<target-arch-triplet/release**
-- libsovtoken.so
-- libsovtoken.a
+where `<repo>` is one of `ios`, `android`, `npm`.
+
+
+If you need credentials for **Kraken** you will need to give a Unix style password hash to technical enablement.
+A simple tool *mkpwhash.py* from https://gitlab.corp.evernym.com/te/Ops-tools does the trick.
+
+### Android Build Settings
+
+*libsovtoken/build_scripts/android/android_settings.txt* contains the settings for building with android.
+
+### Dependency Settings
+
+1. Libindy
+    1. To set the version of libindy to build against, set the file name in *libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt*.
+    1. A list of files can be found at https://repo.corp.evernym.com/filely/android
+1. Openssl
+1. Sodium
+1. ZeroMQ
+    1. To set the version o build against, set the file name in *libindy.dependencies.txt*
+    1. A list of files can be found at https://repo.corp.evernym.com/filely/android
+
+
+## Libindy Android Building
+---------------------------
+
+Libindy building uses all the same settings as libsovtoken minus those in the libsovtoken directory.
+It also uses *libsovtoken/build_scripts/libindy.commit.sha1.hash.txt* which tells git which
+version to use.
+
+Libsovtoken can be built without docker by running `build.nondocker.sh`
+It can be built in docker by running `build.sh`.
+
+Artifacts for each android ABI will be built and zipped together.

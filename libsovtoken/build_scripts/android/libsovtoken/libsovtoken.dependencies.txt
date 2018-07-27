@@ -1,1 +1,1 @@
-libindy_201807261600-2f28ac3_android.zip
+libindy_1.5.0-201807261600-2f28ac3_all.zip
