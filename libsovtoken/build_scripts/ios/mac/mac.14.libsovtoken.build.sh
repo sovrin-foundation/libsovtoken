@@ -58,3 +58,20 @@ do
 done
 mkdir -p ./target/universal/release
 lipo -create $to_combine -o ./target/universal/release/libsovtoken.a
+
+for arch in ${IOS_TARGETS[@]}; do
+    if [ -f ./target.$arch/release/libsovtoken.a ] ; then
+        mv ./target/$arch/release/libsovtoken.a ./target/$arch/libsovtoken.a
+    fi
+done
+
+if [ -f ./target/universal/release/libsovtoken.a ] ; then
+    cp ./target/universal/release/libsovtoken.a ./target/universal/libsovtoken.a
+fi
+
+BUILD_TIME=$(date -u "+%Y%m%d%H%M")
+GIT_REV=$(git rev-parse --short HEAD)
+LIBSOVTOKEN_VER=$(grep ^version Cargo.toml | head -n 1 | cut -d '"' -f 2)
+mv target libsovtoken
+zip -qq "libsovtoken_${LIBSOVTOKEN_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" `find libsovtoken -type f -name "libsovtoken.a" | egrep '(ios|universal)' | egrep -v 'deps|debug|release'`
+mv libsovtoken target
