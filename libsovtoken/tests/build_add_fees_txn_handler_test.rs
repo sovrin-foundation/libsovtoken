@@ -136,3 +136,38 @@ fn test_add_fees_to_request_valid_from_libindy() {
     assert_eq!("sov", method);
     assert_eq!(expected_fees_request.to_string(), req);
 }
+
+#[test]
+fn test_add_fees_to_request_valid_from_libindy_for_not_owned_payment_address() {
+    let wallet_1 = utils::wallet::Wallet::new();
+    let wallet_2 = utils::wallet::Wallet::new();
+
+    let setup = utils::setup::Setup::new(&wallet_1, utils::setup::SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![30]),
+        fees: None,
+    });
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let fake_request = json!({
+       "operation": {
+           "type": "3"
+       }
+    });
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet_1, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]);
+
+    let outputs = json!([{
+            "recipient": addresses[0],
+            "amount": 20,
+    }]);
+
+    let err = indy::payments::Payment::add_request_fees(wallet_2.handle, dids[0], &fake_request.to_string(), &inputs.to_string(), &outputs.to_string(), None).unwrap_err();
+    assert_eq!(err, indy::ErrorCode::WalletItemNotFound);
+}
