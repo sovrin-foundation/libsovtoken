@@ -1,10 +1,10 @@
 # Building and Testing Libsovtoken Client
 
-Libsovtoken can be built for linux using the **run.sh** and Docker.
+Libsovtoken can be built for linux using the **build_docker.sh** script and Docker.
 
 Libsovtoken depends on the libindy library.
 
-**run.sh** supports three options for installing libindy:
+**build_docker.sh** supports three options for installing libindy:
 1. From a debian package via [apt-get](https://github.com/hyperledger/indy-sdk#ubuntu-based-distributions-ubuntu-1604).
 1. Use rust to compile libindy from source in a local folder
 1. Performs a git clone of [libindy](https://github.com/hyperledger/indy-sdk) to a local folder before doing step 2.
@@ -17,7 +17,7 @@ Libsovtoken depends on the libindy library.
             Options -i or -g will cause this option to be ignored.
 * **-b** -  Use named branch for git clone. Default branch is 'master'
              Can be 'master|tags/v1.4|stable'. If the current branch in the local clone is
-             not set to branch, the **run.sh** will try to set it. If it fails, the program will abort.
+             not set to branch, the **build_docker.sh** will try to set it. If it fails, the program will abort.
 * **-c** - Run a custom command instead of cargo \$mode.
             This is useful when you need to use more options with cargo
             like 'cargo test -- --nocapture' or 'cargo build --verbose' or 'cargo check'
