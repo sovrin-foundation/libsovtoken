@@ -1,1 +1,1 @@
-libindy_1.5.0-201807261600-2f28ac3_all.zip
+libindy_1.6.1-201807301910-f8de2c1_all.zip
