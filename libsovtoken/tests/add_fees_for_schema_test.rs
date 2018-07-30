@@ -12,6 +12,23 @@ use sovtoken::utils::random::rand_string;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
+fn send_schema_with_fees(did: &str,
+                         name: &str,
+                         version: &str,
+                         attrs: &str,
+                         wallet_handle: i32,
+                         pool_handle: i32,
+                         inputs_json: &str,
+                         outputs_json: &str,
+                         extra: Option<&str>) -> Result<(String, String, String, String), ErrorCode> {
+    let (schema_id, schema_json) = indy::anoncreds::Issuer::create_schema(did, name, version, attrs).unwrap();
+    let schema_req = indy::ledger::Ledger::build_schema_request(did, &schema_json).unwrap();
+    let schema_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &schema_req).unwrap();
+    let (schema_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, did, &schema_req_signed, inputs_json, outputs_json, extra).unwrap();
+    let schema_resp = indy::ledger::Ledger::submit_request(pool_handle, &schema_req_with_fees).unwrap();
+    indy::payments::Payment::parse_response_with_fees(&pm, &schema_resp).map(|s| (s, schema_id, schema_json, schema_resp))
+}
+
 pub const SCHEMA_VERSION: &'static str = "1.0";
 pub const GVT_SCHEMA_ATTRIBUTES: &'static str = r#"["name", "age", "sex", "height"]"#;
 
@@ -39,7 +56,7 @@ pub fn build_and_submit_schema_with_fees() {
         "amount": 9
     }]).to_string();
 
-    let (parsed_resp, schema_id, _, schema_resp) = _send_schema_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
+    let (parsed_resp, schema_id, _, schema_resp) = send_schema_with_fees(dids[0], rand_string(5).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
@@ -80,7 +97,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
         "amount": 9
     }]).to_string();
 
-    let parsed_err = _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
+    let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
 }
 
@@ -109,9 +126,9 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
         "amount": 9
     }]).to_string();
 
-    _send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
+    send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
-    let err = _send_schema_with_fees(dids[0],rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
+    let err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
     assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
@@ -141,7 +158,7 @@ pub fn build_and_submit_schema_with_fees_twice_and_check_utxo_remain_unspent() {
     }]).to_string();
 
     let name = rand_string(3);
-    _send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
+    send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
@@ -151,27 +168,10 @@ pub fn build_and_submit_schema_with_fees_twice_and_check_utxo_remain_unspent() {
         "amount": 8
     }]).to_string();
 
-    let err = _send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
+    let err = send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
 
     assert_eq!(err, ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2)
-}
-
-fn _send_schema_with_fees(did: &str,
-                          name: &str,
-                          version: &str,
-                          attrs: &str,
-                          wallet_handle: i32,
-                          pool_handle: i32,
-                          inputs_json: &str,
-                          outputs_json: &str,
-                          extra: Option<&str>) -> Result<(String, String, String, String), ErrorCode> {
-    let (schema_id, schema_json) = indy::anoncreds::Issuer::create_schema(did, name, version, attrs).unwrap();
-    let schema_req = indy::ledger::Ledger::build_schema_request(did, &schema_json).unwrap();
-    let schema_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &schema_req).unwrap();
-    let (schema_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, did, &schema_req_signed, inputs_json, outputs_json, extra).unwrap();
-    let schema_resp = indy::ledger::Ledger::submit_request(pool_handle, &schema_req_with_fees).unwrap();
-    indy::payments::Payment::parse_response_with_fees(&pm, &schema_resp).map(|s| (s, schema_id, schema_json, schema_resp))
 }
