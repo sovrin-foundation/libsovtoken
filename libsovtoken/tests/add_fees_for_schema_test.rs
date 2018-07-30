@@ -115,6 +115,50 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
     assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
+
+#[test]
+pub fn build_and_submit_schema_with_fees_twice_and_check_utxo_remain_unspent() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: Some(json!({
+            "101": 1
+        })),
+    });
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]).to_string();
+    let outputs = json!([{
+        "recipient": addresses[0],
+        "amount": 9
+    }]).to_string();
+
+    let name = rand_string(3);
+    _send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]).to_string();
+    let outputs = json!([{
+        "recipient": addresses[0],
+        "amount": 8
+    }]).to_string();
+
+    let err = _send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
+
+    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+
+    let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    assert_eq!(utxo, utxo_2)
+}
+
 fn _send_schema_with_fees(did: &str,
                           name: &str,
                           version: &str,
