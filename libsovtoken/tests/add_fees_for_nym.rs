@@ -218,7 +218,6 @@ pub fn build_and_submit_nym_with_fees_from_invalid_did_and_check_utxo_remain_uns
 
 /// This test reproduces bug described in https://evernym.atlassian.net/browse/TOK-252
 #[test]
-#[ignore]
 pub fn build_and_submit_nym_with_fees_from_other_nym_txn() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {

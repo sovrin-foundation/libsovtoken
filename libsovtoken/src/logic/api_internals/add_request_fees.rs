@@ -2,7 +2,7 @@
 
 use indy::ErrorCode;
 use libc::c_char;
-use logic::xfer_payload::XferPayload;
+use logic::xfer_payload::{XferPayload, serialize_signature};
 use logic::input::Inputs;
 use logic::output::Outputs;
 use serde_json;
@@ -11,6 +11,8 @@ use logic::indy_sdk_api::crypto_api::CryptoSdk;
 use utils::constants::txn_types::XFER_PUBLIC;
 use utils::constants::txn_fields::FEES;
 use utils::constants::general::JsonCallbackUnwrapped;
+use sha2::{Sha256, Digest};
+use hex::ToHex;
 
 type SerdeMap = serde_json::Map<String, serde_json::value::Value>;
 type AddRequestFeesCb = extern fn(command_handle_: i32, err: i32, req_with_fees_json: *const c_char) -> i32;
@@ -122,7 +124,11 @@ pub fn closure_cb_response(command_handle: i32, cb: JsonCallbackUnwrapped) -> im
 */
 
 fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<String>, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
-    signed_fees(wallet_handle, inputs, outputs, extra, Box::new(move |fees| {
+    let txn_serialized = serialize_signature(request_json_map.clone().into())?;
+    let mut hasher = Sha256::default();
+    hasher.input(txn_serialized.as_bytes());
+    let txn_digest = Some(hasher.result().to_hex());
+    signed_fees(wallet_handle, inputs, outputs, extra, &txn_digest, Box::new(move |fees| {
         trace!("Added fees to request_json.");
         match fees {
             Ok(fees) => {
@@ -148,9 +154,9 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
     return Ok(serialized_request_with_fees);
 } 
 
-fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<String>, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<String>, txn_digest: &Option<String>, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
     let fees = XferPayload::new(inputs, outputs, extra);
-    fees.sign_fees(&CryptoSdk{}, wallet_handle, cb)?;
+    fees.sign_fees(&CryptoSdk{}, wallet_handle, txn_digest, cb)?;
     Ok(())
 }
 
