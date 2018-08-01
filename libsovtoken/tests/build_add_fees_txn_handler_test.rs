@@ -154,9 +154,9 @@ fn test_add_fees_to_request_valid_from_libindy_for_not_owned_payment_address() {
     let dids = setup.trustees.dids();
 
     let fake_request = json!({
-       "operation": {
-           "type": "3"
-       }
+        "operation": {
+            "type": "3"
+        }
     });
 
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet_1, pool_handle, dids[0], &addresses[0]);
@@ -170,4 +170,28 @@ fn test_add_fees_to_request_valid_from_libindy_for_not_owned_payment_address() {
 
     let err = indy::payments::Payment::add_request_fees(wallet_2.handle, dids[0], &fake_request.to_string(), &inputs.to_string(), &outputs.to_string(), None).unwrap_err();
     assert_eq!(err, indy::ErrorCode::WalletItemNotFound);
+}
+
+#[test]
+fn build_add_fees_to_request_works_for_invalid_utxo() {
+    sovtoken::api::sovtoken_init();
+    let wallet = Wallet::new();
+    let (did, _) = indy::did::Did::new(wallet.handle, &json!({"seed": "000000000000000000000000Trustee1"}).to_string()).unwrap();
+
+    let fake_request = json!({
+       "operation": {
+           "type": "3"
+       }
+    }).to_string();
+
+    let inputs = json!(["txo:sov:1234"]).to_string();
+
+    let outputs = json!([{
+            "recipient": "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "amount": 20,
+    }]).to_string();
+
+    let err = indy::payments::Payment::add_request_fees(wallet.handle, &did, &fake_request, &inputs, &outputs, None).unwrap_err();
+
+    assert_eq!(err, ErrorCode::CommonInvalidStructure)
 }

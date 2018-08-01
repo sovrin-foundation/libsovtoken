@@ -411,6 +411,23 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
 }
 
 #[test]
+pub fn build_payment_with_invalid_utxo() {
+    sovtoken::api::sovtoken_init();
+    let wallet = Wallet::new();
+    let (did, _) = indy::did::Did::new(wallet.handle, &json!({"seed": "000000000000000000000000Trustee1"}).to_string()).unwrap();
+
+    let inputs = json!(["txo:sov:1234"]).to_string();
+    let outputs = json!([
+        {
+            "recipient": "pay:sov:1234",
+            "amount": 10
+        }
+    ]).to_string();
+
+    let err = indy::payments::Payment::build_payment_req(wallet.handle, &did, &inputs, &outputs, None).unwrap_err();
+    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+}
+
 pub fn build_payment_req_for_not_owned_payment_address() {
     let wallet_1 = Wallet::new();
     let wallet_2 = Wallet::new();

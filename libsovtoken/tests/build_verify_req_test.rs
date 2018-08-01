@@ -141,3 +141,16 @@ pub fn build_and_submit_verify_req_for_unexistant_utxo() {
 
     assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
+
+#[test]
+fn build_verify_req_works_for_invalid_utxo() {
+    sovtoken::api::sovtoken_init();
+    let wallet = Wallet::new();
+    let (did, _) = indy::did::Did::new(wallet.handle, &json!({"seed": "000000000000000000000000Trustee1"}).to_string()).unwrap();
+
+    let receipt = "txo:sov:1234";
+
+    let err = indy::payments::Payment::build_verify_req(wallet.handle, &did, receipt).unwrap_err();
+
+    assert_eq!(err, ErrorCode::CommonInvalidStructure)
+}
