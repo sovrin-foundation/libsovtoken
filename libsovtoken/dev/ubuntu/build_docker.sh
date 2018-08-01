@@ -230,7 +230,7 @@ DK_CMD="docker run --user token_user:token_user --cpus=${CPUS} --rm -w /data"
 if [ "${INDY_INSTALL_METHOD}" == "build" ] ; then
     CLEAN_CMD=""
     if [ ${REBUILD} -eq 1 ] ; then
-        CLEAN_CMD="cargo clean"
+        CLEAN_CMD="/home/token_user/.cargo/bin/cargo clean"
     fi
 
     cat >> "${BUILD_DIR}/build.sh" << EOF
@@ -249,6 +249,10 @@ export LIBINDY_DIR=/usr/lib
 export RUST_TEST_THREADS=1
 EOF
 fi
+
+cat >> "${BUILD_DIR}/build.sh" <<EOF
+${CMD}
+EOF
 
 DK_CMD="${DK_CMD} -v \"${BUILD_DIR}:/data\" -t ${DOCKERIMAGE}:latest bash build.sh"
 
