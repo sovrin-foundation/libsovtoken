@@ -121,7 +121,7 @@ for target in ${archs[@]}; do
 
     if [ ! -d "${TOOLCHAIN_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Making standalone toolchain for ${target}${ESCAPE}${NC}"
-        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
+        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl gnustl --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
     fi
 
     cat > ${LIBSOVTOKEN_DIR}/.cargo/config <<EOF
@@ -134,18 +134,18 @@ EOF
         rustup target add ${CROSS_COMPILE}
     fi
     if [ -d "${OPENSSL_DIR}" ] ; then
-        echo "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
+        echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
     else
         download_and_unzip_dependency "openssl"
     fi
 
     if [ -d "${SODIUM_LIB_DIR}" ] ; then
-        echo "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
+        echo -e "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
     else
         download_and_unzip_dependency "sodium"
     fi
     if [ -d "${LIBZMQ_LIB_DIR}" ] ; then
-        echo "${ESCAPE}${BLUE}Found ${LIBZMQ_LIB_DIR}${ESCAPE}${NC}"
+        echo -e "${ESCAPE}${BLUE}Found ${LIBZMQ_LIB_DIR}${ESCAPE}${NC}"
     else
         download_and_unzip_dependency "zmq"
     fi
