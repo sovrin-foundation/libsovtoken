@@ -4,6 +4,8 @@ extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 extern crate serde_json;
 
+use indy::ErrorCode;
+
 static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
     "op": "REPLY",
     "protocolVersion": 2,
@@ -67,4 +69,11 @@ pub fn parse_payment_response_works() {
         utxo["receipt"].as_str().unwrap();
         utxo["amount"].as_u64().unwrap();
     }
+}
+
+#[test]
+pub fn parse_payment_response_works_for_invalid() {
+    sovtoken::api::sovtoken_init();
+    let resp = indy::payments::Payment::parse_payment_response("sov", "123").unwrap_err();
+    assert_eq!(resp, ErrorCode::CommonInvalidStructure);
 }
