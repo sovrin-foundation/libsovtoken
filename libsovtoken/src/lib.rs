@@ -16,6 +16,7 @@ extern crate rust_base58;
 extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
+extern crate sha2;
 
 // ------------------------------------------
 // crates from crate.io etc that require macro
