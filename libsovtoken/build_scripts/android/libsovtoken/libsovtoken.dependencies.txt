@@ -1,1 +1,1 @@
-libindy=1.6.1=stable
+libindy_1.6.1-201807301910-f8de2c1_all.zip
