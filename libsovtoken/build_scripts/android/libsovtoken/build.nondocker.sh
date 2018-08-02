@@ -42,6 +42,7 @@ download_libindy(){
     command pushd ${PREBUILT} > /dev/null
         wget https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
         unzip -o -qq "libindy_android_$3_$2.zip"
+        rm "libindy_android_$3_$2.zip"
         export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
     command popd > /dev/null
 }
@@ -165,6 +166,7 @@ EOF
 
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
     cargo build --release --target=${CROSS_COMPILE}
+    unset LIBINDY_DIR
     for filename in libsovtoken.so libsovtoken.a; do
         if [ -f "target/${CROSS_COMPILE}/release/${filename}" ] ; then
             mv target/${CROSS_COMPILE}/release/${filename} target/${CROSS_COMPILE}/

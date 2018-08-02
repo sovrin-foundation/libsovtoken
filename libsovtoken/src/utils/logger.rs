@@ -8,7 +8,7 @@ use std::env;
 use std::io::Write;
 
 use env_logger::{Builder, fmt};
-use log::{Record, Metadata, Log, LevelFilter};
+use log::{Record, Level, Metadata, Log, LevelFilter};
 #[cfg(target_os = "android")]
 use self::android_logger::Filter;
 
@@ -20,7 +20,7 @@ pub struct ConsoleLogger;
 
 impl Log for ConsoleLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Log::Level::Trace
+        metadata.level() <= Level::Trace
     }
 
     fn log(&self, record: &Record) {
@@ -49,14 +49,14 @@ pub fn init_log() {
         #[cfg(target_os = "android")]
         let log_filter = match env::var("RUST_LOG") {
             Ok(val) => match val.to_lowercase().as_ref(){
-                "error" => Filter::default().with_min_level(log::Level::Error),
-                "warn" => Filter::default().with_min_level(log::Level::Warn),
-                "info" => Filter::default().with_min_level(log::Level::Info),
-                "debug" => Filter::default().with_min_level(log::Level::Debug),
-                "trace" => Filter::default().with_min_level(log::Level::Trace),
-                _ => Filter::default().with_min_level(log::Level::Error),
+                "error" => Filter::default().with_min_level(Level::Error),
+                "warn" => Filter::default().with_min_level(Level::Warn),
+                "info" => Filter::default().with_min_level(Level::Info),
+                "debug" => Filter::default().with_min_level(Level::Debug),
+                "trace" => Filter::default().with_min_level(Level::Trace),
+                _ => Filter::default().with_min_level(Level::Error),
             },
-            Err(..) => Filter::default().with_min_level(log::Level::Error)
+            Err(..) => Filter::default().with_min_level(Level::Error)
         };
 
         //Set logging to off when deploying production android app.
