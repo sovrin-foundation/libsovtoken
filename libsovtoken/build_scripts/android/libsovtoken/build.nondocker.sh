@@ -155,7 +155,7 @@ EOF
         echo "${ESCAPE}${RED}SODIUM_LIB_DIR not found${ESCAPE}${NC}"
         exit 1
     fi
-    if [ -d "${LIBINDY_DIR}" ] || [ -z "${LIBINDY_DIR}" ]; then
+    if [ -d "${LIBINDY_DIR}" ] || [ -z "${LIBINDY_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${LIBINDY_DIR}${ESCAPE}${NC}"
     else
         libindy_version=$(grep libindy libsovtoken.dependencies.txt | cut -d '=' -f 2)
