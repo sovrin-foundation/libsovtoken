@@ -17,6 +17,14 @@ ESCAPE="\033"
 UNAME=$(uname | tr '[:upper:]' '[:lower:]')
 NDK=${TARGET_NDK}-${UNAME}-$(uname -m)
 
+while getopts ":d" opt; do
+    case ${opt} in
+        d) export DOWNLOAD_PREBUILTS="1";;
+        \?);;
+    esac
+done
+shift $((OPTIND -1))
+
 download_and_unzip_dependency() {
     _FILEY_NAME=$(grep "$1" $2)
     command pushd ${PREBUILT} > /dev/null
@@ -25,6 +33,36 @@ download_and_unzip_dependency() {
     unzip -o -qq ${_FILEY_NAME}
     rm -f ${_FILEY_NAME}
     command popd > /dev/null
+}
+
+download_libindy(){
+    #$1 Branch
+    #$2 Version
+    #$3 Arch
+    command pushd ${PREBUILT} > /dev/null
+        wget https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
+        unzip -o -qq libindy_android_$3_$2.zip
+    command popd > /dev/null
+}
+
+download_and_unzip_dependencies_for_all_architectures(){
+    #TODO Get dependencies in more optimized way
+    pushd ${PREBUILT}
+        if [ ! -d "indy-android-dependencies" ] ; then
+            echo "${GREEN}Downloading dependencies...${RESET}"
+            git clone https://github.com/evernym/indy-android-dependencies.git
+            pushd ${PREBUILT}/indy-android-dependencies/prebuilt/
+                git checkout tags/v1.1
+                find . -name "*.zip" | xargs -P 5 -I FILENAME sh -c 'unzip -o -qq -d "$(dirname "FILENAME")" "FILENAME"'
+            popd
+             echo "${GREEN}Done!${RESET}"
+        fi
+        export OPENSSL_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/openssl/openssl_${TARGET_ARCH}
+        export SODIUM_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}
+        export SODIUM_LIB_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}/lib
+        export SODIUM_INCLUDE_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}/include
+        export LIBZMQ_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/zmq/libzmq_${TARGET_ARCH}
+	popd
 }
 
 get_cross_compile() {
@@ -72,7 +110,7 @@ for target in ${archs[@]}; do
     export OPENSSL_DIR=${PREBUILT}/openssl_prebuilt/${target}
     export SODIUM_LIB_DIR=${PREBUILT}/sodium_prebuilt/${target}/lib
     export SODIUM_INCLUDE_DIR=${PREBUILT}/sodium_prebuilt/${target}/include
-    export LIBINDY_DIR=${PREBUILT}/libindy/${CROSS_COMPILE}
+    export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
     arch=${target}
     if [ ${target} = "armv7" ] ; then
         arch="arm"
@@ -101,21 +139,28 @@ EOF
     if [ -z "${check}" ] ; then
         rustup target add ${CROSS_COMPILE}
     fi
+
+    if [ "${DOWNLOAD_PREBUILTS}" == "1" ]; then
+        download_and_unzip_dependencies_for_all_architectures
+    fi
+
     if [ -d "${OPENSSL_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
     else
-        download_and_unzip_dependency "openssl" "../libindy.dependencies.txt"
+        echo "${ESCAPE}${RED}OPENSSL_DIR not found${ESCAPE}${NC}"
     fi
 
     if [ -d "${SODIUM_LIB_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
     else
-        download_and_unzip_dependency "sodium" "../libindy.dependencies.txt"
+        echo "${ESCAPE}${RED}SODIUM_LIB_DIR not found${ESCAPE}${NC}"
     fi
     if [ -d "${LIBINDY_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${LIBINDY_DIR}${ESCAPE}${NC}"
     else
-        download_and_unzip_dependency "libindy" "libsovtoken.dependencies.txt"
+        libindy_version=$(grep libindy ../android_settings.txt | cut -d '=' -f 2)
+        libindy_branch=$(grep libindy ../android_settings.txt | cut -d '=' -f 3)
+        download_libindy libindy_branch libindy_version target
     fi
 
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
