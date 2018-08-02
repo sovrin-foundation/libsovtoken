@@ -58,11 +58,11 @@ download_and_unzip_dependencies_for_all_architectures(){
             popd
              echo "${GREEN}Done!${RESET}"
         fi
-        export OPENSSL_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/openssl/openssl_${TARGET_ARCH}
-        export SODIUM_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}
-        export SODIUM_LIB_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}/lib
-        export SODIUM_INCLUDE_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}/include
-        export LIBZMQ_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/zmq/libzmq_${TARGET_ARCH}
+        export OPENSSL_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/openssl/openssl_${arch}
+        export SODIUM_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${arch}
+        export SODIUM_LIB_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${arch}/lib
+        export SODIUM_INCLUDE_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${arch}/include
+        export LIBZMQ_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/zmq/libzmq_${arch}
 	popd
 }
 
