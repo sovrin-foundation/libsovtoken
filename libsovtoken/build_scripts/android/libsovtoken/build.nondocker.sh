@@ -108,9 +108,6 @@ fi
 
 for target in ${archs[@]}; do
     export CROSS_COMPILE=$(get_cross_compile ${target})
-    export OPENSSL_DIR=${PREBUILT}/openssl_prebuilt/${target}
-    export SODIUM_LIB_DIR=${PREBUILT}/sodium_prebuilt/${target}/lib
-    export SODIUM_INCLUDE_DIR=${PREBUILT}/sodium_prebuilt/${target}/include
 
     arch=${target}
     if [ ${target} = "armv7" ] ; then
