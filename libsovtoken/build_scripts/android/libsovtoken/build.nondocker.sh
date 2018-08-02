@@ -83,7 +83,7 @@ get_cross_compile() {
 if [ $# -gt 1 ] ; then
     archs=$@
 else
-    archs=(arm armv7 arm64 x86 x86_64)
+    archs=(arm arm64 x86)
 fi
 
 mkdir -p ${PREBUILT}
