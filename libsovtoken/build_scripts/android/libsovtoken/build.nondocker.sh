@@ -145,20 +145,20 @@ EOF
         download_and_unzip_dependencies_for_all_architectures
     fi
 
-    if [ -d "${OPENSSL_DIR}" ] ; then
+    if [ -d "${OPENSSL_DIR}" ] || [ -z "${OPENSSL_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
     else
         echo "${ESCAPE}${RED}OPENSSL_DIR not found${ESCAPE}${NC}"
         exit 1
     fi
 
-    if [ -d "${SODIUM_LIB_DIR}" ] ; then
+    if [ -d "${SODIUM_LIB_DIR}" ] || [ -z "${SODIUM_LIB_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
     else
         echo "${ESCAPE}${RED}SODIUM_LIB_DIR not found${ESCAPE}${NC}"
         exit 1
     fi
-    if [ -d "${LIBINDY_DIR}" ] ; then
+    if [ -d "${LIBINDY_DIR}" ] || [ -z "${LIBINDY_DIR}" ]; then
         echo -e "${ESCAPE}${BLUE}Found ${LIBINDY_DIR}${ESCAPE}${NC}"
     else
         libindy_version=$(grep libindy ../android_settings.txt | cut -d '=' -f 2)
