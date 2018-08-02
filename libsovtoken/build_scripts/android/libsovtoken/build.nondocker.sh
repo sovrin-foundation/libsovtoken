@@ -1,4 +1,4 @@
-#!bin/bash
+#!/usr/bin/env bash
 
 abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
@@ -41,7 +41,8 @@ download_libindy(){
     #$3 Arch
     command pushd ${PREBUILT} > /dev/null
         wget https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
-        unzip -o -qq libindy_android_$3_$2.zip
+        unzip -o -qq "libindy_android_$3_$2.zip"
+        export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
     command popd > /dev/null
 }
 
@@ -78,7 +79,7 @@ get_cross_compile() {
     esac
 }
 
-if [ $# -gt 0 ] ; then
+if [ $# -gt 1 ] ; then
     archs=$@
 else
     archs=(arm armv7 arm64 x86 x86_64)
@@ -110,7 +111,7 @@ for target in ${archs[@]}; do
     export OPENSSL_DIR=${PREBUILT}/openssl_prebuilt/${target}
     export SODIUM_LIB_DIR=${PREBUILT}/sodium_prebuilt/${target}/lib
     export SODIUM_INCLUDE_DIR=${PREBUILT}/sodium_prebuilt/${target}/include
-    export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
+
     arch=${target}
     if [ ${target} = "armv7" ] ; then
         arch="arm"
@@ -148,19 +149,21 @@ EOF
         echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
     else
         echo "${ESCAPE}${RED}OPENSSL_DIR not found${ESCAPE}${NC}"
+        exit 1
     fi
 
     if [ -d "${SODIUM_LIB_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
     else
         echo "${ESCAPE}${RED}SODIUM_LIB_DIR not found${ESCAPE}${NC}"
+        exit 1
     fi
     if [ -d "${LIBINDY_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${LIBINDY_DIR}${ESCAPE}${NC}"
     else
         libindy_version=$(grep libindy ../android_settings.txt | cut -d '=' -f 2)
         libindy_branch=$(grep libindy ../android_settings.txt | cut -d '=' -f 3)
-        download_libindy libindy_branch libindy_version target
+        download_libindy ${libindy_branch} ${libindy_version} ${target}
     fi
 
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
