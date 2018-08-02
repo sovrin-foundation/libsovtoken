@@ -1,15 +1,17 @@
 //! Logger module contains helper functions for using error!, debug!, trace! etc logging
 //! functions and macros in libsovtoken
 
+#[cfg(target_os = "android")]
+extern crate android_logger;
+
 use std::env;
 use std::io::Write;
 
 use env_logger::{Builder, fmt};
-use log::{Record, Level, Metadata, Log, LevelFilter};
+use log::{Record, Metadata, Log, LevelFilter};
 #[cfg(target_os = "android")]
 use self::android_logger::Filter;
 
-static LOGGER_INIT: Once = ONCE_INIT;
 
 /**
     Routes logging to console all of the time regardless of RUST_LOG setting.  helpful for unit tests
@@ -18,7 +20,7 @@ pub struct ConsoleLogger;
 
 impl Log for ConsoleLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Trace
+        metadata.level() <= Log::Level::Trace
     }
 
     fn log(&self, record: &Record) {

@@ -161,8 +161,8 @@ EOF
     if [ -d "${LIBINDY_DIR}" ] || [ -z "${LIBINDY_DIR}" ]; then
         echo -e "${ESCAPE}${BLUE}Found ${LIBINDY_DIR}${ESCAPE}${NC}"
     else
-        libindy_version=$(grep libindy ../android_settings.txt | cut -d '=' -f 2)
-        libindy_branch=$(grep libindy ../android_settings.txt | cut -d '=' -f 3)
+        libindy_version=$(grep libindy libsovtoken.dependencies.txt | cut -d '=' -f 2)
+        libindy_branch=$(grep libindy libsovtoken.dependencies.txt | cut -d '=' -f 3)
         download_libindy ${libindy_branch} ${libindy_version} ${target}
     fi
 

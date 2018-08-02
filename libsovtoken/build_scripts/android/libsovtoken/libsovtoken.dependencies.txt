@@ -1,1 +1,1 @@
-libindy=1.6.1=master
+libindy=1.6.1=stable
