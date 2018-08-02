@@ -17,6 +17,7 @@ extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
 extern crate sha2;
+extern crate log_panics;
 
 // ------------------------------------------
 // crates from crate.io etc that require macro
@@ -29,6 +30,11 @@ extern crate sha2;
 #[cfg(any(test, feature = "integration"))]
 #[macro_use] extern crate lazy_static;
 
+// ------------------------------------------
+// android crates
+// ------------------------------------------
+#[cfg(target_os = "android")]
+extern crate android_logger;
 
 // ------------------------------------------
 // evernym/sovrin crates
