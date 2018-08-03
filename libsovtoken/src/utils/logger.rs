@@ -1,8 +1,6 @@
 //! Logger module contains helper functions for using error!, debug!, trace! etc logging
 //! functions and macros in libsovtoken
 
-#[cfg(target_os = "android")]
-extern crate android_logger;
 
 use std::env;
 use std::io::Write;
@@ -10,7 +8,8 @@ use std::io::Write;
 use env_logger::{Builder, fmt};
 use log::{Record, Level, Metadata, Log, LevelFilter};
 #[cfg(target_os = "android")]
-use self::android_logger::Filter;
+use android_logger;
+use android_logger::Filter;
 
 
 /**
@@ -61,7 +60,8 @@ pub fn init_log() {
 
         //Set logging to off when deploying production android app.
         #[cfg(target_os = "android")]
-            android_logger::init_once(log_filter);
+        android_logger::init_once(log_filter);
+
         info!("Logging for Android");
     } else{
         Builder::new()
