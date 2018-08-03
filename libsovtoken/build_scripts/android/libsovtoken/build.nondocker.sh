@@ -4,7 +4,6 @@ abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
 }
 
-TARGET_API=$(grep api ../android_settings.txt | cut -d '=' -f 2)
 TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
 PREBUILT="${PWD}/android-dependencies"
 FILEY_URL="https://repo.corp.evernym.com/filely/android/"
@@ -25,15 +24,6 @@ while getopts ":d" opt; do
 done
 shift $((OPTIND -1))
 
-download_and_unzip_dependency() {
-    _FILEY_NAME=$(grep "$1" $2)
-    command pushd ${PREBUILT} > /dev/null
-    echo -e "${ESCAPE}${BLUE}Downloading $1 prebuilt binaries${ESCAPE}${NC}"
-    wget --no-check-certificate https://repo.corp.evernym.com/filely/android/${_FILEY_NAME}
-    unzip -o -qq ${_FILEY_NAME}
-    rm -f ${_FILEY_NAME}
-    command popd > /dev/null
-}
 
 download_libindy(){
     #$1 Branch
@@ -113,6 +103,12 @@ for target in ${archs[@]}; do
     arch=${target}
     if [ ${target} = "armv7" ] ; then
         arch="arm"
+    fi
+
+    if [ ${arch} = "arm" ] || [ ${arch} = "x86" ]; then
+	    TARGET_API=16
+    else
+	    TARGET_API=21
     fi
     export TOOLCHAIN_DIR=${PWD}/${UNAME}-${arch}
 

@@ -4,7 +4,7 @@ abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
 }
 
-TARGET_API=$(grep api ../android_settings.txt | cut -d '=' -f 2)
+
 TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
 INDY_PREBUILT="${PWD}/indy-android-dependencies"
 INDY_SDK_REPO="https://github.com/hyperledger/indy-sdk.git"
@@ -108,6 +108,12 @@ for target in ${archs[@]}; do
     arch=${target}
     if [ ${target} = "armv7" ] ; then
         arch="arm"
+    fi
+
+    if [ ${arch} = "arm" ] || [ ${arch} = "x86" ]; then
+	    TARGET_API=16
+    else
+	    TARGET_API=21
     fi
     export TOOLCHAIN_DIR=${PWD}/${UNAME}-${arch}
 
