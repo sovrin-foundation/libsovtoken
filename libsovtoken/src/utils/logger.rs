@@ -9,6 +9,7 @@ use env_logger::{Builder, fmt};
 use log::{Record, Level, Metadata, Log, LevelFilter};
 #[cfg(target_os = "android")]
 use android_logger;
+#[cfg(target_os = "android")]
 use android_logger::Filter;
 
 
