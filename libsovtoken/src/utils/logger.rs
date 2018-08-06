@@ -1,8 +1,6 @@
 //! Logger module contains helper functions for using error!, debug!, trace! etc logging
 //! functions and macros in libsovtoken
 
-#[cfg(target_os = "android")]
-extern crate android_logger;
 
 use std::env;
 use std::io::Write;
