@@ -11,6 +11,7 @@ extern crate base64;
 extern crate env_logger;
 extern crate hex;
 extern crate libc;
+extern crate log_panics;
 extern crate openssl;
 extern crate rust_base58;
 extern crate rand;
@@ -29,6 +30,11 @@ extern crate sha2;
 #[cfg(any(test, feature = "integration"))]
 #[macro_use] extern crate lazy_static;
 
+// ------------------------------------------
+// android crates
+// ------------------------------------------
+#[cfg(target_os = "android")]
+extern crate android_logger;
 
 // ------------------------------------------
 // evernym/sovrin crates

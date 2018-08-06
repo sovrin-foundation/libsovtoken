@@ -4,6 +4,7 @@ abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
 }
 
+TARGET_API=$(grep api ../android_settings.txt | cut -d '=' -f 2)
 TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
 PREBUILT="${PWD}/android-dependencies"
 FILEY_URL="https://repo.corp.evernym.com/filely/android/"
