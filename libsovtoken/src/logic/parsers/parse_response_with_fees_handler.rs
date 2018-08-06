@@ -52,16 +52,29 @@ pub struct ParseResponseWithFeesRequest {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionFees {
-    pub fees: TokenAmount,
-    #[serde(rename = "ref")]
-    pub reference: String,
     pub root_hash: String,
     pub audit_path: Vec<String>,
-    pub inputs: Vec<(String, TxnSeqNo)>,
-    pub outputs: Vec<(String, TokenAmount)>,
     #[serde(rename = "txnMetadata")]
     pub tnx_meta_data: TransactionMetaData,
     pub req_signature: RequireSignature,
+    pub txn: FeeTxn,
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FeeTxn {
+    pub data: FeeData,
+    pub metadata: TransactionMetaData2
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FeeData {
+    pub fees: TokenAmount,
+    pub inputs: Vec<(String, TxnSeqNo)>,
+    pub outputs: Vec<(String, TokenAmount)>,
+    #[serde(rename = "ref")]
+    pub reference: String,
 }
 
 /**
@@ -105,8 +118,8 @@ pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFe
 
             // according to the documentation, don't need the inputs.  Only the outputs
             // and seq_no which are part 2 and 3 of the tuple
-            let outputs = &result.fees.outputs;
-            let seq_no: TxnSeqNo = result.tnx_meta_data.seq_no;
+            let outputs = &result.fees.txn.data.outputs;
+            let seq_no: TxnSeqNo = result.fees.tnx_meta_data.seq_no;
 
             for output in outputs {
                 let output_address : String = output.0.to_string();
