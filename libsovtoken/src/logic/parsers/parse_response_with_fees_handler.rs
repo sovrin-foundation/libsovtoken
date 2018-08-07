@@ -200,16 +200,27 @@ mod parse_response_with_fees_handler_tests {
                 ],
                 "fees":
                 {
-                    "inputs":
-                    [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
-                    ],
-                    "outputs":
-                    [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
-                    ],
-                    "fees": 4,
-                    "ref": "1:13",
+                    "txn": {
+                        "data": {
+                            "inputs":
+                            [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                            ],
+                            "outputs":
+                            [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
+                            ],
+                            "fees": 4,
+                            "ref": "1:13"
+                        },
+                        "metadata":
+                        {
+                            "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                            "reqId": 152969782
+                        },
+                        "protocolVersion": 2,
+                        "type": "1"
+                    },
                     "reqSignature":
                     {
                         "type": "ED25519",
@@ -278,17 +289,28 @@ mod parse_response_with_fees_handler_tests {
                 ],
                 "fees":
                 {
-                    "inputs":
-                    [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
-                    ],
-                    "outputs":
-                    [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9],
-                        ["11S4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 19]
-                    ],
-                    "fees": 4,
-                    "ref": "1:13",
+                    "txn": {
+                        "data": {
+                            "inputs":
+                            [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                            ],
+                            "outputs":
+                            [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9],
+                                ["11S4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 19]
+                            ],
+                            "fees": 4,
+                            "ref": "1:13"
+                        },
+                        "metadata":
+                        {
+                            "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                            "reqId": 152969782
+                        },
+                        "protocolVersion": 2,
+                        "type": "1"
+                    },
                     "reqSignature":
                     {
                         "type": "ED25519",
@@ -356,16 +378,30 @@ mod parse_response_with_fees_handler_tests {
                 ],
                 "fees":
                 {
-                    "inputs":
-                    [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
-                    ],
-                    "outputs":
-                    [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
-                    ],
-                    "fees": 4,
-                    "ref": "1:13",
+                    "txn":
+                    {
+                        "data":
+                        {
+                            "inputs":
+                            [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                            ],
+                            "outputs":
+                            [
+                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
+                            ],
+                            "fees": 4,
+                            "ref": "1:13"
+                        },
+                        "metadata":
+                        {
+                            "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                            "reqId": 152969782
+                        },
+                        "protocolVersion": 2,
+                        "type": "1"
+                    },
+
                     "reqSignature":
                     {
                         "type": "ED25519",
@@ -395,7 +431,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.unwrap().fees.outputs;
+        let outputs= response.result.unwrap().fees.txn.data.outputs;
 
         assert_eq!(1, outputs.len());
     }
@@ -406,7 +442,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.unwrap().fees.outputs;
+        let outputs= response.result.unwrap().fees.txn.data.outputs;
 
         assert_eq!(2, outputs.len());
     }
@@ -440,7 +476,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.unwrap().fees.outputs;
+        let outputs= response.result.unwrap().fees.txn.data.outputs;
 
         assert_eq!(1, outputs.len());
     }
