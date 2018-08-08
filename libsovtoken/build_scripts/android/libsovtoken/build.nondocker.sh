@@ -31,7 +31,7 @@ download_libindy(){
     #$2 Version
     #$3 Arch
     command pushd ${PREBUILT} > /dev/null
-        wget https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
         unzip -o -qq "libindy_android_$3_$2.zip"
         rm "libindy_android_$3_$2.zip"
         export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
@@ -40,18 +40,21 @@ download_libindy(){
 
 download_and_unzip_dependencies(){
     pushd ${PREBUILT}
+        echo -e "${ESCAPE}${GREEN}Downloading openssl for $1 ${ESCAPE}${NC}"
         curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
-        unzip -o openssl_$1.zip
+        unzip -o -qq openssl_$1.zip
         export OPENSSL_DIR=${PREBUILT}/openssl_${arch}
 
+        echo -e "${ESCAPE}${GREEN}Downloading sodium for $1 ${ESCAPE}${NC}"
         curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
-        unzip -o libsodium_$1.zip
+        unzip -o -qq libsodium_$1.zip
         export SODIUM_DIR=${PREBUILT}/libsodium_${arch}
         export SODIUM_LIB_DIR=${PREBUILT}/libsodium_${arch}/lib
         export SODIUM_INCLUDE_DIR=${PREBUILT}/libsodium_${arch}/include
 
+        echo -e "${ESCAPE}${GREEN}Downloading zmq for $1 ${ESCAPE}${NC}"
         curl -sSLO https://repo.sovrin.org/android/libindy/deps/zmq/libzmq_$1.zip
-        unzip -o libzmq_$1.zip
+        unzip -o -qq libzmq_$1.zip
         export LIBZMQ_DIR=${PREBUILT}/libzmq_${arch}
 
         rm openssl_$1.zip
@@ -89,7 +92,7 @@ mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
 if [ ! -d "${ANDROID_NDK_ROOT}" ] ; then
     if [ ! -f "${NDK}.zip" ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading ${NDK}${ESCAPE}${NC}"
-        wget -q https://dl.google.com/android/repository/${NDK}.zip || exit 1
+        curl -sSLO https://dl.google.com/android/repository/${NDK}.zip || exit 1
     fi
     if [ ! -f "${NDK}.zip" ] ; then
         echo STDERR "Can't find ${NDK}"
