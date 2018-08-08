@@ -38,24 +38,26 @@ download_libindy(){
     command popd > /dev/null
 }
 
-download_and_unzip_dependencies_for_all_architectures(){
-    #TODO Get dependencies in more optimized way
+download_and_unzip_dependencies(){
     pushd ${PREBUILT}
-        if [ ! -d "indy-android-dependencies" ] ; then
-            echo "${GREEN}Downloading dependencies...${RESET}"
-            git clone https://github.com/evernym/indy-android-dependencies.git
-            pushd ${PREBUILT}/indy-android-dependencies/prebuilt/
-                git checkout tags/v1.1
-                find . -name "*.zip" | xargs -P 5 -I FILENAME sh -c 'unzip -o -qq -d "$(dirname "FILENAME")" "FILENAME"'
-            popd
-             echo "${GREEN}Done!${RESET}"
-        fi
-        export OPENSSL_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/openssl/openssl_${arch}
-        export SODIUM_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${arch}
-        export SODIUM_LIB_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${arch}/lib
-        export SODIUM_INCLUDE_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/sodium/libsodium_${arch}/include
-        export LIBZMQ_DIR=${PREBUILT}/indy-android-dependencies/prebuilt/zmq/libzmq_${arch}
-	popd
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
+        unzip -o openssl_$1.zip
+        export OPENSSL_DIR=${PREBUILT}/openssl_${arch}
+
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
+        unzip -o libsodium_$1.zip
+        export SODIUM_DIR=${PREBUILT}/libsodium_${arch}
+        export SODIUM_LIB_DIR=${PREBUILT}/libsodium_${arch}/lib
+        export SODIUM_INCLUDE_DIR=${PREBUILT}/libsodium_${arch}/include
+
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/zmq/libzmq_$1.zip
+        unzip -o libzmq_$1.zip
+        export LIBZMQ_DIR=${PREBUILT}/libzmq_${arch}
+
+        rm openssl_$1.zip
+        rm libsodium_$1.zip
+        rm libzmq_$1.zip
+    popd
 }
 
 get_cross_compile() {
@@ -137,7 +139,7 @@ EOF
     fi
 
     if [ "${DOWNLOAD_PREBUILTS}" == "1" ]; then
-        download_and_unzip_dependencies_for_all_architectures
+        download_and_unzip_dependencies ${target}
     fi
 
     if [ -d "${OPENSSL_DIR}" ] || [ -z "${OPENSSL_DIR}" ] ; then
