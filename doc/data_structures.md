@@ -15,6 +15,8 @@ This document exists for multiple purposes:
 * [indy_build_set_txn_fees_req](#method-indy_build_set_txn_fees_req)
 * [indy_build_get_txn_fees_req](#method-indy_build_get_txn_fees_req)
 * [indy_parse_get_txn_fees_response](#method-indy_parse_get_txn_fees_response)
+* [indy_build_verify_payment_request](#method-indy_build_verify_payment_request)
+* [indy_parse_verify_payment_response](#method-indy_parse_verify_payment_response)
 
 ## method: indy_create_payment_address
 This API call is handled by LibSovToken create_payment_address_handler
@@ -683,7 +685,7 @@ Example resp_json:
 [
     {
         "recipient": <str>,     // sovrin payment address: "pay:sov:<address><checksum>"
-        "receipt": <str>,       // // receipt that can be used for payment referencing and verification: "txo:sov:<base58 encoded txn identifier>"
+        "receipt": <str>,       // receipt that can be used for payment referencing and verification: "rec:sov:<base58 encoded txn identifier>"
         "amount": <int>,        // amount of tokens in this input
         "extra": <str>          // optional data from payment transaction
     }
@@ -938,5 +940,279 @@ Example fees_json:
 {
     "10001": 8,
     "1": 4
+}
+```
+## method: indy_build_verify_payment_request
+This API call is handled by LibSovToken build_verify_payment_request_handler
+### inputs:
+    command_handle: Command handle to map callback to caller context
+    wallet_handle: wallet handle
+    submitter_did : DID of request sender
+    receipt: <receipt str>
+        
+    // Each receipt string is of the format: "rec:sov:<base58 string>"
+    // The base58 string can be decoded internally as {"address": <str:address>, "seqNo": <int>}
+
+### return:
+    verify_txn_json: Indy request for getting sources list for payment address
+```
+{
+    "identifier": <str>,        // the payment address
+    "operation":
+    {
+        "type": "3"        
+        "ledgerId": 1001,
+        "data": <int>           // the transaction sequence number
+    },
+    "reqId": <int>,             // a random identifier
+    "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
+}
+
+```
+    payment_method - used payment method
+Example verify_txn_json:
+```
+{
+	"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+	"operation":{
+		"type":"3",
+		"data":24,	
+		"ledgerId":1001
+	},
+	"reqId":1533834704418243379,
+	"protocolVersion":2
+}
+
+```
+
+## method: indy_parse_verify_payment_response
+This API call is handled by LibSovToken parse_verify_payment_response_handler 
+### inputs:
+    command_handle: Command handle to map callback to caller context.
+    payment_method: payment method to use
+    resp_json: the JSON formatted response from the ledger
+```
+{
+    "op": "REPLY",
+    "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
+    "result": {
+        "type": "3",
+        "identifier": <str>,    // the payment address
+        "reqId": <int>,         // a random identifier
+        
+        "seqNo": 69,
+        
+        "data": {
+        
+        }
+    }
+}
+{
+    'op': 'REPLY', 
+    'result': {
+        'type': '3',
+        'identifier': 'MSjKTWkPLtYoPEaTF1TUDb',
+        'reqId': 1514311352551755,
+       
+        'seqNo': 9,
+
+        'data': {
+            'type': '1',
+            'identifier': 'MSjKTWkPLtYoPEaTF1TUDb',
+            'reqId': 1514311345476031,
+            'signature': '4qDmMAGqjzr4nh7S3rzLX3V9iQYkHurrYvbibHSvQaKw3u3BouTdLwv6ZzzavAjS635kAqpj5kKG1ehixTUkzFjK',
+            'signatures': None,
+            
+            'seqNo': 9,
+            `txnTime': 1514311348,
+            
+            'rootHash': '5ecipNPSztrk6X77fYPdepzFRUvLdqBuSqv4M9Mcv2Vn',
+            'auditPath': ['Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA', '3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt'],
+            
+            'alias': 'name',
+            'dest': 'WTJ1xmQViyFb67WAuvPnJP',
+            'role': '2',
+            'verkey': '~HjhFpNnFJKyceyELpCz3b5'
+        }
+    }
+}
+
+```
+Example resp_json from the ledger for a Transfer:
+```
+{
+	"op":"REPLY",
+	"result":{
+		"reqId":1533834540773581038,
+		"seqNo":19,
+		"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+		"type":"3",
+		"data":{
+			"txn":{
+				"protocolVersion":2,
+				"metadata":{
+					"digest":"1d9e749cfe8774d83dd2131811cd72fff2cc3707fb1e050ed2f42b579c11e2ac",
+					"reqId":1989289532,
+					"from":"HWWYHj6Lf92zEfikRBoVzxcmpsLyQf9Apue7Fbj3HHQ9"
+				},
+				"type":"10001",
+				"data":{
+					"outputs":[
+						["cHKFYXNuaPtX9UcZfmq61mWvXA28rfxXh6s3iZU5ZytxmmzRM",10]
+					],
+					"inputs":[
+						["2s2bzWYoxzDqtNBwb2ATxoNoKSF7DZSnypgXxvpGr8Br71AgDg",16]
+					]
+				}
+			},
+			"txnMetadata":{
+				"seqNo":19,
+				"txnTime":1533834535
+			},
+			"ver":"1",
+			"auditPath":[
+				"EAkV5bimQaWKNArEdNV5Dty3FXNNpdaNrGyd4u5qQURx",
+				"Atgkhxn1JMTyrnCvzhqrxutR5yJCH9kyXqUXyw2sAf4b"
+			],
+			"rootHash":"7M995X8oWdmY1PEVMzuB12YZAiEEju9FFBd2s1dPzoiZ",
+			"reqSignature":{
+				"values":[{
+					"from":"2s2bzWYoxzDqtNBwb2ATxoNoKSF7DZSnypgXxvpGr8Br71AgDg",
+					"value":"3me9qt7xtup9tBxMQMGg415ACE4eLWWE4noh4QYLiK4gCRfE7HyA5ozGANKUYV44nAfimgmxVfSfQeZXoUhj63jE"
+				}],
+				"type":"ED25519"
+			}
+		}
+	}
+}
+
+```
+Example resp_json from the ledger for Fees:
+```
+{
+	"op":"REPLY",
+	"result":{
+		"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+		"reqId":1533834704418243379,
+		"type":"3",
+		"data":{
+			"ver":"1",
+			"auditPath":[
+				"7t3J9iZsH1ELjg6A7KbMpPCMF2gMWGxvoiXPLE3BXWm6",
+				"HXLC5nmcNrtdWzMLXVBFcCi7vPfjES5C9GnoGRxv5FRT",
+				"EuS2jriy1FoCweMk4ex7zocs4dJNw9JAkBKGLghoDPGk",
+				"Atgkhxn1JMTyrnCvzhqrxutR5yJCH9kyXqUXyw2sAf4b"
+			],
+			"reqSignature":{
+				"values":[{
+					"value":"3zD3NNMUMK9J1Y2TfBypMxcot3mKER5g7jKSYZFmMebHyBhqpd44XHbrQL6WNGTQujaftjpErTuW4dBpxTJAkpsh",
+					"from":"22qZRFLTfCmvFa2zKxAhzbReCcxV6f48Ux5XwT5poviW2RGesK"
+				}],
+				"type":"ED25519"
+			},
+			"txn":{
+				"data":{
+					"ref":"1:74",
+					"fees":1,
+					"outputs":[
+						["22qZRFLTfCmvFa2zKxAhzbReCcxV6f48Ux5XwT5poviW2RGesK",9]
+					],
+					"inputs":[
+						["22qZRFLTfCmvFa2zKxAhzbReCcxV6f48Ux5XwT5poviW2RGesK",21]
+					]
+				},
+				"type":null,
+				"metadata":{
+					"digest":"99c84be708ab7e03bab13af038027ffffe10ccc03ac4fdd1f7af1ef2f42e340a",
+					"reqId":1533834699526507519
+				},
+				"protocolVersion":2
+			},
+			"txnMetadata":{
+				"txnTime":1533834700,
+				"seqNo":24
+			},
+			"rootHash":"9bY7LVmWcrmzdvs3yJzNf7Apx6dX4YTLTxmLBYQKjNsG"
+		},
+		"seqNo":24
+	}
+}
+
+```
+Example resp_json from the ledger for Mint:
+```
+{	
+	"op":"REPLY",
+	"result":{
+		"reqId":1533834288055293486,
+		"seqNo":8,
+		"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+		"type":"3",
+		"data":{
+			"txn":{
+				"protocolVersion":2,
+				"metadata":{
+					"digest":"6f83fb082eb50742c574b96f34b81850e8f7d8107ca887598cae3a96a5be0d9a",
+					"reqId":3795564132,
+					"from":"V4SGRU86Z58d6TV7PBUe6f"
+				},
+				"type":"10000",
+				"data":{
+					"outputs":[
+						["2s4Ldd2Hr1adbmAmxFcsb7B6HqyY4bADaGW78b1CXbwPECk9Xo",10]
+					]
+				}
+			},
+			"txnMetadata":{
+				"seqNo":8,
+				"txnTime":1533834244
+			},
+			"ver":"1",
+			"auditPath":[
+				"3M1ukcEDUoaajGATWn6XUANwqUjgM4fv9XdCcRFuj9wu",
+				"AR3eZNQccupXhLUZvx54xrvXf7LKrZPXjHMwt1gWFHNw",
+				"3XH6Ep6rWcUgaE8mYHVBbXVw7QqKfXZ8j6ykowXDWWP8"
+			],
+			"rootHash":"2E1k4omwJEPVX4rXT59ybJZWoMHBuoTA9kC5nvLPPQnv",
+			"reqSignature":{
+				"values":[{
+					"from":"V4SGRU86Z58d6TV7PBUe6f",
+					"value":"2kT9SgpEwEUfLaMMf5tbsw1kLYU7kz1ix2MUo8w2avV5Bwz4VirfCKy9tGGZbymZokgTrSvAxmXnj7uyVE6zLRfi"
+				}],
+				"type":"ED25519"
+			}
+		}
+	}
+}
+
+```
+### return:
+    txn_json - parsed (payment method and node version agnostic) transaction info as json:
+```
+{
+    "sources": [<source str>, ],
+    "receipts":
+    [
+        {
+            "recipient": <str>,     // full sovrin payment address: "pay:sov:<address><checksum>"
+            "receipt": <str>,        // receipt string: "rec:sov:<base58 encoding of: {"address": <str:address, "seqNo": <int>}>
+            "amount": <int>,        // amount of tokens in this input
+        },
+    ],
+    "extra": <str>          // optional data from payment transaction
+]
+```
+Example sources_json:
+```
+{
+	"sources":[
+		"src:sov:E1zP66C1U8bKVqA5pz6JQUvhrTM7GqBPJtjJvcRt6ymuRXNnFXruPVSxArfDeBVMLpRFo2g84tGXdopVwS5HWw8TMJ7vHAZFuYC18BHJaXn6bTHj2X9KAJ1"
+	],
+	"receipts":[{
+		"recipient":"pay:sov:cHKFYXNuaPtX9UcZfmq61mWvXA28rfxXh6s3iZU5ZytxmmzRM",
+		"receipt":"rec:sov:3x42qH8UkJac1BuorqjSEvuVjvYkSKtBqeNdKzNr5ZFpMjFbybaqVsZ8SfTnZhY9fiAGD9TXEcQ9DaTB4i69KX2m1x3vCBVG2jAn8NFQrtF87YXtw4nETY",
+		"amount":10,
+	}],
+	"extra":null
 }
 ```
