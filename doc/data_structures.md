@@ -15,6 +15,8 @@ This document exists for multiple purposes:
 * [indy_build_set_txn_fees_req](#method-indy_build_set_txn_fees_req)
 * [indy_build_get_txn_fees_req](#method-indy_build_get_txn_fees_req)
 * [indy_parse_get_txn_fees_response](#method-indy_parse_get_txn_fees_response)
+* [indy_build_verify_payment_request](#method-indy_build_verify_payment_request)
+* [indy_parse_verify_payment_response](#method-indy_parse_verify_payment_response)
 
 ## method: indy_create_payment_address
 This API call is handled by LibSovToken create_payment_address_handler
@@ -39,33 +41,34 @@ This API call is handled by LibSovToken create_payment_address_handler
 This API call is handled by LibSovToken add_request_fees_handler.
 
 ### inputs:
+
+    command_handle: command handle to map callback to context
     wallet_handle: wallet handle where payment keys are stored
     submitter_did : DID of request sender
     req_json: initial transaction request as json
-    inputs_json: The list of UTXO inputs as json array:
+    inputs_json: The list of payment sources as json array:
 ``` 
 [
-    <str: txo_string>, 
+    <str: source_string>, 
 ]
-    // Each txo string is of the format: "txo:sov:<base58 string>"
+    // Each source string is of the format: "src:sov:<base58 string>"
     // The base58 string can be decoded internally as {"address": <str:address>, "seqNo": <int>}
 
 ```
-    outputs_json: The list of UTXO outputs as json array:
+    outputs_json: The list of outputs as json array:
 ``` 
 [
     {
-        "address" : <str>,   // the payment address
+        "recipient" : <str>,   // the payment address
         "amount": <int>,    // the payment amount
-        "extra": <str>,     // optional field
     },
 ]
-
+    extra: // optional information for payment operation, this field is not used in the Sovrin fees or payment ledger
 ```
 Example inputs_json:
 ``` 
 [
-    "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7"
+    "src:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7"
 ]
 
 ```
@@ -75,7 +78,6 @@ Example outputs_json:
     {
         "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
         "amount": 11,
-        "extra": "",
     },
 ]
 ```
@@ -97,6 +99,7 @@ Example outputs_json:
     ]
 }
 ```
+    payment_method - used payment method
 Example req_with_fees_json:
 ```
 {
@@ -115,11 +118,11 @@ Example req_with_fees_json:
 ```
 
 ## method: indy_parse_response_with_fees
-This API call is handled by LibSovToken parse_response_with_fees_handler. *Note This is version 2 updated as of 6/20/18*
+This API call is handled by LibSovToken parse_response_with_fees_handler.
 
 ### inputs:
-    command_handle
-    payment_method
+    command_handle: Command handle to map callback to caller context
+    payment_method: payment method to use
     resp_json: the JSON formatted response from the ledger
 ```
 {
@@ -206,7 +209,7 @@ Example resp_with_fees_json:
 ```
 {
     "op": "REPLY",
-    "protocolVersion": 1,
+    "protocolVersion": 2,
     "request":
     {
         "txn":
@@ -284,23 +287,23 @@ Example resp_with_fees_json:
 ```
 
 ### return:
-    utxo_json - parsed utxo info as json:
+    receipts_json - parsed (payment method and node version agnostic) receipts info as json:
 ```
 [
     {
-        "paymentAddress": <str>,// sovrin payment address: "pay:sov:<address><checksum>"
-        "txo": <str>,           // txo string: "txo:sov:<base58 encoded two identifier>"
+        "recipient": <str>,     // sovrin payment address of recipient: "pay:sov:<address><checksum>"
+        "receipt": <str>,       // receipt that can be used for payment referencing and verification: "rec:sov:<base58 encoded txn identifier>"
         "amount": <int>,        // amount of tokens in this input
-        "extra": <str>          // optional data from payment transaction
+        "extra": <str>          // optional data from payment transaction (Sovrin payment and fees ledger does not use this field for FEES transactions).
     }
 ]
 ```
-Example utxo_json:
+Example receipts_json:
 ```
 [
     {
-        "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-	"txo": "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
+        "recipient": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+	    "receipt": "rec:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
         "amount": 11,
         "extra":
     }
@@ -308,15 +311,15 @@ Example utxo_json:
 ```
 
 
-## method: indy_build_get_utxo_request
-This API call is handled by LibSovToken build_get_utxo_request_handler
+## method: indy_build_get_sources_request
+This API call is handled by LibSovToken build_get_sources_request_handler
 ### inputs:
     wallet_handle: wallet handle
     submitter_did : DID of request sender
     payment_address: "pay:sov:<address><checksum>"  //target payment address
 
 ### return:
-    get_utxo_txn_json: Indy request for getting UTXO list for payment address
+    get_sources_txn_json: Indy request for getting sources list for payment address
 ```
 {
     "identifier": <str>,        // the payment address
@@ -330,7 +333,8 @@ This API call is handled by LibSovToken build_get_utxo_request_handler
 }
 
 ```
-Example get_utxo_txn_json:
+    payment_method - used payment method
+Example get_sources_txn_json:
 ```
 
 {
@@ -346,8 +350,8 @@ Example get_utxo_txn_json:
 
 ```
 
-## method: indy_parse_get_utxo_response
-This API call is handled by LibSovToken parse_get_utxo_response_handler *Note this should not change because it is parsing a read request. It should stay at version 1*
+## method: indy_parse_get_sources_response
+This API call is handled by LibSovToken parse_get_sources_response_handler 
 ### inputs:
     resp_json: the JSON formatted response from the ledger
 ```
@@ -423,29 +427,29 @@ Example resp_json from the ledger:
 
 
 ### return:
-    utxo_json - parsed utxo info as json:
+    sources_json - parsed (payment method and node version agnostic) sources info as json:
 ```
 [
     {
         "paymentAddress": <str>,// full sovrin payment address: "pay:sov:<address><checksum>"
-        "txo": <str>,           // txo string: "{"address": "pay:sov:<address>", "seqNo": <int>}"
+        "source": <str>,        // source string: "src:sov:<base58 encoding of: {"address": <str:address, "seqNo": <int>}>
         "amount": <int>,        // amount of tokens in this input
         "extra": <str>          // optional data from payment transaction
     }
 ]
 ```
-Example utxo_json:
+Example sources_json:
 ```
 [
     {
         "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-	"txo": "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
+	    "source": "src:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
         "amount": 11,
         "extra":
     },
     {
         "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-	"txo": "txo:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2Aat9x86MwXNw88RAojPpdgxLPQyC1oJH88Pxf9u7JsM5m8ApXn"
+	    "source": "src:sov:WqXg36yxheP7wzUZnhnkUY6Qeaib5uyUZuyaujr7atPHRH3d2Aat9x86MwXNw88RAojPpdgxLPQyC1oJH88Pxf9u7JsM5m8ApXn"
         "amount": 3,
         "extra":
     }
@@ -453,31 +457,32 @@ Example utxo_json:
 ```
 
 ## method: indy_build_payment_req
-This API call is handled by LibSovToken build_payment_req_handler. *Note this has been changed back after a commit error. This is up to date as of 6/20/18*
+This API call is handled by LibSovToken build_payment_req_handler. 
 ### inputs:
+    command_handle: Command handle to map callback to caller context.
     wallet_handle: wallet handle
     submitter_did : DID of request sender
-    inputs_json: The list of UTXO inputs as json array:
+    inputs_json: The list of payment sources as json array:
 ```
 [
-    <str: txo_string>, 
+    <str: source_string>, 
 ]
-    // Each txo string is of the format: "txo:sov:<base58 string>"
+    // Each source string is of the format: "src:sov:<base58 string>"
     // The base58 string can be decoded internally as {"address": <str:address>, "seqNo": <int>}
 
 ```
-    outputs_json: The list of UTXO outputs as json array:
+    outputs_json: The list of outputs as json array:
 ``` 
 
 [
     {
         "address" : <str>,   // the payment address
         "amount": <int>,    // the payment amount
-        "extra": <str>      // optional field
     },
 ]
 
 ```
+    "extra": <str>      // optional field
 Example inputs_json:
 ``` 
 [
@@ -492,17 +497,14 @@ Example outputs_json:
     {
         "address": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
         "amount": 11,
-        "extra": ""
     },
     {
         "address": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
         "amount": 19,
-        "extra": ""
    },
    {
        "address": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
        "amount": 9,
-       "extra": ""
    },
 ]
 ```
@@ -531,6 +533,8 @@ Example outputs_json:
     }
 }
 ```
+    payment_method - used payment method
+    
 Example payment_req_json:
     note: output to ledger excludes address prefix "pay:sov"
     note: any difference between the sum of the inputs and the sum of outputs is the fees amount
@@ -562,6 +566,8 @@ Example payment_req_json:
 ## method: indy_parse_payment_response
 This API call is handled by LibSovToken parse_payment_response_handler.
 ### inputs:
+    command_handle: Command handle to map callback to caller context.
+    payment_method: payment method to use
     resp_json: This is an example of the JSON that will be returned from the ledger after submitting a payment request.
 
 resp_json
@@ -674,35 +680,35 @@ Example resp_json:
 }
 ```
 ### return:
-    utxo_json: parsed utxo info as json
+    receipts_json: parsed (payment method and node version agnostic) receipts info as json:
 ```
 [
     {
-        "paymentAddress": <str>,// sovrin payment address: "pay:sov:<address><checksum>"
-        "txo": <str>,           // txo string: "txo:sov:<base58 encoded two identifier>"
+        "recipient": <str>,     // sovrin payment address: "pay:sov:<address><checksum>"
+        "receipt": <str>,       // receipt that can be used for payment referencing and verification: "rec:sov:<base58 encoded txn identifier>"
         "amount": <int>,        // amount of tokens in this input
         "extra": <str>          // optional data from payment transaction
     }
 ]
 ```
-Example utxo_json:
+Example receipts_json:
 ```
 [
     {
-        "paymentAddress": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
-	"txo": "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
+        "recipient": "pay:sov:2mVXsXyVADzSDw88RAojPpdgxLPQyC1oJUqkrLeU5AdfEq2PmC",
+	    "receipt": "rec:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgb"
         "amount": 11,
         "extra":
     },
     {
-        "paymentAddress": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
-        "txo": "txo:sov:2k7K2zwNTF7po3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyM2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
+        "recipient": "pay:sov:2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
+        "receipt": "rec:sov:2k7K2zwNTF7po3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyM2k7K2zwNTF7pouG3yHqnK2LvVWVj1FdVEUSTkdwtoWYxeULu8h",
         "amount": 19,
         "extra": ""
     },
     {
-        "paymentAddress": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
-        "txo": "txo:sov:2SBZcBgBHzU1d9u7jxggsbNJDDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwX2SBZcBgBHzU1d9u7jx3v13V5oR6eZgTmVMy",
+        "recipient": "pay:sov:2SBZcBgBHzU1d9u7jxggsbNJDa5zKZRqa3v13V5oR6eZgTmVMy",
+        "receipt": "rec:sov:2SBZcBgBHzU1d9u7jxggsbNJDDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwX2SBZcBgBHzU1d9u7jx3v13V5oR6eZgTmVMy",
         "amount": 9,
         "extra": ""
     }
@@ -711,40 +717,41 @@ Example utxo_json:
 
 
 ## method: indy_build_mint_req
-This API call is handled by LibSovToken build_mint_txn_handlerr
+This API call is handled by LibSovToken build_mint_txn_handler
 
 ### inputs:
+    command_handle: Command handle to map callback to caller context.
     wallet_handle: wallet handle
     submitter_did : DID of request sender
-    outputs_json: The list of UTXO outputs as json array:
+    outputs_json: The list of outputs as json array:
 ``` 
 [
     {
     "paymentAddress": <str>, // payment address used as output
     "amount": <int>, // amount of tokens to transfer to this payment address
-    "extra": <str>, // optional data
     },
 ]
 ```
+    "extra": <str>, // optional information for mint operation, not used for Sovrin minting
 Example outputs_json:
 ``` 
 [
     {
         "paymentAddress": "sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC",
         "amount": 60,
-        "extra": ""
     },
     {
         "paymentAddress": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
         "amount": 40,
-        "extra": ""
     }
 ]
 ```
 
 ### return:
-    payment_method
+    payment_method: used payment method
     mint_req_json: Indy request for minting tokens
+        note: amount to mint is according to the smallest divisible part of the token
+        for example, to mint 50 tokens in a system with 10<sup>8</sup> precision, the user must enter 5,000,000,000
 ```
 {
     "reqId": <int>,             // a random identifier
@@ -767,8 +774,8 @@ Example mint_req_json:
     "operation": {
         "type": "10000",
         "outputs": [
-            ["sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC", 60],
-            ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 40]
+            ["sjw1ceG7wtym3VcnyaYtf1xo37gCUQHDR5VWcKWNPLRZ1X8eC", 6000000000],
+            ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 4000000000]
         ]
     }
 }
@@ -778,10 +785,10 @@ Example mint_req_json:
 This API call is handled by LibSovToken build_set_txn_fees_handler
 
 ### inputs:
-    command_handle
+    command_handle: Command handle to map callback to caller context.
     wallet_handle: wallet handle
-    submitter_did : DID of request sender
-    payment_method
+    submitter_did: DID of request sender
+    payment_method: payment method to use
     fees_json
 ```
 {
@@ -830,10 +837,10 @@ Example set_txn_fees_json:
 This API call is handled by LibSovToken build_get_txn_fees_handler
 
 ### inputs:
-    command_handle
+    command_handle: Command handle to map callback to caller context.
     wallet_handle: wallet handle
-    submitter_did : DID of request sender
-    payment_method
+    submitter_did: DID of request sender
+    payment_method: payment method to use
 
 ### return:
     get_txn_fees_json - Indy request for getting fees for transactions in the ledger
@@ -863,8 +870,8 @@ Example get_txn_fees_json:
 This API call is handled by LibSovToken parse_get_txn_fees_response_handler. *Note: this transaction format will not change because it"s a read request and not a write request.*
 
 ### inputs:
-    command_handle
-    payment_method
+    command_handle: Command handle to map callback to caller context.
+    payment_method: payment method to use
     resp_json: response from the ledger for Indy request for getting fees
 ```
 {
@@ -933,5 +940,279 @@ Example fees_json:
 {
     "10001": 8,
     "1": 4
+}
+```
+## method: indy_build_verify_payment_request
+This API call is handled by LibSovToken build_verify_payment_request_handler
+### inputs:
+    command_handle: Command handle to map callback to caller context
+    wallet_handle: wallet handle
+    submitter_did : DID of request sender
+    receipt: <receipt str>
+        
+    // Each receipt string is of the format: "rec:sov:<base58 string>"
+    // The base58 string can be decoded internally as {"address": <str:address>, "seqNo": <int>}
+
+### return:
+    verify_txn_json: Indy request for getting sources list for payment address
+```
+{
+    "identifier": <str>,        // the payment address
+    "operation":
+    {
+        "type": "3"        
+        "ledgerId": 1001,
+        "data": <int>           // the transaction sequence number
+    },
+    "reqId": <int>,             // a random identifier
+    "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
+}
+
+```
+    payment_method - used payment method
+Example verify_txn_json:
+```
+{
+	"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+	"operation":{
+		"type":"3",
+		"data":24,	
+		"ledgerId":1001
+	},
+	"reqId":1533834704418243379,
+	"protocolVersion":2
+}
+
+```
+
+## method: indy_parse_verify_payment_response
+This API call is handled by LibSovToken parse_verify_payment_response_handler 
+### inputs:
+    command_handle: Command handle to map callback to caller context.
+    payment_method: payment method to use
+    resp_json: the JSON formatted response from the ledger
+```
+{
+    "op": "REPLY",
+    "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
+    "result": {
+        "type": "3",
+        "identifier": <str>,    // the payment address
+        "reqId": <int>,         // a random identifier
+        
+        "seqNo": 69,
+        
+        "data": {
+        
+        }
+    }
+}
+{
+    'op': 'REPLY', 
+    'result': {
+        'type': '3',
+        'identifier': 'MSjKTWkPLtYoPEaTF1TUDb',
+        'reqId': 1514311352551755,
+       
+        'seqNo': 9,
+
+        'data': {
+            'type': '1',
+            'identifier': 'MSjKTWkPLtYoPEaTF1TUDb',
+            'reqId': 1514311345476031,
+            'signature': '4qDmMAGqjzr4nh7S3rzLX3V9iQYkHurrYvbibHSvQaKw3u3BouTdLwv6ZzzavAjS635kAqpj5kKG1ehixTUkzFjK',
+            'signatures': None,
+            
+            'seqNo': 9,
+            `txnTime': 1514311348,
+            
+            'rootHash': '5ecipNPSztrk6X77fYPdepzFRUvLdqBuSqv4M9Mcv2Vn',
+            'auditPath': ['Cdsoz17SVqPodKpe6xmY2ZgJ9UcywFDZTRgWSAYM96iA', '3phchUcMsnKFk2eZmcySAWm2T5rnzZdEypW7A5SKi1Qt'],
+            
+            'alias': 'name',
+            'dest': 'WTJ1xmQViyFb67WAuvPnJP',
+            'role': '2',
+            'verkey': '~HjhFpNnFJKyceyELpCz3b5'
+        }
+    }
+}
+
+```
+Example resp_json from the ledger for a Transfer:
+```
+{
+	"op":"REPLY",
+	"result":{
+		"reqId":1533834540773581038,
+		"seqNo":19,
+		"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+		"type":"3",
+		"data":{
+			"txn":{
+				"protocolVersion":2,
+				"metadata":{
+					"digest":"1d9e749cfe8774d83dd2131811cd72fff2cc3707fb1e050ed2f42b579c11e2ac",
+					"reqId":1989289532,
+					"from":"HWWYHj6Lf92zEfikRBoVzxcmpsLyQf9Apue7Fbj3HHQ9"
+				},
+				"type":"10001",
+				"data":{
+					"outputs":[
+						["cHKFYXNuaPtX9UcZfmq61mWvXA28rfxXh6s3iZU5ZytxmmzRM",10]
+					],
+					"inputs":[
+						["2s2bzWYoxzDqtNBwb2ATxoNoKSF7DZSnypgXxvpGr8Br71AgDg",16]
+					]
+				}
+			},
+			"txnMetadata":{
+				"seqNo":19,
+				"txnTime":1533834535
+			},
+			"ver":"1",
+			"auditPath":[
+				"EAkV5bimQaWKNArEdNV5Dty3FXNNpdaNrGyd4u5qQURx",
+				"Atgkhxn1JMTyrnCvzhqrxutR5yJCH9kyXqUXyw2sAf4b"
+			],
+			"rootHash":"7M995X8oWdmY1PEVMzuB12YZAiEEju9FFBd2s1dPzoiZ",
+			"reqSignature":{
+				"values":[{
+					"from":"2s2bzWYoxzDqtNBwb2ATxoNoKSF7DZSnypgXxvpGr8Br71AgDg",
+					"value":"3me9qt7xtup9tBxMQMGg415ACE4eLWWE4noh4QYLiK4gCRfE7HyA5ozGANKUYV44nAfimgmxVfSfQeZXoUhj63jE"
+				}],
+				"type":"ED25519"
+			}
+		}
+	}
+}
+
+```
+Example resp_json from the ledger for Fees:
+```
+{
+	"op":"REPLY",
+	"result":{
+		"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+		"reqId":1533834704418243379,
+		"type":"3",
+		"data":{
+			"ver":"1",
+			"auditPath":[
+				"7t3J9iZsH1ELjg6A7KbMpPCMF2gMWGxvoiXPLE3BXWm6",
+				"HXLC5nmcNrtdWzMLXVBFcCi7vPfjES5C9GnoGRxv5FRT",
+				"EuS2jriy1FoCweMk4ex7zocs4dJNw9JAkBKGLghoDPGk",
+				"Atgkhxn1JMTyrnCvzhqrxutR5yJCH9kyXqUXyw2sAf4b"
+			],
+			"reqSignature":{
+				"values":[{
+					"value":"3zD3NNMUMK9J1Y2TfBypMxcot3mKER5g7jKSYZFmMebHyBhqpd44XHbrQL6WNGTQujaftjpErTuW4dBpxTJAkpsh",
+					"from":"22qZRFLTfCmvFa2zKxAhzbReCcxV6f48Ux5XwT5poviW2RGesK"
+				}],
+				"type":"ED25519"
+			},
+			"txn":{
+				"data":{
+					"ref":"1:74",
+					"fees":1,
+					"outputs":[
+						["22qZRFLTfCmvFa2zKxAhzbReCcxV6f48Ux5XwT5poviW2RGesK",9]
+					],
+					"inputs":[
+						["22qZRFLTfCmvFa2zKxAhzbReCcxV6f48Ux5XwT5poviW2RGesK",21]
+					]
+				},
+				"type":null,
+				"metadata":{
+					"digest":"99c84be708ab7e03bab13af038027ffffe10ccc03ac4fdd1f7af1ef2f42e340a",
+					"reqId":1533834699526507519
+				},
+				"protocolVersion":2
+			},
+			"txnMetadata":{
+				"txnTime":1533834700,
+				"seqNo":24
+			},
+			"rootHash":"9bY7LVmWcrmzdvs3yJzNf7Apx6dX4YTLTxmLBYQKjNsG"
+		},
+		"seqNo":24
+	}
+}
+
+```
+Example resp_json from the ledger for Mint:
+```
+{	
+	"op":"REPLY",
+	"result":{
+		"reqId":1533834288055293486,
+		"seqNo":8,
+		"identifier":"V4SGRU86Z58d6TV7PBUe6f",
+		"type":"3",
+		"data":{
+			"txn":{
+				"protocolVersion":2,
+				"metadata":{
+					"digest":"6f83fb082eb50742c574b96f34b81850e8f7d8107ca887598cae3a96a5be0d9a",
+					"reqId":3795564132,
+					"from":"V4SGRU86Z58d6TV7PBUe6f"
+				},
+				"type":"10000",
+				"data":{
+					"outputs":[
+						["2s4Ldd2Hr1adbmAmxFcsb7B6HqyY4bADaGW78b1CXbwPECk9Xo",10]
+					]
+				}
+			},
+			"txnMetadata":{
+				"seqNo":8,
+				"txnTime":1533834244
+			},
+			"ver":"1",
+			"auditPath":[
+				"3M1ukcEDUoaajGATWn6XUANwqUjgM4fv9XdCcRFuj9wu",
+				"AR3eZNQccupXhLUZvx54xrvXf7LKrZPXjHMwt1gWFHNw",
+				"3XH6Ep6rWcUgaE8mYHVBbXVw7QqKfXZ8j6ykowXDWWP8"
+			],
+			"rootHash":"2E1k4omwJEPVX4rXT59ybJZWoMHBuoTA9kC5nvLPPQnv",
+			"reqSignature":{
+				"values":[{
+					"from":"V4SGRU86Z58d6TV7PBUe6f",
+					"value":"2kT9SgpEwEUfLaMMf5tbsw1kLYU7kz1ix2MUo8w2avV5Bwz4VirfCKy9tGGZbymZokgTrSvAxmXnj7uyVE6zLRfi"
+				}],
+				"type":"ED25519"
+			}
+		}
+	}
+}
+
+```
+### return:
+    txn_json - parsed (payment method and node version agnostic) transaction info as json:
+```
+{
+    "sources": [<source str>, ],
+    "receipts":
+    [
+        {
+            "recipient": <str>,     // full sovrin payment address: "pay:sov:<address><checksum>"
+            "receipt": <str>,        // receipt string: "rec:sov:<base58 encoding of: {"address": <str:address, "seqNo": <int>}>
+            "amount": <int>,        // amount of tokens in this input
+        },
+    ],
+    "extra": <str>          // optional data from payment transaction
+]
+```
+Example sources_json:
+```
+{
+	"sources":[
+		"src:sov:E1zP66C1U8bKVqA5pz6JQUvhrTM7GqBPJtjJvcRt6ymuRXNnFXruPVSxArfDeBVMLpRFo2g84tGXdopVwS5HWw8TMJ7vHAZFuYC18BHJaXn6bTHj2X9KAJ1"
+	],
+	"receipts":[{
+		"recipient":"pay:sov:cHKFYXNuaPtX9UcZfmq61mWvXA28rfxXh6s3iZU5ZytxmmzRM",
+		"receipt":"rec:sov:3x42qH8UkJac1BuorqjSEvuVjvYkSKtBqeNdKzNr5ZFpMjFbybaqVsZ8SfTnZhY9fiAGD9TXEcQ9DaTB4i69KX2m1x3vCBVG2jAn8NFQrtF87YXtw4nETY",
+		"amount":10,
+	}],
+	"extra":null
 }
 ```
