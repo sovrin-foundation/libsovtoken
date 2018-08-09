@@ -178,3 +178,93 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     assert_eq!(utxo.payment_address, addresses[0]);
     assert_eq!(utxo.amount, 9);
 }
+
+#[test]
+pub fn build_and_submit_nym_with_fees_from_invalid_did_and_check_utxo_remain_unspent() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: Some(json!({
+            "1": 1
+        })),
+    });
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]).to_string();
+    let outputs = json!([{
+        "recipient": addresses[0],
+        "amount": 9
+    }]).to_string();
+
+    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new_2, _) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+
+    let nym_req = indy::ledger::Ledger::build_nym_request(&did_new_2, &did_new,  Some(&verkey_new), None, None).unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, dids[0], &nym_req, &inputs, &outputs, None).unwrap();
+    let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees).unwrap();
+    let err = indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap_err();
+    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+
+    let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    assert_eq!(utxo, utxo_2);
+}
+
+/// This test reproduces bug described in https://evernym.atlassian.net/browse/TOK-252
+#[test]
+pub fn build_and_submit_nym_with_fees_from_other_nym_txn() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: Some(json!({
+            "1": 1
+        })),
+    });
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]).to_string();
+    let outputs = json!([{
+        "recipient": addresses[0],
+        "amount": 9
+    }]).to_string();
+
+    // We have a user and a malicious node
+    // Both of them generate a nym write request
+    // User 1 generates fees for his nym and sends it to the ledger
+    // Malicious node gets the request from user, fetches fees from it and sends its own nym with that fees
+    // It should not be accepted by other nodes and nym from user should be written
+    let (did_new_1, verkey_new_1) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new_2, verkey_new_2) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+
+    let nym_req_1 = indy::ledger::Ledger::build_nym_request(dids[0], &did_new_1,  Some(&verkey_new_1), None, None).unwrap();
+    let nym_req_2 = indy::ledger::Ledger::build_nym_request(dids[1], &did_new_2,  Some(&verkey_new_2), None, None).unwrap();
+
+    let (nym_req_with_fees_1, pm) = indy::payments::Payment::add_request_fees(wallet.handle, dids[0], &nym_req_1, &inputs, &outputs, None).unwrap();
+
+    let nym_req_with_fees_1_parsed = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&nym_req_with_fees_1).unwrap();
+    let fees: &serde_json::Value = nym_req_with_fees_1_parsed.get("fees").unwrap();
+
+    let mut nym_req_without_fees: serde_json::Map<String, serde_json::Value> = serde_json::from_str(&nym_req_2).unwrap();
+    nym_req_without_fees.insert("fees".to_string(), fees.clone());
+    let nym_req_with_fees_2 = serde_json::to_string(&nym_req_without_fees).unwrap();
+
+    let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[1], &nym_req_with_fees_2).unwrap();
+    let err = indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap_err();
+    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+
+    let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees_1).unwrap();
+    indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap();
+}

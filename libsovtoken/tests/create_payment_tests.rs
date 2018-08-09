@@ -155,3 +155,16 @@ fn success_callback_is_called() {
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 
 }
+
+#[test]
+pub fn create_address_two_times_with_the_same_seed() {
+    sovtoken::api::sovtoken_init();
+    let wallet = utils::wallet::Wallet::new();
+
+    let seed = json!({"seed": "00000000000000000000000000000000"}).to_string();
+
+    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap();
+    let err = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap_err();
+
+    assert_eq!(err, indy::ErrorCode::WalletItemAlreadyExists);
+}
