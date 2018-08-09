@@ -40,7 +40,7 @@ use sovtoken::logic::request::Request;
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
-static VALID_OUTPUT_JSON: &'static str = r#"[{"recipient":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":10}]"#;
+static VALID_OUTPUT_JSON: &'static str = r#"[{"recipient":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":1000000000}]"#;
 
 // ***** UNIT TESTS ****
 
