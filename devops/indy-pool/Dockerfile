@@ -72,8 +72,7 @@ RUN apt-get update -y && apt-get install -y \
         vim sudo
 
 RUN mkdir -p /usr/local/share/ca-certificates
-COPY Evernym_Root_CA.crt  /usr/local/share/ca-certificates/Evernym_Root_CA.crt
-
+RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt
 RUN update-ca-certificates
 ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
 RUN echo "10.2.3.179 repo.corp.evernym.com" >> /etc/hosts  && update-ca-certificates \
