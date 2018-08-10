@@ -5,6 +5,7 @@ It expects all code to be used in each integration test.
 Without this, we are warned of all unused code in each integration test.
 */
 
+pub mod anoncreds;
 pub mod did;
 pub mod environment;
 pub mod ledger;
