@@ -371,7 +371,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     let outputs_2 = json!([
         {
             "recipient": addresses[1],
-            "amount": 2
+            "amount": 1
         },
         {
             "recipient": addresses[0],
