@@ -67,7 +67,7 @@ ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
 # fix that once that issue is resovled
 # https://github.com/moby/moby/issues/26332
 COPY sovtoken*.deb supervisord.conf /tmp/sovtoken-debs/
-COPY Evernym_Root_CA.crt /usr/local/share/ca-certificates/Evernym_Root_CA.crt
+RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt
 RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovtokenfees_*.deb ]; then \
         apt-get update \
         && dpkg -i /tmp/sovtoken-debs/*.deb \
