@@ -7,7 +7,6 @@ ARG INDY_PLENUM_VERSION
 ARG INDY_ANONCREDS_VERSION
 ARG INDY_NODE_VERSION
 
-ARG EVERNYM_REPO_IP
 ARG POOL_IP
 
 USER root
@@ -62,25 +61,23 @@ USER root
 # sovtoken and sovtokenfees
 # bump this env var if you need to avoid caching for apt-based installation
 ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
-ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
 # TODO workaround to copy optional files *.deb
 # fix that once that issue is resovled
 # https://github.com/moby/moby/issues/26332
 COPY sovtoken*.deb supervisord.conf /tmp/sovtoken-debs/
+RUN mkdir -p /usr/local/share/ca-certificates
 RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt
+RUN update-ca-certificates
+RUN curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add -
+RUN echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list
 RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovtokenfees_*.deb ]; then \
         apt-get update \
         && dpkg -i /tmp/sovtoken-debs/*.deb \
         && apt-get install -f -y --no-install-recommends; \
     else \
-        echo "${EVERNYM_REPO_IP} repo.corp.evernym.com" >> /etc/hosts \
-        && update-ca-certificates \
-        && curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add - \
-        && echo "deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main" >> /etc/apt/sources.list \
-        && apt-get update && apt-get install -y --no-install-recommends \
+        apt-get update && apt-get install -y --no-install-recommends \
             sovtoken \
-            sovtokenfees \
-        && rm -rf /var/lib/apt/lists/*; \
+            sovtokenfees
     fi
 
 
