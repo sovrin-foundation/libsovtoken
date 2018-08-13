@@ -79,11 +79,11 @@ RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovto
         echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list \
         apt-get update && apt-get install -y --no-install-recommends \
             sovtoken \
-            sovtokenfees \
+            sovtokenfees; \
     fi
 
 
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.26.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.27.0
