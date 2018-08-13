@@ -65,23 +65,27 @@ ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
 # fix that once that issue is resovled
 # https://github.com/moby/moby/issues/26332
 COPY sovtoken*.deb supervisord.conf /tmp/sovtoken-debs/
-RUN mkdir -p /usr/local/share/ca-certificates
-RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt
-RUN update-ca-certificates
-RUN curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add -
-RUN echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list
 RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovtokenfees_*.deb ]; then \
         apt-get update \
         && dpkg -i /tmp/sovtoken-debs/*.deb \
         && apt-get install -f -y --no-install-recommends; \
     else \
+        echo "10.2.3.179 repo.corp.evernym.com" >>/etc/hosts \
+        update-ca-certificates \
+        mkdir -p /usr/local/share/ca-certificates \
+        curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt \
+        update-ca-certificates \
+        curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add - \
+        echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list \
         apt-get update && apt-get install -y --no-install-recommends \
             sovtoken \
-            sovtokenfees
+            sovtokenfees; \
     fi
 
 
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.26.0
+
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.27.0
+
