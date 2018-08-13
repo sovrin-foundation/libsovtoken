@@ -77,7 +77,7 @@ RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovto
     else \
         apt-get update && apt-get install -y --no-install-recommends \
             sovtoken \
-            sovtokenfees
+            sovtokenfees \
     fi
 
 
