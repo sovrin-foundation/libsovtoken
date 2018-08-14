@@ -65,6 +65,14 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
     return (payment_addresses, addresses);
 }
 
+fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
+                            inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
+    let (req, method) = indy::payments::Payment::build_payment_req(wallet_handle,
+                                                                   did, inputs, outputs, None).unwrap();
+    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
+    indy::payments::Payment::parse_payment_response(&method, &res)
+}
+
 // ***** UNIT TESTS ****
 
 // the build_mint_txn_handler requires a callback and this test ensures that we
@@ -300,9 +308,7 @@ pub fn build_and_submit_payment_req() {
             "amount": 10
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
-    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
-    let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
+    let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
     let utxos = res_parsed.as_array().unwrap();
@@ -330,7 +336,7 @@ pub fn build_and_submit_payment_req() {
 }
 
 #[test]
-pub fn build_and_submit_payment_req_insufficient_funds() {
+pub fn build_and_submit_payment_req_incorrect_funds() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 2,
@@ -344,10 +350,11 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
     let dids = setup.trustees.dids();
 
 
-    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet,
+                                                                                pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
-    let outputs = json!([
+    let outputs_1 = json!([
         {
             "recipient": addresses[1],
             "amount": 20
@@ -357,10 +364,23 @@ pub fn build_and_submit_payment_req_insufficient_funds() {
             "amount": 20
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
-    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
-    let res = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
+    let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
+                                       &inputs, &outputs_1).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
+
+    let outputs_2 = json!([
+        {
+            "recipient": addresses[1],
+            "amount": 1
+        },
+        {
+            "recipient": addresses[0],
+            "amount": 1
+        }
+    ]).to_string();
+    let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
+                                       &inputs, &outputs_2).unwrap_err();
+    assert_eq!(res, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -387,9 +407,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
             "amount": 10
         }
     ]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
-    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
-    indy::payments::Payment::parse_payment_response(&method, &res).unwrap();
+    get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap();
 
     //lets try to spend spent utxo while there are enough funds on the unspent one
     let inputs = json!([utxo_2, utxo]).to_string();
@@ -397,9 +415,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "recipient": addresses[2],
         "amount": 20
     }]).to_string();
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
-    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
-    let err = indy::payments::Payment::parse_payment_response(&method, &res).unwrap_err();
+    let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap_err();
     assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 
     //utxo should stay unspent!
