@@ -68,7 +68,8 @@ Libindy building uses all the same settings as libsovtoken minus those in the li
 It also uses *libsovtoken/build_scripts/libindy.commit.sha1.hash.txt* which tells git which
 version to use.
 
-Libsovtoken can be built without docker by running `build.nondocker.sh`
+Libsovtoken can be built without docker by running `build.nondocker.sh`. Use `-d` flag e.g `build.nondocker.sh -d` if you want the dependencies should be downloaded and used automatically.
+
 It can be built in docker by running `build.sh`.
 
 Artifacts for each android ABI will be built and zipped together.
