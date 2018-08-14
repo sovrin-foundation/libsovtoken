@@ -92,13 +92,21 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
-    let outputs = json!([{
+    let outputs_1 = json!([{
         "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
-    let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
+    let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_1, None).unwrap_err();
     assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
+
+    let outputs_2 = json!([{
+        "recipient": addresses[0],
+        "amount": 1
+    }]).to_string();
+
+    let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_2, None).unwrap_err();
+    assert_eq!(parsed_err, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]

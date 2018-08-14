@@ -3,11 +3,19 @@
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;
 
+use std::{thread, time};
+
 mod utils;
 use indy::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 use sovtoken::logic::parsers::common::TXO;
+
+
+fn sleep(msec: u64) {
+    let ms = time::Duration::from_millis(msec);
+    thread::sleep(ms);
+}
 
 #[test]
 pub fn build_and_submit_verify_on_mint() {
@@ -25,7 +33,7 @@ pub fn build_and_submit_verify_on_mint() {
     let txo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
 
     //We need to wait a little before trying to verify txn
-    std::thread::sleep_ms(1000);
+    sleep(1000);
 
     let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &txo).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
@@ -68,7 +76,7 @@ pub fn build_and_submit_verify_on_xfer() {
     let new_utxo = value.get("receipt").unwrap().as_str().unwrap();
 
     //We need to wait a little before trying to verify txn
-    std::thread::sleep_ms(1000);
+    sleep(1000);
 
     let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &new_utxo).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
@@ -116,7 +124,7 @@ pub fn build_and_submit_verify_on_fees() {
     let new_utxo = value.get("receipt").unwrap().as_str().unwrap();
 
     //We need to wait a little before trying to verify txn
-    std::thread::sleep_ms(1000);
+    sleep(1000);
 
     let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &new_utxo).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
@@ -144,7 +152,7 @@ pub fn build_and_submit_verify_req_for_unexistant_utxo() {
     let txo = TXO { address: payment_addresses[0].to_string(), seq_no: 999999 }.to_libindy_string().unwrap();
 
     //We need to wait a little before trying to verify txn
-    std::thread::sleep_ms(1000);
+    sleep(1000);
 
     let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, dids[0], &txo).unwrap();
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
