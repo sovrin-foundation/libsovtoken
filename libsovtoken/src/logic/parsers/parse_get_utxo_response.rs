@@ -2,19 +2,19 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use rust_base58::ToBase58;
+use base64;
+use indy::ErrorCode;
+use libc::c_char;
 use logic::parsers::common::{ResponseOperations, TXO, StateProof, ParsedSP, KeyValuesInSP,
                              KeyValueSimpleData, extract_result_and_state_proof_from_node_reply};
 use logic::parsers::error_code_parser;
-use utils::json_conversion::{JsonSerialize, JsonDeserialize};
-use indy::ErrorCode;
-use libc::c_char;
-use serde_json;
-use base64;
-use utils::ffi_support::c_pointer_from_string;
-use utils::constants::txn_fields::OUTPUTS;
 use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, ReqId};
 use logic::address;
+use rust_base58::ToBase58;
+use serde_json;
+use utils::constants::txn_fields::OUTPUTS;
+use utils::ffi_support::c_pointer_from_string;
+use utils::json_conversion::{JsonSerialize, JsonDeserialize};
 
 type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 

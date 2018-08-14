@@ -56,7 +56,7 @@ pub type SetFeesMap = HashMap<String, TokenAmount>;
 pub struct SetFees {
     #[serde(rename = "type")]
     txn_type: &'static str,
-    fees: SetFeesMap,
+    pub fees: SetFeesMap,
 }
 
 impl SetFees {
