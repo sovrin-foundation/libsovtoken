@@ -46,8 +46,8 @@ pipelineWrapper({
                         // not accurate (it concatenates them):
                         //  debian package version: <src_version>+<release_version>
                         //  debian package name:    <src_version><release_version>
-                        def sovtoken_deb_version = "0.8.044.71"
-                        def sovtokenfees_deb_version = "0.8.044.71"
+                        def sovtoken_deb_version = "0.8.045.72"
+                        def sovtokenfees_deb_version = "0.8.045.72"
 
                         sh """
                             cd ./devops/docker/ci/xenial/
