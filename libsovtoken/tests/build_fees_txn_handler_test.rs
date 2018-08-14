@@ -140,3 +140,39 @@ pub fn build_and_submit_set_fees() {
     fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
 
 }
+
+
+#[test]
+pub fn build_and_submit_set_fees_with_names() {
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 0,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None,
+        fees: None,
+    });
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let fees = json!({
+        "NYM": 1,
+        "ATTRIB": 2
+    }).to_string();
+
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+    let current_fees = fees::get_fees(&wallet, pool_handle, dids[0]);
+    let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
+
+    assert_eq!(current_fees_value["1"].as_u64().unwrap(), 1);
+    assert_eq!(current_fees_value["100"].as_u64().unwrap(), 2);
+
+    let fees = json!({
+        "NYM": 0,
+        "ATTRIB": 0
+    }).to_string();
+
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids);
+
+}
