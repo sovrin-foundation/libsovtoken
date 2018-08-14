@@ -1,6 +1,7 @@
 //!
 use std::collections::HashMap;
 
+use base64;
 use serde_json;
 use serde_json::Error;
 use indy::ErrorCode;
@@ -77,7 +78,7 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
 
     // TODO: Make sure JSON serialisation preserves order
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData {
-        kvs: vec![(String::from(FEES), Some(fees.to_string()))]
+        kvs: vec![(base64::encode(FEES), Some(fees.to_string()))]
     });
     let proof_nodes = match state_proof.proof_nodes {
         Some(o) => o,
@@ -111,6 +112,7 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
 
 #[cfg(test)]
 mod parse_fees_responses_test {
+    use base64;
     use super::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor,
                 ErrorCode, ParsedSP, KeyValuesInSP, KeyValueSimpleData};
     use serde_json::{Value, Error};
@@ -205,7 +207,7 @@ mod parse_fees_responses_test {
         let expected_parsed_sp = vec![ParsedSP {
             proof_nodes: String::from("29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="),
             root_hash: String::from("5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms"),
-            kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![(String::from("fees"), Some(json!({"1": 4, "10001": 8}).to_string()))] }),
+            kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![(base64::encode("fees"), Some(json!({"1": 4, "10001": 8}).to_string()))] }),
             multi_signature: json!({
                 "participants": ["Gamma", "Delta", "Beta"],
                 "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"
