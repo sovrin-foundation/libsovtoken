@@ -145,7 +145,6 @@ mod test_deserialize_inputs {
         assert_eq!(fees.fees.len(), 2);
         assert_eq!(fees.fees.get("10001"), Some(&5));
         assert_eq!(fees.fees.get("3"), Some(&1));
-//        assert_eq!(ErrorCode::Success, result.unwrap_err());
     }
 
     #[test]
