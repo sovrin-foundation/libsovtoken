@@ -8,6 +8,14 @@ use serde_json;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 
+const NYM: &'static str = "1";
+const ATTRIB: &'static str = "100";
+const SCHEMA: &'static str = "101";
+const CRED_DEF: &'static str = "102";
+const REVOC_REG_DEF: &'static str = "113";
+const REVOC_REG_ENTRY: &'static str = "114";
+const XFER_PUBLIC: &'static str = "10001";
+
 fn txn_name_to_code(txn: &str) -> String {
     match txn {
         "NYM" => NYM.to_string(),
@@ -20,14 +28,6 @@ fn txn_name_to_code(txn: &str) -> String {
         val @ _ => val.to_string()
     }
 }
-
-const NYM: &'static str = "1";
-const ATTRIB: &'static str = "100";
-const SCHEMA: &'static str = "101";
-const CRED_DEF: &'static str = "102";
-const REVOC_REG_DEF: &'static str = "113";
-const REVOC_REG_ENTRY: &'static str = "114";
-const XFER_PUBLIC: &'static str = "10001";
 
 type DeserializedArguments<'a> = (Did<'a>, SetFees, JsonCallbackUnwrapped);
 
