@@ -15,14 +15,14 @@ if [ ! -z "$3" ]; then
 fi
 
 if [ ! -d $WORK_DIR/sovtoken-indy-sdk ]; then
-    git clone --depth 1 https://github.com/hyperledger/indy-sdk.git $WORK_DIR/sovtoken-indy-sdk
+    git clone --depth 1 --single-branch -b rc https://github.com/hyperledger/indy-sdk.git $WORK_DIR/sovtoken-indy-sdk
 
 fi
 cd $WORK_DIR/sovtoken-indy-sdk
 
 if [ "$CLEAN_BUILD" = "cleanbuild" ]; then
     git checkout .
-    git checkout master
+    git checkout rc
     git clean -f
     git clean -fd
     git pull
@@ -74,6 +74,6 @@ BUILD_TIME=$(date -u "+%Y%m%d%H%M")
 GIT_REV=$(git rev-parse --short HEAD)
 LIBINDY_VER=$(grep ^version Cargo.toml | head -n 1 | cut -d '"' -f 2)
 mv target libindy
-zip -qq "libindy_${LIBINDY_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" `find libindy -type f -name "libindy.a" | egrep '(ios|universal)' | egrep -v 'deps|debug|release'`
+zip "libindy_${LIBINDY_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" `find libindy -type f -name "libindy.a" | egrep '(ios|universal)' | egrep -v 'deps|debug|release'`
 mv libindy/"libindy_${LIBINDY_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" .
 mv libindy target
