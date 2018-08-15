@@ -52,14 +52,8 @@ download_and_unzip_dependencies(){
         export SODIUM_LIB_DIR=${PREBUILT}/libsodium_${arch}/lib
         export SODIUM_INCLUDE_DIR=${PREBUILT}/libsodium_${arch}/include
 
-        echo -e "${ESCAPE}${GREEN}Downloading zmq for $1 ${ESCAPE}${NC}"
-        curl -sSLO https://repo.sovrin.org/android/libindy/deps/zmq/libzmq_$1.zip
-        unzip -o -qq libzmq_$1.zip
-        export LIBZMQ_DIR=${PREBUILT}/libzmq_${arch}
-
         rm openssl_$1.zip
         rm libsodium_$1.zip
-        rm libzmq_$1.zip
     popd
 }
 
