@@ -1,15 +1,13 @@
-#!bin/bash
+#!/bin/bash
 
 abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
 }
 
-
 TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
 INDY_PREBUILT="${PWD}/indy-android-dependencies"
 INDY_SDK_REPO="https://github.com/hyperledger/indy-sdk.git"
 FILEY_URL="https://repo.corp.evernym.com/filely/android/"
-LIBSOVTOKEN_DIR=$(abspath ${PWD}/../../..)
 
 GREEN="[0;32m"
 BLUE="[0;34m"
@@ -23,10 +21,10 @@ if [ ! -d "indy-sdk" ] ; then
     echo -e "${ESCAPE}${GREEN}Using commit ${_GIT_COMMIT}${ESCAPE}${NC}"
     if [ "${_GIT_COMMIT}" = "HEAD" ] ; then
         echo -e "${ESCAPE}${GREEN}Shallow clone${ESCAPE}${NC}"
-        git clone --depth 1 --branch master ${INDY_SDK_REPO}
+        git clone --depth 1 --branch rc ${INDY_SDK_REPO}
         rm -f "indy-sdk/libindy/Cargo.lock"
     else
-        git clone --branch master ${INDY_SDK_REPO}
+        git clone --branch rc ${INDY_SDK_REPO}
         rm -f "indy-sdk/libindy/Cargo.lock"
         command pushd indy-sdk > /dev/null
         git checkout ${_GIT_COMMIT}
@@ -48,13 +46,40 @@ else
     fi
 fi
 
-download_and_unzip_dependency() {
-    _FILEY_NAME=$(grep "$1" ../libindy.dependencies.txt)
+download_and_unzip_dependencies(){
     command pushd ${INDY_PREBUILT} > /dev/null
-    echo -e "${ESCAPE}${GREEN}Downloading $1 prebuilt binaries"
-    wget --no-check-certificate -q https://repo.corp.evernym.com/filely/android/${_FILEY_NAME} || exit 1
-    unzip -o -qq ${_FILEY_NAME}
-    rm -f ${_FILEY_NAME}
+    export OPENSSL_DIR=${INDY_PREBUILT}/openssl_${arch}
+    if [ ! -d ${OPENSSL_DIR} ] ; then
+        echo -e "${ESCAPE}${GREEN}Downloading openssl for $1 ${ESCAPE}${NC}"
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
+        unzip -o -qq openssl_$1.zip
+        rm openssl_$1.zip
+    else
+        echo -e "${ESCAPE}${GREEN}Found openssl for $1 ${ESCAPE}${NC}"
+    fi
+
+    export SODIUM_DIR=${INDY_PREBUILT}/libsodium_${arch}
+    export SODIUM_LIB_DIR=${INDY_PREBUILT}/libsodium_${arch}/lib
+    export SODIUM_INCLUDE_DIR=${INDY_PREBUILT}/libsodium_${arch}/include
+    if [ ! -d ${SODIUM_DIR} ] ; then
+        echo -e "${ESCAPE}${GREEN}Downloading sodium for $1 ${ESCAPE}${NC}"
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
+        unzip -o -qq libsodium_$1.zip
+        rm libsodium_$1.zip
+    else
+        echo -e "${ESCAPE}${GREEN}Found sodium for $1 ${ESCAPE}${NC}"
+    fi
+
+    export LIBZMQ_DIR=${INDY_PREBUILT}/libzmq_${arch}
+    if [ ! -d ${LIBZMQ_DIR} ] ; then
+        echo -e "${ESCAPE}${GREEN}Downloading zmq for $1 ${ESCAPE}${NC}"
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/zmq/libzmq_$1.zip
+        unzip -o -qq libzmq_$1.zip
+        rm libzmq_$1.zip
+    else
+        echo -e "${ESCAPE}${GREEN}Found zmq for $1 ${ESCAPE}${NC}"
+    fi
+
     command popd > /dev/null
 }
 
@@ -82,12 +107,12 @@ mkdir -p ${INDY_PREBUILT}
 export ANDROID_NDK_ROOT="${PWD}/${UNAME}-${TARGET_NDK}"
 export PKG_CONFIG_ALLOW_CROSS=1
 
-mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
+mkdir -p "indy-sdk/libindy/.cargo/"
 
 if [ ! -d "${ANDROID_NDK_ROOT}" ] ; then
     if [ ! -f "${NDK}.zip" ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading ${NDK}${ESCAPE}${NC}"
-        wget -q https://dl.google.com/android/repository/${NDK}.zip || exit 1
+        curl -sSLO https://dl.google.com/android/repository/${NDK}.zip || exit 1
     fi
     if [ ! -f "${NDK}.zip" ] ; then
         echo STDERR "Can't find ${NDK}"
@@ -130,7 +155,7 @@ for target in ${archs[@]}; do
         python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl gnustl --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
     fi
 
-    cat > ${LIBSOVTOKEN_DIR}/.cargo/config <<EOF
+    cat > indy-sdk/libindy/.cargo/config <<EOF
 [target.${CROSS_COMPILE}]
 ar = "${AR}"
 linker = "${CC}"
@@ -139,22 +164,7 @@ EOF
     if [ -z "${check}" ] ; then
         rustup target add ${CROSS_COMPILE}
     fi
-    if [ -d "${OPENSSL_DIR}" ] ; then
-        echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
-    else
-        download_and_unzip_dependency "openssl"
-    fi
-
-    if [ -d "${SODIUM_LIB_DIR}" ] ; then
-        echo -e "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
-    else
-        download_and_unzip_dependency "sodium"
-    fi
-    if [ -d "${LIBZMQ_LIB_DIR}" ] ; then
-        echo -e "${ESCAPE}${BLUE}Found ${LIBZMQ_LIB_DIR}${ESCAPE}${NC}"
-    else
-        download_and_unzip_dependency "zmq"
-    fi
+    download_and_unzip_dependencies ${target}
 
     command pushd indy-sdk/libindy > /dev/null
     cargo build --release --target=${CROSS_COMPILE}
