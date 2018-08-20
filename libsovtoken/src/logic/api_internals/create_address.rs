@@ -48,7 +48,7 @@ pub fn create_address_cb(command_handle: i32, cb: JsonCallbackUnwrapped) -> impl
     move | payment_address: String, error_code: ErrorCode | {
         if error_code != ErrorCode::Success {
             error!("create payment address failed ErrorCode={:?}", error_code);
-            cb(command_handle, ErrorCode::CommonInvalidState as i32, c_pointer_from_str(""));
+            cb(command_handle, error_code as i32, c_pointer_from_str(""));
             return;
         }
 

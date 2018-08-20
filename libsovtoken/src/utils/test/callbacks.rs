@@ -55,3 +55,18 @@ pub fn cb_ec_string() -> (
 
     (receiver, command_handle, Some(callback))
 }
+
+pub fn cb_ec_i32() -> (
+    Receiver<(ErrorCode, i32)>,
+    i32,
+    Option<extern fn(command_handle: i32, err: i32, c_i32: i32) -> i32>) {
+    let (sender, receiver) = channel();
+
+    let closure = Box::new(move|error_code, c_i32| {
+        sender.send((ErrorCode::from(error_code), c_i32)).unwrap();
+    });
+
+    let (command_handle, callback) = closure_cb!(closure, i32_value: i32);
+
+    (receiver, command_handle, Some(callback))
+}

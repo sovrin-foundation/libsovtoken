@@ -1,4 +1,4 @@
-#!bin/bash
+#!/usr/bin/env bash
 
 abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
@@ -17,14 +17,44 @@ ESCAPE="\033"
 UNAME=$(uname | tr '[:upper:]' '[:lower:]')
 NDK=${TARGET_NDK}-${UNAME}-$(uname -m)
 
-download_and_unzip_dependency() {
-    _FILEY_NAME=$(grep "$1" $2)
+while getopts ":d" opt; do
+    case ${opt} in
+        d) export DOWNLOAD_PREBUILTS="1";;
+        \?);;
+    esac
+done
+shift $((OPTIND -1))
+
+
+download_libindy(){
+    #$1 Branch
+    #$2 Version
+    #$3 Arch
     command pushd ${PREBUILT} > /dev/null
-    echo -e "${ESCAPE}${BLUE}Downloading $1 prebuilt binaries${ESCAPE}${NC}"
-    wget --no-check-certificate https://repo.corp.evernym.com/filely/android/${_FILEY_NAME}
-    unzip -o -qq ${_FILEY_NAME}
-    rm -f ${_FILEY_NAME}
+        curl -sSLO https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
+        unzip -o -qq "libindy_android_$3_$2.zip"
+        rm "libindy_android_$3_$2.zip"
+        export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
     command popd > /dev/null
+}
+
+download_and_unzip_dependencies(){
+    pushd ${PREBUILT}
+        echo -e "${ESCAPE}${GREEN}Downloading openssl for $1 ${ESCAPE}${NC}"
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
+        unzip -o -qq openssl_$1.zip
+        export OPENSSL_DIR=${PREBUILT}/openssl_${arch}
+
+        echo -e "${ESCAPE}${GREEN}Downloading sodium for $1 ${ESCAPE}${NC}"
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
+        unzip -o -qq libsodium_$1.zip
+        export SODIUM_DIR=${PREBUILT}/libsodium_${arch}
+        export SODIUM_LIB_DIR=${PREBUILT}/libsodium_${arch}/lib
+        export SODIUM_INCLUDE_DIR=${PREBUILT}/libsodium_${arch}/include
+
+        rm openssl_$1.zip
+        rm libsodium_$1.zip
+    popd
 }
 
 get_cross_compile() {
@@ -40,7 +70,7 @@ get_cross_compile() {
     esac
 }
 
-if [ $# -gt 0 ] ; then
+if [ $# -gt 1 ] ; then
     archs=$@
 else
     archs=(arm armv7 arm64 x86 x86_64)
@@ -56,7 +86,7 @@ mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
 if [ ! -d "${ANDROID_NDK_ROOT}" ] ; then
     if [ ! -f "${NDK}.zip" ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading ${NDK}${ESCAPE}${NC}"
-        wget -q https://dl.google.com/android/repository/${NDK}.zip || exit 1
+        curl -sSLO https://dl.google.com/android/repository/${NDK}.zip || exit 1
     fi
     if [ ! -f "${NDK}.zip" ] ; then
         echo STDERR "Can't find ${NDK}"
@@ -69,13 +99,16 @@ fi
 
 for target in ${archs[@]}; do
     export CROSS_COMPILE=$(get_cross_compile ${target})
-    export OPENSSL_DIR=${PREBUILT}/openssl_prebuilt/${target}
-    export SODIUM_LIB_DIR=${PREBUILT}/sodium_prebuilt/${target}/lib
-    export SODIUM_INCLUDE_DIR=${PREBUILT}/sodium_prebuilt/${target}/include
-    export LIBINDY_DIR=${PREBUILT}/libindy/${CROSS_COMPILE}
+
     arch=${target}
     if [ ${target} = "armv7" ] ; then
         arch="arm"
+    fi
+
+    if [ ${arch} = "arm" ] || [ ${arch} = "x86" ]; then
+	    TARGET_API=16
+    else
+	    TARGET_API=21
     fi
     export TOOLCHAIN_DIR=${PWD}/${UNAME}-${arch}
 
@@ -89,7 +122,7 @@ for target in ${archs[@]}; do
 
     if [ ! -d "${TOOLCHAIN_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Making standalone toolchain for ${target}${ESCAPE}${NC}"
-        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
+        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl gnustl --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
     fi
 
     cat > ${LIBSOVTOKEN_DIR}/.cargo/config <<EOF
@@ -101,25 +134,35 @@ EOF
     if [ -z "${check}" ] ; then
         rustup target add ${CROSS_COMPILE}
     fi
-    if [ -d "${OPENSSL_DIR}" ] ; then
-        echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
-    else
-        download_and_unzip_dependency "openssl" "../libindy.dependencies.txt"
+
+    if [ "${DOWNLOAD_PREBUILTS}" == "1" ]; then
+        download_and_unzip_dependencies ${target}
     fi
 
-    if [ -d "${SODIUM_LIB_DIR}" ] ; then
+    if [ -d "${OPENSSL_DIR}" ] || [ -z "${OPENSSL_DIR}" ] ; then
+        echo -e "${ESCAPE}${BLUE}Found ${OPENSSL_DIR}${ESCAPE}${NC}"
+    else
+        echo "${ESCAPE}${RED}OPENSSL_DIR not found${ESCAPE}${NC}"
+        exit 1
+    fi
+
+    if [ -d "${SODIUM_LIB_DIR}" ] || [ -z "${SODIUM_LIB_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${SODIUM_LIB_DIR}${ESCAPE}${NC}"
     else
-        download_and_unzip_dependency "sodium" "../libindy.dependencies.txt"
+        echo "${ESCAPE}${RED}SODIUM_LIB_DIR not found${ESCAPE}${NC}"
+        exit 1
     fi
     if [ -d "${LIBINDY_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Found ${LIBINDY_DIR}${ESCAPE}${NC}"
     else
-        download_and_unzip_dependency "libindy" "libsovtoken.dependencies.txt"
+        libindy_version=$(grep libindy libsovtoken.dependencies.txt | cut -d '=' -f 2)
+        libindy_branch=$(grep libindy libsovtoken.dependencies.txt | cut -d '=' -f 3)
+        download_libindy ${libindy_branch} ${libindy_version} ${target}
     fi
 
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
     cargo build --release --target=${CROSS_COMPILE}
+    unset LIBINDY_DIR
     for filename in libsovtoken.so libsovtoken.a; do
         if [ -f "target/${CROSS_COMPILE}/release/${filename}" ] ; then
             mv target/${CROSS_COMPILE}/release/${filename} target/${CROSS_COMPILE}/

@@ -83,7 +83,7 @@ pub fn build_and_submit_attrib_with_fees_and_no_change() {
 }
 
 #[test]
-pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
+pub fn build_and_submit_attrib_with_fees_incorrect_funds() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -101,13 +101,54 @@ pub fn build_and_submit_attrib_with_fees_insufficient_funds() {
     let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
 
     let inputs = json!([utxo]).to_string();
+    let outputs_1 = json!([{
+        "recipient": addresses[0],
+        "amount": 9
+    }]).to_string();
+
+    let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs_1).unwrap_err();
+    assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
+
+    let outputs_2 = json!([{
+        "recipient": addresses[0],
+        "amount": 1
+    }]).to_string();
+
+    let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs_2).unwrap_err();
+    assert_eq!(parsed_err, ErrorCode::PaymentExtraFundsError);
+}
+
+#[test]
+pub fn build_and_submit_attrib_with_fees_from_invalid_did_and_check_utxo_remain_unspent() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![9]),
+        fees: Some(json!({
+            ATTRIB: 1
+        })),
+    });
+    let addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let (did_new, _) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+
+    let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+
+    let inputs = json!([utxo]).to_string();
     let outputs = json!([{
         "recipient": addresses[0],
         "amount": 9
     }]).to_string();
 
-    let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
+    let parsed_err = _send_attrib_with_fees(&did_new, Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
+    assert_eq!(parsed_err, ErrorCode::CommonInvalidStructure);
+
+    let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
+    assert_eq!(utxo, utxo_2);
 }
 
 #[test]

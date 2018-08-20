@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0
+* Added functionality
+    * build_verify_req_handler
+    * parse_verify_response_handler
+* iOS build artifacts in CI/CD pipeline
+* Increased System testing
+* Android log support
+* Bugfixes
+
 ## 0.8.0
 
 * Follows new Indy-SDK Payments API
