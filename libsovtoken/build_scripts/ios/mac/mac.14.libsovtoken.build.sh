@@ -28,29 +28,13 @@ fi
 
 bkpIFS="$IFS"
 IFS=',()][' read -r -a targets <<<"${IOS_TARGETS}"
-echo "Building targets: ${targets[@]}"    ##Or printf "%s\n" ${array[@]}
+echo "Building targets: ${targets[@]}"
 IFS="$bkpIFS"
 
 to_combine=""
 for target in ${targets[*]}
 do
-    #if [ "${target}" = "aarch64-apple-ios" ]; then
-    #    target_arch="arm64"
-    #elif [ "${target}" = "armv7-apple-ios" ]; then
-    #    target_arch="armv7"
-    #elif [ "${target}" = "armv7s-apple-ios" ]; then
-    #    target_arch="armv7s"
-    #elif [ "${target}" = "i386-apple-ios" ]; then
-    #    target_arch="i386"
-    #elif [ "${target}" = "x86_64-apple-ios" ]; then
-    #    target_arch="x86_64"
-    #fi
-
-    #export OPENSSL_LIB_DIR=$WORK_DIR/OpenSSL-for-iPhone/lib/${target_arch}
-    #export IOS_SODIUM_LIB=$WORK_DIR/libzmq-ios/libsodium-ios/dist/ios/lib/${target_arch}
-    #export IOS_ZMQ_LIB=$WORK_DIR/libzmq-ios/dist/ios/lib/${target_arch}
     export LIBINDY_DIR=${WORK_DIR}/sovtoken-indy-sdk/libindy/target/${target}/release
-    #export LIBINDY_DIR=$WORK_DIR/vcx-indy-sdk/libindy/target/${target}/release
     cargo lipo --release --verbose --targets="${target}"
 
     to_combine="${to_combine} ./target/${target}/release/libsovtoken.a"
@@ -61,12 +45,18 @@ lipo -create $to_combine -o ./target/universal/release/libsovtoken.a
 
 for arch in ${IOS_TARGETS[@]}; do
     if [ -f ./target.$arch/release/libsovtoken.a ] ; then
-        mv ./target/$arch/release/libsovtoken.a ./target/$arch/libsovtoken.a
+        mv ./target/$arch/release/libsovtoken.a ./target/$arch/libsovtoken-unstripped.a
+        # to ensure the library is as small as possible....even though we are using cargo build /release
+        # we still have extraneous data in the library that needs to be removed
+        strip -S -x -o ./target/$arch/libsovtoken.a -r ./target/$arch/libsovtoken-unstripped.a
     fi
 done
 
 if [ -f ./target/universal/release/libsovtoken.a ] ; then
-    cp ./target/universal/release/libsovtoken.a ./target/universal/libsovtoken.a
+    cp ./target/universal/release/libsovtoken.a ./target/universal/libsovtoken-unstripped.a
+    # to ensure the library is as small as possible....even though we are using cargo build /release
+    # we still have extraneous data in the library that needs to be removed
+    strip -S -x -o ./target/universal/libsovtoken.a -r ./target/universal/libsovtoken-unstripped.a
 fi
 
 BUILD_TIME=$(date -u "+%Y%m%d%H%M")
