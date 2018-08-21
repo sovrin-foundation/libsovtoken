@@ -52,10 +52,8 @@ RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $ui
 ARG indy_stream=master
 
 ARG indy_anoncreds_ver=1.0.32
-ARG python3_indy_crypto_ver=0.4.3
-ARG indy_crypto_ver=0.4.3
-ARG indy_node_ver=1.6.568
-ARG indy_plenum_ver=1.6.510
+ARG python3_indy_crypto_ver=0.4.1
+ARG indy_crypto_ver=0.4.0
 
 ARG sovtoken_pkg_name=sovtoken_0.8.0_amd64.deb
 ARG sovtokenfees_pkg_name=sovtokenfees_0.8.0_amd64.deb
@@ -64,8 +62,8 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
 
 RUN apt-get update -y && apt-get install -y \
-        indy-plenum=${indy_plenum_ver} \
-		indy-node=${indy_node_ver} \
+        indy-plenum \        
+		indy-node \
         indy-anoncreds=${indy_anoncreds_ver} \
         python3-indy-crypto=${python3_indy_crypto_ver} \
         libindy-crypto=${indy_crypto_ver} \
