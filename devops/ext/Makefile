@@ -26,6 +26,8 @@ LIB_IMG_NAME=evernym/dockerbase
 docker_env_value = $(call check_non_empty,$(shell grep '^ENV $(1)=' $(2) | cut -d '=' -f 2), \
 				   "Value for ENV $(1) not found in dockerfile $(2)")
 # TODO what about multi-staged builds
+# TODO will work only for match in the first line, consider to use sed's flow control commands
+# (https://www.gnu.org/software/sed/manual/html_node/Branching-and-flow-control.html)
 docker_parent_parts = $(shell sed -n -e 's/FROM[[:space:]]\+\($(if $(2),$(subst /,\/,$(2)),[^[:space:]]\+)\):\([^[:space:]]\+\)/\1 \2/p' -e 'q' $(1))
 docker_from_tag = $(call check_non_empty,$(shell grep '^FROM $(1):' $(2) | cut -d ':' -f 2), \
 					"Tag for FROM $(1) not found in dockerfile $(2)")
