@@ -1,61 +1,59 @@
 ANDROID_BUILD_DIR := _build_android
 ANDROID_PREBUILT_DIR=$(ANDROID_BUILD_DIR)/prebuilt
-ANDROID_PREBUILT_DEPS_DIR=$(ANDROID_BUILD_DIR)/indy-android-dependencies
 
-LIBINDY_DEPS_FILE := $(PROJECT_DIR)/libsovtoken/build_scripts/android/libindy.dependencies.txt
+REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL := https://repo.sovrin.org/android/libindy
 LIBSOVTOKEN_DEPS_FILE := $(PROJECT_DIR)/libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt
 
-get_android_dependency = $(call check_non_empty,$(shell sed -n -e '/^$(1)_.\+/bx' -e 'd' -e ':x' -e 'p' -e 'q' $(2)),"$(1) is not found in $(2)")
+get_android_dependency = $(call check_non_empty,$(shell sed -n -e '/^$(1)=.\+/bx' -e 'd' -e ':x' -e 'p' -e 'q' $(2)),"$(1) is not found in $(2)")
 
-OPENSSL_DEP_FNAME := $(call get_android_dependency,openssl,$(LIBINDY_DEPS_FILE))
-SODIUM_DEP_FNAME := $(call get_android_dependency,sodium,$(LIBINDY_DEPS_FILE))
-LIBINDY_DEP_FNAME := $(call get_android_dependency,libindy,$(LIBSOVTOKEN_DEPS_FILE))
+LIBINDY_DEP_SPEC := $(subst =, ,$(call get_android_dependency,libindy,$(LIBSOVTOKEN_DEPS_FILE)))
+LIBINDY_VERSION ?= $(word 2,$(LIBINDY_DEP_SPEC))
+LIBINDY_BRANCH ?= $(word 3,$(LIBINDY_DEP_SPEC))
 
-DEPS = $(ANDROID_PREBUILT_DIR)/$(OPENSSL_DEP_FNAME)
+#DEPS = $(ANDROID_PREBUILT_DIR)/$(OPENSSL_DEP_FNAME)
 
-$(DEPS): | $(ANDROID_PREBUILT_DIR)
-	wget --no-check-certificate https://10.2.3.179/filely/android/$(@F) -O $@
+#$(DEPS): | $(ANDROID_PREBUILT_DIR)
+#	wget --no-check-certificate https://10.2.3.179/filely/android/$(@F) -O $@
 
 #    unzip -o -qq ${_FILEY_NAME}
 #    rm -f ${_FILEY_NAME}
 
 
-testme: $(ANDROID_PREBUILT_DIR)/$(OPENSSL_DEP_FNAME)
-	ls
-
 # TODO what about multi-staged builds
 docker_parent_parts = $(shell sed -n -e 's/FROM[[:space:]]\+\($(if $(2),$(subst /,\/,$(2)),[^[:space:]]\+)\):\([^[:space:]]\+\)/\1 \2/p' -e 'q' $(1))
 
-
-ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
-
-.PHONY: $(ANDROID_PREBUILT_DEPS_DIR)_pull
+#ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
 
 $(ANDROID_BUILD_DIR) $(ANDROID_PREBUILT_DIR):
 	mkdir -p $@
 
-$(ANDROID_PREBUILT_DEPS_DIR): | $(ANDROID_PREBUILT_DIR)
-	cd $(ANDROID_PREBUILT_DIR) && git clone --depth 1 https://github.com/evernym/indy-android-dependencies.git
+$(ANDROID_PREBUILT_DIR): | $(ANDROID_BUILD_DIR)
+	mkdir -p $@
 
-# TODO activate pulling changes if needed
-#$(ANDROID_PREBUILT_DEPS_DIR)_pull: | $(ANDROID_PREBUILT_DEPS_DIR)
-#	git --git-dir $(ANDROID_PREBUILT_DEPS_DIR)/.git --work-tree $(ANDROID_PREBUILT_DEPS_DIR) pull --depth 1
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/openssl_%.zip | $(ANDROID_PREBUILT_DIR)
+$(ANDROID_PREBUILT_DIR)/openssl_%.zip:
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL)/deps/openssl/openssl_$*.zip
 
-$(ANDROID_PREBUILT_DIR)/%.zip: $(ANDROID_PREBUILT_DEPS_DIR)/prebuilt/%.zip
-	mkdir -p $(@D)
-	$(CP) $(ANDROID_PREBUILT_DEPS_DIR)/prebuilt/$*.zip $(@D)/$(*F).zip
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libsodium_%.zip | $(ANDROID_PREBUILT_DIR)
+$(ANDROID_PREBUILT_DIR)/libsodium_%.zip:
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL)/deps/sodium/libsodium_$*.zip
 
-$(ANDROID_PREBUILT_DIR)/%/libindy.so $(ANDROID_PREBUILT_DIR)/%/libindy.a: image_lst_libindy_android
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip | $(ANDROID_PREBUILT_DIR)
+$(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip:
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL)/$(LIBINDY_BRANCH)/$(LIBINDY_VERSION)/libindy_android_$*_$(LIBINDY_VERSION).zip
 
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/%
+$(ANDROID_PREBUILT_DIR)/%: $(ANDROID_PREBUILT_DIR)/%.zip
+	unzip -o -qq  -d $(<D) $<
+	touch $@
 
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_%_$(LIBINDY_VERSION)
+$(ANDROID_PREBUILT_DIR)/libindy_%_$(LIBINDY_VERSION): $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
+	unzip -o -qq  -d $(<D) $<
+	touch $@
 
-
-.PRECIOUS: $(ANDROID_PREBUILT_DIR)/%.zip $(ANDROID_PREBUILT_DIR)/%/libindy.so $(ANDROID_PREBUILT_DIR)/%/libindy.a
-prebuilt_%: $(ANDROID_PREBUILT_DIR)/openssl/openssl_%.zip \
-			$(ANDROID_PREBUILT_DIR)/sodium/libsodium_%.zip \
-			$(ANDROID_PREBUILT_DIR)/zmq/libzmq_%.zip ;
-#	\
-#			$(ANDROID_PREBUILT_DIR)/%/libindy.so \
-#			$(ANDROID_PREBUILT_DIR)/%/libindy.a ;
+prebuilt_%: $(ANDROID_PREBUILT_DIR)/openssl_% \
+			$(ANDROID_PREBUILT_DIR)/libsodium_% \
+			$(ANDROID_PREBUILT_DIR)/libindy_%_$(LIBINDY_VERSION) ;
 
 build_android: $(patsubst %,prebuilt_%,$(ANDROID_ARCHS)) 
