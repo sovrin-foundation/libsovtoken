@@ -1,12 +1,6 @@
 //!
 //! tests for API related functions
 
-
-#![warn(unused_imports)]
-#![allow(unused_variables)]
-#![allow(dead_code)]
-#[allow(unused_imports)]
-
 extern crate sovtoken;
 extern crate rust_indy_sdk as indy;                      // lib-sdk project
 
