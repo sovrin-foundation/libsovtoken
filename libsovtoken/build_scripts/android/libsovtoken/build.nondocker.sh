@@ -8,7 +8,7 @@ TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
 
 BUILD_DIR=${BUILD_DIR:-${PWD}/_build}
 PREBUILT=${PREBUILT:-"${BUILD_DIR}/android-dependencies"}
-TARGET_DIR=${BUILD_DIR}/libsovtoken
+TARGET_DIR=${TARGET_DIR:-${BUILD_DIR}/libsovtoken}
 
 LIBSOVTOKEN_DIR=$(abspath ${PWD}/../../..)
 
@@ -86,8 +86,6 @@ else
 fi
 
 mkdir -p ${PREBUILT}
-
-rm -rf "$TARGET_DIR"
 mkdir -p "$TARGET_DIR"
 
 if [ -z "$ANDROID_NDK_ROOT" ]; then
@@ -95,8 +93,6 @@ if [ -z "$ANDROID_NDK_ROOT" ]; then
 fi
 
 export PKG_CONFIG_ALLOW_CROSS=1
-
-mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
 
 if [ ! -d "${ANDROID_NDK_ROOT}" ] ; then
     NDK=${TARGET_NDK}-${UNAME}-$(uname -m)
@@ -145,6 +141,7 @@ for target in ${archs[@]}; do
         python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl gnustl --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
     fi
 
+    mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
     cat > ${LIBSOVTOKEN_DIR}/.cargo/config <<EOF
 [target.${CROSS_COMPILE}]
 ar = "${AR}"
@@ -183,6 +180,8 @@ EOF
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
     cargo update
     cargo build -vv --release --target=${CROSS_COMPILE}
+    rm -rf "${LIBSOVTOKEN_DIR}/.cargo"
+
     unset LIBINDY_DIR
     for filename in libsovtoken.so libsovtoken.a; do
         if [ -f "${_CARGO_TARGET_DIR}/${CROSS_COMPILE}/release/${filename}" ] ; then
