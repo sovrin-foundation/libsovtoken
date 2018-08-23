@@ -4,22 +4,31 @@ abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
 }
 
-TARGET_API=$(grep api ../android_settings.txt | cut -d '=' -f 2)
 TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
-PREBUILT="${PWD}/android-dependencies"
-FILEY_URL="https://repo.corp.evernym.com/filely/android/"
+
+BUILD_DIR=${BUILD_DIR:-${PWD}/_build}
+PREBUILT=${PREBUILT:-"${BUILD_DIR}/android-dependencies"}
+TARGET_DIR=${BUILD_DIR}/libsovtoken
+
 LIBSOVTOKEN_DIR=$(abspath ${PWD}/../../..)
+
+if [ -z "${CARGO_TARGET_DIR+x}" ]; then
+    _CARGO_TARGET_DIR=target
+else
+    _CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-.}"
+fi
+
 
 GREEN="[0;32m"
 BLUE="[0;34m"
 NC="[0m"
 ESCAPE="\033"
 UNAME=$(uname | tr '[:upper:]' '[:lower:]')
-NDK=${TARGET_NDK}-${UNAME}-$(uname -m)
 
-while getopts ":d" opt; do
+while getopts ":ds" opt; do
     case ${opt} in
-        d) export DOWNLOAD_PREBUILTS="1";;
+        d) DOWNLOAD_PREBUILTS="1";;
+        s) SKIP_PACKAGING="1";;
         \?);;
     esac
 done
@@ -70,7 +79,7 @@ get_cross_compile() {
     esac
 }
 
-if [ $# -gt 1 ] ; then
+if [ $# -gt 0 ] ; then
     archs=$@
 else
     archs=(arm armv7 arm64 x86 x86_64)
@@ -78,12 +87,19 @@ fi
 
 mkdir -p ${PREBUILT}
 
-export ANDROID_NDK_ROOT="${PWD}/${UNAME}-${TARGET_NDK}"
+rm -rf "$TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+
+if [ -z "$ANDROID_NDK_ROOT" ]; then
+    export ANDROID_NDK_ROOT="${BUILD_DIR}/${UNAME}-${TARGET_NDK}"
+fi
+
 export PKG_CONFIG_ALLOW_CROSS=1
 
 mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
 
 if [ ! -d "${ANDROID_NDK_ROOT}" ] ; then
+    NDK=${TARGET_NDK}-${UNAME}-$(uname -m)
     if [ ! -f "${NDK}.zip" ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading ${NDK}${ESCAPE}${NC}"
         curl -sSLO https://dl.google.com/android/repository/${NDK}.zip || exit 1
@@ -94,11 +110,15 @@ if [ ! -d "${ANDROID_NDK_ROOT}" ] ; then
     fi
     echo -e "${ESCAPE}${GREEN}Extracting ${NDK}${ESCAPE}${NC}"
     unzip -o -qq ${NDK}.zip
-    mv ${TARGET_NDK} ${UNAME}-${TARGET_NDK}
+    mv ${TARGET_NDK} ${ANDROID_NDK_ROOT}
 fi
 
 for target in ${archs[@]}; do
     export CROSS_COMPILE=$(get_cross_compile ${target})
+
+    _TARGET_DIR=${TARGET_DIR}/${CROSS_COMPILE}
+    rm -rf ${_TARGET_DIR}
+    mkdir -p ${_TARGET_DIR}
 
     arch=${target}
     if [ ${target} = "armv7" ] ; then
@@ -110,7 +130,7 @@ for target in ${archs[@]}; do
     else
 	    TARGET_API=21
     fi
-    export TOOLCHAIN_DIR=${PWD}/${UNAME}-${arch}
+    export TOOLCHAIN_DIR=${BUILD_DIR}/${UNAME}-${arch}
 
     ARCH_CROSS=$(get_cross_compile ${arch})
 
@@ -130,7 +150,7 @@ for target in ${archs[@]}; do
 ar = "${AR}"
 linker = "${CC}"
 EOF
-    check=$(rustup show | grep ${CROSS_COMPILE})
+    check=$(rustup show | grep ${CROSS_COMPILE} || true)
     if [ -z "${check}" ] ; then
         rustup target add ${CROSS_COMPILE}
     fi
@@ -161,11 +181,12 @@ EOF
     fi
 
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
-    cargo build --release --target=${CROSS_COMPILE}
+    cargo update
+    cargo build -vv --release --target=${CROSS_COMPILE}
     unset LIBINDY_DIR
     for filename in libsovtoken.so libsovtoken.a; do
-        if [ -f "target/${CROSS_COMPILE}/release/${filename}" ] ; then
-            mv target/${CROSS_COMPILE}/release/${filename} target/${CROSS_COMPILE}/
+        if [ -f "${_CARGO_TARGET_DIR}/${CROSS_COMPILE}/release/${filename}" ] ; then
+            cp ${_CARGO_TARGET_DIR}/${CROSS_COMPILE}/release/${filename} ${_TARGET_DIR}
         else
             echo STDERR "Build didn't complete for ${arch}"
             exit 1
@@ -174,12 +195,8 @@ EOF
     command popd > /dev/null
 done
 
-BUILD_TIME=$(date -u "+%Y%m%d%H%M")
-GIT_REV=$(git rev-parse --short HEAD)
-command pushd ${LIBSOVTOKEN_DIR} > /dev/null
-LIBSOVTOKEN_VER=$(grep ^version Cargo.toml | head -n 1 | cut -d '"' -f 2)
-mv target libsovtoken
-zip -qq "libsovtoken_${LIBSOVTOKEN_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" `find libsovtoken -type f \( -name "libsovtoken.so" -o -name "libsovtoken.a" \) | grep android | egrep -v 'deps|debug|release'`
-mv libsovtoken target
-command popd > /dev/null
-mv ${LIBSOVTOKEN_DIR}/"libsovtoken_${LIBSOVTOKEN_VER}-${BUILD_TIME}-${GIT_REV}_all.zip" .
+if [ ! "${SKIP_PACKAGING}" == "1" ]; then
+   . ./pack.sh "$TARGET_DIR"
+else
+    echo "Skipping packaging"
+fi
