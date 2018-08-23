@@ -15,6 +15,8 @@ ifndef PROJECT_DIR
 PROJECT_DIR := $(shell git rev-parse --show-toplevel)
 endif
 
+GIT_SHA1_SHORT ?= $(shell git rev-parse --short HEAD)
+
 # project variables
 SRC_DIR_NAME := libsovtoken
 SRC_DIR := $(PROJECT_DIR)/$(SRC_DIR_NAME)
@@ -54,8 +56,6 @@ LST_BASE_DOCKER_TAG ?=
 LST_CI_DOCKER_TAG ?=
 LST_ANDROID_NDK_DOCKER_TAG ?=
 LST_LIBINDY_ANDROID_DOCKER_TAG ?=
-
-ANDROID_NDK_VERSION ?= r16b
 
 DOCKER_BUILD_NETWORK ?= host
 
@@ -158,33 +158,8 @@ IMAGE_LST_LIBINDY_ANDROID_CTX_DIR = docker/libindy_android/$(OSNAME)
 
 include ./Makefile.android.in
 
-
 $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk:
 	git clone --depth $(INDY_SDK_REPO_DEPTH) --branch $(INDY_SDK_SHA1) https://github.com/hyperledger/indy-sdk.git $@
-
-.PRECIOUS: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk/.sha1.%
-$(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk/.sha1.%: | $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk
-	rm -f $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk/.sha1.*
-	git pull --depth $(INDY_SDK_REPO_DEPTH) --no-edit
-	git --git-dir $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk/.git \
-		--work-tree $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk checkout $*
-	touch $@
-
-.PRECIOUS: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/openssl_%.zip
-$(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/openssl_%.zip: $(ANDROID_PREBUILT_DIR)/openssl/openssl_%.zip
-	$(CP) $< $@
-	
-.PRECIOUS: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/libsodium_%.zip
-$(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/libsodium_%.zip: $(ANDROID_PREBUILT_DIR)/sodium/libsodium_%.zip
-	$(CP) $< $@
-
-.PRECIOUS: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/libzmq_%.zip
-$(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/libzmq_%.zip: $(ANDROID_PREBUILT_DIR)/zmq/libzmq_%.zip
-	$(CP) $< $@
-
-image_lst_libindy_android_prebuilt_%: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/openssl_%.zip \
-									  $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/libsodium_%.zip \
-									  $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/libzmq_%.zip ;
 
 indy-sdk-sha1-%: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk/.sha1.% ;
 

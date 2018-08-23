@@ -33,6 +33,7 @@ docker_from_tag = $(call check_non_empty,$(shell grep '^FROM $(1):' $(2) | cut -
 					"Tag for FROM $(1) not found in dockerfile $(2)")
 docker_from_version = $(firstword $(subst -, ,$(call docker_from_tag,$(1),$(2))))
 to_upper = $(shell echo $(1) | awk '{print toupper($$0)}')
+to_lower = $(shell echo $(1) | awk '{print tolower($$0)}')
 
 # required for in-docker targets
 DOCKER_NAME ?=

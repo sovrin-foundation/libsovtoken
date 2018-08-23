@@ -1,10 +1,20 @@
-ANDROID_BUILD_DIR := _build_android
+REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL := https://repo.sovrin.org/android/libindy
+LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS=$(PROJECT_DIR)/libsovtoken/build_scripts/android
+LIBSOVTOKEN_DEPS_FILE := $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/libsovtoken/libsovtoken.dependencies.txt
+LIBSOVTOKEN_ANDROID_SETTINGS_FILE := $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/android_settings.txt
+ANDROID_BUILD_DIR := $(PROJECT_DIR)/devops/_build_android
 ANDROID_PREBUILT_DIR=$(ANDROID_BUILD_DIR)/prebuilt
 
-REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL := https://repo.sovrin.org/android/libindy
-LIBSOVTOKEN_DEPS_FILE := $(PROJECT_DIR)/libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt
-
 get_android_dependency = $(call check_non_empty,$(shell sed -n -e '/^$(1)=.\+/bx' -e 'd' -e ':x' -e 'p' -e 'q' $(2)),"$(1) is not found in $(2)")
+
+ifndef ANDROID_NDK_VERSION
+ANDROID_NDK_NAME := $(shell grep ndk $(LIBSOVTOKEN_ANDROID_SETTINGS_FILE) | cut -d '=' -f 2)
+ANDROID_NDK_VERSION := $(lastword $(subst -, ,$(ANDROID_NDK_NAME)))
+else
+ANDROID_NDK_NAME := android-ndk-$(ANDROID_NDK_VERSION)
+endif
+
+ANDROID_NDK_ARCHIVE_NAME := $(ANDROID_NDK_NAME)-$(call to_lower,$(shell uname))-$(shell uname -m).zip
 
 LIBINDY_DEP_SPEC := $(subst =, ,$(call get_android_dependency,libindy,$(LIBSOVTOKEN_DEPS_FILE)))
 LIBINDY_VERSION ?= $(word 2,$(LIBINDY_DEP_SPEC))
@@ -22,9 +32,10 @@ LIBINDY_BRANCH ?= $(word 3,$(LIBINDY_DEP_SPEC))
 # TODO what about multi-staged builds
 docker_parent_parts = $(shell sed -n -e 's/FROM[[:space:]]\+\($(if $(2),$(subst /,\/,$(2)),[^[:space:]]\+)\):\([^[:space:]]\+\)/\1 \2/p' -e 'q' $(1))
 
+ANDROID_ARCHS ?= arm x86_64
 #ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
 
-$(ANDROID_BUILD_DIR) $(ANDROID_PREBUILT_DIR):
+$(ANDROID_BUILD_DIR):
 	mkdir -p $@
 
 $(ANDROID_PREBUILT_DIR): | $(ANDROID_BUILD_DIR)
@@ -32,28 +43,57 @@ $(ANDROID_PREBUILT_DIR): | $(ANDROID_BUILD_DIR)
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/openssl_%.zip | $(ANDROID_PREBUILT_DIR)
 $(ANDROID_PREBUILT_DIR)/openssl_%.zip:
-	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL)/deps/openssl/openssl_$*.zip
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/deps/openssl/openssl_$*.zip
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/libsodium_%.zip | $(ANDROID_PREBUILT_DIR)
 $(ANDROID_PREBUILT_DIR)/libsodium_%.zip:
-	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL)/deps/sodium/libsodium_$*.zip
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/deps/sodium/libsodium_$*.zip
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip | $(ANDROID_PREBUILT_DIR)
 $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip:
-	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILD_URL)/$(LIBINDY_BRANCH)/$(LIBINDY_VERSION)/libindy_android_$*_$(LIBINDY_VERSION).zip
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/$(LIBINDY_BRANCH)/$(LIBINDY_VERSION)/libindy_android_$*_$(LIBINDY_VERSION).zip
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/%
 $(ANDROID_PREBUILT_DIR)/%: $(ANDROID_PREBUILT_DIR)/%.zip
-	unzip -o -qq  -d $(<D) $<
+	unzip -o -qq -d $(<D) $<
 	touch $@
 
-.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_%_$(LIBINDY_VERSION)
-$(ANDROID_PREBUILT_DIR)/libindy_%_$(LIBINDY_VERSION): $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
-	unzip -o -qq  -d $(<D) $<
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_%
+$(ANDROID_PREBUILT_DIR)/libindy_%: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
+	unzip -o -qq -d $(<D) $<
 	touch $@
 
-prebuilt_%: $(ANDROID_PREBUILT_DIR)/openssl_% \
+$(ANDROID_BUILD_DIR)/$(ANDROID_NDK_ARCHIVE_NAME): | $(ANDROID_BUILD_DIR)
+	cd $(@D) && curl -fLO https://dl.google.com/android/repository/$(@F)
+
+$(ANDROID_BUILD_DIR)/$(ANDROID_NDK_NAME): $(ANDROID_BUILD_DIR)/$(ANDROID_NDK_ARCHIVE_NAME)
+	unzip -o -qq -d $(<D) $<
+	touch $@
+
+.PHONY: android_ndk
+android_ndk: $(ANDROID_BUILD_DIR)/$(ANDROID_NDK_NAME)
+
+android_prebuilt_%: $(ANDROID_PREBUILT_DIR)/openssl_% \
 			$(ANDROID_PREBUILT_DIR)/libsodium_% \
-			$(ANDROID_PREBUILT_DIR)/libindy_%_$(LIBINDY_VERSION) ;
+			$(ANDROID_PREBUILT_DIR)/libindy_% ;
 
-build_android: $(patsubst %,prebuilt_%,$(ANDROID_ARCHS)) 
+android_build_%: android_ndk android_prebuilt_%
+	cd $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/libsovtoken && \
+		BUILD_DIR=$(ANDROID_BUILD_DIR) \
+		TARGET_DIR=$(ANDROID_BUILD_DIR)/libsovtoken \
+		ANDROID_NDK_ROOT=$(ANDROID_BUILD_DIR)/$(ANDROID_NDK_NAME) \
+		PREBUILT=$(ANDROID_PREBUILT_DIR) \
+		OPENSSL_DIR=$(ANDROID_PREBUILT_DIR)/openssl_$* \
+		SODIUM_DIR=$(ANDROID_PREBUILT_DIR)/libsodium_$* \
+		SODIUM_LIB_DIR=$(ANDROID_PREBUILT_DIR)/libsodium_$*/lib \
+		SODIUM_INCLUDE_DIR=$(ANDROID_PREBUILT_DIR)/libsodium_$*/include \
+		LIBINDY_DIR=$(ANDROID_PREBUILT_DIR)/libindy_$*/lib \
+			/bin/bash -ex build.nondocker.sh -s $*
+
+.PHONY: android_pack
+android_pack:
+	GIT_REV=$(GIT_SHA1_SHORT) \
+	LIBSOVTOKEN_VER=$(SRC_VERSION) \
+		/bin/bash -ex $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/libsovtoken/pack.sh $(ANDROID_BUILD_DIR)/libsovtoken
+
+android_build: $(patsubst %,android_build_%,$(ANDROID_ARCHS)) android_pack
