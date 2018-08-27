@@ -42,5 +42,5 @@ This includes changes to any files in the devops folder. It is to be noted that 
 
 1. A maintainer must thoroughly read the changes and consider the effects of the pull request
 2. A maintainer must consider and address any concerns left in the comments section
-2. A maintainer must check that all tests pass in the jenkins enviorment
-3. A maintainer must test the changes on his local machine and make sure that all tests pass using the ***libsovtoken*** `indy_pool` 
+3. A maintainer must check that all tests pass in the jenkins environment
+4. A maintainer must test the changes on his local machine and make sure that all tests pass using the ***libsovtoken*** `indy_pool` 
