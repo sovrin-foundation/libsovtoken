@@ -108,7 +108,6 @@ mod general_tests {
     fn success_from_right_full_string_when_exceeding_len() {
         let data = "1234567890".to_string();
 
-        let len = data.len();
         let copy = data.as_str();
         let result = copy.from_right(75);
 

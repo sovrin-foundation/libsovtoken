@@ -1,12 +1,6 @@
 //!
 //! tests for Payment related functions
 
-
-#![warn(unused_imports)]
-#![allow(unused_variables)]
-#![allow(dead_code)]
-#[allow(unused_imports)]
-
 extern crate env_logger;
 extern crate libc;
 extern crate rand;
@@ -28,7 +22,6 @@ use std::time::Duration;
 use indy::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
-use sovtoken::utils::logger::*;
 use sovtoken::utils::test::callbacks;
 mod utils;
 use rust_base58::FromBase58;
@@ -38,11 +31,8 @@ const WALLET_ID: i32 = 99;
 const COMMAND_HANDLE: i32 = 1;
 const TIMEOUT_SECONDS: u64 = 20;
 static VALID_SEED_LEN: usize = 32;
-static WALLET_NAME_1: &'static str = "integration_test_wallet_1";
-static WALLET_NAME_2: &'static str = "integration_test_wallet_2";
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;
 static VALID_CONFIG_EMPTY_SEED_JSON: &'static str = r#"{}"#;
-static TESTING_LOGGER: ConsoleLogger = ConsoleLogger;
 
 
 // ***** HELPER METHODS  *****
@@ -56,7 +46,7 @@ fn rand_string(length : usize) -> String {
     return s;
 }
 
-extern "C" fn empty_create_payment_callback(command_handle_: i32, err: i32, payment_address: *const c_char) -> i32 {
+extern "C" fn empty_create_payment_callback(_command_handle: i32, _err: i32, _payment_address: *const c_char) -> i32 {
     return ErrorCode::Success as i32;
 }
 
@@ -163,7 +153,7 @@ pub fn create_address_two_times_with_the_same_seed() {
 
     let seed = json!({"seed": "00000000000000000000000000000000"}).to_string();
 
-    let pa1 = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap();
+    let _pa1 = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap();
     let err = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap_err();
 
     assert_eq!(err, indy::ErrorCode::WalletItemAlreadyExists);

@@ -1,20 +1,14 @@
 //! types used for parse_response_with_fees_handler
-#![allow(unused_variables)]
-#![allow(unused_imports)]
 
 use logic::address::add_qualifer_to_address;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
                              TransactionMetaData,
-                             RequireSignature,
-                             SignatureValues};
+                             RequireSignature};
 use logic::parsers::error_code_parser;
-use logic::input::Inputs;
-use logic::output::{Outputs, Output};
-use utils::json_conversion::JsonSerialize;
 use indy::ErrorCode;
-use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion, ReqId};
+use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion};
 
 /**
     for parse_response_with_fees_handler input resp_json
@@ -145,11 +139,7 @@ pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFe
 
 #[cfg(test)]
 mod parse_response_with_fees_handler_tests {
-    #[allow(unused_imports)]
-
-    use logic::address::{ADDRESS_LEN, VERKEY_LEN, ADDRESS_CHECKSUM_LEN};
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use utils::random::{rand_req_id, rand_string};
+    use utils::json_conversion::{JsonDeserialize};
     use super::*;
 
     // "fees" : [ [ (3) ], [ (2) ], int ]
