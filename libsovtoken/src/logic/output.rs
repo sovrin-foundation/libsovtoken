@@ -177,7 +177,7 @@ mod output_tests {
     #[test]
     fn deserialize_output_tuple() {
         let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
-        let expected = Output::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10);
+        let expected = output();
         assert_valid_deserialize(json, expected);
     }
 
@@ -189,15 +189,21 @@ mod output_tests {
         assert_invalid_deserialize(json, "missing field `amount`");
     }
 
-    // this test ensures that the deserialized JSON is serialized correctly
+    #[test]
+    fn serialize_valid_output_object() {
+        let output = output();
+        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
+        assert_valid_serialize(output, json);
+    }
+
     #[test]
     fn serializing_fee_struct_output_config() {
-        let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10);
+        let output = output();
 
         let fee: OutputConfig = OutputConfig {
             ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]]}"#);
     }
 }
