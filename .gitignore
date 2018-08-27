@@ -20,6 +20,7 @@ libsovtoken/build_scripts/android/libsovtoken/linux-arm/
 libsovtoken/build_scripts/android/libsovtoken/linux-arm64/
 libsovtoken/build_scripts/android/libsovtoken/linux-x86/
 libsovtoken/build_scripts/android/libsovtoken/linux-x86_64/
+libsovtoken/build_scripts/android/libsovtoken/linux-android-ndk-r16b/
 # Mac directory attributes
 *.DS_Store
 *.deb
