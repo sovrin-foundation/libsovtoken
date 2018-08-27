@@ -24,12 +24,16 @@ services:
       args:
           - PYTHON3_VERSION
           - ANDROID_NDK_VERSION
+          - ANDROID_NDK_DIR
     image: ${LST_ANDROID_NDK_DOCKER_NAME}:${LST_ANDROID_NDK_DOCKER_TAG}
 
-  libindy_android:
+  android_build:
     build:
-      context: ./libindy_android/$OSNAME
+      context: ./android_build/$OSNAME
       network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - u_id=${DOCKER_UID}
-    image: ${LST_LIBINDY_ANDROID_DOCKER_NAME}:${LST_LIBINDY_ANDROID_DOCKER_TAG}
+          - ANDROID_ARCHS
+          - ANDROID_PREBUILT_DIR
+          - RUST_TARGETS
+    image: ${LST_ANDROID_BUILD_DOCKER_NAME}:${LST_ANDROID_BUILD_DOCKER_TAG}

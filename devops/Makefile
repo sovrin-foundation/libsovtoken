@@ -55,7 +55,7 @@ DOCKER_NAME ?= evernym/libsovtoken
 LST_BASE_DOCKER_TAG ?=
 LST_CI_DOCKER_TAG ?=
 LST_ANDROID_NDK_DOCKER_TAG ?=
-LST_LIBINDY_ANDROID_DOCKER_TAG ?=
+LST_ANDROID_BUILD_DOCKER_TAG ?=
 
 DOCKER_BUILD_NETWORK ?= host
 
@@ -97,19 +97,18 @@ _image_lst_%_tag: _image_lst_%_version
 	$(eval _i_tag=$(if $(value LST_$(_stem)_DOCKER_TAG),$(value LST_$(_stem)_DOCKER_TAG),$(_i_version)))
 
 _image_lst_%_lib_parent:
-	$(eval _base_i=$(call check_non_empty,$(call docker_parent_parts,docker/$*/$(OSNAME)/Dockerfile,$(LIB_IMG_NAME))))
+	$(eval _base_i=$(call check_non_empty,$(call docker_parent_parts,docker/$*/$(OSNAME)/Dockerfile,$(LIB_IMG_NAME)),"No base image for $* found"))
 	MAKEFLAGS="$(MAKEFLAGS)" $(MAKE) image_dockerbase_$(word 2,$(_base_i))
 
 image_lst_%_version: _image_lst_%_version
 	echo $(_i_version)
 
+docker/%/$(OSNAME)/Cargo.toml: $(SRC_DIR)/Cargo.toml docker/%/$(OSNAME)
+	$(CP) -f $< $@
+
 ##########################
 # libsovtoken base image #
 # ###################### #
-
-docker/base/$(OSNAME)/Cargo.toml: $(SRC_DIR)/Cargo.toml docker/base/$(OSNAME)
-	$(CP) -f $< $@
-
 image_lst_base: _image_lst_base_lib_parent _image_lst_base_tag docker/base/$(OSNAME)/Cargo.toml
 	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
@@ -122,7 +121,6 @@ image_lst_base: _image_lst_base_lib_parent _image_lst_base_tag docker/base/$(OSN
 ##########################
 # libsovtoken ci image #
 # ###################### #
-
 image_lst_ci: image_lst_base _image_lst_ci_tag 
 	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
@@ -132,59 +130,69 @@ image_lst_ci: image_lst_base _image_lst_ci_tag
 		docker-compose -f docker/docker-compose.yml build ci
 
 
+include ./Makefile.android.in
 # ############################# #
 # libsovtoken android ndk image #
 # ############################# #
+docker/android_ndk/$(OSNAME)/$(ANDROID_NDK_ARCHIVE_NAME): $(ANDROID_BUILD_DIR)/$(ANDROID_NDK_ARCHIVE_NAME)
+	$(CP) -f $< $@
 
-docker/android_ndk/$(OSNAME)/android-ndk-$(ANDROID_NDK_VERSION)-linux-x86_64.zip:
-	wget https://dl.google.com/android/repository/$(@F) -O $@
+_IN_DOCKER_BUILD_DIR := /tmp/android
+_IN_DOCKER_ANDROID_NDK_DIR := $(_IN_DOCKER_BUILD_DIR)/android_ndk
 
-image_lst_android_ndk: _image_lst_android_ndk_lib_parent _image_lst_android_ndk_tag docker/android_ndk/$(OSNAME)/android-ndk-$(ANDROID_NDK_VERSION)-linux-x86_64.zip
+image_lst_android_ndk: _image_lst_android_ndk_lib_parent \
+						_image_lst_android_ndk_tag \
+						docker/android_ndk/$(OSNAME)/$(ANDROID_NDK_ARCHIVE_NAME)
 	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
 	LST_ANDROID_NDK_DOCKER_NAME=$(DOCKER_NAME) \
 	LST_ANDROID_NDK_DOCKER_TAG=$(_i_tag) \
 	ANDROID_NDK_VERSION=$(ANDROID_NDK_VERSION) \
+	ANDROID_NDK_DIR=$(_IN_DOCKER_ANDROID_NDK_DIR) \
 		docker-compose -f docker/docker-compose.yml build android_ndk
 
 
 ################################### #
-# libsovtoken libindy_android image #
+# libsovtoken android_build image #
 # ################################# #
-INDY_SDK_SHA1 ?= master
-INDY_SDK_REPO_DEPTH ?= 1
-IMAGE_LST_LIBINDY_ANDROID_CTX_DIR = docker/libindy_android/$(OSNAME)
+IMAGE_LST_ANDROID_BUILD_CTX_DIR := docker/android_build/$(OSNAME)
+_IN_DOCKER_PREBUILT_DIR := $(_IN_DOCKER_BUILD_DIR)/libsovtoken_prebuilt
 
-include ./Makefile.android.in
+$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/%.zip: $(ANDROID_PREBUILT_DIR)/%.zip
+	$(CP) -f $< $@
 
-$(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk:
-	git clone --depth $(INDY_SDK_REPO_DEPTH) --branch $(INDY_SDK_SHA1) https://github.com/hyperledger/indy-sdk.git $@
-
-indy-sdk-sha1-%: $(IMAGE_LST_LIBINDY_ANDROID_CTX_DIR)/indy-sdk/.sha1.% ;
-
-image_lst_libindy_android: image_lst_android_ndk \
-						   _image_lst_libindy_android_tag \
-						   indy-sdk-sha1-$(INDY_SDK_SHA1) \
-						   $(patsubst %,image_lst_libindy_android_prebuilt_%,$(ANDROID_ARCHS))
+image_lst_android_build: image_lst_android_ndk \
+							_image_lst_android_build_tag \
+							docker/android_build/$(OSNAME)/Cargo.toml \
+							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/openssl_%.zip) \
+							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libsodium_%.zip) \
+							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip)
 	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
 	DOCKER_UID=$(DOCKER_UID) \
-	LST_LIBINDY_ANDROID_DOCKER_NAME=$(DOCKER_NAME) \
-	LST_LIBINDY_ANDROID_DOCKER_TAG=$(_i_tag) \
-		docker-compose -f docker/docker-compose.yml build libindy_android
+	LST_ANDROID_BUILD_DOCKER_NAME=$(DOCKER_NAME) \
+	LST_ANDROID_BUILD_DOCKER_TAG=$(_i_tag) \
+	ANDROID_ARCHS="$(ANDROID_ARCHS)" \
+	ANDROID_PREBUILT_DIR=$(_IN_DOCKER_PREBUILT_DIR) \
+		docker-compose -f docker/docker-compose.yml build android_build
+
+android_build_in_docker_opts:
+	$(eval DOCKER_OPTS= -e ANDROID_NDK_DIR=$(_IN_DOCKER_ANDROID_NDK_DIR) \
+						-e ANDROID_PREBUILT_DIR=$(_IN_DOCKER_PREBUILT_DIR))
+
 
 ######
 
 LST_BASE_IMAGE_BASED_TARGETS = build $(LIBS) package publish_crate clean
-$(patsubst %,image_%, $(LST_BASE_IMAGE_BASED_TARGETS)): image_lst_base
+$(LST_BASE_IMAGE_BASED_TARGETS:%=image_%): image_lst_base
 
-CI_IMAGE_BASED_TARGETS = test_dry test
-$(patsubst %,image_%, $(CI_IMAGE_BASED_TARGETS)): image_lst_ci
+LST_CI_IMAGE_BASED_TARGETS = test_dry test
+$(LST_CI_IMAGE_BASED_TARGETS:%=image_%): image_lst_ci
 
-ANDROID_NDK_IMAGE_BASED_TARGETS = build-android
-$(patsubst %,image_%, $(ANDROID_NDK_IMAGE_BASED_TARGETS)): image_lst_android_ndk
+ANDROID_NDK_IMAGE_BASED_TARGETS = android_build
+$(ANDROID_NDK_IMAGE_BASED_TARGETS:%=image_%): image_lst_android_build
 
 ######
 
