@@ -1,6 +1,4 @@
 //! types used for parse_payment_response_handler
-#![allow(unused_variables)]
-#![allow(unused_imports)]
 
 use indy::ErrorCode;
 use logic::address::add_qualifer_to_address;
@@ -8,11 +6,9 @@ use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
                              TransactionMetaData,
-                             RequireSignature,
-                             SignatureValues};
+                             RequireSignature};
 use logic::parsers::error_code_parser;
 use logic::type_aliases::{TokenAmount, ProtocolVersion};
-use utils::json_conversion::JsonSerialize;
 
 /**
     for parse_payment_response_handler input resp_json
@@ -113,10 +109,8 @@ pub fn from_response(base: ParsePaymentResponse) -> Result<ParsePaymentReply, Er
 
 #[cfg(test)]
 mod parse_payment_response_tests {
-    #[allow(unused_imports)]
-    use logic::parsers::common::{ResponseOperations, UTXO, TXO};
-    use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use utils::random::{rand_req_id, rand_string};
+    use logic::parsers::common::{ResponseOperations};
+    use utils::json_conversion::{JsonDeserialize};
     use super::*;
 
     static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
