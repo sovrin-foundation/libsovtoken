@@ -15,7 +15,7 @@ Cargo.lock
 **/*.rs.bk
 # builds
 libsovtoken/build_scripts/android/libsovtoken/android-dependencies/
-libsovtoken/build_scripts/android/libsovtoken/linux-android-ndk-r17b/
+libsovtoken/build_scripts/android/libsovtoken/linux-android-ndk-*/
 libsovtoken/build_scripts/android/libsovtoken/linux-arm/
 libsovtoken/build_scripts/android/libsovtoken/linux-arm64/
 libsovtoken/build_scripts/android/libsovtoken/linux-x86/
