@@ -1,4 +1,4 @@
-ARG ANDROID_PREBUILT_DIR=/tmp/android_prebuilt
+ARG ANDROID_PREBUILT_DIR=/tmp/android/libsovtoken_prebuilt
 
 FROM evernym/libsovtoken:android_ndk-xenial-0.2.0
 # TODO LABEL maintainer="Name <email-address>"

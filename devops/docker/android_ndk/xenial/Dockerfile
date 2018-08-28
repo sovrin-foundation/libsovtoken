@@ -1,4 +1,4 @@
-ARG ANDROID_NDK_DIR=/tmp/android_ndk
+ARG ANDROID_NDK_DIR=/tmp/android/android_ndk
 ARG ANDROID_NDK_VERSION=r16b
 
 FROM evernym/dockerbase:rust-xenial-0.6.0
