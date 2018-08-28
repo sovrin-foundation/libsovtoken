@@ -22,8 +22,7 @@ LIBINDY_DEP_SPEC := $(subst =, ,$(call get_android_dependency,libindy,$(LIBSOVTO
 LIBINDY_VERSION ?= $(word 2,$(LIBINDY_DEP_SPEC))
 LIBINDY_BRANCH ?= $(word 3,$(LIBINDY_DEP_SPEC))
 
-ANDROID_ARCHS ?= arm x86_64
-#ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
+ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
 
 EXPORT_ENV += GIT_SHA1_SHORT
 

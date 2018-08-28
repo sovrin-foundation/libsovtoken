@@ -43,7 +43,7 @@ pipelineWrapper({
             def osname = 'xenial'
             def prTag = "cd-$osname-android"
             List goals = ['package_android']
-            List targetArchs = ['arm', 'x86_64']
+            List targetArchs = ['arm', 'armv7', 'arm64', 'x86', 'x86_64']
             def buildImageTag
 
             stage("$prTag: Resolve image tag") {
