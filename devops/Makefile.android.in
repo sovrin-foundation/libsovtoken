@@ -3,7 +3,7 @@ LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS=$(PROJECT_DIR)/libsovtoken/build_scripts/andro
 LIBSOVTOKEN_DEPS_FILE := $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/libsovtoken/libsovtoken.dependencies.txt
 LIBSOVTOKEN_ANDROID_SETTINGS_FILE := $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/android_settings.txt
 
-ANDROID_BUILD_DIR := $(PROJECT_DIR)/devops/_build_android
+ANDROID_BUILD_DIR := $(PROJECT_DIR)/devops/_build/android
 ANDROID_PREBUILT_DIR ?= $(ANDROID_BUILD_DIR)/prebuilt
 ANDROID_NDK_DIR ?= $(ANDROID_BUILD_DIR)
 
@@ -85,8 +85,9 @@ android_build_%: android_ndk android_prebuilt_%
 
 .PHONY: android_pack
 android_pack:
-	GIT_REV=$(GIT_SHA1_SHORT) \
+	PACKAGE_NAME=$(PACKAGE_NAME) \
 	LIBSOVTOKEN_VER=$(SRC_VERSION) \
+	GIT_REV=$(GIT_SHA1_SHORT) \
 		/bin/bash -ex $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/libsovtoken/pack.sh $(ANDROID_BUILD_DIR)/libsovtoken
 
-android_build: $(ANDROID_ARCHS:%=android_build_%) android_pack
+package_android: $(ANDROID_ARCHS:%=android_build_%) android_pack

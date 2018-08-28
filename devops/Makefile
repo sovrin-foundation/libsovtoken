@@ -38,13 +38,14 @@ LIB_DYNAMIC = $(LIB_TARGET_DIR)/$(LIBNAME).so
 LIBS = $(LIB_DYNAMIC) $(LIB_STATIC)
 
 # package related variables
+PACKAGE_NAME ?= $(LIBNAME)
 PRE_PACKAGE_GOALS := pre_package $(LIB_DYNAMIC)
 FPM_P_MAINTAINER := Evernym
 FPM_P_URL := https://github.com/evernym/libsovtoken
 FPM_P_LICENSE := Apache License 2.0
 FPM_P_VENDOR := Evernym
 FPM_P_DESCRIPTION := libsovtoken writen in Rust
-FPM_P_NAME = $(LIBNAME)
+FPM_P_NAME = $(PACKAGE_NAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
 FPM_P_DEPENDS = libindy
 FPM_P_OUTPUT_DIR = $(LIB_TARGET_DIR)
@@ -59,7 +60,7 @@ LST_ANDROID_BUILD_DOCKER_TAG ?=
 
 DOCKER_BUILD_NETWORK ?= host
 
-EXPORT_ENV += OSNAME RELEASE CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
+EXPORT_ENV += OSNAME RELEASE PACKAGE_NAME GIT_SHA1_SHORT CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
 
 .PHONY: all \
 		image_lst_base image_lst_ci image_lst_android_ndk \
@@ -178,7 +179,7 @@ image_lst_android_build: image_lst_android_ndk \
 	ANDROID_PREBUILT_DIR=$(_IN_DOCKER_PREBUILT_DIR) \
 		docker-compose -f docker/docker-compose.yml build android_build
 
-android_build_in_docker_opts:
+package_android_in_docker_opts:
 	$(eval DOCKER_OPTS= -e ANDROID_NDK_DIR=$(_IN_DOCKER_ANDROID_NDK_DIR) \
 						-e ANDROID_PREBUILT_DIR=$(_IN_DOCKER_PREBUILT_DIR))
 
@@ -191,7 +192,7 @@ $(LST_BASE_IMAGE_BASED_TARGETS:%=image_%): image_lst_base
 LST_CI_IMAGE_BASED_TARGETS = test_dry test
 $(LST_CI_IMAGE_BASED_TARGETS:%=image_%): image_lst_ci
 
-ANDROID_NDK_IMAGE_BASED_TARGETS = android_build
+ANDROID_NDK_IMAGE_BASED_TARGETS = package_android
 $(ANDROID_NDK_IMAGE_BASED_TARGETS:%=image_%): image_lst_android_build
 
 ######
