@@ -25,6 +25,7 @@ ARG ANDROID_NDK_DIR
 ENV PYTHON3_VERSION=${PYTHON3_VERSION:-3.5}
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python${PYTHON3_VERSION} \
+        python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # android ndk
@@ -39,4 +40,4 @@ RUN chmod +x /usr/local/bin/android-ndk-install
 
 # TODO CMD ENTRYPOINT ...
 
-ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.2.0
+ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.3.0
