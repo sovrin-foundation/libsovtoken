@@ -12,7 +12,15 @@ use serde_json;
 use utils::constants::txn_fields::OUTPUTS;
 use utils::ffi_support::c_pointer_from_string;
 
-type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
+type Outputs_ = Vec<Output_>;
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Output_ {
+    pub address: String,
+    pub seq_no: TxnSeqNo,
+    pub amount: TokenAmount
+}
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -79,11 +87,9 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
             for unspent_output in result.outputs {
 
-                let (_address, seq_no, amount) = unspent_output;
-
                 let payment_address = address::address_from_unqualified_address(&result.address.to_string())?;
-                let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
-                let utxo: UTXO = UTXO { payment_address, source: txo, amount, extra: "".to_string() };
+                let txo = (TXO { address: payment_address.clone(), seq_no: unspent_output.seq_no }).to_libindy_string()?;
+                let utxo: UTXO = UTXO { payment_address, source: txo, amount: unspent_output.amount, extra: "".to_string() };
 
                 utxos.push(utxo);
             }
@@ -127,8 +133,8 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
     let mut kvs: Vec<(String, Option<String>)> = Vec::new();
 
     for output in outputs {
-        kvs.push((get_utxo_state_key(&output.0, output.1),
-                  Some(output.2.to_string())));
+        kvs.push((get_utxo_state_key(&output.address, output.seq_no),
+                  Some(output.amount.to_string())));
     }
 
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData { kvs });
