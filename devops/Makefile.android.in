@@ -42,8 +42,8 @@ $(ANDROID_PREBUILT_DIR)/openssl_%.zip:
 $(ANDROID_PREBUILT_DIR)/libsodium_%.zip:
 	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/deps/sodium/libsodium_$*.zip
 
-.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip | $(ANDROID_PREBUILT_DIR)
-$(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip:
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
+$(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip: | $(ANDROID_PREBUILT_DIR)
 	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/$(LIBINDY_BRANCH)/$(LIBINDY_VERSION)/libindy_android_$*_$(LIBINDY_VERSION).zip
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/%
