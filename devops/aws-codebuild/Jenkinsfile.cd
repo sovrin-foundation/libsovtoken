@@ -11,16 +11,8 @@ logger.setGlobalLevel('TRACE')
 pipelineWrapper({
 
     nodeWrapper {
-        def packageName = 'libsovtoken'
+        def packageName = '_libsovtoken' // FIXME debug
         def srcVersion
-        def lastRevision
-        def debPVersion
-        def cratePVersion
-        def goals = ['package']
-
-        def buildImageTag
-        def osname = 'xenial'
-        def prTag = "cd-$osname"
 
         stage('Checkout sources from SCM') {
             checkout scm
@@ -28,7 +20,8 @@ pipelineWrapper({
 
         def evernymRepo = evLibrary.EvernymRepo.new(this)
         def utils = evLibrary.Utils.new(this)
-        def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
+        def git = evLibrary.Git.new(this)
+        def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('test-libsovtoken')
         def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
 
         stage('Resolve current source version') {
@@ -36,109 +29,211 @@ pipelineWrapper({
             logger.info("Current source version: $srcVersion")
         }
 
-        stage('Resolve last revision') {
-            lastRevision = evernymRepo.getLastRevision {
-                delegate.packageName = packageName
-                packageSrcVersion = srcVersion
-                repoDistr = 'agency-dev'
-            }
-
-            if (lastRevision) {
-                logger.info("Found last revision number: $lastRevision")
-            } else {
-                logger.info("No previous revision was found")
-            }
-        }
-
-        stage('Set release parameters') {
-            def releaseVersion = "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
-
-            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
-            logger.info("Package version for evernym repo: $debPVersion")
-
-            // TODO crate and rpm
-            //cratePVersion = utils.packageVersion('crate', srcVersion, releaseVersion)
-            //logger.info("Package version for rust registry: $cratePVersion")
-        }
-
-        stage("$osname: Resolve image tag") {
-            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_base_version -s")
-            buildImageTag = "${_imgVersion}-${osname}-cd"
-            logger.info("CD docker image tag: $buildImageTag")
-        }
-
         stage('Upload source to S3') {
             awsCBHelper.uploadSourceToS3()
         }
 
-        awsCBHelper.build() {
-            projectTag = prTag
+        def androidBuild = {
+            def osname = 'xenial'
+            def prTag = "cd-$osname-android"
+            def goals = ['package_android']
+            List targetArchs = ['arm', 'x86_64']
+            def buildImageTag
 
-            // build spec for env image
-            envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
-            envBuildCmds = [
-                'export PROJECT_DIR=$PWD',
-                'make -C devops image_lst_base'
-            ]
-            envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
-            envBuildEnvv = [
-                [name: 'OSNAME', value: osname],
-                [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
-            ]
+            stage("$prTag: Resolve image tag") {
+                def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_android_build_version -s")
+                buildImageTag = "${_imgVersion}-${prTag}-cd"
+                logger.info("CD docker image tag: $buildImageTag")
+            }
 
-            // env and build spec
-            imageTag = buildImageTag
-            buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
-            envv = [
-                [name: 'OSNAME', value: osname],
-                [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                [name: 'ARTIFACTS', value: 'libsovtoken/target/release/libsovtoken*.*'],
-                [name: 'FPM_P_VERSION', value: debPVersion],
-               // [name: 'CRATE_P_VERSION', value: cratePVersion],
-            ]
+            awsCBHelper.build() {
+                projectTag = prTag
 
-            onArtifacts = {
-                this.stage("$osname: Archive logs") {
-                    utils.archiveArtifacts("logs/*.log*") {
-                        truncate = true
-                        allowEmptyArchive = true
-                        truncateFileSuffix = 'trunc.log'
+                // build spec for env image
+                envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                envBuildCmds = [
+                    'export PROJECT_DIR=$PWD',
+                    'make -C devops image_lst_android_build'
+                ]
+                envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
+                envBuildEnvv = [
+                    [name: 'OSNAME', value: osname],
+                    [name: 'LST_ANDROID_BUILD_DOCKER_TAG', value: buildImageTag],
+                ]
+
+                // env and build spec
+                imageTag = buildImageTag
+                buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
+                envv = [
+                    [name: 'OSNAME', value: osname],
+                    [name: 'ANDROID_ARCHS', value: "${targetArchs.join(' ')}"],
+                    [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                    [name: 'PACKAGE_NAME', value: packageName],
+                    [name: 'GIT_SHA1_SHORT', value: git.sha1(shortN: true)],
+                    //[name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*.zip"],
+                ]
+
+                onArtifacts = { // FIXME debug
+                    this.stage("$prTag: Archive logs") {
+                        utils.archiveArtifacts("logs/*.log*") {
+                            truncate = true
+                            allowEmptyArchive = true
+                            truncateFileSuffix = 'trunc.log'
+                        }
                     }
                 }
             }
-        }
 
-        stage('Upload deb to Evernym repo') {
-            String debName
+            // FIXME debug
+            /*
+            stage('Upload android archives to Evernym repo') {
+                def now = new Date()
+                def timestamp = now.format("yyyyMMddHHmm", TimeZone.getTimeZone('UTC'))
 
-            dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
-                debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
+                dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
+                    targetArchs.each { arch ->
+                        def archName = "libsovtoken-test_${srcVersion}-${timestamp}-${shortSha1}_${arch}.zip"
+                        sh "zip $archName ${triples[arch]}"
 
-                logger.info("Uploading debian package '$debName' to evernym repo")
-                evernymRepo.upload {
-                    repoDistr = 'agency_dev'
-                    packagePath = debName
+                        logger.info("Uploading package '$archName' to evernym repo")
+                        evernymRepo.upload {
+                            repoDistr = 'android'
+                            packagePath = archName
+                        }
+                    }
+                }
+
+                notifier.email {
+                    subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new android package '$archName' was published"
+                    body = ("New android package '$archName' was built and published" +
+                        '\n\nCheck console output at $BUILD_URL to view the results.')
                 }
             }
-
-            notifier.email {
-                subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new deb '$debName' was published"
-                body = ("New debian package '$debName' was built and published" +
-                    '\n\nCheck console output at $BUILD_URL to view the results.')
-            }
+            */
         }
 
-        /*
-        ['agency_dev', 'agency_qa'].each { distr ->
-            stage("Promote deb from $distr") {
-                evernymRepo.promote {
-                    repoDistr = distr
+        def xenialBuild = {
+            def prTag = "cd-$osname"
+            def osname = 'xenial'
+            def goals = ['package']
+            def buildImageTag
+            def lastRevision
+            def debPVersion
+            def cratePVersion
+
+            stage('Resolve last debian revision') {
+                lastRevision = evernymRepo.getLastRevision {
                     delegate.packageName = packageName
-                    delegate.packageVersion = debPVersion
+                    packageSrcVersion = srcVersion
+                    repoDistr = 'agency-dev'
+                }
+
+                if (lastRevision) {
+                    logger.info("Found last revision number: $lastRevision")
+                } else {
+                    logger.info("No previous revision was found")
                 }
             }
+
+            stage('Set release parameters') {
+                def releaseVersion = "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+
+                debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
+                logger.info("Package version for evernym repo: $debPVersion")
+
+                // TODO crate and rpm
+                //cratePVersion = utils.packageVersion('crate', srcVersion, releaseVersion)
+                //logger.info("Package version for rust registry: $cratePVersion")
+            }
+
+            stage("$prTag: Resolve image tag") {
+                def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_base_version -s")
+                buildImageTag = "${_imgVersion}-${prTag}-cd"
+                logger.info("CD docker image tag: $buildImageTag")
+            }
+
+            awsCBHelper.build() {
+                projectTag = prTag
+
+                // build spec for env image
+                envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                envBuildCmds = [
+                    'export PROJECT_DIR=$PWD',
+                    'make -C devops image_lst_base'
+                ]
+                envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
+                envBuildEnvv = [
+                    [name: 'OSNAME', value: osname],
+                    [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
+                ]
+
+                // env and build spec
+                imageTag = buildImageTag
+                buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
+                envv = [
+                    [name: 'OSNAME', value: osname],
+                    [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                    //[name: 'ARTIFACTS', value: 'libsovtoken/target/release/${packageName}*.*'],
+                    [name: 'PACKAGE_NAME', value: packageName],
+                    [name: 'FPM_P_VERSION', value: debPVersion],
+                   // [name: 'CRATE_P_VERSION', value: cratePVersion],
+                ]
+
+                onArtifacts = {
+                    this.stage("$prTag: Archive logs") {
+                        utils.archiveArtifacts("logs/*.log*") {
+                            truncate = true
+                            allowEmptyArchive = true
+                            truncateFileSuffix = 'trunc.log'
+                        }
+                    }
+                }
+            }
+
+            // FIXME debug
+            /*
+            stage('Upload deb to Evernym repo') {
+                String debName
+
+                dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
+                    debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
+
+                    logger.info("Uploading debian package '$debName' to evernym repo")
+                    evernymRepo.upload {
+                        repoDistr = 'agency_dev'
+                        packagePath = debName
+                    }
+                }
+
+                notifier.email {
+                    subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new deb '$debName' was published"
+                    body = ("New debian package '$debName' was built and published" +
+                        '\n\nCheck console output at $BUILD_URL to view the results.')
+                }
+            }
+            */
+
+            /*
+            ['agency_dev', 'agency_qa'].each { distr ->
+                stage("Promote deb from $distr") {
+                    evernymRepo.promote {
+                        repoDistr = distr
+                        delegate.packageName = packageName
+                        delegate.packageVersion = debPVersion
+                    }
+                }
+            }
+            */
         }
-        */
+
+        Map builds = [:]
+        //builds['xenial'] = xenialBuild
+        builds['android'] = androidBuild
+
+        stage("Build") {
+            builds.failFast = false
+            utils.parallel builds
+        }
     }
 }, { err ->
     if (err) {
