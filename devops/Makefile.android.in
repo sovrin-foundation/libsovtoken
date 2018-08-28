@@ -35,12 +35,12 @@ $(sort $(ANDROID_BUILD_DIR) $(ANDROID_PREBUILT_DIR) $(ANDROID_NDK_DIR)):
 	mkdir -p $@
 
 # .PRECIOUS to stop make remove files that it treats as intermediate
-.PRECIOUS: $(ANDROID_PREBUILT_DIR)/openssl_%.zip | $(ANDROID_PREBUILT_DIR)
-$(ANDROID_PREBUILT_DIR)/openssl_%.zip:
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/openssl_%.zip
+$(ANDROID_PREBUILT_DIR)/openssl_%.zip: | $(ANDROID_PREBUILT_DIR)
 	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/deps/openssl/openssl_$*.zip
 
-.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libsodium_%.zip | $(ANDROID_PREBUILT_DIR)
-$(ANDROID_PREBUILT_DIR)/libsodium_%.zip:
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libsodium_%.zip
+$(ANDROID_PREBUILT_DIR)/libsodium_%.zip: | $(ANDROID_PREBUILT_DIR)
 	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/deps/sodium/libsodium_$*.zip
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
