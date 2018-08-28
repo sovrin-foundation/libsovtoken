@@ -1,7 +1,7 @@
 ARG ANDROID_NDK_DIR=/tmp/android/android_ndk
 ARG ANDROID_NDK_VERSION=r16b
 
-FROM evernym/dockerbase:rust-xenial-0.6.0
+FROM evernym/dockerbase:rust-xenial-0.7.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG ANDROID_NDK_VERSION
@@ -14,7 +14,7 @@ RUN chmod -R 777 ${ANDROID_NDK_DIR}
 ############################################
 
 
-FROM evernym/dockerbase:rust-xenial-0.6.0
+FROM evernym/dockerbase:rust-xenial-0.7.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG PYTHON3_VERSION

@@ -48,7 +48,7 @@ pipelineWrapper({
 
             stage("$prTag: Resolve image tag") {
                 def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_android_build_version -s")
-                buildImageTag = "${_imgVersion}-${prTag}-cd"
+                buildImageTag = "${_imgVersion}-${prTag}"
                 logger.info("CD docker image tag: $buildImageTag")
             }
 
@@ -154,7 +154,7 @@ pipelineWrapper({
 
             stage("$prTag: Resolve image tag") {
                 def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_base_version -s")
-                buildImageTag = "${_imgVersion}-${prTag}-cd"
+                buildImageTag = "${_imgVersion}-${prTag}"
                 logger.info("CD docker image tag: $buildImageTag")
             }
 
