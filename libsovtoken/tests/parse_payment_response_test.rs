@@ -17,14 +17,29 @@ static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
             {
                 "inputs":
                 [
-                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                    {
+                        "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                        "seqNo": 1
+                    }
                 ],
                 "outputs":
                 [
-                    ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
-                    ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
-                    ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
-                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                    {
+                        "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                        "amount": 13
+                    },
+                    {
+                        "address": "24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY",
+                        "amount": 13
+                    },
+                    {
+                        "address": "mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5",
+                        "amount": 13
+                    },
+                    {
+                        "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                        "amount": 1
+                    }
                 ]
             },
             "metadata":
