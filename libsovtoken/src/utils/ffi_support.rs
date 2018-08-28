@@ -170,7 +170,7 @@ mod ffi_support_tests {
     #[test]
     fn api_result_handler_callback_on_ok() {
         static mut CALLBACK_CALLED: bool = false;
-        extern fn callback(ch: i32, ec: i32, val: u32) {
+        extern fn callback(_ch: i32, _ec: i32, val: u32) {
             assert_eq!(val, 2);
             unsafe { CALLBACK_CALLED = true }
         }

@@ -50,7 +50,6 @@ extern crate rust_indy_sdk as indy;                      // lib-sdk project
 // ------------------------------------------
 
 
-#[allow(unused_variables)]
 #[macro_use]
 pub mod utils;
 pub mod api;

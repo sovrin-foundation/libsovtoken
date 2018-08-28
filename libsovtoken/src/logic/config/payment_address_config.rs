@@ -1,9 +1,6 @@
 //!  defines structure and implementation for PaymentAddressConfig which is used
 //! for generating payment addresses
 
-#![warn(unused_imports)]
-#[allow(unused_imports)]
-
 use serde_json;
 use std::ffi::CString;
 use utils::ffi_support::cstring_from_str;

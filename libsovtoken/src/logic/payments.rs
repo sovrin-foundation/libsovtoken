@@ -1,6 +1,4 @@
 //! Payments module contains functions for working with payments.  :D
-#![allow(unused_variables)]
-#[warn(unused_imports)]
 
 use indy::ErrorCode;
 use logic::config::payment_address_config::PaymentAddressConfig;
@@ -98,7 +96,7 @@ mod payments_tests {
     struct CreatePaymentSDKMockHandler {}
 
     impl CryptoAPI for CreatePaymentSDKMockHandler {
-        fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+        fn indy_create_key(&self, _wallet_id: i32, _config: PaymentAddressConfig) -> Result<String, ErrorCode> {
             return Ok(gen_random_base58_verkey());
         }
 
@@ -106,7 +104,7 @@ mod payments_tests {
             return ErrorCode::CommonInvalidState;
         }
 
-        fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+        fn indy_create_key_async<F: 'static>(&self, _wallet_id: i32, _config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
             closure(ErrorCode::Success, gen_random_base58_verkey());
             return ErrorCode::Success;
         }
@@ -140,7 +138,7 @@ mod payments_tests {
 
         let address = match handler.create_payment_address(WALLET_ID, config) {
             Ok(s) => s,
-            Err(e) => "".to_string(),
+            Err(_) => "".to_string(),
         };
 
         // got our result, if its correct, it will look something like this:
@@ -167,7 +165,7 @@ mod payments_tests {
         let handler = CreatePaymentHandler::new(CreatePaymentSDKMockHandler{});
         let address = match handler.create_payment_address(WALLET_ID, config){
             Ok(s) => s,
-            Err(e) => "".to_string(),
+            Err(_) => "".to_string(),
         };
 
         // got our result, if its correct, it will look something like this:
@@ -208,6 +206,6 @@ mod payments_tests {
 
         let got_good_result = receiver.recv_timeout(Duration::from_secs(10)).unwrap();
         assert_eq!(got_good_result, true);
-
+        assert_eq!(ErrorCode::Success, error_code);
     }
 }

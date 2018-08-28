@@ -1,6 +1,4 @@
 //! types used for parse_get_utxo_response_handler
-#![allow(unused_variables)]
-#![allow(unused_imports)]
 
 use base64;
 use indy::ErrorCode;
@@ -10,11 +8,9 @@ use logic::parsers::common::{ResponseOperations, TXO, StateProof, ParsedSP, KeyV
 use logic::parsers::error_code_parser;
 use logic::type_aliases::{TokenAmount, TxnSeqNo, ProtocolVersion, ReqId};
 use logic::address;
-use rust_base58::ToBase58;
 use serde_json;
 use utils::constants::txn_fields::OUTPUTS;
 use utils::ffi_support::c_pointer_from_string;
-use utils::json_conversion::{JsonSerialize, JsonDeserialize};
 
 type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
 
@@ -83,7 +79,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
             for unspent_output in result.outputs {
 
-                let (address, seq_no, amount) = unspent_output;
+                let (_address, seq_no, amount) = unspent_output;
 
                 let payment_address = address::address_from_unqualified_address(&result.address.to_string())?;
                 let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
@@ -168,15 +164,15 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
 
 #[cfg(test)]
 mod parse_get_utxo_responses_tests {
-    #[allow(unused_imports)]
+    use super::*;
+    use std::ffi::CString;
 
-    use logic::parsers::common::{ResponseOperations, UTXO, TXO, StateProof};
+    use logic::parsers::common::{ResponseOperations, StateProof};
+    use rust_base58::ToBase58;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use utils::constants::txn_types::GET_UTXO;
-    use std::ffi::CString;
     use utils::ffi_support::string_from_char_ptr;
-    use super::*;
 
     static PARSE_GET_UTXO_RESPONSE_JSON: &'static str = r#"{
         "op": "REPLY",
@@ -328,7 +324,8 @@ mod parse_get_utxo_responses_tests {
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
         let reply: ParseGetUtxoReply = from_response(response).unwrap();
-        let reply_json : String = reply.to_json().unwrap();
+        let reply_json = reply.to_json();
+        assert!(reply_json.is_ok());
     }
 
     #[test]
