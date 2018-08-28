@@ -47,30 +47,33 @@ RUN pip3 install -U \
 	pip==9.0.3 \
 	setuptools
 
+# user setup
 RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $uid indy; usermod -aG sudo indy
 
-ARG indy_stream=master
-
-ARG indy_anoncreds_ver=1.0.32
+# version variables 
+ARG indy_stream=stable 
+ARG indy_anoncreds_ver=1.0.11
 ARG python3_indy_crypto_ver=0.4.1
-ARG indy_crypto_ver=0.4.0
-
-ARG sovtoken_pkg_name=sovtoken_0.8.0_amd64.deb
-ARG sovtokenfees_pkg_name=sovtokenfees_0.8.0_amd64.deb
+ARG indy_crypto_ver=0.4.1
+ARG plugin_version=0.9.015.87
+ARG indy_node_version=1.6.71
+ARG indy_plenum_version=1.6.50
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
+RUN echo "deb https://repo.sovrin.org/sdk/deb xenial $indy_stream" >> /etc/apt/sources.list
 
 RUN apt-get update -y && apt-get install -y \
-        indy-plenum \        
-		indy-node \
-        indy-anoncreds=${indy_anoncreds_ver} \
-        python3-indy-crypto=${python3_indy_crypto_ver} \
         libindy-crypto=${indy_crypto_ver} \
-        vim sudo
+        python3-indy-crypto=${python3_indy_crypto_ver} \
+        indy-plenum=${indy_plenum_version} \        
+        indy-anoncreds=${indy_anoncreds_ver} \
+		indy-node=${indy_node_version} \
+        vim sudo \
+        && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /usr/local/share/ca-certificates
-RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt
+RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crtRUN update-ca-certificates
 RUN update-ca-certificates
 RUN echo "10.2.3.179 repo.corp.evernym.com" >>/etc/hosts
 RUN update-ca-certificates
@@ -78,8 +81,9 @@ RUN curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key ad
 RUN echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        sovtoken \
-        sovtokenfees
+        sovtoken=${plugin_version}\
+        sovtokenfees=${plugin_version}
+
 RUN echo "[supervisord]\n\
 logfile = /tmp/supervisord.log\n\
 logfile_maxbytes = 50MB\n\
