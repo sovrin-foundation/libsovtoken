@@ -15,8 +15,6 @@ ifndef PROJECT_DIR
 PROJECT_DIR := $(shell git rev-parse --show-toplevel)
 endif
 
-GIT_SHA1_SHORT ?= $(shell git rev-parse --short HEAD)
-
 # project variables
 SRC_DIR_NAME := libsovtoken
 SRC_DIR := $(PROJECT_DIR)/$(SRC_DIR_NAME)
@@ -60,7 +58,7 @@ LST_ANDROID_BUILD_DOCKER_TAG ?=
 
 DOCKER_BUILD_NETWORK ?= host
 
-EXPORT_ENV += OSNAME RELEASE PACKAGE_NAME GIT_SHA1_SHORT CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
+EXPORT_ENV += OSNAME RELEASE PACKAGE_NAME CARGO_TARGET_DIR CRATE_P_VERSION CARGO_LOGIN_TOKEN
 
 .PHONY: all \
 		image_lst_base image_lst_ci image_lst_android_ndk \

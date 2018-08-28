@@ -25,6 +25,7 @@ LIBINDY_BRANCH ?= $(word 3,$(LIBINDY_DEP_SPEC))
 ANDROID_ARCHS ?= arm x86_64
 #ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
 
+EXPORT_ENV += GIT_SHA1_SHORT
 
 # ########### RULES #################
 
@@ -87,7 +88,7 @@ android_build_%: android_ndk android_prebuilt_%
 android_pack:
 	PACKAGE_NAME=$(PACKAGE_NAME) \
 	LIBSOVTOKEN_VER=$(SRC_VERSION) \
-	GIT_REV=$(GIT_SHA1_SHORT) \
+	GIT_REV=$(if $(GIT_SHA1_SHORT),$(GIT_SHA1_SHORT),$(shell git rev-parse --short HEAD)) \
 		/bin/bash -ex $(LIBSOVTOKEN_ANDROID_BUILD_SCRIPTS)/libsovtoken/pack.sh $(ANDROID_BUILD_DIR)/libsovtoken
 
 package_android: $(ANDROID_ARCHS:%=android_build_%) android_pack
