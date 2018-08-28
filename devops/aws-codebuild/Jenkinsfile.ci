@@ -10,12 +10,17 @@ logger.setGlobalLevel('TRACE')
 
 pipelineWrapper({
     nodeWrapper {
-
+        List _envBuildSrc = [
+            'devops',
+            'libsovtoken/Cargo.toml',
+            'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
+            'libsovtoken/build_scripts/android/android_settings.txt'
+        ]
         List osnames = [
             'xenial',
             //'centos7'
         ]
-        def goals = ['test_dry', 'test']
+        List goals = ['test_dry', 'test']
 
         stage('Checkout from SCM') {
             checkout scm
@@ -78,7 +83,7 @@ pipelineWrapper({
                     computeType = 'medium'
 
                     // build spec for env image
-                    envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                    envBuildSrc = _envBuildSrc // TODO make more accurate
                     envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
                     envBuildCmds = [
                         'export PROJECT_DIR=$PWD',

@@ -12,6 +12,12 @@ pipelineWrapper({
 
     nodeWrapper {
         def packageName = '_libsovtoken' // FIXME debug
+        List _envBuildSrc = [
+            'devops',
+            'libsovtoken/Cargo.toml',
+            'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
+            'libsovtoken/build_scripts/android/android_settings.txt'
+        ]
         def srcVersion
 
         stage('Checkout sources from SCM') {
@@ -36,7 +42,7 @@ pipelineWrapper({
         def androidBuild = {
             def osname = 'xenial'
             def prTag = "cd-$osname-android"
-            def goals = ['package_android']
+            List goals = ['package_android']
             List targetArchs = ['arm', 'x86_64']
             def buildImageTag
 
@@ -50,7 +56,7 @@ pipelineWrapper({
                 projectTag = prTag
 
                 // build spec for env image
-                envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                envBuildSrc = _envBuildSrc // TODO make more accurate
                 envBuildCmds = [
                     'export PROJECT_DIR=$PWD',
                     'make -C devops image_lst_android_build'
@@ -156,7 +162,7 @@ pipelineWrapper({
                 projectTag = prTag
 
                 // build spec for env image
-                envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                envBuildSrc = _envBuildSrc // TODO make more accurate
                 envBuildCmds = [
                     'export PROJECT_DIR=$PWD',
                     'make -C devops image_lst_base'
