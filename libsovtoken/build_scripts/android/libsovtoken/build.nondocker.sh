@@ -43,7 +43,6 @@ download_libindy(){
         curl -sSLO https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
         unzip -o -qq "libindy_android_$3_$2.zip"
         rm "libindy_android_$3_$2.zip"
-        export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
     command popd > /dev/null
 }
 
@@ -52,14 +51,10 @@ download_and_unzip_dependencies(){
         echo -e "${ESCAPE}${GREEN}Downloading openssl for $1 ${ESCAPE}${NC}"
         curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
         unzip -o -qq openssl_$1.zip
-        export OPENSSL_DIR=${PREBUILT}/openssl_${arch}
 
         echo -e "${ESCAPE}${GREEN}Downloading sodium for $1 ${ESCAPE}${NC}"
         curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
         unzip -o -qq libsodium_$1.zip
-        export SODIUM_DIR=${PREBUILT}/libsodium_${arch}
-        export SODIUM_LIB_DIR=${PREBUILT}/libsodium_${arch}/lib
-        export SODIUM_INCLUDE_DIR=${PREBUILT}/libsodium_${arch}/include
 
         rm openssl_$1.zip
         rm libsodium_$1.zip
@@ -152,6 +147,22 @@ EOF
         rustup target add ${CROSS_COMPILE}
     fi
 
+    if [ -z "${LIBINDY_DIR}" ]; then
+        export LIBINDY_DIR=${PREBUILT}/libindy_${target}/lib
+    fi
+    if [ -z "${OPENSSL_DIR}" ]; then
+        export OPENSSL_DIR=${PREBUILT}/openssl_${target}
+    fi
+    if [ -z "${SODIUM_DIR}" ]; then
+        export SODIUM_DIR=${PREBUILT}/libsodium_${target}
+    fi
+    if [ -z "${SODIUM_LIB_DIR}" ]; then
+        export SODIUM_LIB_DIR=${PREBUILT}/libsodium_${target}/lib
+    fi
+    if [ -z "${SODIUM_INCLUDE_DIR}" ]; then
+        export SODIUM_INCLUDE_DIR=${PREBUILT}/libsodium_${target}/include
+    fi
+
     if [ "${DOWNLOAD_PREBUILTS}" == "1" ]; then
         download_and_unzip_dependencies ${target}
     fi
@@ -187,7 +198,7 @@ EOF
         if [ -f "${_CARGO_TARGET_DIR}/${CROSS_COMPILE}/release/${filename}" ] ; then
             cp ${_CARGO_TARGET_DIR}/${CROSS_COMPILE}/release/${filename} ${_TARGET_DIR}
         else
-            echo STDERR "Build didn't complete for ${arch}"
+            echo STDERR "Build didn't complete for ${target}"
             exit 1
         fi
     done
