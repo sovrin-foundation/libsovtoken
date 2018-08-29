@@ -59,7 +59,7 @@ CD pipeline stages:
 
 Please refer to [ext/README.md](ext/README.md) for more details about targets inherited from there.
 
-#### Build targets
+#### General build targets
 - `test_dry` runs tests in "dry" mode: `cargo test --no-run`
 - `test` runs tests: `cargo test`
 - `build` runs `cargo build`
@@ -67,11 +67,14 @@ Please refer to [ext/README.md](ext/README.md) for more details about targets in
 - `package` creates debian package
 - `package_android` builds and archives libraries for android for a set of architectures
 
-Each target could be run in two ways - with or without `_in_docker` postfix: e.g. `test_in_docker` and `test`. In former case the target is run inside docker container (though it makes sense not for all targets), otherwise current host's environment is used. Docker image for each target can be built using `image_<build-target-name>` target.
+Each target could be run in two ways - with or without `_in_docker` postfix: e.g. `test_in_docker` and `test`. In former case the target is run inside docker container, otherwise current host's environment is used. Docker image for each target can be built using `image_<build-target-name>` target.
+
+#### Android build target
+- `android_build_<arch>` builds libraries for android, where `arch` is one of supported platforms (please check `ANDROID_ARCHS` environment variable to see the list of supported platforms).
 
 
 #### Docker images targets
-- `image_<build-target-name>` - set of targets to build docker images for [build targets](Build targets) in-docker running
+- `image_<build-target-name>` - set of targets to build docker images for [general build targets](#general-build-targets) in-docker running
 - `image_lst_base` builds docker image with necessary environment to create debian package, it's a parent for `image_lst_ci` image
 - `image_lst_base_version` prints current version of the docker image (dockerfile) built by `image_lst_base` target
 - `image_lst_ci` builds docker image with necessary environment to perform CI tasks
