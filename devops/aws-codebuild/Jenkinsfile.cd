@@ -76,7 +76,7 @@ pipelineWrapper({
                     [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
                     [name: 'PACKAGE_NAME', value: packageName],
                     [name: 'GIT_SHA1_SHORT', value: git.sha1(shortN: true)],
-                    //[name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*.zip"],
+                    [name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*all.zip"],
                 ]
 
                 onArtifacts = { // FIXME debug
@@ -91,31 +91,25 @@ pipelineWrapper({
             }
 
             // FIXME debug
-            /*
             stage('Upload android archives to Evernym repo') {
-                def now = new Date()
-                def timestamp = now.format("yyyyMMddHHmm", TimeZone.getTimeZone('UTC'))
+                String archName
 
                 dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
-                    targetArchs.each { arch ->
-                        def archName = "libsovtoken-test_${srcVersion}-${timestamp}-${shortSha1}_${arch}.zip"
-                        sh "zip $archName ${triples[arch]}"
+                    archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
 
-                        logger.info("Uploading package '$archName' to evernym repo")
-                        evernymRepo.upload {
-                            repoDistr = 'android'
-                            packagePath = archName
-                        }
+                    logger.info("Uploading package '$archName' to evernym repo")
+                    evernymRepo.upload {
+                        repoDistr = 'android'
+                        packagePath = archName
                     }
                 }
 
                 notifier.email {
                     subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new android package '$archName' was published"
                     body = ("New android package '$archName' was built and published" +
-                        '\n\nCheck console output at $BUILD_URL to view the results.')
+                        '\n\nCheck console output at $BUILD_URL to view the details.')
                 }
             }
-            */
         }
 
         def xenialBuild = {
@@ -214,7 +208,7 @@ pipelineWrapper({
                 notifier.email {
                     subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new deb '$debName' was published"
                     body = ("New debian package '$debName' was built and published" +
-                        '\n\nCheck console output at $BUILD_URL to view the results.')
+                        '\n\nCheck console output at $BUILD_URL to view the details.')
                 }
             }
             */
