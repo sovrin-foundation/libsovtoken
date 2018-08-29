@@ -1,7 +1,7 @@
 ARG ANDROID_NDK_DIR=/tmp/android/android_ndk
 ARG ANDROID_NDK_VERSION=r16b
 
-FROM evernym/dockerbase:rust-xenial-0.7.0
+FROM evernym/dockerbase:rust-xenial-0.8.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG ANDROID_NDK_VERSION
@@ -14,7 +14,7 @@ RUN chmod -R 777 ${ANDROID_NDK_DIR}
 ############################################
 
 
-FROM evernym/dockerbase:rust-xenial-0.7.0
+FROM evernym/dockerbase:rust-xenial-0.8.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG PYTHON3_VERSION
@@ -40,4 +40,4 @@ RUN chmod +x /usr/local/bin/android-ndk-install
 
 # TODO CMD ENTRYPOINT ...
 
-ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.3.0
+ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.4.0
