@@ -113,8 +113,8 @@ pipelineWrapper({
         }
 
         def xenialBuild = {
-            def prTag = "cd-$osname"
             def osname = 'xenial'
+            def prTag = "cd-$osname"
             def goals = ['package']
             def buildImageTag
             def lastRevision

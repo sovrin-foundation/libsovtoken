@@ -48,10 +48,6 @@ RUN cd /tmp/_libsovtoken \
 ENV RUST_TARGETS=${RUST_TARGETS:-"arm-linux-androideabi armv7-linux-androideabi aarch64-linux-android i686-linux-android x86_64-linux-android"}
 #RUN rustup target add ${RUST_TARGETS} # This will increase size of the image for about 350Mb
 
-#COPY libindy-android-entrypoint.sh /usr/local/bin/
-#RUN chmod +x /usr/local/bin/libindy-android-entrypoint.sh
-
 # TODO some entrypoint
-#ENTRYPOINT ["libindy-android-entrypoint.sh"]
 
 ENV LIBSOVTOKEN_ANDROID_BUILD_ENV_VERSION=0.2.0

@@ -56,20 +56,26 @@ CD pipeline stages:
 - docker-compose
 
 ### Targets
+
+Please refer to [ext/README.md](ext/README.md) for more details about targets inherited from there.
+
+#### Build targets
 - `test_dry` runs tests in "dry" mode: `cargo test --no-run`
 - `test` runs tests: `cargo test`
 - `build` runs `cargo build`
 - `publish_crate` publishes the code to crates.io performing cargo `login`, `package` and `publish` commands
+- `package` creates debian package
+- `package_android` builds and archives libraries for android for a set of architectures
+
+Each target could be run in two ways - with or without `_in_docker` postfix: e.g. `test_in_docker` and `test`. In former case the target is run inside docker container (though it makes sense not for all targets), otherwise current host's environment is used. Docker image for each target can be built using `image_<build-target-name>` target.
+
+
+#### Docker images targets
+- `image_<build-target-name>` - set of targets to build docker images for [build targets](Build targets) in-docker running
 - `image_lst_base` builds docker image with necessary environment to create debian package, it's a parent for `image_lst_ci` image
 - `image_lst_base_version` prints current version of the docker image (dockerfile) built by `image_lst_base` target
 - `image_lst_ci` builds docker image with necessary environment to perform CI tasks
 - `image_lst_ci_version` prints current version of the docker image (dockerfile) built by `image_lst_ci` target
-- `package_android` builds and archives libraries for a set of architectures
-- please refer to [ext/README.md](ext/README.md) for list of targets inherited from there
-
-
-
-Each target could be run in two ways - with or without `_in_docker` postfix: e.g. `test_in_docker` and `test`. In former case the target is run inside docker container (though it makes sense not for all targets), otherwise current host's environment is used.
 
 ### Environment variables
 
