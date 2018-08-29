@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.1
+* Set fees accepts strings
+* relies on stable versions of all artifacts
+* optimization of size for ios build
+* refactoring and code improvements
+* bugfixes
+
 ## 0.9.0
 * Added functionality
     * build_verify_req_handler
