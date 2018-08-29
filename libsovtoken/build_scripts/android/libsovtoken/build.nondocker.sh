@@ -189,8 +189,8 @@ EOF
     fi
 
     command pushd ${LIBSOVTOKEN_DIR} > /dev/null
-    cargo update
-    cargo build -vv --release --target=${CROSS_COMPILE}
+    cargo update ${CARGO_VERBOSITY}
+    cargo build ${CARGO_VERBOSITY} --release --target=${CROSS_COMPILE}
     rm -rf "${LIBSOVTOKEN_DIR}/.cargo"
 
     unset LIBINDY_DIR
