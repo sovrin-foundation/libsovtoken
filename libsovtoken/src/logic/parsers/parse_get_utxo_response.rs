@@ -220,7 +220,7 @@ mod parse_get_utxo_responses_tests {
 
         let address: String = "00000000000000000000000000000000".as_bytes().to_base58_check();
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
+        let mut outputs: Vec<Output_> = Vec::new();
 
         let multi_signature = json!({
             "participants" : ["Gamma", "Alpha", "Delta"],
@@ -240,8 +240,16 @@ mod parse_get_utxo_responses_tests {
             root_hash : Some("8tJkWdp9wdz3bpb5s5hPDfrjWCQTPmsFKrSdoPmTTnea".to_string())
         };
 
-        outputs.push((rand_string(32), 1, 10));
-        outputs.push((rand_string(32), 2, 20));
+        outputs.push(Output_ {
+            address: rand_string(32),
+            seq_no: 1,
+            amount: 10
+        });
+        outputs.push(Output_ {
+            address: rand_string(32),
+            seq_no: 2,
+            amount: 20
+        });
 
         let outputs_len: usize = outputs.len();
 
@@ -271,7 +279,7 @@ mod parse_get_utxo_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
+        let outputs: Vec<Output_> = Vec::new();
 
         let multi_signature = json!({
             "participants" : ["Gamma", "Alpha", "Delta"],
