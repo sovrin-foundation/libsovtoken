@@ -11,7 +11,7 @@ logger.setGlobalLevel('TRACE')
 pipelineWrapper({
 
     nodeWrapper {
-        def packageName = '_libsovtoken' // FIXME debug
+        def packageName = 'testlibsovtoken'
         List _envBuildSrc = [
             'devops',
             'libsovtoken/Cargo.toml',
@@ -79,7 +79,7 @@ pipelineWrapper({
                     [name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*all.zip"],
                 ]
 
-                onArtifacts = { // FIXME debug
+                onArtifacts = {
                     this.stage("$prTag: Archive logs") {
                         utils.archiveArtifacts("logs/*.log*") {
                             truncate = true
@@ -90,7 +90,6 @@ pipelineWrapper({
                 }
             }
 
-            // FIXME debug
             stage('Upload android archives to Evernym repo') {
                 String archName
 
@@ -173,7 +172,7 @@ pipelineWrapper({
                 envv = [
                     [name: 'OSNAME', value: osname],
                     [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                    //[name: 'ARTIFACTS', value: 'libsovtoken/target/release/${packageName}*.*'],
+                    [name: 'ARTIFACTS', value: "libsovtoken/target/release/${packageName}*.*"],
                     [name: 'PACKAGE_NAME', value: packageName],
                     [name: 'FPM_P_VERSION', value: debPVersion],
                    // [name: 'CRATE_P_VERSION', value: cratePVersion],
@@ -190,8 +189,6 @@ pipelineWrapper({
                 }
             }
 
-            // FIXME debug
-            /*
             stage('Upload deb to Evernym repo') {
                 String debName
 
@@ -211,7 +208,6 @@ pipelineWrapper({
                         '\n\nCheck console output at $BUILD_URL to view the details.')
                 }
             }
-            */
 
             /*
             ['agency_dev', 'agency_qa'].each { distr ->
@@ -226,12 +222,13 @@ pipelineWrapper({
             */
         }
 
-        Map builds = [:]
-        //builds['xenial'] = xenialBuild
-        builds['android'] = androidBuild
+        Map builds = [
+            xenial: xenialBuild,
+            android: androidBuild
+        ]
+        builds.failFast = false
 
         stage("Build") {
-            builds.failFast = false
             utils.parallel builds
         }
     }
