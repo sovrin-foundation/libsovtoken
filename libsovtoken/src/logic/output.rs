@@ -61,7 +61,7 @@ pub struct OutputConfig {
     let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
     let output = Output::new(address, 5);
     let json = Output::to_json(&output).unwrap();
-    assert_eq!(json, r#"["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",5]"#);
+    assert_eq!(json, r#"{"address":"pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7","amount":5}"#);
     ```
 
 */

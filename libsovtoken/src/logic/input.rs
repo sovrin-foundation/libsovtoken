@@ -35,7 +35,7 @@ pub struct InputConfig {
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
-    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30]"#;
+    let json = r#"{"address":"pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", "seqNo":30}"#;
     let input = Input::from_json(json).unwrap();
     assert_eq!(Input{address: "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja".to_string(), seq_no: 30}, input);
     ```
@@ -70,7 +70,7 @@ pub struct InputConfig {
     let input = Input::new(address, 30);
 
     let json = Input::to_json(&input).unwrap();
-    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30]"#);
+    assert_eq!(json, r#"{"address":"pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja","seqNo":30}"#);
     ```
 
 */
