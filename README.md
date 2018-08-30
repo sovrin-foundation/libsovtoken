@@ -77,3 +77,7 @@ If you update libsovtoken code from github you need to re-build libsovtoken as f
 3) cargo build
 
 The cargo update command is necessary to make sure you get latest from the cargo crates in github
+
+## How To Contribute
+
+Please follow the guide [here](./doc/pull-request.md).
