@@ -17,7 +17,7 @@ def nodeLabels = [
 ]
 
 def codeBuildPipelines = {
-    def packageName = 'testlibsovtoken' // FIXME debug
+    def packageName = 'libsovtoken'
     List _envBuildSrc = [
         'devops',
         'libsovtoken/Cargo.toml',
@@ -32,7 +32,7 @@ def codeBuildPipelines = {
 
     def evernymRepo = evLibrary.EvernymRepo.new(this)
     def git = evLibrary.Git.new(this)
-    def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('test-libsovtoken') // FIXME debug
+    def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
     def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
 
     stage('Resolve current source version') {
