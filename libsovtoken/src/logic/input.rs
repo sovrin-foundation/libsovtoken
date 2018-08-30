@@ -2,7 +2,7 @@
     Payment Input
 */
 
-use serde::{de, ser, Deserialize, ser::SerializeTuple, Serialize};
+use serde::{de, Deserialize};
 use std::fmt;
 use logic::parsers::common::TXO;
 use logic::type_aliases::TxnSeqNo;
@@ -35,7 +35,7 @@ pub struct InputConfig {
     ```
     use sovtoken::utils::json_conversion::JsonDeserialize;
     use sovtoken::logic::input::Input;
-    let json = r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", 30]"#;
+    let json = r#"{"address":"pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja", "seqNo":30}"#;
     let input = Input::from_json(json).unwrap();
     assert_eq!(Input{address: "pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja".to_string(), seq_no: 30}, input);
     ```
@@ -70,13 +70,14 @@ pub struct InputConfig {
     let input = Input::new(address, 30);
 
     let json = Input::to_json(&input).unwrap();
-    assert_eq!(json, r#"["pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",30]"#);
+    assert_eq!(json, r#"{"address":"pay:sov:AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja","seqNo":30}"#);
     ```
 
 */
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize)]
 pub struct Input {
     pub address: String,
+    #[serde(rename = "seqNo")]
     pub seq_no: TxnSeqNo
 }
 
@@ -89,15 +90,6 @@ impl ToString for Input {
 impl Input {
     pub fn new(address: String, seq_no: TxnSeqNo) -> Input {
         return Input { address, seq_no};
-    }
-}
-
-impl Serialize for Input {
-    fn serialize<S: ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut seq = serializer.serialize_tuple(2)?;
-        seq.serialize_element(&self.address)?;
-        seq.serialize_element(&self.seq_no)?;
-        return seq.end();
     }
 }
 
@@ -117,18 +109,6 @@ impl<'de> Deserialize<'de> for Input {
                     .map_err(|ec| de::Error::custom(format!("Error when deserializing txo: error code {:?}", ec)))?;
 
                 return Ok(Input::new(txo.address, txo.seq_no ))
-            }
-
-            fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Input, V::Error> {
-                let address = seq
-                    .next_element()?
-                    .ok_or(de::Error::invalid_length(0, &"2"))?;
-
-                let seq_no = seq
-                    .next_element()?
-                    .ok_or(de::Error::invalid_length(1, &"2"))?;
-
-                return Ok(Input::new(address, seq_no));
             }
 
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Input, V::Error> {
@@ -195,25 +175,6 @@ mod input_tests {
     }
 
     #[test]
-    fn deserialize_invalid_input_tuple() {
-        let json = json!(["Avadsfesaafefsdfcv"]);
-        assert_invalid_deserialize(json, "invalid length 1, expected 2");
-    }
-
-    #[test]
-    fn deserialize_invalid_tuple_invalid_seq_no() {
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81f", 2.5]);
-        assert_invalid_deserialize(json, "invalid type: floating point")
-    }
-
-    #[test]
-    fn deserialize_input_tuple() {
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 30]);
-        let expected = Input::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 30);
-        assert_valid_deserialize(json, expected);
-    }
-
-    #[test]
     fn deserialize_invalid_input_object_without_seq_no() {
         let json = json!("txo:sov:".to_string() + &json!({
             "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
@@ -243,8 +204,8 @@ mod input_tests {
 
     #[test]
     fn serialize_input() {
-        let input = Input::new(String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 5);
-        let expected = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 5]);
+        let input = Input::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 5);
+        let expected = json!({"address": "a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", "seqNo":5});
         assert_valid_serialize(input, expected);
     }
 
@@ -257,6 +218,6 @@ mod input_tests {
             ver: 1,
             inputs: vec![input],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"inputs":[["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",30]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"inputs":[{"address":"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7","seqNo":30}]}"#);
     }
 }

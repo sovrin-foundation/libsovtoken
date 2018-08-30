@@ -12,7 +12,15 @@ use serde_json;
 use utils::constants::txn_fields::OUTPUTS;
 use utils::ffi_support::c_pointer_from_string;
 
-type Outputs_ = Vec<(String, TxnSeqNo, TokenAmount)>;
+type UTXOs = Vec<UTXOInner>;
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UTXOInner {
+    pub address: String,
+    pub seq_no: TxnSeqNo,
+    pub amount: TokenAmount
+}
 
 /**
     for parse_get_utxo_response_handler input parameter resp_json
@@ -39,7 +47,7 @@ pub struct ParseGetUtxoResponseResult {
     pub address : String,
     pub identifier: String,
     pub req_id : ReqId,
-    pub outputs : Outputs_,
+    pub outputs : UTXOs,
     #[serde(rename = "state_proof", skip_serializing_if = "Option::is_none")]
     pub state_proof : Option<StateProof>
 }
@@ -79,11 +87,9 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
             for unspent_output in result.outputs {
 
-                let (_address, seq_no, amount) = unspent_output;
-
                 let payment_address = address::address_from_unqualified_address(&result.address.to_string())?;
-                let txo = (TXO { address: payment_address.clone(), seq_no }).to_libindy_string()?;
-                let utxo: UTXO = UTXO { payment_address, source: txo, amount, extra: "".to_string() };
+                let txo = (TXO { address: payment_address.clone(), seq_no: unspent_output.seq_no }).to_libindy_string()?;
+                let utxo: UTXO = UTXO { payment_address, source: txo, amount: unspent_output.amount, extra: "".to_string() };
 
                 utxos.push(utxo);
             }
@@ -113,9 +119,9 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
     // a single private field called `address` and with implementation defining `new` and a getter.
     // The `new` method will do the validation.
 
-    let outputs: Outputs_ = match result.get(OUTPUTS) {
+    let outputs: UTXOs = match result.get(OUTPUTS) {
         Some(outs) => {
-            let outputs: Outputs_ = match serde_json::from_value(outs.to_owned()) {
+            let outputs: UTXOs = match serde_json::from_value(outs.to_owned()) {
                 Ok(o) => o,
                 Err(_) => return ErrorCode::CommonInvalidStructure
             };
@@ -127,8 +133,8 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
     let mut kvs: Vec<(String, Option<String>)> = Vec::new();
 
     for output in outputs {
-        kvs.push((get_utxo_state_key(&output.0, output.1),
-                  Some(output.2.to_string())));
+        kvs.push((get_utxo_state_key(&output.address, output.seq_no),
+                  Some(output.amount.to_string())));
     }
 
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData { kvs });
@@ -214,7 +220,7 @@ mod parse_get_utxo_responses_tests {
 
         let address: String = "00000000000000000000000000000000".as_bytes().to_base58_check();
         let identifier: String = rand_req_id().to_string();
-        let mut outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
+        let mut outputs: Vec<UTXOInner> = Vec::new();
 
         let multi_signature = json!({
             "participants" : ["Gamma", "Alpha", "Delta"],
@@ -234,8 +240,16 @@ mod parse_get_utxo_responses_tests {
             root_hash : Some("8tJkWdp9wdz3bpb5s5hPDfrjWCQTPmsFKrSdoPmTTnea".to_string())
         };
 
-        outputs.push((rand_string(32), 1, 10));
-        outputs.push((rand_string(32), 2, 20));
+        outputs.push(UTXOInner {
+            address: rand_string(32),
+            seq_no: 1,
+            amount: 10
+        });
+        outputs.push(UTXOInner {
+            address: rand_string(32),
+            seq_no: 2,
+            amount: 20
+        });
 
         let outputs_len: usize = outputs.len();
 
@@ -265,7 +279,7 @@ mod parse_get_utxo_responses_tests {
     fn success_parse_get_utxo_reply_from_response_with_empty_outputs() {
         let address: String = rand_string(32);
         let identifier: String = rand_req_id().to_string();
-        let outputs: Vec<(String, TxnSeqNo, TokenAmount)> = Vec::new();
+        let outputs: Vec<UTXOInner> = Vec::new();
 
         let multi_signature = json!({
             "participants" : ["Gamma", "Alpha", "Delta"],

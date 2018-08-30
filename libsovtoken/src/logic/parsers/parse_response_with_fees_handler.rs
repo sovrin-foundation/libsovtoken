@@ -1,6 +1,8 @@
 //! types used for parse_response_with_fees_handler
 
 use logic::address::add_qualifer_to_address;
+use logic::input::Inputs;
+use logic::output::Outputs;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
@@ -65,8 +67,8 @@ pub struct FeeTxn {
 #[serde(rename_all = "camelCase")]
 pub struct FeeData {
     pub fees: TokenAmount,
-    pub inputs: Vec<(String, TxnSeqNo)>,
-    pub outputs: Vec<(String, TokenAmount)>,
+    pub inputs: Inputs,
+    pub outputs: Outputs,
     #[serde(rename = "ref")]
     pub reference: String,
 }
@@ -116,9 +118,8 @@ pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFe
             let seq_no: TxnSeqNo = result.fees.tnx_meta_data.seq_no;
 
             for output in outputs {
-                let output_address : String = output.0.to_string();
-                let amount: TokenAmount = output.1;
-                let qualified_address: String = add_qualifer_to_address(&output_address);
+                let amount: TokenAmount = output.amount;
+                let qualified_address: String = add_qualifer_to_address(&output.recipient);
 
                 let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
 
@@ -194,11 +195,11 @@ mod parse_response_with_fees_handler_tests {
                         "data": {
                             "inputs":
                             [
-                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                                {"address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 2}
                             ],
                             "outputs":
                             [
-                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
+                                {"address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "amount": 9}
                             ],
                             "fees": 4,
                             "ref": "1:13"
@@ -283,12 +284,12 @@ mod parse_response_with_fees_handler_tests {
                         "data": {
                             "inputs":
                             [
-                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                                {"address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 2}
                             ],
                             "outputs":
                             [
-                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9],
-                                ["11S4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 19]
+                                {"address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "amount": 9},
+                                {"address": "11S4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "amount": 19}
                             ],
                             "fees": 4,
                             "ref": "1:13"
@@ -374,11 +375,11 @@ mod parse_response_with_fees_handler_tests {
                         {
                             "inputs":
                             [
-                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 2]
+                                {"address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "seqNo": 2}
                             ],
                             "outputs":
                             [
-                                ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 9]
+                                {"address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", "amount": 9}
                             ],
                             "fees": 4,
                             "ref": "1:13"
@@ -421,7 +422,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.unwrap().fees.txn.data.outputs;
+        let outputs = response.result.unwrap().fees.txn.data.outputs;
 
         assert_eq!(1, outputs.len());
     }

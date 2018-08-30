@@ -169,13 +169,16 @@ fn success_signed_request() {
     let expected_operation = json!({
         "type": XFER_PUBLIC,
         "inputs": [
-            [addresses[0], 1],
-            [addresses[1], 1]
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1}
         ],
-        "outputs": [[addresses[2], 10], [addresses[3], 22]],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
         "signatures": [
-            "4XFsKCBsuW2e4rUfzy6SxbtyfvyL3WbK8bg1wkm4jLrnbnPmbed8oERdm58pmTG7xEoVZxmYsqHjhYaMqDJH48Dx",
-            "4MrrBDrYzJvj2ADEkz8Lg3kfZeTJmTrYNtALdxyAqhuJ9xBoKrjKgtcYS7nKDBubNsPH1pb6oMqYBQFiGm28ikzX"
+            "bnuZUPAq5jgpqvaQBzXKBQ973yCpjL1pkqJjiBtVPybpzzKGnPv3uE3VufBVZtR6hq2y55b8MSJpPFVMqskBy3m",
+            "4HpwuknWrSpJCs2qXEMZA1kbAsP9WxJFaoHq1cH7W3yxLg5R2fHV8QPdY5Hz2bgDmGkRitLaPa3HbF65kTxNpNTe"
         ]
     });
 
@@ -240,13 +243,16 @@ fn success_signed_request_from_libindy() {
     let expected_operation = json!({
         "type": XFER_PUBLIC,
         "inputs": [
-            [addresses[0], 1],
-            [addresses[1], 1]
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1},
         ],
-        "outputs": [[addresses[2], 10], [addresses[3], 22]],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
         "signatures": [
-            "4XFsKCBsuW2e4rUfzy6SxbtyfvyL3WbK8bg1wkm4jLrnbnPmbed8oERdm58pmTG7xEoVZxmYsqHjhYaMqDJH48Dx",
-            "4MrrBDrYzJvj2ADEkz8Lg3kfZeTJmTrYNtALdxyAqhuJ9xBoKrjKgtcYS7nKDBubNsPH1pb6oMqYBQFiGm28ikzX"
+            "bnuZUPAq5jgpqvaQBzXKBQ973yCpjL1pkqJjiBtVPybpzzKGnPv3uE3VufBVZtR6hq2y55b8MSJpPFVMqskBy3m",
+            "4HpwuknWrSpJCs2qXEMZA1kbAsP9WxJFaoHq1cH7W3yxLg5R2fHV8QPdY5Hz2bgDmGkRitLaPa3HbF65kTxNpNTe"
         ]
     });
 

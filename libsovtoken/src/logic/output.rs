@@ -2,7 +2,7 @@
     Payment Output
 */
 
-use serde::{de, ser, ser::{SerializeTuple}, Deserialize, Serialize};
+use serde::{de, Deserialize};
 use std::fmt;
 use logic::type_aliases::TokenAmount;
 
@@ -61,12 +61,13 @@ pub struct OutputConfig {
     let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
     let output = Output::new(address, 5);
     let json = Output::to_json(&output).unwrap();
-    assert_eq!(json, r#"["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",5]"#);
+    assert_eq!(json, r#"{"address":"pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7","amount":5}"#);
     ```
 
 */
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize)]
 pub struct Output {
+    #[serde(rename = "address")]
     pub recipient: String,
     pub amount: TokenAmount
 }
@@ -74,15 +75,6 @@ pub struct Output {
 impl Output {
     pub fn new(address: String, amount: TokenAmount) -> Output {
         return Output { recipient: address, amount };
-    }
-}
-
-impl Serialize for Output {
-    fn serialize<S: ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut seq = serializer.serialize_tuple(2)?;
-        seq.serialize_element(&self.recipient)?;
-        seq.serialize_element(&self.amount)?;
-        return seq.end();
     }
 }
 
@@ -97,18 +89,6 @@ impl<'de> Deserialize<'de> for Output {
                 return formatter.write_str("Expected an Output with address and tokens.");
             }
 
-            fn visit_seq<V: de::SeqAccess<'de>>(self, mut seq: V) -> Result<Output, V::Error> {
-                let address = seq
-                    .next_element()?
-                    .ok_or(de::Error::invalid_length(0, &"2"))?;
-
-                let amount = seq
-                    .next_element()?
-                    .ok_or(de::Error::invalid_length(1, &"2"))?;
-
-                return Ok(Output::new(address, amount));
-            }
-
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Output, V::Error> {
                 let mut address = None;
                 let mut amount = None;
@@ -116,19 +96,20 @@ impl<'de> Deserialize<'de> for Output {
                 while let Some(key) = map.next_key()? {
                     match key {
                         "recipient" => { address = map.next_value()?; },
+                        "address" => { address = map.next_value()?; },
                         "amount" => { amount =  map.next_value()?; },
                         x => { return Err(de::Error::unknown_field(x, FIELDS)) }
                     }
                 }
 
-                let address = address.ok_or(de::Error::missing_field("recipient"))?;
+                let address = address.ok_or(de::Error::missing_field("recipient or address"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
                 return Ok(Output::new(address, amount));
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["recipient", "amount"];
+        const FIELDS: &'static [&'static str] = &["recipient", "amount", "address"];
         return deserializer.deserialize_struct("Output", FIELDS, OutputVisitor);
     }
 }
@@ -164,19 +145,18 @@ mod output_tests {
     }
 
     fn output() -> Output {
-        let address = String::from("pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
+        let address = String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7");
         return Output::new(address, 10);
     }
 
     #[test]
-    fn deserialize_invalid_output_tuple() {
-        let json = json!(["Avadsfesaafefsdfcv"]);
-        assert_invalid_deserialize(json, "invalid length 1, expected 2");
-    }
-
-    #[test]
-    fn deserialize_output_tuple() {
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
+    fn deserialize_output() {
+        let json = json!(
+            {
+                 "address":"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
+                 "amount":10
+            }
+        );
         let expected = output();
         assert_valid_deserialize(json, expected);
     }
@@ -184,7 +164,7 @@ mod output_tests {
     #[test]
     fn deserialize_invalid_output_object() {
         let json = json!({
-            "recipient": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"
+            "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"
         });
         assert_invalid_deserialize(json, "missing field `amount`");
     }
@@ -192,7 +172,10 @@ mod output_tests {
     #[test]
     fn serialize_valid_output_object() {
         let output = output();
-        let json = json!(["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7", 10]);
+        let json = json!({
+                 "address":"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
+                 "amount":10
+            });
         assert_valid_serialize(output, json);
     }
 
@@ -204,6 +187,6 @@ mod output_tests {
             ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[["pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]]}"#);
+        assert_eq!(fee.to_json().unwrap(), r#"{"ver":1,"outputs":[{"address":"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7","amount":10}]}"#);
     }
 }
