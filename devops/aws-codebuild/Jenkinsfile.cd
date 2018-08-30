@@ -5,8 +5,11 @@ def evLibrary = library(identifier: 'evernym-aws-codebuild@aws-codebuild', retri
 )).com.evernym.pipeline
 
 logger = evLibrary.Logger.new(this)
-notifier = evLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
+
+notifier = evLibrary.Notifier.new(this)
+utils = evLibrary.Utils.new(this)
+
 
 def codeBuildPipelines = {
     nodeWrapper {
@@ -24,7 +27,6 @@ def codeBuildPipelines = {
         }
 
         def evernymRepo = evLibrary.EvernymRepo.new(this)
-        def utils = evLibrary.Utils.new(this)
         def git = evLibrary.Git.new(this)
         def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('test-libsovtoken')
         def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
@@ -80,7 +82,7 @@ def codeBuildPipelines = {
 
                 onArtifacts = {
                     this.stage("$prTag: Archive logs") {
-                        utils.archiveArtifacts("logs/*.log*") {
+                        this.utils.archiveArtifacts("logs/*.log*") {
                             truncate = true
                             allowEmptyArchive = true
                             truncateFileSuffix = 'trunc.log'
@@ -179,7 +181,7 @@ def codeBuildPipelines = {
 
                 onArtifacts = {
                     this.stage("$prTag: Archive logs") {
-                        utils.archiveArtifacts("logs/*.log*") {
+                        this.utils.archiveArtifacts("logs/*.log*") {
                             truncate = true
                             allowEmptyArchive = true
                             truncateFileSuffix = 'trunc.log'
