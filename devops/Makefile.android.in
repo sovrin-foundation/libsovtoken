@@ -82,7 +82,7 @@ android_build_%: android_ndk android_prebuilt_%
 		SODIUM_INCLUDE_DIR=$(ANDROID_PREBUILT_DIR)/libsodium_$*/include \
 		LIBINDY_DIR=$(ANDROID_PREBUILT_DIR)/libindy_$*/lib \
 		CARGO_VERBOSITY=-v \
-			/bin/bash -ex build.nondocker.sh -s $*
+			/bin/bash -ex build.nondocker.sh -s -d $*
 
 .PHONY: android_pack
 android_pack:
