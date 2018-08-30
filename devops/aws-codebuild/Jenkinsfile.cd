@@ -8,8 +8,7 @@ logger = evLibrary.Logger.new(this)
 notifier = evLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
 
-pipelineWrapper({
-
+def codeBuildPipelines = {
     nodeWrapper {
         def packageName = 'testlibsovtoken'
         List _envBuildSrc = [
@@ -228,16 +227,36 @@ pipelineWrapper({
         ]
         builds.failFast = false
 
-        stage("Build") {
+        stage("CodeBuild Build") {
             utils.parallel builds
         }
     }
-}, { err ->
-    if (err) {
-        logger.error("Pipeline failed with the error $err")
-    }
+}
 
-    stage("Build result notification") {
-        notifier.email()
+def macOSPipeline = {
+    stage("MacOS Build") {
+        logger.info("Coming soon ...")
+    }
+}
+
+pipelineWrapper({
+    Map builds = [
+        codeBuild: codeBuildPipelines,
+        macos: macOSPipeline
+    ]
+    builds.failFast = false
+
+    stage("Build") {
+        utils.parallel builds
+    }
+}, { err ->
+    stage("Pipeline finalizing") {
+        if (err) {
+            logger.error("Pipeline failed with the error $err")
+        }
+
+        stage("Build result notification") {
+            notifier.email()
+        }
     }
 })
