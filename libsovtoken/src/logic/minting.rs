@@ -102,7 +102,7 @@ mod test_build_mint_request {
     #[test]
     fn build_mint_request_valid() {
         let output_config_pointer = json_c_pointer!([{
-            "recipient": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+            "address": "pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
             "amount": 12
         }]);
 
@@ -123,7 +123,7 @@ mod test_build_mint_request {
             "operation": {
                 "type": MINT_PUBLIC,
                 "outputs": [
-                    ["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm", 12]
+                    {"address":"E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm", "amount":12}
                 ]
             },
         });

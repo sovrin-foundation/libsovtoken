@@ -128,8 +128,16 @@ mod payment_request_test {
         assert_fees_request(
             json!({
                 "type": XFER_PUBLIC,
-                "outputs": [["a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",10]],
-                "inputs": [["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm", 30]],
+                "outputs": [{
+                    "address":"a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
+                    "amount":10
+                }],
+                "inputs": [
+                    {
+                        "address":"E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+                        "seqNo":30
+                    }
+                ],
                 "signatures": ["239asdkj3298uadkljasd98u234ijasdlkj"]
             }),
             |_fees_req| {}
