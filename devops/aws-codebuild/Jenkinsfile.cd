@@ -1,7 +1,6 @@
 #!groovy
 
-// FIXME debug
-def evLibrary = library(identifier: 'evernym-aws-codebuild@parallel-with-labels', retriever: modernSCM(
+def evLibrary = library(identifier: 'evernym-aws-codebuild@aws-codebuild', retriever: modernSCM(
     github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
 )).com.evernym.pipeline
 
@@ -17,9 +16,8 @@ def nodeLabels = [
     macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos || !macos',
 ]
 
-
 def codeBuildPipelines = {
-    def packageName = 'testlibsovtoken'
+    def packageName = 'testlibsovtoken' // FIXME debug
     List _envBuildSrc = [
         'devops',
         'libsovtoken/Cargo.toml',
@@ -34,7 +32,7 @@ def codeBuildPipelines = {
 
     def evernymRepo = evLibrary.EvernymRepo.new(this)
     def git = evLibrary.Git.new(this)
-    def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('test-libsovtoken')
+    def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('test-libsovtoken') // FIXME debug
     def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
 
     stage('Resolve current source version') {
