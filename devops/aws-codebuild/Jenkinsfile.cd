@@ -149,7 +149,7 @@ def codeBuildPipelines = {
 
 def macOSPipeline = {
     stage("MacOS Build") {
-        def packageName = 'test-libsovtoken'
+        def packageName = 'libsovtoken'
         def xcodeMinVersion = '9.0'
         def RUST_PATH = '~/.cargo/bin'
 
@@ -232,8 +232,6 @@ def macOSPipeline = {
                 stage('Upload libsovtoken universal package to Evernym repo') {
                     String pkgName
                     def repoUrl
-                    renameCommand = utils.shStdout("ls libsovtoken*.zip | sed 's/libsovtoken\\(.*\\)/mv & ${packageName}\\1/' | tail -1")
-                    sh "$renameCommand"
                     pkgName = utils.shStdout("ls ${packageName}*.zip")
                     logger.info("Uploading libsovtoken package '$pkgName' to evernym repo")
 
