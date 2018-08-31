@@ -13,17 +13,19 @@ utils = evLibrary.Utils.new(this)
 // TODO set proper labels
 def nodeLabels = [
     codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: '!macos',
-    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos || !macos',
+    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos', 
 ]
 
 def codeBuildPipelines = {
     def packageName = 'libsovtoken'
+    
     List _envBuildSrc = [
         'devops',
         'libsovtoken/Cargo.toml',
         'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
         'libsovtoken/build_scripts/android/android_settings.txt'
     ]
+    
     def srcVersion
 
     stage('Checkout sources from SCM') {
@@ -243,7 +245,100 @@ def codeBuildPipelines = {
 
 def macOSPipeline = {
     stage("MacOS Build") {
-        logger.info("Coming soon ...")
+        def packageName = 'libsovtoken'
+        def xcodeMinVersion = '9.0'
+        def RUST_PATH = '~/.cargo/bin'
+
+
+        stage('Checks') {
+            echo "===================== Checks for XCode and Rust environment ========================"
+            INSTALLED_XCODE_VERSION = sh(script: '''xcodebuild -version | head -1 | cut -d' ' -f2''', returnStdout: true)
+            echo "INSTALLED_XCODE_VERSION = ${INSTALLED_XCODE_VERSION} and xcodeMinVersion = ${xcodeMinVersion}"
+            if ( INSTALLED_XCODE_VERSION <= xcodeMinVersion ) {
+                msg = "The XCode version must be greater or equal ${xcodeMinVersion}"
+                echo "${msg}"
+                error(msg)
+            }
+
+            RUST_HOME_EXIST = sh(script: "test -d ${RUST_PATH} && echo '1' || echo '0' ", returnStdout: true).trim()
+            if ( RUST_HOME_EXIST == '0' ) {
+                msg = "Rust home dir does not exist. Make sure that rust is installed in the ${RUST_PATH}."
+                echo "${msg}"
+                error(msg)
+            }
+
+            RUSTC_VERSION = sh(script: "${RUST_PATH}/rustc --version || echo '0' ", returnStdout: true).trim()
+            if ( RUSTC_VERSION == '0' ) {
+                msg = "rustc does not exist. Make sure that rust is installed in the ${RUST_PATH}."
+                echo "${msg}"
+                error(msg)
+            }
+        }
+        
+        stage('Checkout sources from SCM') {
+            checkout scm
+        }
+
+        def evernymRepo = evLibrary.EvernymRepo.new(this)
+        def utils = evLibrary.Utils.new(this)
+
+        
+        withEnv([
+                    "PATH+RUST=${RUST_PATH}",
+                    "PATH+BREW=/usr/local/bin",
+                    "PATH+CURL=/usr/local/opt/curl/bin"
+                ]) { 
+            
+            dir('libsovtoken/build_scripts/ios/mac/') {
+                
+                stage('mac.01.libindy.setup') {
+                    sh './mac.01.libindy.setup.sh'
+                }
+                
+                stage('mac.02.libindy.env.sh') {
+                    sh ". mac.02.libindy.env.sh"
+                }
+                
+                stage('mac.03.libindy.build.sh') {
+                    try {
+                            sh "./mac.03.libindy.build.sh"
+                        } catch ( exc ) {
+                            logger.info("Stage 'mac.03' failed with exception ${exc}. So we run additional steps.")
+                            
+                            stage('mac.08.libssl.libcrypto.build.sh') {
+                                sh "./mac.08.libssl.libcrypto.build.sh"
+                            }
+
+                            stage('mac.09.libzmq.libsodium.build.sh') {
+                                sh "./mac.09.libzmq.libsodium.build.sh"
+                            }
+
+                            stage('mac.10.libminiz.libsqlite3.combine.sh') {
+                                sh "./mac.10.libminiz.libsqlite3.combine.sh"
+                            }
+                        }
+                }
+
+                stage('mac.14.libsovtoken.build.sh') {
+                    sh "./mac.14.libsovtoken.build.sh"
+                }
+            }
+            
+            dir('libsovtoken') {
+                stage('Upload libsovtoken universal package to Evernym repo') {
+                    String pkgName
+                    def repoUrl
+                    pkgName = utils.shStdout("ls ${packageName}*.zip")
+                    logger.info("Uploading libsovtoken package '$pkgName' to evernym repo")
+
+                    
+                    evernymRepo.upload {
+                        repoDistr = 'ios'
+                        packagePath = pkgName
+                    }
+                }
+            }
+        }
     }
 }
 
