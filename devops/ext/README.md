@@ -27,7 +27,6 @@ Notes:
   - consider to add all non-root users that will be using rvm to `rvm` group
 
 Environment variables:
-  - `BASE_ENV_VERSION` version of the dockerfile
   - `FPM_VERSION` version for the `fpm`
   - (`centos7` only) `RUBY_VERSION` version of the `ruby`
 
@@ -39,7 +38,6 @@ Supported arguments:
   - `RUST_VERSION`: version of the `rust` to install. Default: depends on dockerfile version
 
   Environment variables:
-    - `RUST_ENV_VERSION` version of the dockerfile
     - `RUST_VERSION` version of the `rust`
 
 ## Makefile
@@ -48,8 +46,7 @@ Supported arguments:
 
 - `%_in_docker` re-runs make for the matched target `%` inside `$(DOCKER_NAME):$(DOCKER_TAG)` docker image. Requires target `image_%` to be defined and expects that it builds necessary docker image. Environment variables `DOCKER_NAME` and `DOCKER_TAG` should be defined as well
 - `package` creates a package from the source code using [fpm][a1feb9f1] tool. Could be configured by `FPM_*` environment variables
-- `image_base` builds docker image with generally useful packages and `fpm` installed
-- `image_rust` builds docker image with `rust` installed
+- `image_dockerbase_<type>:<osname>:<version>` builds one of the base docker images along with its necessary images hierarchy where `type` is `base|rust|python`, `osname` is one of possible oses for this image type, `version` is one of the available versions for the pair `type-osname`
 
   [a1feb9f1]: https://github.com/jordansissel/fpm "fpm"
 
@@ -65,8 +62,6 @@ Expects the following targets to be defined in child makefiles:
 - `DOCKER_NAME`: name of the image to use in `%_in_docker` target's recipe. Default: not set
 - `DOCKER_TAG`: tag of the image to use in `%_in_docker` target's recipe. Default: not set
 - `DOCKER_UID`: `uid` of the user passed to `docker run` command. Default: resolved as `id -u`
-- `BASE_DOCKER_VERSION` (**required**): impacts the tag of the image built by `image_base` target. The tag is evaluated as: `$(BASE_DOCKER_VERSION)-$(OSNAME)`. Default: not set
-- `RUST_DOCKER_VERSION`(**required**): impacts the tag of the image built by `image_rust` target. The tag is evaluated as: `$(RUST_DOCKER_VERSION)-$(OSNAME)`. Default: not set
 
 #### Variables for package build configuration
 

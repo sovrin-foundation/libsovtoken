@@ -21,7 +21,7 @@ Artifacts for each android ABI will be built and zipped together.
 | x86   | i686-linux-android |
 | x86_64 | x86_64-linux-android |
 
-The zip file format will be
+The zip file format will be available in `_build` directory and will look as follows:
 
 **libsovtoken_<Cargo.toml-version>-yyyymmddHHMM-<git_short_rev>_<target_arch>.zip**
 
