@@ -102,7 +102,12 @@ fn  valid_output_json() {
 
         let expected = json!({
             "type": MINT_PUBLIC,
-            OUTPUTS: [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+            OUTPUTS: [
+                {
+                    "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                    "amount": 10
+                }
+            ]
         });
         assert_eq!(mint_operation, &expected);
         return ErrorCode::Success as i32;
@@ -157,7 +162,12 @@ fn valid_output_json_from_libindy() {
 
     let expected = json!({
         "type": MINT_PUBLIC,
-        OUTPUTS: [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",10]]
+        OUTPUTS: [
+            {
+                "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                "amount": 10
+            }
+        ]
     });
 
 

@@ -64,14 +64,24 @@ fn test_add_fees_to_request_valid() {
     }]);
 
     let expected_fees_request = json!({
-       "fees": [
-           [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
-           [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
-           ["2pTQPLHmv1xfw5qFrk6aET5eukoKsZNvHvvHhX6vV5Zi9t1co1L5CPTUVXeoyh6hG83N9crkhLb4KSfPisWaqM3E"]
-       ],
-       "operation": {
-           "type": "3"
-       }
+        "fees": [
+            [
+                {
+                    "address": "iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd",
+                    "seqNo": 1
+                }
+            ],
+            [
+                {
+                    "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                    "amount": 20
+                }
+            ],
+            ["64wPLDPMjGxgqTdrNTZFa9CK4NtvBx7eLJkgnjW3JchRGyMUr29tjkAiHCTnhLtkdW81k5BtBiiqM2tkaMB2eouv"]
+        ],
+        "operation": {
+            "type": "3"
+        }
     });
 
     let result = call_add_fees(
@@ -107,13 +117,23 @@ fn test_add_fees_to_request_valid_from_libindy() {
 
     let expected_fees_request = json!({
        "fees": [
-           [["iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd", 1]],
-           [["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 20]],
-           ["2pTQPLHmv1xfw5qFrk6aET5eukoKsZNvHvvHhX6vV5Zi9t1co1L5CPTUVXeoyh6hG83N9crkhLb4KSfPisWaqM3E"]
-       ],
-       "operation": {
-           "type": "3"
-       }
+            [
+                {
+                    "address": "iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd",
+                    "seqNo": 1
+                }
+            ],
+            [
+                {
+                    "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                    "amount": 20
+                }
+            ],
+            ["64wPLDPMjGxgqTdrNTZFa9CK4NtvBx7eLJkgnjW3JchRGyMUr29tjkAiHCTnhLtkdW81k5BtBiiqM2tkaMB2eouv"]
+        ],
+        "operation": {
+            "type": "3"
+        }
     });
 
     let (sender, receiver) = channel();

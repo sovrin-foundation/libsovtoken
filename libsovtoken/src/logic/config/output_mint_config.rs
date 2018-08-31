@@ -68,7 +68,7 @@ mod output_mint_config_test {
             ver: 1,
             outputs: vec![output],
         };
-        assert_eq!(mint.to_json().unwrap(), r#"{"ver":1,"outputs":[["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",10]]}"#);
+        assert_eq!(mint.to_json().unwrap(), r#"{"ver":1,"outputs":[{"address":"E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm","amount":10}]}"#);
     }
 
     fn initial_mint_request() -> Request<MintRequest> {
@@ -108,7 +108,10 @@ mod output_mint_config_test {
         assert_mint_request(
             json!({
                 "type": MINT_PUBLIC,
-                "outputs": [["E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",10]],
+                "outputs": [{
+                    "address":"E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm",
+                    "amount":10
+                }],
             }),
             |_mint_req| {}
         )

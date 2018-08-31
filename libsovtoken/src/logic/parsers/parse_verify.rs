@@ -140,10 +140,10 @@ mod test_parse_verify {
                     "txn": {
                         "data": {
                             "outputs": [
-                                [
-                                    "sM2S2UJVkh9FEZLo7bNJD5aw3u98v6eryDyN9ehB2iW7kia4M",
-                                    10
-                                ]
+                                {
+                                    "address": "sM2S2UJVkh9FEZLo7bNJD5aw3u98v6eryDyN9ehB2iW7kia4M",
+                                    "amount": 10
+                                }
                             ]
                         },
                         "metadata": {

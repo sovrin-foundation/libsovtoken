@@ -204,7 +204,9 @@ mod test_handle_signing {
         assert_eq!("10001", request.operation.get("type").unwrap());
         assert_eq!(
             "iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd",
-            request.operation.get("inputs").unwrap().get(0).unwrap().get(0).unwrap()
+            request.operation.get("inputs").unwrap().as_array().unwrap()
+                .get(0).unwrap().as_object().unwrap()
+                .get("address").unwrap().as_str().unwrap()
         );
         assert_eq!("7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8G", request.identifier.unwrap());
     }

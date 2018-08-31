@@ -2,13 +2,15 @@
 
 use indy::ErrorCode;
 use logic::address::add_qualifer_to_address;
+use logic::input::Inputs;
+use logic::output::Outputs;
 use logic::parsers::common::{ResponseOperations,
                              UTXO,
                              TXO,
                              TransactionMetaData,
                              RequireSignature};
 use logic::parsers::error_code_parser;
-use logic::type_aliases::{TokenAmount, ProtocolVersion};
+use logic::type_aliases::{ProtocolVersion};
 
 /**
     for parse_payment_response_handler input resp_json
@@ -58,8 +60,8 @@ pub struct Transaction {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
     pub extra: Option<String>,
-    pub inputs: Vec<(String, u64)>,
-    pub outputs: Vec<(String, TokenAmount)>,
+    pub inputs: Inputs,
+    pub outputs: Outputs,
 }
 
 /**
@@ -90,7 +92,8 @@ pub fn from_response(base: ParsePaymentResponse) -> Result<ParsePaymentReply, Er
             let result = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
             let mut utxos: Vec<UTXO> = vec![];
             for unspent_output in result.txn.data.outputs {
-                let (address, amount) = unspent_output;
+                let address = unspent_output.recipient;
+                let amount  = unspent_output.amount;
                 let qualified_address: String = add_qualifer_to_address(&address);
                 let seq_no: u64 = result.tnx_meta_data.seq_no;
                 let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
@@ -124,14 +127,29 @@ mod parse_payment_response_tests {
                 {
                     "inputs":
                     [
-                        ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                        {
+                            "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                            "seqNo": 1
+                        }
                     ],
                     "outputs":
                     [
-                        ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
-                        ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
-                        ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
-                        ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                        {
+                            "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                            "amount": 13
+                        },
+                        {
+                            "address": "24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY",
+                            "amount": 13
+                        },
+                        {
+                            "address": "mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5",
+                            "amount": 13
+                        },
+                        {
+                            "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                            "amount": 1
+                        }
                     ]
                 },
                 "metadata":
@@ -170,14 +188,29 @@ mod parse_payment_response_tests {
             {
                 "inputs":
                 [
-                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                    {
+                        "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                        "seqNo": 1
+                    }
                 ],
                 "outputs":
                 [
-                    ["2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es", 13],
-                    ["24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY", 13],
-                    ["mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5", 13],
-                    ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1]
+                    {
+                        "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                        "amount": 13
+                    },
+                    {
+                        "address": "24xHHVDRq97Hss5BxiTciEDsve7nYNx1pxAMi9RAvcWMouviSY",
+                        "amount": 13
+                    },
+                    {
+                        "address": "mNYFWv9vvoQVCVLrSpbU7ZScthjNJMQxMs3gREQrwcJC1DsG5",
+                        "amount": 13
+                    },
+                    {
+                        "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+                        "amount": 1
+                    }
                 ]
             },
             "metadata":

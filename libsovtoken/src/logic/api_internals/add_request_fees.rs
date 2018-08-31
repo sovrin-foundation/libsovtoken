@@ -28,7 +28,7 @@ pub fn deserialize_inputs (
     extra: *const c_char,
     cb: Option<AddRequestFeesCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
-    trace!("logic::add_request_fees::deserialize_inputs >> req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", req_json, inputs_json, outputs_json);
+    debug!("logic::add_request_fees::deserialize_inputs >> req_json: {:?}, inputs_json: {:?}, outputs_json: {:?}", req_json, inputs_json, outputs_json);
 
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
 

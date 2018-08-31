@@ -201,7 +201,7 @@ trait InputSigner<A: CryptoAPI> {
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let vals: Vec<serde_json::Value> = vec![
-            Some(json!([input.address, input.seq_no])),
+            Some(json!([input])),
             Some(json!(outputs)),
             txn_digest.clone().map(|e| json!(e)),
 //            _extra.map(|e| json!(e))
