@@ -115,7 +115,6 @@ def codeBuildPipelines = {
     }
 
     stage('Upload deb to Evernym repo') {
-        return // FIXME: DEBUG
         String debName
 
         dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
@@ -231,7 +230,6 @@ def macOSPipeline = {
             
             dir('libsovtoken') {
                 stage('Upload libsovtoken universal package to Evernym repo') {
-                    return
                     String pkgName
                     def repoUrl
                     renameCommand = utils.shStdout("ls libsovtoken*.zip | sed 's/libsovtoken\\(.*\\)/mv & ${packageName}\\1/' | tail -1")
