@@ -10,12 +10,17 @@ logger.setGlobalLevel('TRACE')
 
 pipelineWrapper({
     nodeWrapper {
-
+        List _envBuildSrc = [
+            'devops',
+            'libsovtoken/Cargo.toml',
+            'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
+            'libsovtoken/build_scripts/android/android_settings.txt'
+        ]
         List osnames = [
             'xenial',
             //'centos7'
         ]
-        def goals = ['test_dry', 'test']
+        List goals = ['test_dry', 'test']
 
         stage('Checkout from SCM') {
             checkout scm
@@ -58,7 +63,7 @@ pipelineWrapper({
                 }
 
                 stage("$osname: Resolve image tag") {
-                    def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_ci_version -s")
+                    def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_ci_version -s")
                     buildImageTag = "${_imgVersion}-${osname}-ci"
                     logger.info("CI docker image tag: $buildImageTag")
                 }
@@ -78,16 +83,16 @@ pipelineWrapper({
                     computeType = 'medium'
 
                     // build spec for env image
-                    envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+                    envBuildSrc = _envBuildSrc // TODO make more accurate
                     envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
                     envBuildCmds = [
                         'export PROJECT_DIR=$PWD',
-                        'make -C devops image_ci'
+                        'make -C devops image_lst_ci'
                     ]
                     envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
                     envBuildEnvv = [
                         [name: 'OSNAME', value: osname],
-                        [name: 'CI_DOCKER_TAG', value: buildImageTag],
+                        [name: 'LST_CI_DOCKER_TAG', value: buildImageTag],
                     ]
 
                     onArtifacts = {

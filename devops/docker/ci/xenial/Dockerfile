@@ -1,4 +1,4 @@
-FROM evernym/libsovtoken:0.5.0-xenial-base
+FROM evernym/libsovtoken:base-xenial-0.8.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -7,6 +7,7 @@ ARG INDY_PLENUM_VERSION
 ARG INDY_ANONCREDS_VERSION
 ARG INDY_NODE_VERSION
 
+ARG EVERNYM_REPO_IP
 ARG POOL_IP
 
 USER root
@@ -62,6 +63,7 @@ USER root
 # sovtoken and sovtokenfees
 # bump this env var if you need to avoid caching for apt-based installation
 ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
+ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
 # TODO workaround to copy optional files *.deb
 # fix that once that issue is resovled
 # https://github.com/moby/moby/issues/26332
@@ -71,22 +73,21 @@ RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovto
         && dpkg -i /tmp/sovtoken-debs/*.deb \
         && apt-get install -f -y --no-install-recommends; \
     else \
-        echo "10.2.3.179 repo.corp.evernym.com" >>/etc/hosts \
-        update-ca-certificates \
-        mkdir -p /usr/local/share/ca-certificates \
-        curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt \
-        update-ca-certificates \
-        curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add - \
-        echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list \
-        apt-get update && apt-get install -y --no-install-recommends \
+        echo "${EVERNYM_REPO_IP} repo.corp.evernym.com" >> /etc/hosts \
+        && mkdir -p /usr/local/share/ca-certificates \
+        && curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt \
+        && update-ca-certificates \
+        && curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add - \
+        && echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list \
+        && apt-get update && apt-get install -y --no-install-recommends \
             sovtoken \
-            sovtokenfees; \
+            sovtokenfees \
+        && rm -rf /var/lib/apt/lists/*; \
     fi
 
 
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.36.0
-
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.39.0
