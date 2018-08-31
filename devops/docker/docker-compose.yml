@@ -9,10 +9,31 @@ services:
       args:
           - INDY_SDK_VERSION
           - u_id=${DOCKER_UID}
-    image: ${LSTBASE_DOCKER_NAME}:${LSTBASE_DOCKER_TAG}
+    image: ${LST_BASE_DOCKER_NAME}:${LST_BASE_DOCKER_TAG}
 
   ci:
     build:
       context: ./ci/$OSNAME
       network: ${DOCKER_BUILD_NETWORK:-bridge}
-    image: ${CI_DOCKER_NAME}:${CI_DOCKER_TAG}
+    image: ${LST_CI_DOCKER_NAME}:${LST_CI_DOCKER_TAG}
+
+  android_ndk:
+    build:
+      context: ./android_ndk/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
+      args:
+          - PYTHON3_VERSION
+          - ANDROID_NDK_VERSION
+          - ANDROID_NDK_DIR
+    image: ${LST_ANDROID_NDK_DOCKER_NAME}:${LST_ANDROID_NDK_DOCKER_TAG}
+
+  android_build:
+    build:
+      context: ./android_build/$OSNAME
+      network: ${DOCKER_BUILD_NETWORK:-bridge}
+      args:
+          - u_id=${DOCKER_UID}
+          - ANDROID_ARCHS
+          - ANDROID_PREBUILT_DIR
+          - RUST_TARGETS
+    image: ${LST_ANDROID_BUILD_DOCKER_NAME}:${LST_ANDROID_BUILD_DOCKER_TAG}

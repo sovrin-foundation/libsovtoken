@@ -5,38 +5,127 @@ def evLibrary = library(identifier: 'evernym-aws-codebuild@aws-codebuild', retri
 )).com.evernym.pipeline
 
 logger = evLibrary.Logger.new(this)
-notifier = evLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
 
-pipelineWrapper({
+notifier = evLibrary.Notifier.new(this)
+utils = evLibrary.Utils.new(this)
 
-    nodeWrapper {
-        def packageName = 'libsovtoken'
-        def srcVersion
+// TODO set proper labels
+def nodeLabels = [
+    codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: '!macos',
+    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos || !macos',
+]
+
+def codeBuildPipelines = {
+    def packageName = 'libsovtoken'
+    List _envBuildSrc = [
+        'devops',
+        'libsovtoken/Cargo.toml',
+        'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
+        'libsovtoken/build_scripts/android/android_settings.txt'
+    ]
+    def srcVersion
+
+    stage('Checkout sources from SCM') {
+        checkout scm
+    }
+
+    def evernymRepo = evLibrary.EvernymRepo.new(this)
+    def git = evLibrary.Git.new(this)
+    def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
+    def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
+
+    stage('Resolve current source version') {
+        srcVersion = utils.srcVersion(projectType: 'rust')
+        logger.info("Current source version: $srcVersion")
+    }
+
+    stage('Upload source to S3') {
+        awsCBHelper.uploadSourceToS3()
+    }
+
+    def androidBuild = {
+        def osname = 'xenial'
+        def prTag = "cd-$osname-android"
+        List goals = ['package_android']
+        List targetArchs = ['arm', 'armv7', 'arm64', 'x86', 'x86_64']
+        def buildImageTag
+
+        stage("$prTag: Resolve image tag") {
+            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_android_build_version -s")
+            buildImageTag = "${_imgVersion}-${prTag}"
+            logger.info("CD docker image tag: $buildImageTag")
+        }
+
+        awsCBHelper.build() {
+            projectTag = prTag
+
+            // build spec for env image
+            envBuildSrc = _envBuildSrc // TODO make more accurate
+            envBuildCmds = [
+                'export PROJECT_DIR=$PWD',
+                'make -C devops image_lst_android_build'
+            ]
+            envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
+            envBuildEnvv = [
+                [name: 'OSNAME', value: osname],
+                [name: 'LST_ANDROID_BUILD_DOCKER_TAG', value: buildImageTag],
+            ]
+
+            // env and build spec
+            imageTag = buildImageTag
+            buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
+            envv = [
+                [name: 'OSNAME', value: osname],
+                [name: 'ANDROID_ARCHS', value: "${targetArchs.join(' ')}"],
+                [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                [name: 'PACKAGE_NAME', value: packageName],
+                [name: 'GIT_SHA1_SHORT', value: git.sha1(shortN: true)],
+                [name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*all.zip"],
+            ]
+
+            onArtifacts = {
+                this.stage("$prTag: Archive logs") {
+                    this.utils.archiveArtifacts("logs/*.log*") {
+                        truncate = true
+                        allowEmptyArchive = true
+                        truncateFileSuffix = 'trunc.log'
+                    }
+                }
+            }
+        }
+
+        stage('Upload android archives to Evernym repo') {
+            String archName
+
+            dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
+                archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
+
+                logger.info("Uploading package '$archName' to evernym repo")
+                evernymRepo.upload {
+                    repoDistr = 'android'
+                    packagePath = archName
+                }
+            }
+
+            notifier.email {
+                subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new android package '$archName' was published"
+                body = ("New android package '$archName' was built and published" +
+                    '\n\nCheck console output at $BUILD_URL to view the details.')
+            }
+        }
+    }
+
+    def xenialBuild = {
+        def osname = 'xenial'
+        def prTag = "cd-$osname"
+        def goals = ['package']
+        def buildImageTag
         def lastRevision
         def debPVersion
         def cratePVersion
-        def goals = ['package']
 
-        def buildImageTag
-        def osname = 'xenial'
-        def prTag = "cd-$osname"
-
-        stage('Checkout sources from SCM') {
-            checkout scm
-        }
-
-        def evernymRepo = evLibrary.EvernymRepo.new(this)
-        def utils = evLibrary.Utils.new(this)
-        def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
-        def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
-
-        stage('Resolve current source version') {
-            srcVersion = utils.srcVersion(projectType: 'rust')
-            logger.info("Current source version: $srcVersion")
-        }
-
-        stage('Resolve last revision') {
+        stage('Resolve last debian revision') {
             lastRevision = evernymRepo.getLastRevision {
                 delegate.packageName = packageName
                 packageSrcVersion = srcVersion
@@ -61,29 +150,25 @@ pipelineWrapper({
             //logger.info("Package version for rust registry: $cratePVersion")
         }
 
-        stage("$osname: Resolve image tag") {
-            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lstbase_version -s")
-            buildImageTag = "${_imgVersion}-${osname}-cd"
+        stage("$prTag: Resolve image tag") {
+            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_base_version -s")
+            buildImageTag = "${_imgVersion}-${prTag}"
             logger.info("CD docker image tag: $buildImageTag")
-        }
-
-        stage('Upload source to S3') {
-            awsCBHelper.uploadSourceToS3()
         }
 
         awsCBHelper.build() {
             projectTag = prTag
 
             // build spec for env image
-            envBuildSrc = ['devops', 'libsovtoken/Cargo.toml'] // TODO make more accurate
+            envBuildSrc = _envBuildSrc // TODO make more accurate
             envBuildCmds = [
                 'export PROJECT_DIR=$PWD',
-                'make -C devops image_lstbase'
+                'make -C devops image_lst_base'
             ]
             envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
             envBuildEnvv = [
                 [name: 'OSNAME', value: osname],
-                [name: 'LSTBASE_DOCKER_TAG', value: buildImageTag],
+                [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
             ]
 
             // env and build spec
@@ -92,14 +177,15 @@ pipelineWrapper({
             envv = [
                 [name: 'OSNAME', value: osname],
                 [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                [name: 'ARTIFACTS', value: 'libsovtoken/target/release/libsovtoken*.*'],
+                [name: 'ARTIFACTS', value: "libsovtoken/target/release/${packageName}*.*"],
+                [name: 'PACKAGE_NAME', value: packageName],
                 [name: 'FPM_P_VERSION', value: debPVersion],
                // [name: 'CRATE_P_VERSION', value: cratePVersion],
             ]
 
             onArtifacts = {
-                this.stage("$osname: Archive logs") {
-                    utils.archiveArtifacts("logs/*.log*") {
+                this.stage("$prTag: Archive logs") {
+                    this.utils.archiveArtifacts("logs/*.log*") {
                         truncate = true
                         allowEmptyArchive = true
                         truncateFileSuffix = 'trunc.log'
@@ -124,7 +210,7 @@ pipelineWrapper({
             notifier.email {
                 subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new deb '$debName' was published"
                 body = ("New debian package '$debName' was built and published" +
-                    '\n\nCheck console output at $BUILD_URL to view the results.')
+                    '\n\nCheck console output at $BUILD_URL to view the details.')
             }
         }
 
@@ -140,12 +226,51 @@ pipelineWrapper({
         }
         */
     }
-}, { err ->
-    if (err) {
-        logger.error("Pipeline failed with the error $err")
-    }
 
-    stage("Build result notification") {
-        notifier.email()
+    Map builds = [
+        xenial: xenialBuild,
+        android: [
+            build: androidBuild,
+            nodeLabel: "$nodeLabels.codeBuild"
+        ]
+    ]
+    builds.failFast = false
+
+    stage("CodeBuild Build") {
+        utils.parallel builds
+    }
+}
+
+def macOSPipeline = {
+    stage("MacOS Build") {
+        logger.info("Coming soon ...")
+    }
+}
+
+pipelineWrapper({
+    Map builds = [
+        codeBuild: [
+            build: codeBuildPipelines,
+            nodeLabel: "$nodeLabels.codeBuild"
+        ],
+        macos: [
+            build: macOSPipeline,
+            nodeLabel: "$nodeLabels.macos"
+        ]
+    ]
+    builds.failFast = false
+
+    stage("Build") {
+        utils.parallel builds
+    }
+}, { err ->
+    stage("Pipeline finalizing") {
+        if (err) {
+            logger.error("Pipeline failed with the error $err")
+        }
+
+        stage("Build result notification") {
+            notifier.email()
+        }
     }
 })
