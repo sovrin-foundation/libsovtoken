@@ -1,4 +1,4 @@
-FROM evernym/dockerbase:base-xenial-0.3.0
+FROM evernym/dockerbase:base-xenial-0.4.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG RUST_VERSION
@@ -15,4 +15,4 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --default-tool
 
 # TODO CMD ENTRYPOINT ...
 
-ENV RUST_ENV_VERSION=0.6.0
+ENV RUST_ENV_VERSION=0.7.0

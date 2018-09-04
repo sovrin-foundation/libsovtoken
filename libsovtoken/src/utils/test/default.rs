@@ -45,7 +45,7 @@ pub fn outputs() -> Outputs {
 pub fn outputs_json_pointer() -> *const c_char {
     json_c_pointer!([
         {
-            "recipient": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
+            "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
             "amount": 10
         }
     ])

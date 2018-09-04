@@ -7,7 +7,6 @@ abspath() {
 TARGET_NDK=$(grep ndk ../android_settings.txt | cut -d '=' -f 2)
 INDY_PREBUILT="${PWD}/indy-android-dependencies"
 INDY_SDK_REPO="https://github.com/hyperledger/indy-sdk.git"
-FILEY_URL="https://repo.corp.evernym.com/filely/android/"
 
 GREEN="[0;32m"
 BLUE="[0;34m"

@@ -1,0 +1,20 @@
+#!/bin/bash -e
+archs=$1
+api=$2
+base_dir=${3:-/tmp/android-ndk}
+
+if [[ -z "$archs" || -z "$api" || -z "$base_dir" ]]; then
+    echo "Usage: $0 <archs> <api> [<base-dir>]"
+    exit 1
+fi
+
+unzip -q /tmp/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip -d /tmp
+
+for arch in $archs; do
+    echo "Installing android-ndk for arch $arch, api $api to $base_dir/$api/$arch ..."
+    python${PYTHON3_VERSION} /tmp/android-ndk-${ANDROID_NDK_VERSION}/build/tools/make_standalone_toolchain.py \
+        --arch "$arch" --api "$api" --install-dir "$base_dir/$api/$arch"
+    echo "Done"
+done
+
+rm -rf /tmp/android-ndk-${ANDROID_NDK_VERSION}

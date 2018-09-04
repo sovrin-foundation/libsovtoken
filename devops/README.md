@@ -29,7 +29,9 @@ CI pipeline stages:
 
 ## CD pipeline
 
-CD pipeline is described by [Jenkinsfile.cd](aws-codebuild/Jenkinsfile.cd). It uses [Jenkins shared library](https://github.com/evernym/jenkins-shared/tree/aws-codebuild) API as well. For now CD generates artifacts (debian package) only for ubuntu `xenial`.
+CD pipeline is described by [Jenkinsfile.cd](aws-codebuild/Jenkinsfile.cd). It uses [Jenkins shared library](https://github.com/evernym/jenkins-shared/tree/aws-codebuild) API as well and generates the following artifacts:
+- debian package for ubuntu `xenial`
+- zip archive with shared and dynamic libraries for android on the following architectures: `arm`, `armv7`, `arm64`, `x86`, `x86_64`
 
 CD pipeline stages:
 - clone the GitHub repository
@@ -54,25 +56,42 @@ CD pipeline stages:
 - docker-compose
 
 ### Targets
+
+Please refer to [ext/README.md](ext/README.md) for more details about targets inherited from there.
+
+#### General build targets
 - `test_dry` runs tests in "dry" mode: `cargo test --no-run`
 - `test` runs tests: `cargo test`
 - `build` runs `cargo build`
 - `publish_crate` publishes the code to crates.io performing cargo `login`, `package` and `publish` commands
-- `image_ci` builds docker image with necessary environment for performing both CI and CD tasks
-- `image_ci_version` prints current version of the docker image (dockerfile) built by `image_ci` target
-- please refer to [ext/README.md](ext/README.md) for list of targets inherited from there
+- `package` creates debian package
+- `package_android` builds and archives libraries for android for a set of architectures
+
+Each target could be run in two ways - with or without `_in_docker` postfix: e.g. `test_in_docker` and `test`. In former case the target is run inside docker container, otherwise current host's environment is used. Docker image for each target can be built using `image_<build-target-name>` target.
+
+#### Android build target
+- `android_build_<arch>` builds libraries for android, where `arch` is one of supported platforms (please check `ANDROID_ARCHS` environment variable to see the list of supported platforms).
 
 
-Each target could be run in two ways - with or without `_in_docker` postfix: e.g. `test_in_docker` and `test`. In former case the target is run inside docker container (though it makes sense not for all targets), otherwise current host's environment is used.
+#### Docker images targets
+- `image_<build-target-name>` - set of targets to build docker images for [general build targets](#general-build-targets) in-docker running
+- `image_lst_base` builds docker image with necessary environment to create debian package, it's a parent for `image_lst_ci` image
+- `image_lst_base_version` prints current version of the docker image (dockerfile) built by `image_lst_base` target
+- `image_lst_ci` builds docker image with necessary environment to perform CI tasks
+- `image_lst_ci_version` prints current version of the docker image (dockerfile) built by `image_lst_ci` target
 
 ### Environment variables
 
-- `PROJECT_DIR`: absolute path of the top level project dir. Default: resolved as `git rev-parse --show-toplevel`
-- `RELEASE`: adds `--release` flag to cargo `test` and `build` commands if set to `1`. Default: `1`
-- `OSNAME`: switches OS context, possible values: `xenial`, `centos7`. Default: `xenial`
-- `CARGO_TARGET_DIR`: sets [CARGO_TARGET_DIR](https://doc.rust-lang.org/cargo/reference/environment-variables.html) environment variable. Default: `target/$(OSNAME)`
-- `CRATE_P_VERSION`: if set overwrites `version` field of `[package]` section in [Cargo.toml](../libsovtoken/Cargo.toml) before crate publishing. Default: not set
-- `CARGO_LOGIN_TOKEN`: token to perform `cargo login` during crate publishing. Default: not set
-- `DOCKER_NAME`: name of the image built by `image_ci` target. Default: `evernym/libsovtoken`
-- `DOCKER_TAG`: tag of the image built by `image_ci` target. Default: `<VERSION>-$(OSNAME)-ci`, where `VERSION` is value of `CI_ENV_VERSION` environment variable in accordant dockerfile
-- please refer to [ext/README.md](ext/README.md) for list of environment variables inherited from there
+| Variable      | Targets | Description | Default
+|---            |---                  |---|---|
+| `PROJECT_DIR`       | all  | absolute path of the top level project dir   |resolved as `git rev-parse --show-toplevel`   |
+|  `RELEASE`          | all  | adds `--release` flag to cargo `test` and `build` commands if set to `1`  | `1`  |
+|  `OSNAME`           | all  | switches OS context, possible values: `xenial`, `centos7`|`xenial`|
+|  `CARGO_TARGET_DIR` | all  | sets [CARGO_TARGET_DIR](https://doc.rust-lang.org/cargo/reference/environment-variables.html) environment variable|`target/$(OSNAME)`    |
+| `ANDROID_ARCHS`     |`package_android`  | target architectures for android builds  |`arm`, `armv7`, `arm64`, `x86`, `x86_64`|
+| `CRATE_P_VERSION`   | all  | if set overwrites `version` field of `[package]` section in [Cargo.toml](../libsovtoken/Cargo.toml) before crate publishing| not set  |
+| `CARGO_LOGIN_TOKEN` | all  | token to perform `cargo login` during crate publishing  |not set|
+| `DOCKER_NAME`       | all  | name of the image built by `image_lst_ci` target |`evernym/libsovtoken`|
+|  `DOCKER_TAG`       | all  | tag of the image built by `image_lst_ci` target| `<VERSION>-$(OSNAME)-ci`, where `VERSION` is value of `CI_ENV_VERSION` environment variable in accordant dockerfile     |
+
+Please refer to [ext/README.md](ext/README.md) for list of environment variables inherited from there
