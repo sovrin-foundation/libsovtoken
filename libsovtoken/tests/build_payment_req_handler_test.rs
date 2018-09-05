@@ -1,13 +1,13 @@
 extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
-extern crate rust_indy_sdk as indy;                      // lib-sdk project
+extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
 extern crate rust_base58;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate rust_indy_sdk;
+extern crate rust_libindy_wrapper;
 
 use indy::ErrorCode;
 use indy::utils::results::ResultHandler;

@@ -65,7 +65,7 @@ impl Hash {
 /// ```
 /// extern crate openssl;
 /// extern crate sovtoken;
-/// extern crate rust_indy_sdk as indy;
+/// extern crate rust_libindy_wrapper as indy;
 /// use self::openssl::hash::{hash2, MessageDigest, Hasher, DigestBytes};
 /// use self::sovtoken::logic::hash::Hashable;
 /// use self::indy::ErrorCode;
