@@ -1,4 +1,4 @@
-extern crate rust_indy_sdk as indy;
+extern crate rust_libindy_wrapper as indy;
 
 use sovtoken::logic::config::set_fees_config::SetFees;
 use sovtoken::logic::request::Request;

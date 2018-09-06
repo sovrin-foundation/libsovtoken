@@ -2,7 +2,7 @@
 #[macro_use] extern crate serde_derive;
 extern crate libc;
 extern crate sovtoken;
-extern crate rust_indy_sdk as indy;                      // lib-sdk project
+extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
 extern crate rust_base58;
 pub mod utils;
 

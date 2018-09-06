@@ -11,7 +11,7 @@ extern crate rand;
 
 extern crate rust_base58;
 extern crate sovtoken;
-extern crate rust_indy_sdk as indy;                      // lib-sdk project
+extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
 
 use libc::c_char;
 use rand::Rng;

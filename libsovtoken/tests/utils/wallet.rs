@@ -3,7 +3,7 @@
  */
 
 extern crate env_logger;
-extern crate rust_indy_sdk as indy;
+extern crate rust_libindy_wrapper as indy;
 extern crate sovtoken;
 
 use self::indy::ErrorCode;

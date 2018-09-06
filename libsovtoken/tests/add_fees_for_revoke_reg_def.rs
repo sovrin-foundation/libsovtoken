@@ -1,7 +1,7 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 extern crate sovtoken;
-extern crate rust_indy_sdk as indy;
+extern crate rust_libindy_wrapper as indy;
 
 mod utils;
 use indy::ErrorCode;
