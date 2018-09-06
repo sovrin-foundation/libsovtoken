@@ -2,7 +2,7 @@
 //! tests for API related functions
 
 extern crate sovtoken;
-extern crate rust_indy_sdk as indy;                      // lib-sdk project
+extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
 
 use indy::ErrorCode;
 use sovtoken::api::sovtoken_init;
