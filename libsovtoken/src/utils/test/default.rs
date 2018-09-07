@@ -4,10 +4,11 @@
 */
 
 use libc::c_char;
+use utils::base58::IntoBase58;
+use utils::constants::txn_types;
 use utils::ffi_support::c_pointer_from_string;
 use utils::random::rand_string;
-use utils::constants::txn_types;
-use utils::base58::IntoBase58;
+
 use logic::parsers::common::TXO;
 use logic::input::{Input, Inputs};
 use logic::output::{Output, Outputs};

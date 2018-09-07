@@ -4,9 +4,11 @@
 
 use libc::c_char;
 use std::char;
+
+use bs58::decode::DecodeError;
 use utils::ffi_support::str_from_char_ptr;
 use utils::base58::{FromBase58};
-use bs58::decode::DecodeError;
+
 
 /**
     Enum which holds possible errors with the did.
