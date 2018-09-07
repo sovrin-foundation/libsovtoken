@@ -7,7 +7,7 @@ use logic::input::Inputs;
 use logic::output::Outputs;
 use logic::xfer_payload::XferPayload;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
-use rust_base58::{ToBase58, FromBase58};
+use utils::base58::{IntoBase58, FromBase58};
 use serde_json;
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
@@ -72,7 +72,7 @@ fn build_payment_request_pointer(
 
     let identifier = signed_payload.inputs[0].address.clone();
     let identifier = identifier.as_bytes().from_base58_check();
-    let identifier = identifier.map(|s| s.to_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?;
+    let identifier = identifier.map(|s| s.into_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?;
 
     let payment_request = PaymentRequest::new(signed_payload)
         .as_request(identifier);

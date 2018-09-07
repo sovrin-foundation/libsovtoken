@@ -4,14 +4,16 @@
 */
 
 use libc::c_char;
+use utils::base58::IntoBase58;
+use utils::constants::txn_types;
 use utils::ffi_support::c_pointer_from_string;
 use utils::random::rand_string;
-use utils::constants::txn_types;
+
 use logic::parsers::common::TXO;
 use logic::input::{Input, Inputs};
 use logic::output::{Output, Outputs};
 use logic::xfer_payload::XferPayload;
-use rust_base58::ToBase58;
+
 
 pub fn inputs_json_pointer() -> *const c_char {
     let txo_1 = TXO { address: "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC".to_string(), seq_no: 2 };
@@ -60,7 +62,7 @@ pub extern fn empty_callback_string(
 }
 
 pub fn did() -> *const c_char {
-    let did = rand_string(16).as_bytes().to_base58();
+    let did = rand_string(16).as_bytes().into_base58();
     c_pointer_from_string(did)
 }
 

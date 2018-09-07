@@ -8,12 +8,12 @@
 // crates from crate.io etc
 // ------------------------------------------
 extern crate base64;
+extern crate bs58;
 extern crate env_logger;
 extern crate hex;
 extern crate libc;
 extern crate log_panics;
 extern crate openssl;
-extern crate rust_base58;
 extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
