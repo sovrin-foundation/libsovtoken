@@ -69,7 +69,7 @@ mod test_build_mint_request {
     use super::*;
     use std::ptr::null;
     use logic::output::Output;
-    use rust_base58::ToBase58;
+    use utils::base58::IntoBase58;
     use utils::constants::txn_types::MINT_PUBLIC;
     use utils::ffi_support::{c_pointer_from_str};
     use utils::test::default;
@@ -106,7 +106,7 @@ mod test_build_mint_request {
             "amount": 12
         }]);
 
-        let did_str = &"1123456789abcdef".as_bytes().to_base58();
+        let did_str = &"1123456789abcdef".as_bytes().into_base58();
         let (did, output_config, _, _) = call_deserialize_inputs(
             Some(c_pointer_from_str(did_str)),
             Some(output_config_pointer),

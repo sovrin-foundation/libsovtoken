@@ -138,12 +138,12 @@ impl<'de> Deserialize<'de> for Input {
 
 #[cfg(test)]
 mod input_tests {
-    use rust_base58::ToBase58;
     use serde_json;
 
     use logic::input::{Input, InputConfig};
     use logic::parsers::common::TXO;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
+    use utils::base58::IntoBase58;
 
 
     fn json_value_to_string(json: serde_json::Value) -> String {
@@ -178,7 +178,7 @@ mod input_tests {
     fn deserialize_invalid_input_object_without_seq_no() {
         let json = json!("txo:sov:".to_string() + &json!({
             "address": "pay:sov:a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7",
-        }).to_string().as_bytes().to_base58_check());
+        }).to_string().as_bytes().into_base58_check());
         assert_invalid_deserialize(json, "missing field `seqNo`");
     }
 
@@ -186,7 +186,7 @@ mod input_tests {
     fn deserialize_input_object_without_address() {
         let json = json!("txo:sov:".to_string() + &json!({
             "seqNo": 30,
-        }).to_string().as_bytes().to_base58_check());
+        }).to_string().as_bytes().into_base58_check());
         assert_invalid_deserialize(json, "missing field `address`");
     }
 

@@ -9,7 +9,7 @@ extern crate rand;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-extern crate rust_base58;
+extern crate bs58;
 extern crate sovtoken;
 extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
 
@@ -24,7 +24,6 @@ use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::test::callbacks;
 mod utils;
-use rust_base58::FromBase58;
 
 // ***** HELPER TEST DATA  *****
 const WALLET_ID: i32 = 99;
@@ -111,7 +110,7 @@ fn successfully_creates_payment_address_with_no_seed() {
 
     debug!("******* got address of {}", payment_address);
     let unqual_address = unqualified_address_from_address(&payment_address).unwrap();
-    assert_eq!(unqual_address.as_str().from_base58().unwrap().len(), 36);
+    assert_eq!(bs58::decode(unqual_address).into_vec().unwrap().len(), 36);
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 }
 
@@ -141,7 +140,7 @@ fn success_callback_is_called() {
 
     debug!("******* got address of {}", payment_address);
     let unqual_address = unqualified_address_from_address(&payment_address).unwrap();
-    assert_eq!(unqual_address.as_str().from_base58().unwrap().len(), 36, "callback did not receive valid payment address");
+    assert_eq!(bs58::decode(unqual_address).into_vec().unwrap().len(), 36, "callback did not receive valid payment address");
     assert_eq!(ErrorCode::Success, err, "Expected Success");
 
 }

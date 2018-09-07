@@ -13,7 +13,7 @@ extern crate hex;
 extern crate libc;
 extern crate log_panics;
 extern crate openssl;
-extern crate rust_base58;
+extern crate bs58;
 extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;

@@ -174,7 +174,7 @@ mod parse_get_utxo_responses_tests {
     use std::ffi::CString;
 
     use logic::parsers::common::{ResponseOperations, StateProof};
-    use rust_base58::ToBase58;
+    use utils::base58::IntoBase58;
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
     use utils::random::{rand_req_id, rand_string};
     use utils::constants::txn_types::GET_UTXO;
@@ -218,7 +218,7 @@ mod parse_get_utxo_responses_tests {
     #[test]
     fn success_parse_get_utxo_reply_from_response() {
 
-        let address: String = "00000000000000000000000000000000".as_bytes().to_base58_check();
+        let address: String = "00000000000000000000000000000000".as_bytes().into_base58_check();
         let identifier: String = rand_req_id().to_string();
         let mut outputs: Vec<UTXOInner> = Vec::new();
 
