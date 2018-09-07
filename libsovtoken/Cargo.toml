@@ -1,6 +1,6 @@
 [package]
 name = "libsovtoken"
-version = "0.9.1"
+version = "0.9.2"
 authors = [
   "Matt Raffel <matt.raffel@evernym.com",
   "Stephen Felt <stephen.felt@evernym.com",
@@ -28,7 +28,7 @@ log-panics = "2.0.0"
 openssl = "0.9.24"
 rand = "0.4.2"
 rust-base58 = { git = "https://github.com/lovesh/rust-base58.git", branch = "b58check" }
-rust-indy-sdk = { git = "https://github.com/mikelodder7/rust-indy-sdk.git"}
+rust-libindy-wrapper = "0.2.13"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

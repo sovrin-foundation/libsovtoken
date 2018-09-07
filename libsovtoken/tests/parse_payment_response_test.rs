@@ -1,7 +1,7 @@
 extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
-extern crate rust_indy_sdk as indy;
+extern crate rust_libindy_wrapper as indy;
 extern crate serde_json;
 
 use indy::ErrorCode;

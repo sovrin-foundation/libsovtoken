@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2
+* Android and iOS builds in CD pipeline
+* Changed transactions to use JSON objects rather than unlabeled arrays
+* bugfixes
+
 ## 0.9.1
 * Set fees accepts strings
 * relies on stable versions of all artifacts
