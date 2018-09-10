@@ -16,7 +16,6 @@
 
 */
 
-use rust_base58::{ToBase58, FromBase58, CHECKSUM_LEN};
 use serde_json;
 use std::{io, str};
 
@@ -24,6 +23,7 @@ use indy::ErrorCode;
 use logic::parsers::common::TXO;
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::constants::general::{PAYMENT_ADDRESS_QUALIFIER, TXO_QUALIFIER};
+use utils::base58::{IntoBase58, FromBase58};
 
 // Following lengths are in bytes
 pub const VERKEY_LEN: usize = 32;
@@ -33,7 +33,7 @@ pub const VERKEY_LEN: usize = 32;
 // TODO: It is better to have a lazy_static
 pub const ADDRESS_QUAL_LEN: usize = 8;
 
-pub const ADDRESS_CHECKSUM_LEN: usize = CHECKSUM_LEN;
+pub const ADDRESS_CHECKSUM_LEN: usize = 4;
 
 pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDRESS_QUAL_LEN;
 
@@ -73,7 +73,7 @@ pub fn unqualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode
     if vk_bytes.len() != VERKEY_LEN {
         return Err(ErrorCode::CommonInvalidStructure);
     }
-    Ok(vk_bytes.to_base58_check())
+    Ok(vk_bytes.into_base58_check())
 }
 
 /**
@@ -142,7 +142,7 @@ pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<Stri
                 error!("Incorrect verkey length, expected {:?}, real {:?}", VERKEY_LEN, vk.len());
                 return Err(ErrorCode::CommonInvalidStructure)
             } else {
-                return Ok(vk.to_base58());
+                return Ok(vk.into_base58());
             }
         },
         Err(_) => return Err(ErrorCode::CommonInvalidStructure)
@@ -165,7 +165,7 @@ pub fn string_to_txo(txo_str: &str) -> Result<TXO, serde_json::Error> {
     if !txo_str.starts_with(TXO_QUALIFIER) {
         return Err(serde_json::Error::io(io::ErrorKind::InvalidInput.into()));
     }
-    let json_u8 = txo_str[TXO_QUALIFIER.len()..].from_base58_check()
+    let json_u8 = (&txo_str[TXO_QUALIFIER.len()..]).from_base58_check()
         .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
     let json = str::from_utf8(&json_u8)
         .map_err(|_| serde_json::Error::io(io::ErrorKind::InvalidInput.into()))?;
@@ -187,7 +187,7 @@ pub fn string_to_txo(txo_str: &str) -> Result<TXO, serde_json::Error> {
 pub fn txo_to_string(txo: &TXO) ->  Result<String, ErrorCode> {
     let temp = txo.to_json()
         .map_err(|_| ErrorCode::CommonInvalidState)?
-        .as_bytes().to_base58_check();
+        .as_bytes().into_base58_check();
     Ok(TXO_QUALIFIER.to_string() + &temp)
 }
 
@@ -233,14 +233,14 @@ pub mod address_tests {
     fn validate_address_invalid_verkey_len(length: usize) {
         assert_ne!(length, VERKEY_LEN);
         let vk_bytes = rand_bytes(length);
-        let verkey = vk_bytes.to_base58();
+        let verkey = vk_bytes.into_base58();
         let invalid_address = qualified_address_from_verkey(&verkey);
         assert!(invalid_address.is_err())
     }
 
     pub fn gen_random_base58_verkey() -> String {
         let vk_bytes = rand_bytes(VERKEY_LEN);
-        vk_bytes.to_base58()
+        vk_bytes.into_base58()
     }
 
     pub fn gen_random_base58_address() -> String {
@@ -264,7 +264,7 @@ pub mod address_tests {
     #[test]
     fn test_unqualified_address_from_verkey_success() {
         let vk_bytes = rand_bytes(VERKEY_LEN);
-        let verkey = vk_bytes.to_base58();
+        let verkey = vk_bytes.into_base58();
         let address = unqualified_address_from_verkey(&verkey).unwrap();
         let address_bytes = address.from_base58().unwrap();
 
@@ -300,7 +300,7 @@ pub mod address_tests {
     #[test]
     fn test_qualified_address_invalid_length_verkey() {
         let vk_bytes = rand_bytes(VERKEY_LEN+1);
-        let address = vk_bytes.to_base58_check();
+        let address = vk_bytes.into_base58_check();
         let result = validate_address(&address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);

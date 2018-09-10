@@ -2,7 +2,7 @@ extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
 extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
-extern crate rust_base58;
+extern crate bs58;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
@@ -21,7 +21,6 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 use std::sync::mpsc::channel;
-use rust_base58::{FromBase58, ToBase58};
 
 mod utils;
 use utils::wallet::Wallet;
@@ -205,7 +204,8 @@ fn success_signed_request() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    let ident = addresses[0].from_base58_check().unwrap().to_base58();
+    let ident = bs58::decode(&addresses[0]).with_check(None).into_vec().unwrap();
+    let ident = bs58::encode(ident).into_string();
     assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 }
@@ -280,7 +280,8 @@ fn success_signed_request_from_libindy() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    let ident = addresses[0].from_base58_check().unwrap().to_base58();
+    let ident = bs58::decode(&addresses[0]).with_check(None).into_vec().unwrap();
+    let ident = bs58::encode(ident).into_string();
     assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 

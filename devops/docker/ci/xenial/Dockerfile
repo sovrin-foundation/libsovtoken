@@ -34,11 +34,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #       - have explicitly defined versions in packages depends list
 #       - are likely to be updated (e.g. packaged 3rd parties like python3-pyzmq
 #         or python3-rocksdb are not specified here)
-ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.1}
-ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.1}
-ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.50}
+ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.3}
+ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.3}
+ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.51}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.11}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.71}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.73}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
@@ -90,4 +90,4 @@ COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.40.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.41.0
