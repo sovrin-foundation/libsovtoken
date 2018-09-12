@@ -34,7 +34,7 @@ IFS="$bkpIFS"
 to_combine=""
 for target in ${targets[*]}
 do
-    export LIBINDY_DIR=${WORK_DIR}/sovtoken-indy-sdk/libindy
+    export LIBINDY_DIR=${WORK_DIR}/sovtoken-indy-sdk/libindy/target/${target}/release
     cargo lipo --release --verbose --targets="${target}"
 
     to_combine="${to_combine} ./target/${target}/release/libsovtoken.a"
