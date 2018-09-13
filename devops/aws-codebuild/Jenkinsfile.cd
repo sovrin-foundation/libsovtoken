@@ -292,7 +292,7 @@ def macOSPipeline = {
             dir('libsovtoken/build_scripts/ios/mac/') {
                 
                 stage('mac.01.libindy.setup') {
-                    sh './mac.01.libindy.setup.sh'
+                    sh './mac.01.env.setup.sh'
                 }
                 
                 stage('mac.14.libsovtoken.build.sh') {
