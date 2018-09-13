@@ -22,6 +22,9 @@ pipelineWrapper({
         ]
         List goals = ['test_dry', 'test']
 
+        //put code build containers inside a vpc under our dev account
+        env.USE_VPC_CONFIG = true
+
         stage('Checkout from SCM') {
             checkout scm
         }
