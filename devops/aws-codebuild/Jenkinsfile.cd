@@ -1,6 +1,6 @@
 #!groovy
 
-def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.8.0-aws-codebuild', retriever: modernSCM(
+def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.3.0-aws-codebuild', retriever: modernSCM(
     github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
 )).com.evernym.pipeline
 
@@ -19,6 +19,10 @@ def nodeLabels = [
 def codeBuildPipelines = {
     def packageName = 'libsovtoken'
     
+    //put code build containers inside a vpc under our dev account
+    env.USE_VPC_CONFIG = true
+    env.SOVRIN_REPO_HOST = '192.168.11.115'
+
     List _envBuildSrc = [
         'devops',
         'libsovtoken/Cargo.toml',
@@ -210,11 +214,14 @@ def codeBuildPipelines = {
                 }
 
                 if (env.BRANCH_NAME == 'stable') {
-                  logger.info("Uploading debian package '$debName' to sovrin repo")
-                  sovrinRepo.upload {
-                      repoDistr = 'sdk'
-                      packagePath = debName
-                  }
+                    logger.info("Uploading debian package '$debName' to sovrin repo")
+                    sshagent(credentials: ['SovrinRepoSSHKey']) {
+                        sovrinRepo.upload {
+                            repoDistr = 'sdk'
+                            packagePath = debName
+                            component = 'rc'
+                        }
+                    }
                 }
             }
 
