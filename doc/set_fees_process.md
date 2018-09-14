@@ -27,6 +27,8 @@ Indy CLI will print the transaction after these steps. Example output:
 
 ### Putting your signature on a prepared request
 
+This step should be made by multiple trustees.
+
 * Open `indy-cli`
 * Load libsovtoken: `load-plugin library=libsovtoken.[so|dll] initializer=sovtoken_init`
 * Open your wallet: `wallet open <name_of_wallet> key=<wallet_encryption_key>`
@@ -38,6 +40,8 @@ Indy CLI will print the transaction with your signature after these steps. Examp
 ```json
 {"identifier":"V4SGRU86Z58d6TV7PBUe6f","operation":{"fees":{"1":1,"10001":2},"type":"20000"},"protocolVersion":2,"reqId":3782930813,"signatures":{"V4SGRU86Z58d6TV7PBUe6f":"DpiKv5n5es9yTkPv1py8mMb6PtL1tWrYdpVS9qp5bJ6GtNPRfNME8ThAbxW7hFbAPfsDzQsBMMEarJ4qDS4CgEF"}}
 ```
+
+The output should be send to the next trustee to sign it.
 
 ### Sending the signed transaction to the ledger
 
