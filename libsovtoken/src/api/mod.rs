@@ -451,7 +451,7 @@ pub extern "C" fn parse_payment_response_handler(
 #[no_mangle]
 pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
-                                                 submitter_did: *const c_char,
+                                                 _submitter_did: *const c_char,
                                                  payment_address: *const c_char,
                                                  cb: JsonCallback)-> i32 {
     trace!("api::build_get_utxo_request_handler called");
@@ -464,26 +464,10 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
+    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, payment_address);
 
-    let did = match Did::from_pointer(submitter_did) {
-        Some(did) => did,
-        None => {
-            error!("Failed to convert submitter_did pointer to string");
-            return ErrorCode::CommonInvalidStructure as i32
-        }
-    };
-
-    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, submitter_did: {:?}, payment_address: {:?}", wallet_handle, did, payment_address);
-
-    let did = match did.validate() {
-        Ok(did_valid) => did_valid,
-        Err(_) => {
-            trace!("api::build_get_utxo_request_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-            return ErrorCode::CommonInvalidStructure as i32
-        }
-    };
-
-    let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address), did.into());
+    let utxo_request =
+        GetUtxoOperationRequest::new(String::from(payment_address));
     info!("Built GET_UTXO request: {:?}", utxo_request);
     let utxo_request = utxo_request.serialize_to_pointer()
         .map_err(|_| ErrorCode::CommonInvalidStructure);

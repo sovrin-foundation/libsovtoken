@@ -1,6 +1,6 @@
 #!groovy
 
-def evLibrary = library(identifier: 'evernym-aws-codebuild@aws-codebuild', retriever: modernSCM(
+def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.3.0-aws-codebuild', retriever: modernSCM(
     github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
 )).com.evernym.pipeline
 
@@ -21,6 +21,9 @@ pipelineWrapper({
             //'centos7'
         ]
         List goals = ['test_dry', 'test']
+
+        //put code build containers inside a vpc under our dev account
+        env.USE_VPC_CONFIG = true
 
         stage('Checkout from SCM') {
             checkout scm
@@ -51,13 +54,13 @@ pipelineWrapper({
                         // not accurate (it concatenates them):
                         //  debian package version: <src_version>+<release_version>
                         //  debian package name:    <src_version><release_version>
-                        def sovtoken_deb_version = "0.9.21.94"
-                        def sovtokenfees_deb_version = "0.9.21.94"
+                        def sovtoken_deb_version = "0.9.3+12.58"
+                        def sovtokenfees_deb_version = "0.9.3+13.58"
 
                         sh """
                             cd ./devops/docker/ci/xenial/
-                            wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
-                            wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtokenfees/sovtokenfees_${sovtoken_deb_version}_amd64.deb
+                            wget --no-check-certificate https://repo.sovrin.org/deb/pool/xenial/rc/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
+                            wget --no-check-certificate https://repo.sovrin.org/deb/pool/xenial/rc/s/sovtokenfees/sovtokenfees_${sovtokenfees_deb_version}_amd64.deb
                         """
                     }
                 }
