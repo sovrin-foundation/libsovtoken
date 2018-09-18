@@ -52,30 +52,23 @@ RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $ui
 ARG indy_stream=stable
 
 ARG indy_anoncreds_ver=1.0.11
-ARG python3_indy_crypto_ver=0.4.1
-ARG indy_crypto_ver=0.4.0
+ARG python3_indy_crypto_ver=0.4.3
+ARG indy_crypto_ver=0.4.3
+ARG indy_plenum_ver=1.6.51
+ARG indy_node_ver=1.6.73
 
-ARG sovtoken_pkg_name=sovtoken_0.8.0_amd64.deb
-ARG sovtokenfees_pkg_name=sovtokenfees_0.8.0_amd64.deb
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
 
 RUN apt-get update -y && apt-get install -y \
-        indy-plenum \        
-		indy-node \
+        indy-plenum=${indy_plenum_ver}\        
+		indy-node=${indy_node_ver} \
         indy-anoncreds=${indy_anoncreds_ver} \
         python3-indy-crypto=${python3_indy_crypto_ver} \
         libindy-crypto=${indy_crypto_ver} \
         vim sudo
 
-RUN mkdir -p /usr/local/share/ca-certificates
-RUN curl -k https://repo.corp.evernym.com/ca.crt | tee /usr/local/share/ca-certificates/Evernym_Root_CA.crt
-RUN update-ca-certificates
-RUN echo "10.2.3.179 repo.corp.evernym.com" >>/etc/hosts
-RUN update-ca-certificates
-RUN curl https://repo.corp.evernym.com/repo.corp.evenym.com-sig.key | apt-key add -
-RUN echo 'deb https://repo.corp.evernym.com/deb evernym-agency-dev-ubuntu main' | tee /etc/apt/sources.list.d/agency-dev_repo.corp.evernym.com.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         sovtoken \
