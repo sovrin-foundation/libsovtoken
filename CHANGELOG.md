@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.3
+* Changed CI/CD to new stable branch.
+* CD added to the new stable branch with new stable release process
+* Source code is now public Sovrin repository
+* changed base-58 library dependency.
+* changed rust-indy-sdk dependency to rust crate
+* all artifacts built against stable versions of dependencies
+* bugfixes
+
 ## 0.9.2
 * Android and iOS builds in CD pipeline
 * Changed transactions to use JSON objects rather than unlabeled arrays
