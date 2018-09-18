@@ -6,6 +6,7 @@
 * changed base-58 library dependency.
 * changed rust-indy-sdk dependency to rust crate
 * bugfixes
+
 ## 0.9.2
 * Android and iOS builds in CD pipeline
 * Changed transactions to use JSON objects rather than unlabeled arrays

@@ -54,13 +54,13 @@ pipelineWrapper({
                         // not accurate (it concatenates them):
                         //  debian package version: <src_version>+<release_version>
                         //  debian package name:    <src_version><release_version>
-                        def sovtoken_deb_version = "0.9.25.98"
-                        def sovtokenfees_deb_version = "0.9.25.98"
+                        def sovtoken_deb_version = "0.9.3+12.58"
+                        def sovtokenfees_deb_version = "0.9.3+13.58"
 
                         sh """
                             cd ./devops/docker/ci/xenial/
-                            wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
-                            wget --no-check-certificate https://repo.corp.evernym.com/deb/pool/main/s/sovtokenfees/sovtokenfees_${sovtoken_deb_version}_amd64.deb
+                            wget --no-check-certificatea https://repo.sovrin.org/deb/pool/xenial/rc/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
+                            wget --no-check-certificate https://repo.sovrin.org/deb/pool/xenial/rc/s/sovtokenfees/sovtokenfees_${sovtoken_deb_version}_amd64.deb
                         """
                     }
                 }
