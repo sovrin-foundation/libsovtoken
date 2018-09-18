@@ -1,3 +1,4 @@
+![sovrinlogo](https://github.com/sovrin-foundation/sovrin/blob/master/banner.png "insert humor here")
 # LibSovToken
 
 
