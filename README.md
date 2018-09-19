@@ -18,7 +18,7 @@ This is a payment handler library to work with libindy. It may one day be merged
 
 ``` shell
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
-sudo add-apt-repository "deb https://repo.sovrin.org/sdk/deb stable"
+sudo add-apt-repository "deb https://repo.sovrin.org/sdk/deb xenial stable"
 sudo apt-get update
 sudo apt-get install -y libindy>=1.6.0
 ```
