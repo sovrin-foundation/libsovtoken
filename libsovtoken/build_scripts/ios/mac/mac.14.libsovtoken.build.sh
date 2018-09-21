@@ -62,12 +62,12 @@ do
     etarget=$(extract_target $target)
 
     echo "LIBINDY_DIR=${LIBINDY_DIR}"
-    lipo -extract_family $etarget $LIBINDY/libindy.a -o $LIBINDY_DIR/libindy.a
+    lipo -thin $etarget $LIBINDY/libindy.a -o $LIBINDY_DIR/libindy.a
     cargo lipo --release --verbose --targets="${target}"
     mv ./target/$target/release/libsovtoken.a ./target/$target/libsovtoken-unstripped.a
     strip -S -x -o ./target/$target/libsovtoken.a -r ./target/$target/libsovtoken-unstripped.a
 
-    to_combine="${to_combine} ./target/${target}/release/libsovtoken.a"
+    to_combine="${to_combine} ./target/${target}/libsovtoken.a"
 
 done
 
