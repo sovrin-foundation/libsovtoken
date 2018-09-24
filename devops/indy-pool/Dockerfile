@@ -1,78 +1,67 @@
 ########################################################
-##  Use this to create a pool of nodes that uses 
-##  the payment plugins with plenum
+##  Use this to create a pool of nodes that uses
+##  the payment plugins for plenum
 ##
-##  find the missing deb pkgs in google drive 
-##  token-team/builds/dev
-##  
-##  place required deb pkgs in the same folder as this
-##  dockerfile then run the following commands
+##  To run this file please use the following
+##  Docker commands:
 ##
 ##  docker build -t indy_pool .
 ##
 ##  docker run -itd -p 9701-9708:9701-9708 indy_pool
 ##
-##  Running the command 'docker ps' will show the 
-##  container id
-##
-##  If you want to connect to the shell of the container
-##  you can use the following exec command replacing the 
-##  <container_id> with the id of the running container
-##
+##  Connecting to the container through bash (optional):
+##  docker ps | grep indy # to obtain container_id
 ##  docker exec -it <container_id> /bin/bash
 ##
 ########################################################
-
-FROM steptan/ubuntu-1604-rockdb-5.13.3-sharedlib
+# this will be changed to sovrin docker hub when possible. Now changed to maintainer's hub
+FROM camparra/ubuntu16.04-rocksdb
 
 ARG uid=1000
 
-# Install environment
-RUN apt-get update -y && apt-get install -y \
-	git \
-	wget \
-	python3.5 \
-	python3-pip \
-	python-setuptools \
-	python3-nacl \
-	apt-transport-https \
-	ca-certificates \
-	supervisor \ 
-	curl \
-    sudo
-
-
-
-RUN pip3 install -U \
-	pip==9.0.3 \
-	setuptools
-
-RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $uid indy; usermod -aG sudo indy
-
 ARG indy_stream=stable
 
+ARG indy_plenum_ver=1.6.51
+ARG indy_node_ver=1.6.73
 ARG indy_anoncreds_ver=1.0.11
 ARG python3_indy_crypto_ver=0.4.3
 ARG indy_crypto_ver=0.4.3
-ARG indy_plenum_ver=1.6.51
-ARG indy_node_ver=1.6.73
+ARG token_ver=0.9.3+12.58
+ARG fees_ver=0.9.3+13.58
 
+# Install environment
+RUN apt-get update -y && apt-get install -y \
+	  wget \
+	  python3.5 \
+	  python3-pip \
+	  python-setuptools \
+	  python3-nacl \
+	  apt-transport-https \
+	  ca-certificates \
+	  supervisor \
+	  curl \
+      sudo \
+      nano
 
+# Add Sovrin artifact repository 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
 
-RUN apt-get update -y && apt-get install -y \
-        indy-plenum=${indy_plenum_ver}\        
-		indy-node=${indy_node_ver} \
-        indy-anoncreds=${indy_anoncreds_ver} \
-        python3-indy-crypto=${python3_indy_crypto_ver} \
-        libindy-crypto=${indy_crypto_ver} \
-        vim sudo
-
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        sovtoken \
-        sovtokenfees
+    indy-plenum=${indy_plenum_ver} \
+    indy-node=${indy_node_ver} \
+    indy-anoncreds=${indy_anoncreds_ver} \
+    python3-indy-crypto=${python3_indy_crypto_ver} \
+    libindy-crypto=${indy_crypto_ver} \
+    sovtoken=${token_ver} \
+    sovtokenfees=${fees_ver}
+
+RUN pip3 install -U \
+    pip==9.0.3 \
+    setuptools
+
+RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $uid indy; usermod -aG sudo indy
+
 RUN echo "[supervisord]\n\
 logfile = /tmp/supervisord.log\n\
 logfile_maxbytes = 50MB\n\
