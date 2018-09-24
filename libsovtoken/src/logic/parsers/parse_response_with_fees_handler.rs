@@ -238,6 +238,53 @@ mod parse_response_with_fees_handler_tests {
             }
         }"#;
 
+    static PARSE_RESPONSE_WITH_NO_FEES_JSON: &'static str = r#"{
+            "op": "REPLY",
+            "protocolVersion": 1,
+            "result":
+            {
+                "txn":
+                {
+                    "data":
+                    {
+                        "alias": "508867",
+                        "dest": "8Wv7NMbsMiNSmNa3iC6fG7",
+                        "verkey": "56b9wim9b3dYXzzc8wnm8RZePbyuMoWw5XUXxL4Y9gFZ"
+                    },
+                    "metadata":
+                    {
+                        "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                        "reqId": 152969782
+                    },
+                    "protocolVersion": 2,
+                    "type": "1"
+                },
+                "ver": "1",
+                "txnMetadata":
+                {
+                    "seqNo": 13,
+                    "txnTime": 1529697829
+                },
+                "reqSignature":
+                {
+                    "type": "ED25519",
+                    "values":
+                    [
+                        {
+                            "from": "MSjKTWkPLtYoPEaTF1TUDb",
+                            "value": "5Ngg5fQ4NtqdzgN3kSjdRKo6ffeq5sP264TmzxvGGQX3ieJzP9hCeUCu7RkmAhLjzqZ2Z5y8FLSptWxetS8FCmcs"
+                        }
+                    ]
+                },
+                "rootHash": "FePFuqEX6iJ1SP5DkYn9WTXQrThxqevEkxYXyCxyX4Fd",
+                "auditPath":
+                [
+                    "CWQ9keGzhBqyMRLvp7XbMr7da7yUbEU4qGTfJ2KNxMM6",
+                    "2S9HAxKukY2hxUoEC718fhywF3KRfwPnEQvRsoN168EV"
+                ]
+            }
+        }"#;
+
     static PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON: &'static str = r#"{
             "op": "REPLY",
             "protocolVersion": 1,
@@ -429,6 +476,14 @@ mod parse_response_with_fees_handler_tests {
         let outputs = response.result.unwrap().fees.unwrap().txn.data.outputs;
 
         assert_eq!(1, outputs.len());
+    }
+
+    #[test]
+    fn success_json_to_parse_response_with_no_fees() {
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_NO_FEES_JSON).unwrap();
+
+        // only going to test outputs since we don't use inputs
+        assert_eq!(from_response(response), Ok(None));
     }
 
     // Tests that valid json with multiple elements in the "output section" is serialized to ParseResponseWithFees tyoe
