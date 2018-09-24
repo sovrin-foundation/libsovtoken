@@ -45,7 +45,7 @@ FPM_P_VENDOR := Evernym
 FPM_P_DESCRIPTION := libsovtoken writen in Rust
 FPM_P_NAME = $(PACKAGE_NAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
-FPM_P_DEPENDS = libindy
+FPM_P_DEPENDS = libindy(=1.6.6)
 FPM_P_OUTPUT_DIR = $(LIB_TARGET_DIR)
 FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 

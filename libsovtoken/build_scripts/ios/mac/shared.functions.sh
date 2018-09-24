@@ -1,5 +1,10 @@
 #!/bin/sh
 
+export LIBINDY_IOS_BUILD_URL="https://repo.sovrin.org/ios/libindy/stable/libindy-core/1.6.6/libindy.tar.gz"
+export LIBINDY_FILE=$(basename ${LIBINDY_IOS_BUILD_URL})
+export LIBINDY_VERSION=$(basename $(dirname ${LIBINDY_IOS_BUILD_URL}))
+export BUILD_CACHE=~/.build_libvxc/ioscache
+
 function abspath() {
     perl -e 'use Cwd "abs_path"; print abs_path(shift)' $1
 }

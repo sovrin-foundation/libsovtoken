@@ -23,6 +23,7 @@ libsovtoken/build_scripts/android/libsovtoken/linux-arm64/
 libsovtoken/build_scripts/android/libsovtoken/linux-x86/
 libsovtoken/build_scripts/android/libsovtoken/linux-x86_64/
 devops/_build
+libsovtoken/.macosbuild/
 
 # Mac directory attributes
 *.DS_Store
