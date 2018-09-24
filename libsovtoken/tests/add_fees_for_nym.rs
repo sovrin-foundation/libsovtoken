@@ -91,6 +91,28 @@ pub fn build_and_submit_nym_with_fees_insufficient_funds() {
 }
 
 #[test]
+pub fn build_and_submit_nym_with_no_fees() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 0,
+        num_trustees: 1,
+        num_users: 0,
+        mint_tokens: None,
+        fees: None,
+    });
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+
+    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).unwrap();
+    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
+    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_signed).unwrap();
+    let resp = indy::payments::Payment::parse_response_with_fees("sov", &nym_resp).unwrap();
+    assert_eq!(resp, json!([]).to_string());
+}
+
+#[test]
 pub fn build_and_submit_nym_with_fees_utxo_already_spent() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
