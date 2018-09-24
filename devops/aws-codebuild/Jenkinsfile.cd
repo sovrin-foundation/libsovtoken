@@ -1,6 +1,6 @@
 #!groovy
 
-def evLibrary = library(identifier: 'evernym-aws-codebuild@aws-codebuild', retriever: modernSCM(
+def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.3.0-aws-codebuild', retriever: modernSCM(
     github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
 )).com.evernym.pipeline
 
@@ -19,6 +19,10 @@ def nodeLabels = [
 def codeBuildPipelines = {
     def packageName = 'libsovtoken'
     
+    //put code build containers inside a vpc under our dev account
+    env.USE_VPC_CONFIG = true
+    env.SOVRIN_REPO_HOST = '192.168.11.115'
+
     List _envBuildSrc = [
         'devops',
         'libsovtoken/Cargo.toml',
@@ -33,6 +37,7 @@ def codeBuildPipelines = {
     }
 
     def evernymRepo = evLibrary.EvernymRepo.new(this)
+    def sovrinRepo = evLibrary.SovrinRepo.new(this)
     def git = evLibrary.Git.new(this)
     def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
     def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
@@ -196,7 +201,7 @@ def codeBuildPipelines = {
             }
         }
 
-        stage('Upload deb to Evernym repo') {
+        stage('Upload deb to repositories') {
             String debName
 
             dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
@@ -206,6 +211,17 @@ def codeBuildPipelines = {
                 evernymRepo.upload {
                     repoDistr = 'agency_dev'
                     packagePath = debName
+                }
+
+                if (env.BRANCH_NAME == 'stable') {
+                    logger.info("Uploading debian package '$debName' to sovrin repo")
+                    sshagent(credentials: ['SovrinRepoSSHKey']) {
+                        sovrinRepo.upload {
+                            repoDistr = 'sdk'
+                            packagePath = debName
+                            component = 'rc'
+                        }
+                    }
                 }
             }
 
@@ -292,33 +308,9 @@ def macOSPipeline = {
             dir('libsovtoken/build_scripts/ios/mac/') {
                 
                 stage('mac.01.libindy.setup') {
-                    sh './mac.01.libindy.setup.sh'
+                    sh './mac.01.env.setup.sh'
                 }
                 
-                stage('mac.02.libindy.env.sh') {
-                    sh ". mac.02.libindy.env.sh"
-                }
-                
-                stage('mac.03.libindy.build.sh') {
-                    try {
-                            sh "./mac.03.libindy.build.sh"
-                        } catch ( exc ) {
-                            logger.info("Stage 'mac.03' failed with exception ${exc}. So we run additional steps.")
-                            
-                            stage('mac.08.libssl.libcrypto.build.sh') {
-                                sh "./mac.08.libssl.libcrypto.build.sh"
-                            }
-
-                            stage('mac.09.libzmq.libsodium.build.sh') {
-                                sh "./mac.09.libzmq.libsodium.build.sh"
-                            }
-
-                            stage('mac.10.libminiz.libsqlite3.combine.sh') {
-                                sh "./mac.10.libminiz.libsqlite3.combine.sh"
-                            }
-                        }
-                }
-
                 stage('mac.14.libsovtoken.build.sh') {
                     sh "./mac.14.libsovtoken.build.sh"
                 }
@@ -343,6 +335,9 @@ def macOSPipeline = {
 }
 
 pipelineWrapper({
+    //put code build containers inside a vpc under our dev account
+    env.USE_VPC_CONFIG = true
+
     Map builds = [
         codeBuild: [
             build: codeBuildPipelines,
