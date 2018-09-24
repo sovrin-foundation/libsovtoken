@@ -40,8 +40,8 @@ RUN apt-get update -y && apt-get install -y \
 	  ca-certificates \
 	  supervisor \
 	  curl \
-    sudo \
-    nano
+      sudo \
+      nano
 
 # Add Sovrin artifact repository 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
