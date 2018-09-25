@@ -267,7 +267,7 @@ pub extern "C" fn parse_response_with_fees_handler(
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseResponseWithFeesReply::from_response
-    let reply: ParseResponseWithFeesReply = match parse_response_with_fees_handler::from_response(response) {
+    let reply: Option<ParseResponseWithFeesReply> = match parse_response_with_fees_handler::from_response(response) {
         Ok(rep) => rep,
         Err(ec) => {
             trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
@@ -275,12 +275,17 @@ pub extern "C" fn parse_response_with_fees_handler(
         },
     };
 
-    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
-        Ok(j) => j,
-        Err(_) => return ErrorCode::CommonInvalidState as i32,
+    let reply_str: Option<String> = match reply {
+        Some(reply) => {
+            match reply.to_json().map_err(map_err_err!()) {
+                Ok(j) => Some(j),
+                Err(_) => return ErrorCode::CommonInvalidState as i32,
+            }
+        }
+        None => None
     };
 
-    let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
+    let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str.unwrap_or(String::from("[]")));
     let ec = ErrorCode::Success;
 
     cb(command_handle, ec as i32, reply_str_ptr);
