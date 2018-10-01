@@ -181,7 +181,7 @@ mod test_deserialize_inputs {
         cb: Option<Option<AddRequestFeesCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
         let default_req_json = json_c_pointer!({
-            "protocolVersion": 1,
+            "protocolVersion": 2,
             "operation": {
                 "type": 2,
             }
