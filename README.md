@@ -1,4 +1,7 @@
 ![sovrinlogo](https://github.com/sovrin-foundation/sovrin/blob/master/banner.png "insert humor here")
+
+<a href="https://www.apache.org/licenses/LICENSE-2.0.txt" target="_blank">![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?style=plastic)</a>
+<a href="https://badge.fury.io/gh/cam-parra%2Flibsovtoken">[![GitHub version](https://badge.fury.io/gh/cam-parra%2Flibsovtoken.svg)](https://badge.fury.io/gh/cam-parra%2Flibsovtoken)</a>
 # LibSovToken
 
 
