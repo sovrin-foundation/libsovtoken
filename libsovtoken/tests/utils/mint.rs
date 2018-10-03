@@ -1,4 +1,4 @@
-extern crate rust_libindy_wrapper as indy;
+extern crate indy;
 extern crate serde_json;
 
 use std::collections::HashMap;
@@ -22,7 +22,7 @@ pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i
 
     let json = serde_json::to_string(&vec_outputs).unwrap();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet_handle, did, &json, None)?;
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(wallet_handle, Some(did), &json, None)?;
 
     let mint_req = Request::<MintRequest>::multi_sign_request(wallet_handle, &mint_req, trustee_dids.to_vec())?;
 

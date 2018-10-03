@@ -1,7 +1,7 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 extern crate sovtoken;
-extern crate rust_libindy_wrapper as indy;
+extern crate indy;
 pub mod utils;
 
 use std::sync::mpsc::channel;
@@ -144,7 +144,7 @@ fn test_add_fees_to_request_valid_from_libindy() {
 
     let return_error = indy::payments::Payment::add_request_fees_async(
         wallet.handle,
-        did,
+        Some(did),
         &fake_request.to_string(),
         &inputs.to_string(),
         &outputs.to_string(),
@@ -188,7 +188,7 @@ fn test_add_fees_to_request_valid_from_libindy_for_not_owned_payment_address() {
             "amount": 20,
     }]);
 
-    let err = indy::payments::Payment::add_request_fees(wallet_2.handle, dids[0], &fake_request.to_string(), &inputs.to_string(), &outputs.to_string(), None).unwrap_err();
+    let err = indy::payments::Payment::add_request_fees(wallet_2.handle, Some(dids[0]), &fake_request.to_string(), &inputs.to_string(), &outputs.to_string(), None).unwrap_err();
     assert_eq!(err, indy::ErrorCode::WalletItemNotFound);
 }
 
@@ -211,7 +211,7 @@ fn build_add_fees_to_request_works_for_invalid_utxo() {
             "amount": 20,
     }]).to_string();
 
-    let err = indy::payments::Payment::add_request_fees(wallet.handle, &did, &fake_request, &inputs, &outputs, None).unwrap_err();
+    let err = indy::payments::Payment::add_request_fees(wallet.handle, Some(&did), &fake_request, &inputs, &outputs, None).unwrap_err();
 
     assert_eq!(err, ErrorCode::CommonInvalidStructure)
 }

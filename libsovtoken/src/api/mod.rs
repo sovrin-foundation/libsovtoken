@@ -823,7 +823,7 @@ pub extern "C" fn build_verify_req_handler(
     };
 
     let res = indy::ledger::Ledger::build_get_txn_request_async(
-        &String::from(did),
+        Some(&String::from(did)),
         Some(LEDGER_ID),
         txo.seq_no as i32,
         move |ec, res| {

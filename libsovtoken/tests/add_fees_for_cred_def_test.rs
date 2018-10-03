@@ -1,6 +1,6 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate rust_libindy_wrapper as indy;
+extern crate indy;
 extern crate sovtoken;
 
 
@@ -38,7 +38,7 @@ fn send_cred_def_with_fees(did: &str,
     let cred_def_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &cred_def_req).unwrap();
     let (cred_def_req_with_fees, pm) = indy::payments::Payment::add_request_fees(
         wallet_handle,
-        did,
+        Some(did),
         &cred_def_req_signed,
         inputs_json,
         outputs_json,
@@ -59,7 +59,7 @@ fn create_schema_json(did: &str,
     let schema_req = indy::ledger::Ledger::build_schema_request(did, &schema_json).unwrap();
     let schema_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, did, &schema_req).unwrap();
     thread::sleep(time::Duration::from_millis(100));
-    let get_schema_req = indy::ledger::Ledger::build_get_schema_request(did, &schema_id).unwrap();
+    let get_schema_req = indy::ledger::Ledger::build_get_schema_request(Some(did), &schema_id).unwrap();
     let get_schema_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &get_schema_req).unwrap();
     let get_schema_resp = utils::ledger::submit_request_with_retries(pool_handle, &get_schema_req_signed, &schema_resp).unwrap();
     let (_, schema_json) = indy::ledger::Ledger::parse_get_schema_response(&get_schema_resp).unwrap();
@@ -103,7 +103,7 @@ pub fn build_and_submit_cred_def_with_fees() {
 
     thread::sleep(time::Duration::from_millis(100));
 
-    let get_cred_def_req = indy::ledger::Ledger::build_get_cred_def_request(dids[0], &cred_def_id).unwrap();
+    let get_cred_def_req = indy::ledger::Ledger::build_get_cred_def_request(Some(dids[0]), &cred_def_id).unwrap();
     let get_cred_def_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_cred_def_req).unwrap();
     let (cred_def_id_get, _) = indy::ledger::Ledger::parse_get_cred_def_response(&get_cred_def_resp).unwrap();
     assert_eq!(cred_def_id, cred_def_id_get);
