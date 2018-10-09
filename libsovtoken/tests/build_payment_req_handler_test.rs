@@ -1,13 +1,12 @@
 extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
-extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
+extern crate indy;                      // lib-sdk project
 extern crate bs58;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate rust_libindy_wrapper;
 
 use indy::ErrorCode;
 use indy::utils::results::ResultHandler;
@@ -67,7 +66,7 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
 fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
                             inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
     let (req, method) = indy::payments::Payment::build_payment_req(wallet_handle,
-                                                                   did, inputs, outputs, None).unwrap();
+                                                                   Some(did), inputs, outputs, None).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
     indy::payments::Payment::parse_payment_response(&method, &res)
 }
@@ -267,7 +266,7 @@ fn success_signed_request_from_libindy() {
 
     let _ = indy::payments::Payment::build_payment_req_async(
         wallet.handle,
-        &did,
+        Some(&did),
         &inputs.to_string(),
         &outputs.to_string(),
         None,
@@ -447,7 +446,7 @@ pub fn build_payment_with_invalid_utxo() {
         }
     ]).to_string();
 
-    let err = indy::payments::Payment::build_payment_req(wallet.handle, &did, &inputs, &outputs, None).unwrap_err();
+    let err = indy::payments::Payment::build_payment_req(wallet.handle, Some(&did), &inputs, &outputs, None).unwrap_err();
     assert_eq!(err, ErrorCode::CommonInvalidStructure);
 }
 
@@ -476,6 +475,6 @@ pub fn build_payment_req_for_not_owned_payment_address() {
         }
     ]).to_string();
 
-    let err = indy::payments::Payment::build_payment_req(wallet_2.handle, dids[0], &inputs, &outputs, None).unwrap_err();
+    let err = indy::payments::Payment::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).unwrap_err();
     assert_eq!(err, indy::ErrorCode::WalletItemNotFound);
 }

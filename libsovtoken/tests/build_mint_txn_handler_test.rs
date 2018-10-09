@@ -3,7 +3,7 @@ extern crate libc;
 extern crate sovtoken;
 #[macro_use]
 extern crate serde_derive;
-extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
+extern crate indy;                      // lib-sdk project
 #[macro_use]
 extern crate serde_json;
 #[macro_use]
@@ -145,7 +145,7 @@ fn valid_output_json_from_libindy() {
 
     let return_error = indy::payments::Payment::build_mint_req_async(
         wallet.handle,
-        did,
+        Some(did),
         outputs_str,
         None,
         cb
@@ -207,7 +207,7 @@ pub fn build_and_submit_mint_txn_works() {
 
     let (mint_req, _) = indy::payments::Payment::build_mint_req(
         wallet.handle,
-        dids[0],
+        Some(dids[0]),
         &output_json,
         None,
     ).unwrap();
@@ -262,7 +262,7 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
 
     let (mint_req, _) = indy::payments::Payment::build_mint_req(
         wallet.handle,
-        dids[0],
+        Some(dids[0]),
         &output_json,
         None
     ).unwrap();
@@ -314,7 +314,7 @@ fn mint_10_billion_tokens() {
 
     let (mint_req, _) = indy::payments::Payment::build_mint_req(
         wallet.handle,
-        dids[0],
+        Some(dids[0]),
         &output_json,
         None
     ).unwrap();

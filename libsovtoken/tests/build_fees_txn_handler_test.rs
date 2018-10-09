@@ -2,7 +2,7 @@
 #[macro_use] extern crate serde_derive;
 extern crate libc;
 extern crate sovtoken;
-extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
+extern crate indy;                      // lib-sdk project
 extern crate bs58;
 pub mod utils;
 
@@ -121,7 +121,7 @@ pub fn build_and_submit_set_fees() {
     let dids = setup.trustees.dids();
 
     let fees = json!({
-        "202": 1,
+        "100": 1,
         "101": 2
     }).to_string();
 
@@ -130,7 +130,7 @@ pub fn build_and_submit_set_fees() {
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
     assert_eq!(current_fees_value["101"].as_u64().unwrap(), 2);
-    assert_eq!(current_fees_value["202"].as_u64().unwrap(), 1);
+    assert_eq!(current_fees_value["100"].as_u64().unwrap(), 1);
 
     let fees = json!({
         "202": 0,

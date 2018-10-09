@@ -42,7 +42,7 @@ extern crate android_logger;
 // ------------------------------------------
 
 
-extern crate rust_libindy_wrapper as indy;                      // lib-sdk project
+extern crate indy;                      // lib-sdk project
 
 
 // ------------------------------------------

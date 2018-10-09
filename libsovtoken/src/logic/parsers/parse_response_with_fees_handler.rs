@@ -39,7 +39,7 @@ pub struct ParseResponseWithFeesRequest {
     pub req_signature: RequireSignature,
     pub root_hash: String,
     pub audit_path: Vec<String>,
-    pub fees : TransactionFees
+    pub fees : Option<TransactionFees>
 }
 
 /**
@@ -106,7 +106,7 @@ pub type ParseResponseWithFeesReply = Vec<UTXO>;
     please note:  use of this function moves ParseResponseWithFees and it cannot be used again
     after this call
 */
-pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFeesReply, ErrorCode> {
+pub fn from_response(base : ParseResponseWithFees) -> Result<Option<ParseResponseWithFeesReply>, ErrorCode> {
     match base.op {
         ResponseOperations::REPLY => {
             let result = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
@@ -114,8 +114,12 @@ pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFe
 
             // according to the documentation, don't need the inputs.  Only the outputs
             // and seq_no which are part 2 and 3 of the tuple
-            let outputs = &result.fees.txn.data.outputs;
-            let seq_no: TxnSeqNo = result.fees.tnx_meta_data.seq_no;
+            let fees = match &result.fees {
+                Some(fees) => fees,
+                None => {return Ok(None)}
+            };
+            let outputs = &fees.txn.data.outputs;
+            let seq_no: TxnSeqNo = fees.tnx_meta_data.seq_no;
 
             for output in outputs {
                 let amount: TokenAmount = output.amount;
@@ -128,7 +132,7 @@ pub fn from_response(base : ParseResponseWithFees) -> Result<ParseResponseWithFe
                 utxos.push(utxo);
             }
 
-            Ok(utxos)
+            Ok(Some(utxos))
         }
         ResponseOperations::REQNACK | ResponseOperations::REJECT => {
             let reason = base.reason.ok_or(ErrorCode::CommonInvalidStructure)?;
@@ -231,6 +235,53 @@ mod parse_response_with_fees_handler_tests {
                     "rootHash": "A8qwQKyKUMd3PnJTKe4bXRzajCUVgSd1J1A7jdahhNW6",
                     "auditPath": ["Gyw5iBPPs4KSiEoAXQcjv8jw1VWsFjTVyCkm1Zp9E3Pa"]
                 }
+            }
+        }"#;
+
+    static PARSE_RESPONSE_WITH_NO_FEES_JSON: &'static str = r#"{
+            "op": "REPLY",
+            "protocolVersion": 1,
+            "result":
+            {
+                "txn":
+                {
+                    "data":
+                    {
+                        "alias": "508867",
+                        "dest": "8Wv7NMbsMiNSmNa3iC6fG7",
+                        "verkey": "56b9wim9b3dYXzzc8wnm8RZePbyuMoWw5XUXxL4Y9gFZ"
+                    },
+                    "metadata":
+                    {
+                        "digest": "54289ff3f7853891e2ba9f4edb4925a0028840008395ea717df8b1f757c4fc77",
+                        "reqId": 152969782
+                    },
+                    "protocolVersion": 2,
+                    "type": "1"
+                },
+                "ver": "1",
+                "txnMetadata":
+                {
+                    "seqNo": 13,
+                    "txnTime": 1529697829
+                },
+                "reqSignature":
+                {
+                    "type": "ED25519",
+                    "values":
+                    [
+                        {
+                            "from": "MSjKTWkPLtYoPEaTF1TUDb",
+                            "value": "5Ngg5fQ4NtqdzgN3kSjdRKo6ffeq5sP264TmzxvGGQX3ieJzP9hCeUCu7RkmAhLjzqZ2Z5y8FLSptWxetS8FCmcs"
+                        }
+                    ]
+                },
+                "rootHash": "FePFuqEX6iJ1SP5DkYn9WTXQrThxqevEkxYXyCxyX4Fd",
+                "auditPath":
+                [
+                    "CWQ9keGzhBqyMRLvp7XbMr7da7yUbEU4qGTfJ2KNxMM6",
+                    "2S9HAxKukY2hxUoEC718fhywF3KRfwPnEQvRsoN168EV"
+                ]
             }
         }"#;
 
@@ -422,9 +473,17 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs = response.result.unwrap().fees.txn.data.outputs;
+        let outputs = response.result.unwrap().fees.unwrap().txn.data.outputs;
 
         assert_eq!(1, outputs.len());
+    }
+
+    #[test]
+    fn success_json_to_parse_response_with_no_fees() {
+        let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_NO_FEES_JSON).unwrap();
+
+        // only going to test outputs since we don't use inputs
+        assert_eq!(from_response(response), Ok(None));
     }
 
     // Tests that valid json with multiple elements in the "output section" is serialized to ParseResponseWithFees tyoe
@@ -433,7 +492,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.unwrap().fees.txn.data.outputs;
+        let outputs = response.result.unwrap().fees.unwrap().txn.data.outputs;
 
         assert_eq!(2, outputs.len());
     }
@@ -444,7 +503,7 @@ mod parse_response_with_fees_handler_tests {
     fn success_parse_response_with_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON).unwrap();
 
-        let reply: ParseResponseWithFeesReply = from_response(response).unwrap();
+        let reply: ParseResponseWithFeesReply = from_response(response).unwrap().unwrap();
 
         assert_eq!(1, reply.len());
 
@@ -455,7 +514,7 @@ mod parse_response_with_fees_handler_tests {
     #[test]
     fn success_parse_response_with_multiple_fees_to_reply() {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_MULTIPLE_FEES_JSON).unwrap();
-        let reply: ParseResponseWithFeesReply = from_response(response).unwrap();
+        let reply: ParseResponseWithFeesReply = from_response(response).unwrap().unwrap();
 
         assert_eq!(2, reply.len());
 
@@ -467,7 +526,7 @@ mod parse_response_with_fees_handler_tests {
         let response: ParseResponseWithFees = ParseResponseWithFees::from_json(PARSE_RESPONSE_WITH_FEES_JSON_NO_PROTOCOL_VERSION).unwrap();
 
         // only going to test outputs since we don't use inputs
-        let outputs= response.result.unwrap().fees.txn.data.outputs;
+        let outputs = response.result.unwrap().fees.unwrap().txn.data.outputs;
 
         assert_eq!(1, outputs.len());
     }
