@@ -39,8 +39,8 @@ ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.3}
 ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.52}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.11}
 ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.74}
-RUN echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list
-RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
+RUN echo "deb https://repo.sovrin.org/sdk/deb xenial rc" >> /etc/apt/sources.list
+RUN echo "deb https://repo.sovrin.org/deb xenial rc" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
         libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
         python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
