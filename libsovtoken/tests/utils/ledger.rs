@@ -1,4 +1,4 @@
-extern crate rust_libindy_wrapper as indy;
+extern crate indy;
 
 use indy::ErrorCode;
 use std::time::Duration;
