@@ -457,7 +457,7 @@ Example sources_json:
 ```
 
 ## method: indy_build_payment_req
-This API call is handled by LibSovToken build_payment_req_handler. 
+This API call is handled by LibSovToken build_payment_req_handler. Note all payment amounts in outputs must sum to the input utxo value. 
 ### inputs:
     command_handle: Command handle to map callback to caller context.
     wallet_handle: wallet handle
@@ -476,9 +476,13 @@ This API call is handled by LibSovToken build_payment_req_handler.
 
 [
     {
-        "address" : <str>,   // the payment address
-        "amount": <int>,    // the payment amount
+        "address" : <str>,   // the payment address correlating to the input utxo
+        "amount": <int>,    // the amount remaining after all payments are processed
     },
+    {   // continued list of payment outputs 
+        "address" : <str>,   // the payment address to recieve payment
+        "amount": <int>,    // the payment amount to be paid to this address
+    }
 ]
 
 ```
