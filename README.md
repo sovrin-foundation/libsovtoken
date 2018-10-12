@@ -13,9 +13,12 @@
 
 <a href="https://www.apache.org/licenses/LICENSE-2.0.txt" target="_blank">![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?style=plastic)</a>
 <a href="https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken">[![GitHub version](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken.svg)](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken)</a>
+
 <a id="orged7f66f"></a>
 
 # LibSovToken
+
+Adds Sovrin's token functionality to HyperLedger's Indy-SDK. 
 
 
 <a id="requirements"></a>
