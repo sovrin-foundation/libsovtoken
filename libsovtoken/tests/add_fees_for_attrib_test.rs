@@ -1,6 +1,6 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate rust_libindy_wrapper as indy;
+extern crate indy;
 extern crate sovtoken;
 
 mod utils;
@@ -194,13 +194,13 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
 fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
     let attrib_req = indy::ledger::Ledger::build_attrib_request(did, did,  None, data, None).unwrap();
     let attrib_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &attrib_req).unwrap();
-    let (attrib_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, did, &attrib_req_signed, inputs, outputs, None).unwrap();
+    let (attrib_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, Some(did), &attrib_req_signed, inputs, outputs, None).unwrap();
     let attrib_resp = indy::ledger::Ledger::submit_request(pool_handle, &attrib_req_with_fees).unwrap();
     indy::payments::Payment::parse_response_with_fees(&pm, &attrib_resp)
 }
 
 fn send_get_attrib_req(wallet: &Wallet, pool_handle: i32, did: &str, target: &str, attribute: Option<&str>) -> String {
-    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(did, target, attribute, None, None).unwrap();
+    let get_attrib_req = indy::ledger::Ledger::build_get_attrib_request(Some(did), target, attribute, None, None).unwrap();
     indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, did, &get_attrib_req).unwrap()
 }
 

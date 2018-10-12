@@ -1,7 +1,7 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 extern crate sovtoken;
-extern crate rust_libindy_wrapper as indy;
+extern crate indy;
 
 mod utils;
 use indy::ErrorCode;
@@ -53,7 +53,7 @@ fn send_revoc_reg_def_with_fees(issuer_did: &str,
     let (req_with_fees, pm) =
         indy::payments::Payment::add_request_fees(
             wallet_handle,
-            issuer_did,
+            Some(issuer_did),
             &req,
             inputs_json,
             outputs_json,
@@ -98,7 +98,7 @@ fn create_schema_json(did: &str,
     let schema_req = indy::ledger::Ledger::build_schema_request(did, &schema_json).unwrap();
     let schema_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, did, &schema_req).unwrap();
     thread::sleep(time::Duration::from_millis(100));
-    let get_schema_req = indy::ledger::Ledger::build_get_schema_request(did, &schema_id).unwrap();
+    let get_schema_req = indy::ledger::Ledger::build_get_schema_request(Some(did), &schema_id).unwrap();
     let get_schema_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &get_schema_req).unwrap();
     let get_schema_resp = utils::ledger::submit_request_with_retries(pool_handle, &get_schema_req_signed, &schema_resp).unwrap();
     let (_, schema_json) = indy::ledger::Ledger::parse_get_schema_response(&get_schema_resp).unwrap();
@@ -171,7 +171,7 @@ pub fn build_and_submit_revoc_reg_def_works_with_fees_and_spent_utxo() {
         "amount": 10
     }]).to_string();
 
-    let (req, _) = indy::payments::Payment::build_payment_req(wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
+    let (req, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &inputs, &outputs, None).unwrap();
     indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
 
     let outputs_2 = json!([{
