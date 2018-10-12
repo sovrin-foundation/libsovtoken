@@ -1,27 +1,26 @@
-![sovrinlogo](https://github.com/sovrin-foundation/sovrin/blob/master/banner.png "insert humor here")
+![img](https://github.com/sovrin-foundation/sovrin/blob/master/banner.png)
+
 # Table of Contents
 
-
-1.  [Requirements](#requirements)
-    1.  [Installing Indy-SDK](#installing-indy-sdk)
-2.  [Running Indy Pool](#running-indy-pool)
-    1.  [Build the pool](#build-the-pool)
-    2.  [run the poool](#run-the-poool)
-    3.  [Compiling libsovtoken and running tests](#compiling-libsovtoken-and-running-tests)
-3.  [How To Contribute](#how-to-contribute)
+1.  [LibSovToken](#orged7f66f)
+    1.  [Requirements](#requirements)
+        1.  [Installing Indy-SDK](#installing-indy-sdk)
+    2.  [Running Indy Pool](#running-indy-pool)
+        1.  [Build the pool](#build-the-pool)
+        2.  [run the poool](#run-the-poool)
+        3.  [Compiling libsovtoken and running tests](#compiling-libsovtoken-and-running-tests)
+    3.  [How To Contribute](#how-to-contribute)
 
 <a href="https://www.apache.org/licenses/LICENSE-2.0.txt" target="_blank">![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?style=plastic)</a>
 <a href="https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken">[![GitHub version](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken.svg)](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken)</a>
-# LibSovToken
+<a id="orged7f66f"></a>
 
-This is a payment handler library to work with libindy. It may one day
-be merged into libindy.
+# LibSovToken
 
 
 <a id="requirements"></a>
 
-
-# Requirements
+## Requirements
 
 -   Rust Lang (Stable)
 -   LibIndy (Stable)
@@ -30,7 +29,7 @@ be merged into libindy.
 
 <a id="installing-indy-sdk"></a>
 
-## Installing Indy-SDK
+### Installing Indy-SDK
 
 1.  Ubuntu
 
@@ -69,26 +68,26 @@ be merged into libindy.
 
 <a id="running-indy-pool"></a>
 
-# Running Indy Pool
+## Running Indy Pool
 
 
 <a id="build-the-pool"></a>
 
-## Build the pool
+### Build the pool
 
     cd devops/indy-pool/ && docker build -t indy_pool . 
 
 
 <a id="run-the-poool"></a>
 
-## run the poool
+### run the poool
 
     docker run -itd -p 9701-9708:9701-9708 indy_pool
 
 
 <a id="compiling-libsovtoken-and-running-tests"></a>
 
-## Compiling libsovtoken and running tests
+### Compiling libsovtoken and running tests
 
 1.  Make sure you meet the requirements above, including building the
     projects, if you elect to use source code.
@@ -114,7 +113,7 @@ the cargo crates in github
 
 <a id="how-to-contribute"></a>
 
-# How To Contribute
+## How To Contribute
 
 Please follow the guide [here](./doc/pull-request.md).
 
