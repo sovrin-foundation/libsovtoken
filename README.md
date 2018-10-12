@@ -1,8 +1,7 @@
-
+![sovrinlogo](https://github.com/sovrin-foundation/sovrin/blob/master/banner.png "insert humor here")
 # Table of Contents
-<a href="https://www.apache.org/licenses/LICENSE-2.0.txt" target="_blank">![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?style=plastic)</a>
-<a href="https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken">[![GitHub version](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken.svg)](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken)</a>
-# LibSovToken
+
+
 1.  [Requirements](#requirements)
     1.  [Installing Indy-SDK](#installing-indy-sdk)
 2.  [Running Indy Pool](#running-indy-pool)
@@ -11,11 +10,16 @@
     3.  [Compiling libsovtoken and running tests](#compiling-libsovtoken-and-running-tests)
 3.  [How To Contribute](#how-to-contribute)
 
+<a href="https://www.apache.org/licenses/LICENSE-2.0.txt" target="_blank">![Hex.pm](https://img.shields.io/hexpm/l/plug.svg?style=plastic)</a>
+<a href="https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken">[![GitHub version](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken.svg)](https://badge.fury.io/gh/sovrin-foundation%2Flibsovtoken)</a>
+# LibSovToken
+
 This is a payment handler library to work with libindy. It may one day
 be merged into libindy.
 
 
 <a id="requirements"></a>
+
 
 # Requirements
 
