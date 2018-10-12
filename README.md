@@ -52,9 +52,9 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
         cargo build
     
     Libsovtoken build needs to know how to find Indy-SDK. This is done
-    through the environment variable LIBINDY<sub>DIR</sub>.
+    through the environment variable LIBINDY_DIR.
     
-    Create an environment variable LIBINDY<sub>DIR</sub>. Have it point the directory
+    Create an environment variable LIBINDY_DIR. Have it point the directory
     containing indy-sdk binaries.
     
     Use `pwd` to get path to current directory
@@ -103,15 +103,6 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 
 5.  Run the tests to ensure everything is in good order.
     1.  cargo test
-
-***Please keep in mind*** (at the time this document was written) some of
-the cargo crates are github repositories. If you update libsovtoken code
-from github you need to re-build libsovtoken as follows: 1) cargo clean
-
-1.  cargo update 3) cargo build
-
-The cargo update command is necessary to make sure you get latest from
-the cargo crates in github
 
 
 <a id="how-to-contribute"></a>
