@@ -95,7 +95,7 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 1.  Make sure you meet the requirements above, including building the
     projects, if you elect to use source code.
 2.  Get latest for libsovtoken at
-    <https://github.com/evernym/libsovtoken.git>
+    <https://github.com/sovrin-foundation/libsovtoken.git>
 3.  The source code is in a sub-directory called libsovtoken
 4.  Run the following commands from the libsovtoken subdirectory
     1.  cargo update
