@@ -327,7 +327,7 @@ pub fn pay_with_funds_remaining_with_several_outputs_fails() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    // ---- spend more tokens than we minted
+    // ---- spend less tokens than we minted
     let txo_1 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
 
     let pay_input_json = json!([
@@ -370,7 +370,7 @@ pub fn pay_with_funds_remaining_with_several_txo_fails() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    // ---- spend more tokens than we minted
+    // ---- spend less tokens than we minted
     let txo_1 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
     let txo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[1]);
     let txo_3 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[2]);
