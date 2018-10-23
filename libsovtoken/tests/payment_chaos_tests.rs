@@ -86,10 +86,8 @@ pub fn pay_without_outputs_fails() {
     let pay_output_json = json!([
     ]).to_string();
 
-    match indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None) {
-        Ok(_) => { assert!(false, "Expected CommonInvalidStructure error"); }
-        Err(ec) => { assert_eq!(ec, ErrorCode::CommonInvalidStructure); }
-    }
+    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
+    assert_eq!(ec, ErrorCode::CommonInvalidStructure);
 
 }
 
@@ -127,11 +125,8 @@ pub fn pay_without_inputs_fails() {
         }
     ]).to_string();
 
-    match indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None) {
-        Ok(_) => { assert!(false, "Expected CommonInvalidStructure error"); }
-        Err(ec) => { assert_eq!(ec, ErrorCode::CommonInvalidStructure); }
-    }
-
+    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
+    assert_eq!(ec, ErrorCode::CommonInvalidStructure);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -169,15 +164,48 @@ pub fn pay_from_non_existent_payment_source_fails() {
         }
     ]).to_string();
 
-    match indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None) {
-        Ok(_) => {
-            assert!(false, "expected build_payment_req to fail");
-        },
-        Err(ec) => {
-            assert_eq!(ec, ErrorCode::WalletItemNotFound);
-        }
+    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
+    assert_eq!(ec, ErrorCode::WalletItemNotFound);
+}
 
-    }
+// ------------------------------------------------------------------------------------------------
+#[test]
+pub fn pay_from_existent_and_non_existent_payment_source_fails() {
+
+    // ---- setup
+    sovtoken::api::sovtoken_init();
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None,
+        fees: None,
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    // ---- create some tokens
+    do_minting(pool_handle, &wallet, &dids, &payment_addresses[0], 50);
+
+
+    // ---- spend tokens from inputs with both an address in the wallet and one address that is not in the wallet
+    let txo_1 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
+
+    let pay_input_json = json!([
+        txo_1, "txo:sov:3x42qH8UkJac1BuorqjSEvuVjvYkXk8sUAqoVPn1fGCwjLPquu4CndzBHBQ5hX6RSmDVnXGdMPrnWDUN5S1ty4YQP87hW8ubMSzu9M56z1FbAQV6aMSX5h"
+    ]).to_string();
+
+    let pay_output_json = json!([
+        {
+            "recipient": payment_addresses[0],
+            "amount": 50
+        }
+    ]).to_string();
+
+    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
+    assert_eq!(ec, ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -212,6 +240,52 @@ pub fn pay_with_insufficent_funds_fails() {
         {
             "recipient": payment_addresses[0],
             "amount": 90
+        }
+    ]).to_string();
+
+    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+
+    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+
+    assert!(payment_result.contains("InsufficientFundsError"), "Expected InsufficientFundsError");
+}
+
+// ------------------------------------------------------------------------------------------------
+#[test]
+pub fn pay_with_insufficent_funds_with_several_output_addresses_fails() {
+
+    // ---- setup
+    sovtoken::api::sovtoken_init();
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 2,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None,
+        fees: None,
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    // ---- create some tokens
+    do_minting(pool_handle, &wallet, &dids, &payment_addresses[0], 50);
+
+    // ---- spend more tokens than we minted sending the outputs (spending) to several addresses
+    let txo_1 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
+
+    let pay_input_json = json!([
+        txo_1
+    ]).to_string();
+
+    let pay_output_json = json!([
+        {
+            "recipient": payment_addresses[0],
+            "amount": 45
+        },
+        {
+            "recipient": payment_addresses[1],
+            "amount": 45
         }
     ]).to_string();
 
