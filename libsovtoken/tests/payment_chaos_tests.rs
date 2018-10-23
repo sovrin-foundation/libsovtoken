@@ -16,7 +16,6 @@ use utils::wallet::Wallet;
 pub fn pay_without_outputs_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -49,7 +48,6 @@ pub fn pay_without_outputs_fails() {
 pub fn pay_without_inputs_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -82,7 +80,6 @@ pub fn pay_without_inputs_fails() {
 pub fn pay_from_non_existent_payment_source_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -116,7 +113,6 @@ pub fn pay_from_non_existent_payment_source_fails() {
 pub fn pay_from_existent_and_non_existent_payment_source_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -152,7 +148,6 @@ pub fn pay_from_existent_and_non_existent_payment_source_fails() {
 pub fn pay_with_insufficent_funds_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -191,7 +186,6 @@ pub fn pay_with_insufficent_funds_fails() {
 pub fn pay_with_insufficent_funds_with_several_output_addresses_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 2,
@@ -234,7 +228,6 @@ pub fn pay_with_insufficent_funds_with_several_output_addresses_fails() {
 pub fn pay_with_insufficent_funds_with_several_txo_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 3,
@@ -275,7 +268,6 @@ pub fn pay_with_insufficent_funds_with_several_txo_fails() {
 pub fn pay_with_funds_remaining_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
@@ -314,13 +306,12 @@ pub fn pay_with_funds_remaining_fails() {
 pub fn pay_with_funds_remaining_with_several_outputs_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 2,
         num_trustees: 4,
         num_users: 0,
-        mint_tokens: Some(vec![50, 1]),
+        mint_tokens: Some(vec![50]),
         fees: None,
     });
     let payment_addresses = &setup.addresses;
@@ -357,7 +348,6 @@ pub fn pay_with_funds_remaining_with_several_outputs_fails() {
 pub fn pay_with_funds_remaining_with_several_txo_fails() {
 
     // ---- setup
-    sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 3,
