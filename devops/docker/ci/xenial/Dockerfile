@@ -36,9 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #         or python3-rocksdb are not specified here)
 ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.3}
 ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.3}
-ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.52}
+ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.53}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.11}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.74}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.78}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
