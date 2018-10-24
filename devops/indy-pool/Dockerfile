@@ -24,8 +24,8 @@ ARG indy_stream=stable
 ARG indy_plenum_ver=1.6.53
 ARG indy_node_ver=1.6.78
 ARG indy_anoncreds_ver=1.0.11
-ARG python3_indy_crypto_ver=0.4.4
-ARG indy_crypto_ver=0.4.4
+ARG python3_indy_crypto_ver=0.4.5
+ARG indy_crypto_ver=0.4.5
 ARG token_ver=0.9.5
 ARG fees_ver=0.9.5
 
