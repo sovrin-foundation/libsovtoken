@@ -1,4 +1,4 @@
-FROM evernym/libsovtoken:base-xenial-0.11.0
+FROM evernym/libsovtoken:base-xenial-0.12.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -39,6 +39,7 @@ ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
 ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.53}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.11}
 ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.78}
+ENV TOKEN_VER  ${TOKEN_VER:-0.9.5}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
@@ -47,6 +48,8 @@ RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.lis
         indy-plenum=${INDY_PLENUM_VERSION} \
         indy-anoncreds=${INDY_ANONCREDS_VERSION} \
         indy-node=${INDY_NODE_VERSION} \
+        sovtoken=${TOKEN_VER} \
+        sovtokenfees=${TOKEN_VER} \
     && rm -rf /var/lib/apt/lists/*
 COPY supervisord.conf /etc/supervisord.conf
 
@@ -60,24 +63,8 @@ RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"
 
 USER root
 
-# sovtoken and sovtokenfees
-# bump this env var if you need to avoid caching for apt-based installation
 ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
-ENV EVERNYM_REPO_IP ${EVERNYM_REPO_IP:-10.2.3.179}
-# TODO workaround to copy optional files *.deb
-# fix that once that issue is resovled
-# https://github.com/moby/moby/issues/26332
-COPY sovtoken*.deb supervisord.conf /tmp/sovtoken-debs/
-RUN if [ -f /tmp/sovtoken-debs/sovtoken_*.deb ] && [ -f /tmp/sovtoken-debs/sovtokenfees_*.deb ]; then \
-        apt-get update \
-        && dpkg -i /tmp/sovtoken-debs/*.deb \
-        && apt-get install -f -y --no-install-recommends; \
-    else \
-         apt-get update && apt-get install -y --no-install-recommends \
-            sovtoken \
-            sovtokenfees \
-        && rm -rf /var/lib/apt/lists/*; \
-    fi
+
 
 
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
