@@ -34,8 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #       - have explicitly defined versions in packages depends list
 #       - are likely to be updated (e.g. packaged 3rd parties like python3-pyzmq
 #         or python3-rocksdb are not specified here)
-ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.3}
-ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.3}
+ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.5}
+ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
 ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.6.53}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.11}
 ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.6.78}
