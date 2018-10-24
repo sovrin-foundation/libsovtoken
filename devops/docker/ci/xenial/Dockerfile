@@ -63,7 +63,7 @@ RUN awk '{if (index($1, "NETWORK_NAME") != 0) {print("NETWORK_NAME = \"sandbox\"
 
 USER root
 
-ENV SOVTOKEN_PLUGINS_APT_UPDATE 1
+ENV SOVTOKEN_PLUGINS_APT_UPDATE 2
 
 
 
