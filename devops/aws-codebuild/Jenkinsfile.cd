@@ -1,6 +1,6 @@
 #!groovy
 
-def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.3.0-aws-codebuild', retriever: modernSCM(
+def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.4.0-aws-codebuild', retriever: modernSCM(
     github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
 )).com.evernym.pipeline
 
@@ -147,9 +147,9 @@ def codeBuildPipelines = {
         }
 
         stage('Set release parameters') {
-            def releaseVersion = "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
 
-            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
+            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
             logger.info("Package version for evernym repo: $debPVersion")
 
             // TODO crate and rpm
