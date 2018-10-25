@@ -12,7 +12,7 @@ utils = evLibrary.Utils.new(this)
 
 // TODO set proper labels
 def nodeLabels = [
-    codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: '!macos',
+    codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
     macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos', 
 ]
 
