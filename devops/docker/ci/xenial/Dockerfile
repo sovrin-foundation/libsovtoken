@@ -65,8 +65,6 @@ USER root
 
 ENV SOVTOKEN_PLUGINS_APT_UPDATE 2
 
-
-
 COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]

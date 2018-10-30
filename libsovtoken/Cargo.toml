@@ -1,6 +1,8 @@
 [package]
 name = "libsovtoken"
+
 version = "0.9.5"
+
 authors = [
   "Matt Raffel <matt.raffel@evernym.com",
   "Stephen Felt <stephen.felt@evernym.com",

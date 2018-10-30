@@ -21,6 +21,7 @@ ARG uid=1000
 
 ARG indy_stream=stable
 
+
 ARG indy_plenum_ver=1.6.53
 ARG indy_node_ver=1.6.78
 ARG indy_anoncreds_ver=1.0.11
