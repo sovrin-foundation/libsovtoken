@@ -30,21 +30,21 @@ impl MintRequest {
     /**
      * Creates a new `MintRequest` with `outputs`
      */
-    pub fn new(outputs: Vec<Output>, identifier : Did, extra: Option<String>) -> Request<MintRequest> {
+    pub fn new(outputs: Vec<Output>, identifier : Option<Did>, extra: Option<String>) -> Request<MintRequest> {
         let mint = MintRequest {
             txn_type: MINT_PUBLIC.to_string(),
             outputs,
             extra,
         };
 
-        return Request::new(mint, Some(String::from(identifier)));
+        return Request::new(mint, identifier.map(String::from));
     }
 
     /**
      * Creates a new `MintRequest` from an [`OutputConfig`].
      * [`OutputConfig`]: ../general/struct.OutputConfig.html
      */
-    pub fn from_config(mint_config: Outputs, identifier : Did, extra: Option<String>) -> Request<MintRequest> {
+    pub fn from_config(mint_config: Outputs, identifier : Option<Did>, extra: Option<String>) -> Request<MintRequest> {
         return MintRequest::new(mint_config, identifier, extra);
     }
 }
@@ -76,7 +76,7 @@ mod output_mint_config_test {
         let did = Did::new(&identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let outputs = vec![output];
-        return MintRequest::new(outputs, did, None);
+        return MintRequest::new(outputs, Some(did), None);
     }
 
     fn assert_mint_request<F>(expected: serde_json::Value, f: F)
@@ -99,7 +99,7 @@ mod output_mint_config_test {
         let did = Did::new(&identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let outputs = vec![output];
-        let request = MintRequest::from_config(outputs.clone(), did, None);
+        let request = MintRequest::from_config(outputs.clone(), Some(did), None);
         assert_eq!(request.operation.outputs, outputs);
     }
 

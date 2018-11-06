@@ -231,6 +231,61 @@ pub fn build_and_submit_mint_txn_works() {
 }
 
 #[test]
+pub fn build_and_submit_mint_txn_works_with_empty_did() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 3,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: None,
+        fees: None,
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+
+    let output_json = json!([
+        {
+            "recipient": payment_addresses[0],
+            "amount": 5,
+        },
+        {
+            "recipient": payment_addresses[1],
+            "amount": 10,
+        },
+        {
+            "recipient": payment_addresses[2],
+            "amount": 15,
+        }
+    ]).to_string();
+
+    let (mint_req, _) = indy::payments::Payment::build_mint_req(
+        wallet.handle,
+        None,
+        &output_json,
+        None,
+    ).unwrap();
+
+    trace!("{:?}", &mint_req);
+
+    let mint_req = Request::<MintRequest>::multi_sign_request(
+        wallet.handle,
+        &mint_req,
+        dids.clone()
+    ).unwrap();
+
+    trace!("{:?}", &mint_req);
+
+    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
+    let response = ParseMintResponse::from_json(&result).unwrap();
+    assert_eq!(response.op, ResponseOperations::REPLY);
+    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
+    assert_eq!(utxos[0].amount, 5);
+    assert_eq!(utxos[0].payment_address, payment_addresses[0]);
+}
+
+#[test]
 pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {

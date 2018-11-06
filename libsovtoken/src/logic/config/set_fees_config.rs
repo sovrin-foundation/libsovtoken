@@ -46,7 +46,7 @@ pub type SetFeesMap = HashMap<String, TokenAmount>;
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
         let did = Did::new(&identifier).validate().unwrap();
         let set_fees = SetFees::new(fees).validate().unwrap();
-        let set_fees_request = set_fees.as_request(did);
+        let set_fees_request = set_fees.as_request(Some(did));
         let json_pointer = set_fees_request.serialize_to_pointer().unwrap();
     ```
 
@@ -82,8 +82,8 @@ impl SetFees {
     // TODO: Remove identifier, this is temporary, just to get around the current incorrect way
     // of signing and being consistent with MINT.
     // More details here https://docs.google.com/document/d/15m3XPEUfwhI5GPWh3kuMj6rML52ydWTLsBiurHKfmnU/edit
-    pub fn as_request(self, identifier: Did) -> Request<SetFees> {
-        return Request::new(self, Some(String::from(identifier)));
+    pub fn as_request(self, identifier: Option<Did>) -> Request<SetFees> {
+        return Request::new(self, identifier.map(String::from));
     }
 
     /**
@@ -248,7 +248,7 @@ mod fees_config_test {
         let set_fees = SetFees::new(hash_map).validate().unwrap();
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
         let did = Did::new(&identifier).validate().unwrap();
-        let request = set_fees.as_request(did);
+        let request = set_fees.as_request(Some(did));
         let fees_from_request = serde_json::to_value(&request.operation.fees).unwrap();
         assert_eq!(expected, fees_from_request)
     }
