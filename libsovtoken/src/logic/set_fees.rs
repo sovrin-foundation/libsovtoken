@@ -29,7 +29,7 @@ fn txn_name_to_code(txn: &str) -> String {
     }
 }
 
-type DeserializedArguments<'a> = (Did<'a>, SetFees, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Option<Did<'a>>, SetFees, JsonCallbackUnwrapped);
 
 pub fn deserialize_inputs<'a>(
     did: *const c_char,
@@ -39,11 +39,11 @@ pub fn deserialize_inputs<'a>(
     trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", did, fees_json);
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
-    let did = Did::from_pointer(did)
-        .ok_or(ErrorCode::CommonInvalidStructure)
-        .map_err(map_err_err!())?
-        .validate()
-        .or(Err(ErrorCode::CommonInvalidStructure))?;
+    let did = Did::from_pointer(did).map(|did| {
+        did.validate().or(Err(ErrorCode::CommonInvalidStructure))
+    });
+
+    let did = opt_res_to_res_opt!(did)?;
 
     let set_fees_json = string_from_char_ptr(fees_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
@@ -85,7 +85,8 @@ mod test_deserialize_inputs {
     #[test]
     fn deserialize_empty_did() {
         let result = call_deserialize_inputs(Some(ptr::null()), None, None);
-        assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
+        let (did, _, _) = result.unwrap();
+        assert_eq!(None, did);
     }
 
     #[test]
