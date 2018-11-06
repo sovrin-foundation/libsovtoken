@@ -642,23 +642,15 @@ pub extern "C" fn build_get_txn_fees_handler(
         return handle_result(Err(ErrorCode::CommonInvalidStructure)) as i32;
     }
 
-    let did = match Did::from_pointer(submitter_did) {
-        Some(did) => did,
-        None => {
-            error!("Failed to convert submitter_did pointer to string");
-            trace!("api::build_get_txn_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-            return ErrorCode::CommonInvalidStructure as i32;
-        }
-    };
+    let did = Did::from_pointer(submitter_did).map(|did| {
+        did.validate().map_err(map_err_trace!()).or(Err(ErrorCode::CommonInvalidStructure))
+    });
 
     debug!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, did);
 
-    let did = match did.validate() {
-        Ok(d) => d,
-        Err(_) => {
-            trace!("api::build_get_txn_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-            return ErrorCode::CommonInvalidStructure as i32
-        }
+    let did = match opt_res_to_res_opt!(did) {
+        Ok(did) => did,
+        Err(e) => { return e as i32; }
     };
 
     let get_txn_request = GetFeesRequest::new().as_request(did);
@@ -821,9 +813,10 @@ pub extern "C" fn build_verify_req_handler(
             return ec as i32;
         }
     };
+    let did = did.map(|s| String::from(s));
 
     let res = indy::ledger::Ledger::build_get_txn_request_async(
-        Some(&String::from(did)),
+        did.as_ref().map(|x| &**x),
         Some(LEDGER_ID),
         txo.seq_no as i32,
         move |ec, res| {
