@@ -1,11 +1,11 @@
 #!groovy
 
-def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.4.0-aws-codebuild', retriever: modernSCM(
-    github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
-)).com.evernym.pipeline
+def sovLibrary = library(identifier: 'sovrin-aws-codebuild@v0.4.0-aws-codebuild', retriever: modernSCM(
+    github(credentialsId: 'sovrin-ci', repoOwner: 'sovrin-foundation', repository: 'jenkins-shared')
+)).com.sovrin.pipeline
 
-logger = evLibrary.Logger.new(this)
-notifier = evLibrary.Notifier.new(this)
+logger = sovLibrary.Logger.new(this)
+notifier = sovLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
 
 pipelineWrapper({
@@ -29,11 +29,11 @@ pipelineWrapper({
             checkout scm
         }
 
-        def utils = evLibrary.Utils.new(this)
+        def utils = sovLibrary.Utils.new(this)
         // TODO Cargo.toml is necessary only for variable in makefile which is not used for that context, thus
         // shouldn't be taken into account when deciding to rebuild docker images
-        def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken', ['devops', 'libsovtoken/Cargo.toml'])
-        def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
+        def buildCtx = sovLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken', ['devops', 'libsovtoken/Cargo.toml'])
+        def awsCBHelper = sovLibrary.AwsCodeBuildHelper.new(this, buildCtx)
 
         stage('Upload source to S3') {
             awsCBHelper.uploadSourceToS3()
@@ -46,10 +46,10 @@ pipelineWrapper({
 
                 if (osname == 'xenial') {
                     stage('Download plugin debs') {
-                        // TODO remove that code once repo.corp evernym.com
+                        // TODO remove that code once repo.corp sovrin.com
                         // become available from AWS CodeBuild
 
-                        // TODO Aptly on repo.copr.evernym.com removes '+' signs
+                        // TODO Aptly on repo.copr.sovrin.com removes '+' signs
                         // from debian packages making versions in filenames
                         // not accurate (it concatenates them):
                         //  debian package version: <src_version>+<release_version>
@@ -93,7 +93,7 @@ pipelineWrapper({
                         'export PROJECT_DIR=$PWD',
                         'make -C devops image_lst_ci'
                     ]
-                    envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
+                    envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
                     envBuildEnvv = [
                         [name: 'OSNAME', value: osname],
                         [name: 'LST_CI_DOCKER_TAG', value: buildImageTag],
