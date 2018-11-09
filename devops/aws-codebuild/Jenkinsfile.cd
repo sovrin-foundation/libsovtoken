@@ -37,7 +37,6 @@ def codeBuildPipelines = {
     }
 
     def sovrinRepo = sovLibrary.SovrinRepo.new(this)
-    def sovrinRepo = sovLibrary.SovrinRepo.new(this)
     def git = sovLibrary.Git.new(this)
     def buildCtx = sovLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
     def awsCBHelper = sovLibrary.AwsCodeBuildHelper.new(this, buildCtx)
@@ -213,16 +212,6 @@ def codeBuildPipelines = {
                     packagePath = debName
                 }
 
-                if (env.BRANCH_NAME == 'stable') {
-                    logger.info("Uploading debian package '$debName' to sovrin repo")
-                    sshagent(credentials: ['SovrinRepoSSHKey']) {
-                        sovrinRepo.upload {
-                            repoDistr = 'sdk'
-                            packagePath = debName
-                            component = 'rc'
-                        }
-                    }
-                }
             }
 
             notifier.email {
