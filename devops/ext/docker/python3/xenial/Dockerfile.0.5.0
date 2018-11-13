@@ -1,4 +1,4 @@
-FROM evernym/dockerbase:base-xenial-0.5.0
+FROM sovrin/dockerbase:base-xenial-0.5.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG PYTHON3_VERSION

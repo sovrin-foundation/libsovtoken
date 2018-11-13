@@ -1,4 +1,4 @@
-FROM evernym/libsovtoken:base-xenial-0.12.0
+FROM sovrin/libsovtoken:base-xenial-0.12.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -7,7 +7,7 @@ ARG INDY_PLENUM_VERSION
 ARG INDY_ANONCREDS_VERSION
 ARG INDY_NODE_VERSION
 
-ARG EVERNYM_REPO_IP
+ARG SOVRIN_REPO_IP
 ARG POOL_IP
 
 USER root
