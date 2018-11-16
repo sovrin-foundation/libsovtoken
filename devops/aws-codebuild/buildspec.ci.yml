@@ -21,6 +21,7 @@ phases:
   pre_build:
     commands:
       - echo Pre-Build started on `date`
+      - rustup component add clippy-preview
       # create soft link dockerfile like 'start_pool'
       - libsovtoken-ci-entrypoint.sh
       - mkdir -p /tmp/artifacts/logs/pool
