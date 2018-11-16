@@ -135,7 +135,7 @@ def codeBuildPipelines = {
             lastRevision = sovrinRepo.getLastRevision {
                 delegate.packageName = packageName
                 packageSrcVersion = srcVersion
-                repoDistr = 'agency-dev'
+                repoDistr = 'deb'
             }
 
             if (lastRevision) {
@@ -208,7 +208,7 @@ def codeBuildPipelines = {
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
                 sovrinRepo.upload {
-                    repoDistr = 'agency_dev'
+                    repoDistr = 'deb'
                     packagePath = debName
                 }
 
