@@ -30,7 +30,7 @@ impl GetUtxoOperationRequest {
             address : unqualified_address,
             req_type : GET_UTXO.to_string(),
         };
-        return Request::new(req, identifier);
+        Request::new(req, identifier)
     }
 }
 

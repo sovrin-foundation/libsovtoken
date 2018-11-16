@@ -37,7 +37,7 @@ impl MintRequest {
             extra,
         };
 
-        return Request::new(mint, Some(String::from(identifier)));
+        Request::new(mint, Some(String::from(identifier)))
     }
 
     /**
@@ -45,7 +45,7 @@ impl MintRequest {
      * [`OutputConfig`]: ../general/struct.OutputConfig.html
      */
     pub fn from_config(mint_config: Outputs, identifier : Did, extra: Option<String>) -> Request<MintRequest> {
-        return MintRequest::new(mint_config, identifier, extra);
+        MintRequest::new(mint_config, identifier, extra)
     }
 }
 

@@ -8,13 +8,13 @@ use serde_json;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 
-const NYM: &'static str = "1";
-const ATTRIB: &'static str = "100";
-const SCHEMA: &'static str = "101";
-const CRED_DEF: &'static str = "102";
-const REVOC_REG_DEF: &'static str = "113";
-const REVOC_REG_ENTRY: &'static str = "114";
-const XFER_PUBLIC: &'static str = "10001";
+const NYM: &str = "1";
+const ATTRIB: &str = "100";
+const SCHEMA: &str = "101";
+const CRED_DEF: &str = "102";
+const REVOC_REG_DEF: &str = "113";
+const REVOC_REG_ENTRY: &str = "114";
+const XFER_PUBLIC: &str = "10001";
 
 fn txn_name_to_code(txn: &str) -> String {
     match txn {
@@ -60,7 +60,7 @@ pub fn deserialize_inputs<'a>(
 
     let res = Ok((did, set_fees, cb));
     trace!("logic::set_fees::deserialize_inputs << res: {:?}", res);
-    return res;
+    res
 }
 
 #[cfg(test)]

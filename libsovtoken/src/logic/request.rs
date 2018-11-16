@@ -29,7 +29,7 @@ impl<T> Request<T>
 {
     pub fn new(operation: T, identifier : Option<String>) -> Self {
         let req_id = rand_req_id();
-        return Request {
+        Request {
             operation,
             protocol_version: PROTOCOL_VERSION,
             req_id,
@@ -38,17 +38,17 @@ impl<T> Request<T>
     }
 
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
-        return self.serialize_to_string().map_err(map_err_err!())
-            .map(|string| cstring_from_str(string));
+        self.serialize_to_string().map_err(map_err_err!())
+            .map(|string| cstring_from_str(string))
     }
 
     pub fn serialize_to_string(&self) -> Result<String, serde_json::Error> {
-        return JsonSerialize::to_json(&self).map_err(map_err_err!());
+        JsonSerialize::to_json(&self).map_err(map_err_err!())
     }
 
     pub fn serialize_to_pointer(&self) -> Result<*const c_char, serde_json::Error> {
-        return self.serialize_to_string()
-            .map(|string| c_pointer_from_string(string));
+        self.serialize_to_string()
+            .map(|string| c_pointer_from_string(string))
     }
 
     pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {

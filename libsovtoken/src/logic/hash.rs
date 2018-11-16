@@ -12,7 +12,7 @@ pub struct Digest {
 impl Digest {
     fn new(data: DigestBytes) -> Digest {
         Digest {
-            data: data
+            data
         }
     }
 

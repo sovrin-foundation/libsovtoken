@@ -62,7 +62,7 @@ pub fn parse_fees_from_get_txn_fees_response(response : String) -> Result<String
             ParseGetTxnFeesResponse::from_json(&response).map_err(map_err_err!())?;
     let res = serde_json::to_string(&fees_response.result.fees).map_err(map_err_err!());
     trace!("logic::parsers::parse_fees_from_get_txn_fees_response << result: {:?}", res);
-    return res;
+    res
 }
 
 pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp: *mut *const c_char) -> ErrorCode {
@@ -104,9 +104,9 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         Ok(s) => {
             trace!("JSON representation of ParsedSP for get fees {:?}", &s);
             unsafe { *parsed_sp = c_pointer_from_string(s); }
-            return ErrorCode::Success;
+            ErrorCode::Success
         },
-        Err(_) => return ErrorCode::CommonInvalidStructure
+        Err(_) => ErrorCode::CommonInvalidStructure
     }
 }
 

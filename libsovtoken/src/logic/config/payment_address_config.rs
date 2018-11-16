@@ -25,6 +25,6 @@ impl PaymentAddressConfig {
     */
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
         let serialized = JsonSerialize::to_json(&self)?;
-        return Ok(cstring_from_str(serialized));
+        Ok(cstring_from_str(serialized))
     }
 }

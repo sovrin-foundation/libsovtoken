@@ -2,8 +2,8 @@
 
 // TODO: Make them part of an Enum
 
-pub const FEES: &'static str = "fees";
-pub const INPUTS: &'static str = "inputs";
-pub const OUTPUTS: &'static str = "outputs";
-pub const RESULT: &'static str = "result";
-pub const STATE_PROOF: &'static str = "state_proof";
+pub const FEES: &str = "fees";
+pub const INPUTS: &str = "inputs";
+pub const OUTPUTS: &str = "outputs";
+pub const RESULT: &str = "result";
+pub const STATE_PROOF: &str = "state_proof";

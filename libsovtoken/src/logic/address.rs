@@ -50,7 +50,7 @@ pub const ADDRESS_LEN: usize = VERKEY_LEN + ADDRESS_CHECKSUM_LEN + ADDRESS_QUAL_
 */
 pub fn unqualified_address_from_address(fq_address: &str) -> Result<String, ErrorCode> {
     validate_address(&fq_address)?;
-    return Ok(strip_qualifier_from_address(&fq_address));
+    Ok(strip_qualifier_from_address(&fq_address))
 }
 
 /** 
@@ -107,7 +107,7 @@ pub fn address_from_unqualified_address(unqual_address: &str) -> Result<String, 
 */
 pub fn qualified_address_from_verkey(verkey: &str) -> Result<String, ErrorCode> {
     let address = unqualified_address_from_verkey(verkey)?;
-    return Ok(format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address));
+    Ok(format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address))
 }
 
 
@@ -140,12 +140,12 @@ pub fn verkey_from_unqualified_address(unqualified_address: &str) -> Result<Stri
         Ok(vk) => {
             if vk.len() != VERKEY_LEN {
                 error!("Incorrect verkey length, expected {:?}, real {:?}", VERKEY_LEN, vk.len());
-                return Err(ErrorCode::CommonInvalidStructure)
+                Err(ErrorCode::CommonInvalidStructure)
             } else {
-                return Ok(vk.into_base58());
+                Ok(vk.into_base58())
             }
         },
-        Err(_) => return Err(ErrorCode::CommonInvalidStructure)
+        Err(_) => Err(ErrorCode::CommonInvalidStructure)
     }
 }
 
@@ -204,7 +204,7 @@ pub fn txo_to_string(txo: &TXO) ->  Result<String, ErrorCode> {
 
 */
 pub fn add_qualifer_to_address(address : &str) -> String {
-    return format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address);
+    format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, address)
 }
 
 /**
@@ -212,7 +212,7 @@ pub fn add_qualifer_to_address(address : &str) -> String {
     Unqualified address is <verkey><checksum> without the "pay:sov"
 */
 pub fn strip_qualifier_from_address(address : &str) -> String {
-    return address[ADDRESS_QUAL_LEN..].to_string();
+    address[ADDRESS_QUAL_LEN..].to_string()
 }
 
 /*

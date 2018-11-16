@@ -35,11 +35,11 @@ pub struct Did<'a>(&'a str);
 impl<'a> Did<'a> {
 
     pub fn new(did_string: &'a str) -> Self {
-        return Did(did_string);
+        Did(did_string)
     }
 
     pub fn from_pointer(pointer: *const c_char) -> Option<Self> {
-        return str_from_char_ptr(pointer).map(Self::new);
+        str_from_char_ptr(pointer).map(Self::new)
     }
 
     /**
@@ -67,8 +67,8 @@ impl<'a> Did<'a> {
         match res_did {
             Ok(ref vec) if vec.len() == 32 || vec.len() == 16 => Ok(self),
             Ok(ref vec) => Err(DidError::InvalidLength(vec.len())),
-            Err(DecodeError::InvalidCharacter {character: b, index: _}) => Err(DidError::InvalidChar(b as char)),
-            Err(DecodeError::NonAsciiCharacter {index: _}) => Err(DidError::InvalidChar(0 as char)),
+            Err(DecodeError::InvalidCharacter {character: b, ..}) => Err(DidError::InvalidChar(b as char)),
+            Err(DecodeError::NonAsciiCharacter { .. }) => Err(DidError::InvalidChar(0 as char)),
             Err(_) => Err(DidError::InvalidLength(did_string.len()))
         }
     }
@@ -76,7 +76,7 @@ impl<'a> Did<'a> {
 
 impl<'a> From<Did<'a>> for String {
     fn from(did: Did<'a>) -> String {
-        return String::from(did.0);
+        String::from(did.0)
     }
 }
 

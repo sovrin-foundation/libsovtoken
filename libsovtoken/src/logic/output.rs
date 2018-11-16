@@ -74,7 +74,7 @@ pub struct Output {
 
 impl Output {
     pub fn new(address: String, amount: TokenAmount) -> Output {
-        return Output { recipient: address, amount };
+        Output { recipient: address, amount }
     }
 }
 
@@ -86,7 +86,7 @@ impl<'de> Deserialize<'de> for Output {
             type Value = Output;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                return formatter.write_str("Expected an Output with address and tokens.");
+                formatter.write_str("Expected an Output with address and tokens.")
             }
 
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Output, V::Error> {
@@ -105,12 +105,12 @@ impl<'de> Deserialize<'de> for Output {
                 let address = address.ok_or(de::Error::missing_field("recipient or address"))?;
                 let amount = amount.ok_or_else(|| de::Error::missing_field("amount"))?;
 
-                return Ok(Output::new(address, amount));
+                Ok(Output::new(address, amount))
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["recipient", "amount", "address"];
-        return deserializer.deserialize_struct("Output", FIELDS, OutputVisitor);
+        const FIELDS: &[&str] = &["recipient", "amount", "address"];
+        deserializer.deserialize_struct("Output", FIELDS, OutputVisitor)
     }
 }
 
