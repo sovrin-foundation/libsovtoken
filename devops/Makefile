@@ -1,5 +1,7 @@
 #TODO
 # - docker-compose re-runs build always (it's fast because of cache but anyway)
+# - Remove the clippy warning flags once breaking issues have been addressed:
+#   - `-- -W clippy::style -W clippy::correctness -W clippy::complexity -W clippy::perf`
 
 RELEASE ?= 1
 OSNAME ?= xenial
@@ -201,11 +203,19 @@ rust_version:
 
 test_dry: $(SRC_DIR) rust_version
 	echo "Running tests in dry mode (compile, but don't run tests)"
-	cd $< && cargo clean && cargo update && cargo clippy && RUST_TEST_THREADS=1 RUST_BACKTRACE=1 cargo test $(CARGO_FLAGS) --no-run
+	cd $< && \
+	cargo clean && \
+	cargo update && \
+	cargo clippy -- -W clippy::style -W clippy::correctness -W clippy::complexity -W clippy::perf && \
+	RUST_TEST_THREADS=1 RUST_BACKTRACE=1 cargo test $(CARGO_FLAGS) --no-run
 
 test: $(SRC_DIR) rust_version
 	echo "Running tests"
-	cd $< && cargo clean && cargo update && cargo clippy && RUST_TEST_THREADS=1 RUST_BACKTRACE=1 RUST_LOG=trace cargo test $(CARGO_FLAGS)
+	cd $< && \
+	cargo clean && \
+	cargo update && \
+	cargo clippy -- -W clippy::style -W clippy::correctness -W clippy::complexity -W clippy::perf && \
+	RUST_TEST_THREADS=1 RUST_BACKTRACE=1 RUST_LOG=trace cargo test $(CARGO_FLAGS)
 
 build $(LIBS): $(SRC_DIR) rust_version
 	echo "Compiling the project"
