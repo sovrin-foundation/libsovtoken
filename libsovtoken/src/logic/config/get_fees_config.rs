@@ -18,7 +18,7 @@ use utils::constants::txn_types::GET_FEES;
 
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
         let did = Did::new(&identifier).validate().unwrap();
-        let get_fees_request = GetFeesRequest::new().as_request(did);
+        let get_fees_request = GetFeesRequest::new().as_request(Some(did));
         let json_pointer = get_fees_request.serialize_to_pointer().unwrap();
     ```
 
@@ -49,8 +49,8 @@ impl GetFeesRequest {
 
         [`Request<GetFeesRequest>`]: ../../request/struct.Request.html
     */
-    pub fn as_request(self, identifier: Did) -> Request<GetFeesRequest> {
-        Request::new(self, Some(String::from(identifier)))
+    pub fn as_request(self, identifier: Option<Did>) -> Request<GetFeesRequest> {
+        Request::new(self, identifier.map(String::from))
     }
 }
 
@@ -66,7 +66,7 @@ mod get_fees_config_test {
     fn initial_get_fee_request() -> Request<GetFeesRequest> {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        return GetFeesRequest::new().as_request(did);
+        return GetFeesRequest::new().as_request(Some(did));
     }
 
     fn assert_get_fee_request<F>(expected: serde_json::Value, f: F)
@@ -87,7 +87,7 @@ mod get_fees_config_test {
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
-        let request = GetFeesRequest::new().as_request(did);
+        let request = GetFeesRequest::new().as_request(Some(did));
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }
 

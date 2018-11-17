@@ -6,7 +6,7 @@ use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 use logic::parsers::common::TXO;
 
-type DeserializedArguments<'a> = (Did<'a>, TXO, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Option<Did<'a>>, TXO, JsonCallbackUnwrapped);
 
 pub fn deserialize<'a>(
     did: *const c_char,
@@ -17,11 +17,15 @@ pub fn deserialize<'a>(
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
-    let did = Did::from_pointer(did)
-        .ok_or(ErrorCode::CommonInvalidStructure)?
-        .validate()
-        .map_err(map_err_err!())
-        .or(Err(ErrorCode::CommonInvalidStructure))?;
+    let did = opt_res_to_res_opt!(
+        Did::from_pointer(did)
+            .map(|did| {
+                did.validate()
+                    .map_err(map_err_err!())
+                    .or(Err(ErrorCode::CommonInvalidStructure))
+            })
+    )?;
+
     debug!("Converted did pointer to string >>> {:?}", did);
 
     let txo = string_from_char_ptr(txo)
@@ -53,7 +57,7 @@ mod test_deserialize {
         let cb = default::empty_callback_string;
 
         let (did, txo, _) = super::deserialize(did, txo_c, Some(cb)).unwrap();
-        assert_eq!(String::from(did), "Th7MpTaRZVRYnPiabds81Y");
+        assert_eq!(String::from(did.unwrap()), "Th7MpTaRZVRYnPiabds81Y");
         assert_eq!(txo.seq_no, 1);
         assert_eq!(txo.address, payment_address);
     }

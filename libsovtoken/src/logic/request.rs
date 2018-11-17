@@ -12,6 +12,8 @@ use utils::json_conversion::JsonSerialize;
 use utils::constants::general::PROTOCOL_VERSION;
 use logic::type_aliases::{ProtocolVersion, ReqId};
 
+pub const DEFAULT_LIBSOVTOKEN_DID: &'static str = "LibsovtokenDid11111111";
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Request<T>
@@ -20,8 +22,7 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identifier : Option<String>,
+    pub identifier : String,
 }
 
 impl<T> Request<T> 
@@ -33,7 +34,7 @@ impl<T> Request<T>
             operation,
             protocol_version: PROTOCOL_VERSION,
             req_id,
-            identifier
+            identifier: identifier.unwrap_or(DEFAULT_LIBSOVTOKEN_DID.to_string())
         }
     }
 
