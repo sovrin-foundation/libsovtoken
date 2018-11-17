@@ -109,7 +109,7 @@ def codeBuildPipelines = {
 
                 logger.info("Uploading package '$archName' to sovrin repo")
                 sovrinRepo.upload {
-                    repoDistr = 'android'
+                    repoDistr = 'android-rc'
                     packagePath = archName
                 }
             }
@@ -135,7 +135,7 @@ def codeBuildPipelines = {
             lastRevision = sovrinRepo.getLastRevision {
                 delegate.packageName = packageName
                 packageSrcVersion = srcVersion
-                repoDistr = 'deb'
+                repoDistr = 'xenial-rc'
             }
 
             if (lastRevision) {
@@ -208,7 +208,7 @@ def codeBuildPipelines = {
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
                 sovrinRepo.upload {
-                    repoDistr = 'deb'
+                    repoDistr = 'xenial-rc'
                     packagePath = debName
                 }
 
@@ -314,7 +314,7 @@ def macOSPipeline = {
 
                     
                     sovrinRepo.upload {
-                        repoDistr = 'ios'
+                        repoDistr = 'ios-rc'
                         packagePath = pkgName
                     }
                 }
