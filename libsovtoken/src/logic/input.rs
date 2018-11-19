@@ -89,7 +89,7 @@ impl ToString for Input {
 
 impl Input {
     pub fn new(address: String, seq_no: TxnSeqNo) -> Input {
-        Input { address, seq_no}
+        return Input { address, seq_no};
     }
 }
 
@@ -101,14 +101,14 @@ impl<'de> Deserialize<'de> for Input {
             type Value = Input;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("Expected an Input with address and seqNo.")
+                return formatter.write_str("Expected an Input with address and seqNo.");
             }
 
             fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
                 let txo = TXO::from_libindy_string(v)
                     .map_err(|ec| de::Error::custom(format!("Error when deserializing txo: error code {:?}", ec)))?;
 
-                Ok(Input::new(txo.address, txo.seq_no ))
+                return Ok(Input::new(txo.address, txo.seq_no ))
             }
 
             fn visit_map<V: de::MapAccess<'de>>(self, mut map: V) -> Result<Input, V::Error> {
@@ -126,12 +126,12 @@ impl<'de> Deserialize<'de> for Input {
                 let address = address.ok_or(de::Error::missing_field("address"))?;
                 let seq_no = seq_no.ok_or( de::Error::missing_field("seqNo"))?;
 
-                Ok(Input::new(address, seq_no))
+                return Ok(Input::new(address, seq_no));
             }
         }
 
-        const FIELDS: &[&str] = &["address", "seqNo"];
-        deserializer.deserialize_any(InputVisitor)
+        const FIELDS: &'static [&'static str] = &["address", "seqNo"];
+        return deserializer.deserialize_any(InputVisitor);
     }
 }
 

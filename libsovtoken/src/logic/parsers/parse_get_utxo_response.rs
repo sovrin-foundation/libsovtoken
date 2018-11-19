@@ -162,9 +162,9 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         Ok(s) => {
             trace!("JSON representation of ParsedSP for get utxo {:?}", &s);
             unsafe { *parsed_sp = c_pointer_from_string(s); }
-            ErrorCode::Success
+            return ErrorCode::Success;
         },
-        Err(_) => ErrorCode::CommonInvalidStructure
+        Err(_) => return ErrorCode::CommonInvalidStructure
     }
 }
 

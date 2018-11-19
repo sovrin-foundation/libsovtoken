@@ -67,10 +67,10 @@ impl SetFees {
         [`SetFees`]: ./struct.SetFees.html
     */
     pub fn new(fees: SetFeesMap) -> SetFees {
-        SetFees {
+        return SetFees {
             txn_type: SET_FEES,
             fees,
-        }
+        };
     }
 
 
@@ -83,7 +83,7 @@ impl SetFees {
     // of signing and being consistent with MINT.
     // More details here https://docs.google.com/document/d/15m3XPEUfwhI5GPWh3kuMj6rML52ydWTLsBiurHKfmnU/edit
     pub fn as_request(self, identifier: Option<Did>) -> Request<SetFees> {
-        Request::new(self, identifier.map(String::from))
+        return Request::new(self, identifier.map(String::from))
     }
 
     /**
@@ -165,7 +165,7 @@ impl SetFees {
             }
         }
     
-        Ok(self)
+        return Ok(self);
     }
 
 }
@@ -193,9 +193,9 @@ impl fmt::Display for SetFeesError {
 
 impl Error for SetFeesError {
     fn description(&self) -> &str {
-        match *self {
-            SetFeesError::Empty => "Set fees was empty.",
-            SetFeesError::KeyNotInteger(_) => "A Set fees key wasn't a integer string.",
+        match self {
+            &SetFeesError::Empty => "Set fees was empty.",
+            &SetFeesError::KeyNotInteger(_) => "A Set fees key wasn't a integer string.",
         }
     }
 }

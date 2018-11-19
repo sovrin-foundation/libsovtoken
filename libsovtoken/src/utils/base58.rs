@@ -16,8 +16,8 @@ pub fn deserialize_b58_check_string(s: String) -> Result<String, ErrorCode> {
         .into_vec()
         .map_err(|_| ErrorCode::CommonInvalidStructure)?;
 
-    String::from_utf8(deserialized_bytes)
-        .map_err(|_| ErrorCode::CommonInvalidStructure)
+    return String::from_utf8(deserialized_bytes)
+        .map_err(|_| ErrorCode::CommonInvalidStructure);
 }
 
 /**

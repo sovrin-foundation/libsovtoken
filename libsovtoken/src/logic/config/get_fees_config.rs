@@ -39,9 +39,9 @@ impl GetFeesRequest {
         [`GetFeesRequest`]: ./struct.GetFeesRequest.html
     */
     pub fn new() -> GetFeesRequest {
-        GetFeesRequest {
+        return GetFeesRequest {
             txn_type: GET_FEES.to_string(),
-        }
+        };
     }
 
     /**
@@ -50,7 +50,7 @@ impl GetFeesRequest {
         [`Request<GetFeesRequest>`]: ../../request/struct.Request.html
     */
     pub fn as_request(self, identifier: Option<Did>) -> Request<GetFeesRequest> {
-        Request::new(self, identifier.map(String::from))
+        return Request::new(self, identifier.map(String::from))
     }
 }
 

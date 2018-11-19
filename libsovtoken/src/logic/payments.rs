@@ -36,7 +36,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
         let verkey = self.injected_api.indy_create_key(wallet_id, config)?;
 
         trace!("got verkey from self.injected_api.indy_create_key {}", verkey);
-        address::qualified_address_from_verkey(&verkey)
+        return address::qualified_address_from_verkey(&verkey);
     }
 
     /**
@@ -67,7 +67,9 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
         };
 
         trace!("calling injected_api.indy_create_key_async");
-        self.injected_api.indy_create_key_async(wallet_id, config, cb_closure)
+        let result_code = self.injected_api.indy_create_key_async(wallet_id, config, cb_closure);
+
+        return result_code;
     }
 }
 

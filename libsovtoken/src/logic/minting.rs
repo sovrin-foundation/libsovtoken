@@ -40,7 +40,7 @@ pub fn deserialize_inputs<'a>(
     debug!("Deserialized extra >>> {:?}", extra);
 
     trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}, extra: {:?}", did, outputs, extra);
-    Ok((did, outputs, extra, cb))
+    return Ok((did, outputs, extra, cb));
 }
 
 pub fn build_mint_request(

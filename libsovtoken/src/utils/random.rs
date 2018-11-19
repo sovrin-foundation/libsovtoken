@@ -10,10 +10,12 @@ use logic::type_aliases::ReqId;
    Builds a string of random numbers of the inputted length
 */
 pub fn rand_string(length : usize) -> String {
-    rand::thread_rng()
+    let s = rand::thread_rng()
         .gen_ascii_chars()
         .take(length)
-        .collect::<String>()
+        .collect::<String>();
+
+    return s;
 }
 
 pub fn rand_bytes(length : usize) -> Vec<u8> {

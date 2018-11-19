@@ -68,7 +68,7 @@ impl<A: CryptoAPI> InputSigner<A> for XferPayload {}
 impl XferPayload {
     pub fn new(inputs: Inputs, outputs: Outputs, extra: Option<String>) -> Self
     {
-        XferPayload { inputs, outputs, extra, signatures: None }
+        return XferPayload { inputs, outputs, extra, signatures: None };
     }
 
     // TODO: Add request hash to include while signature

@@ -45,7 +45,7 @@ impl CryptoAPI for CryptoSdk {
             config_json = r#"{ }"#.to_string();
         }
 
-        Key::create(wallet_id, Some(&config_json))
+        return Key::create(wallet_id, Some(&config_json));
     }
 
     /**
@@ -62,7 +62,7 @@ impl CryptoAPI for CryptoSdk {
             config_json = r#"{ }"#.to_string();
         }
 
-        Key::create_async(wallet_id, Some(&config_json), closure)
+        return Key::create_async(wallet_id, Some(&config_json), closure);
     }
 
     fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(
@@ -72,12 +72,12 @@ impl CryptoAPI for CryptoSdk {
         message: String,
         mut cb: F
     ) -> ErrorCode {
-        Crypto::sign_async(wallet_handle, &verkey, message.as_bytes(), move |error_code, vec| {
+        return Crypto::sign_async(wallet_handle, &verkey, message.as_bytes(), move |error_code, vec| {
             if error_code == ErrorCode::Success {
                 cb(Ok(serialize_bytes(&vec)));
             } else {
                 cb(Err(error_code));
             }
-        })
+        });
     }
 }

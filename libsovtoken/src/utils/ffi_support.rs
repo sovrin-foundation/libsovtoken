@@ -18,7 +18,7 @@ pub fn str_from_char_ptr<'a>(str_ptr: *const c_char) -> Option<&'a str> {
 
     let c_str: &CStr = unsafe { CStr::from_ptr(str_ptr)};
     let str_slice: &str = c_str.to_str().unwrap();
-    Some(str_slice)
+    return Some(str_slice);
 }
 
 /**
@@ -32,14 +32,14 @@ pub fn string_from_char_ptr(str_ptr: *const c_char) -> Option<String> {
     method for converting String to CString with no error checking.
 */
 pub fn cstring_from_str(string: String) -> CString {
-    CString::new(string).unwrap()
+    return CString::new(string).unwrap();
 }
 
 /**
     method for converting String to *const c_char
 */
 pub fn c_pointer_from_string(string: String) -> *const c_char {
-    c_pointer_from_str(&string)
+    return c_pointer_from_str(&string);
 }
 
 /**
@@ -47,7 +47,7 @@ pub fn c_pointer_from_string(string: String) -> *const c_char {
 */
     pub fn c_pointer_from_str(string: &str) -> *const c_char {
     let cstring = CString::new(string).unwrap();
-    Box::new(cstring).into_raw()
+    return Box::new(cstring).into_raw();
 }
 
 
@@ -58,7 +58,8 @@ pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_c
     let json_string = str_from_char_ptr(str_ptr).ok_or(ErrorCode::CommonInvalidStructure)?;
     println!("deserializing = {:?}",json_string);
 
-    S::from_json(json_string).map_err(|_| ErrorCode::CommonInvalidStructure)
+    let result = S::from_json(json_string).map_err(|_| ErrorCode::CommonInvalidStructure);
+    return result;
 }
 
 /**

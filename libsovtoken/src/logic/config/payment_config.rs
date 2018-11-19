@@ -72,10 +72,10 @@ impl PaymentRequest {
         [`XferPayload`]: ../../xfer_payments/struct.XferPayload.html
     */
     pub fn new(signed_inputs_outputs: XferPayload ) -> PaymentRequest {
-        PaymentRequest {
+        return PaymentRequest {
             txn_type: XFER_PUBLIC.to_string(),
             signed_inputs_outputs,
-        }
+        };
     }
 
     /**
@@ -84,7 +84,7 @@ impl PaymentRequest {
         [`Request<PaymentRequest>`]: ../../request/struct.Request.html
     */
     pub fn as_request(self, identifier: String) -> Request<PaymentRequest> {
-        Request::new(self, Some(identifier))
+        return Request::new(self, Some(identifier));
     }
 }
 

@@ -81,7 +81,7 @@ pub extern "C" fn create_payment_address_handler(
     let handler = CreatePaymentHandler::new(CryptoSdk {});
     let ec = handler.create_payment_address_async(wallet_handle, config, payment_closure);
     trace!("api::create_payment_address_handler << result: {:?}", ec);
-    ec as i32
+    return ec as i32;
 }
 
 /**
@@ -193,7 +193,7 @@ pub extern "C" fn add_request_fees_handler(
         fees should be implicit in the operation's inputs and
         outputs.
     */
-    if add_request_fees::validate_type_not_transfer(&request_json_map).is_err() {
+    if let Err(_) = add_request_fees::validate_type_not_transfer(&request_json_map) {
         error!("api::add_request_fees_handler Can't add fees to a transfer request");
         return ErrorCode::CommonInvalidStructure as i32;
     }
@@ -210,14 +210,14 @@ pub extern "C" fn add_request_fees_handler(
     match result {
         Err(e) => {
             error!("api::add_request_fees_handler Received error adding fees to request_json");
-            e as i32
+            return e as i32;
         }
         _ => {
             let res = ErrorCode::Success;
             trace!("api::add_request_fees_handler result >> {:?}", res);
-            res as i32
+            return res as i32;
         }
-    }
+    };
 }
 
 
@@ -291,7 +291,7 @@ pub extern "C" fn parse_response_with_fees_handler(
     cb(command_handle, ec as i32, reply_str_ptr);
 
     trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
-    ec as i32
+    return ec as i32;
 }
 
 
@@ -369,7 +369,7 @@ pub extern "C" fn build_payment_req_handler(
         Err(ec) => ec
     };
     trace!("api::build_payment_req_handler << result {:?}", ec);
-    ec as i32
+    return ec as i32;
 }
 
 /// Parses inputted payment data and returns formatted UTXOs
@@ -437,7 +437,7 @@ pub extern "C" fn parse_payment_response_handler(
 
     cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
     trace!("api::parse_payment_response_handler << result: {:?}", ErrorCode::Success);
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }
 
 
@@ -479,7 +479,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 
     let res = handle_result(utxo_request) as i32;
     trace!("api::build_get_utxo_request_handler << result: {:?}", res);
-    res
+    return res;
 }
 
 /// Description
@@ -549,7 +549,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
 
     cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
     trace!("api::parse_get_utxo_response_handler << result: {:?}", ErrorCode::Success);
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }
 
 /**
@@ -612,7 +612,7 @@ pub extern "C" fn build_set_txn_fees_handler(
     cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
 
     trace!("api::build_set_txn_fees_handler << result: {:?}", ErrorCode::Success);
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }
 
 /// Description
@@ -666,7 +666,7 @@ pub extern "C" fn build_get_txn_fees_handler(
 
     let res = handle_result(Ok(request_pointer)) as i32;
     trace!("api::build_get_txn_fees_handler << res: {:?}", res);
-    res
+    return res;
 }
 
 /// Description
@@ -721,7 +721,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
 
     let res = ErrorCode::Success as i32;
     trace!("api::parse_get_txn_fees_response_handler << result: {:?}", res);
-    res
+    return res;
 }
 
 
@@ -784,7 +784,7 @@ pub extern "C" fn build_mint_txn_handler(
     cb(command_handle, ErrorCode::Success as i32, mint_request);
     let res = ErrorCode::Success;
     trace!("api::build_mint_txn_handle << res: {:?}", res);
-    res as i32
+    return res as i32;
 }
 
 /// Build a verify transaction request.
@@ -897,7 +897,7 @@ pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
 
     trace!("Called get_utxo_state_proof_parser: <<< res: {:?}", res);
 
-    res
+    return res;
 }
 
 #[no_mangle]
@@ -911,7 +911,7 @@ pub extern "C" fn get_fees_state_proof_parser(reply_from_node: *const c_char,
 
     trace!("Called get_fees_state_proof_parser: <<< res: {:?}", res);
 
-    res
+    return res;
 }
 
 #[no_mangle]
@@ -924,7 +924,7 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 
     trace!("Called free_parsed_state_proof");
 
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }
 
 /**
@@ -986,5 +986,5 @@ pub extern fn sovtoken_init() -> i32 {
     };
 
     debug!("sovtoken_init() returning ErrorCode::Success");
-    ErrorCode::Success as i32
+    return ErrorCode::Success as i32;
 }

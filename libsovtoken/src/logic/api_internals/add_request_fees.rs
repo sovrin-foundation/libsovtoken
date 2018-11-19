@@ -57,13 +57,13 @@ pub fn deserialize_inputs (
     trace!("Converted request_json to hash_map");
 
     debug!("Deserialized values: inputs: {:?}, outputs: {:?}, request_json_map: {:?}", inputs, outputs, request_json_map);
-    Ok((
+    return Ok((
         inputs,
         outputs,
         extra,
         request_json_map.to_owned(),
         cb,
-    ))
+    ));
 }
 
 pub fn validate_type_not_transfer(request_json_map: &SerdeMap) -> Result<(), ErrorCode> {
@@ -77,10 +77,10 @@ pub fn validate_type_not_transfer(request_json_map: &SerdeMap) -> Result<(), Err
     debug!("Request transaction type was >>> {}", transaction_type);
 
     if transaction_type == XFER_PUBLIC {
-        Err(ErrorCode::CommonInvalidStructure)
+        return Err(ErrorCode::CommonInvalidStructure);
     } else {
-        Ok(())
-    }
+        return Ok(());
+    };
 }
 
 pub fn add_fees_to_request_and_serialize(
@@ -93,7 +93,7 @@ pub fn add_fees_to_request_and_serialize(
 ) -> Result<(), ErrorCode> {
     trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> wallet_handle: {:?}, inputs: {:?}, outputs: {:?}, request_json_map: {:?}", wallet_handle, inputs, outputs, request_json_map);
     let res = add_fees(wallet_handle, inputs, outputs, extra, request_json_map, Box::new(move |request_json_map_updated|{
-        let rm_fees = request_json_map_updated.map(serialize_request_with_fees);
+        let rm_fees = request_json_map_updated.map(|request_json_map_with_fees| serialize_request_with_fees(request_json_map_with_fees));
         match rm_fees {
             Ok(some) => cb(some),
             Err(e) => cb(Err(e))
@@ -151,7 +151,7 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
         .or(Err(ErrorCode::CommonInvalidStructure))?;
     trace!("Serialized request_with_fees");
     
-    Ok(serialized_request_with_fees)
+    return Ok(serialized_request_with_fees);
 } 
 
 fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<String>, txn_digest: &Option<String>, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {

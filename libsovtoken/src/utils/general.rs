@@ -15,7 +15,7 @@ pub trait ResultExtension<A> {
 
 impl<A> ResultExtension<A> for Result<A, A> {
     fn ok_or_err(self) -> A {
-        match self {
+        return match self {
             Ok(a) => a,
             Err(a) => a,
         }
@@ -30,11 +30,11 @@ impl<A> ResultExtension<A> for Result<A, A> {
 ///    # Return
 ///    outputs: Option<&[u8]>
 pub fn some_or_none_option_u8(data : &[u8]) -> Option<&[u8]> {
-    if data.is_empty() {
+    if 0 == data.len() {
         return None;
     }
 
-    Some(data)
+    return Some(data);
 }
 
 
@@ -58,7 +58,7 @@ impl<'a> StringUtils for &'a str {
                                     .skip(len - count).take(count)
                                     .collect::<String>();
 
-        right_most.to_owned()
+        return right_most.to_owned();
     }
 
 }

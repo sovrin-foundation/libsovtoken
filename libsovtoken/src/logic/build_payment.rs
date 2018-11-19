@@ -42,7 +42,7 @@ pub fn deserialize_inputs(
     debug!("Deserialized extra >>> {:?}", extra);
 
     trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
-    Ok((inputs, outputs, extra, cb))
+    return Ok((inputs, outputs, extra, cb));
 }
 
 pub fn handle_signing(
@@ -78,12 +78,12 @@ fn build_payment_request_pointer(
         .as_request(identifier);
     debug!("payment_request >>> {:?}", payment_request);
 
-    payment_request
+    return payment_request
         .serialize_to_pointer()
         .map_err(|e| {
             map_err_err!()(e);
-            ErrorCode::CommonInvalidState
-        })
+            return ErrorCode::CommonInvalidState;
+        });
 }
 
 
