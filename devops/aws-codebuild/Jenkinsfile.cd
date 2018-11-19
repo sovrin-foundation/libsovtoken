@@ -109,7 +109,7 @@ def codeBuildPipelines = {
 
                 logger.info("Uploading package '$archName' to sovrin repo")
                 sovrinRepo.upload {
-                    repoDistr = 'android-rc'
+                    repoDistr = 'android/libsovtoken/rc'
                     packagePath = archName
                 }
             }
@@ -314,7 +314,7 @@ def macOSPipeline = {
 
                     
                     sovrinRepo.upload {
-                        repoDistr = 'ios-rc'
+                        repoDistr = 'ios/libsovtoken/rc'
                         packagePath = pkgName
                     }
                 }
