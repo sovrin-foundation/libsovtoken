@@ -151,7 +151,7 @@ def codeBuildPipelines = {
             logger.info("Release version for sovrin repo: $releaseVersion")
 
             logger.info("Finding Package version")
-            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
+            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
             logger.info("Package version for sovrin repo: $debPVersion")
 
             // TODO crate and rpm
