@@ -238,12 +238,11 @@ def codeBuildPipelines = {
     }
 
     Map builds = [
-        xenial: xenialBuild
-        //xenial: xenialBuild,
-        //android: [
-        //    build: androidBuild,
-        //    nodeLabel: "$nodeLabels.codeBuild"
-        //]
+        xenial: xenialBuild,
+        android: [
+            build: androidBuild,
+            nodeLabel: "$nodeLabels.codeBuild"
+        ]
     ]
     builds.failFast = false
 
@@ -335,10 +334,10 @@ pipelineWrapper({
         codeBuild: [
             build: codeBuildPipelines,
             nodeLabel: "$nodeLabels.codeBuild"
-        //],
-        //macos: [
-        //    build: macOSPipeline,
-        //    nodeLabel: "$nodeLabels.macos"
+        ],
+        macos: [
+            build: macOSPipeline,
+            nodeLabel: "$nodeLabels.macos"
         ]
     ]
     builds.failFast = false
