@@ -8,6 +8,7 @@ pub mod constants;
 pub mod general;
 #[macro_use] pub mod json_conversion;
 #[macro_use] pub mod logger;
+#[macro_use] pub mod conversions;
 pub mod random;
 
 #[cfg(any(test, feature = "integration"))]
