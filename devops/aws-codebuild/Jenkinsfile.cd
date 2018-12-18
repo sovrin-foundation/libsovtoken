@@ -37,6 +37,7 @@ def codeBuildPipelines = {
     }
 
     def sovrinRepo = sovLibrary.SovrinRepo.new(this)
+    def nexusRepo = sovLibrary.NexusRepo.new(this)
     def git = sovLibrary.Git.new(this)
     def buildCtx = sovLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
     def awsCBHelper = sovLibrary.AwsCodeBuildHelper.new(this, buildCtx)
@@ -108,7 +109,7 @@ def codeBuildPipelines = {
                 archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
 
                 logger.info("Uploading package '$archName' to sovrin repo")
-                sovrinRepo.uploadBlob {
+                nexusRepo.uploadBlob {
                     repoDistr = 'android/libsovtoken/rc'
                     packagePath = archName
                 }
@@ -135,7 +136,8 @@ def codeBuildPipelines = {
             lastRevision = sovrinRepo.getLastRevision {
                 delegate.packageName = packageName
                 packageSrcVersion = srcVersion
-                repoDistr = 'xenial-rc'
+                repoDistr = 'xenial'
+                component = 'rc'
             }
 
             if (lastRevision) {
@@ -210,8 +212,9 @@ def codeBuildPipelines = {
                 debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
-                sovrinRepo.uploadDeb {
-                    repoDistr = 'xenial-rc'
+                sovrinRepo.upload {
+                    repoDistr = 'xenial'
+                    component = 'rc'
                     packagePath = debName
                 }
 
@@ -287,7 +290,7 @@ def macOSPipeline = {
             checkout scm
         }
 
-        def sovrinRepo = sovLibrary.SovrinRepo.new(this)
+        def nexusRepo = sovLibrary.NexusRepo.new(this)
         def utils = sovLibrary.Utils.new(this)
 
         
@@ -316,7 +319,7 @@ def macOSPipeline = {
                     logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
                     
-                    sovrinRepo.uploadBlob {
+                    NexusRepo.uploadBlob {
                         repoDistr = 'ios/libsovtoken/rc'
                         packagePath = pkgName
                     }
