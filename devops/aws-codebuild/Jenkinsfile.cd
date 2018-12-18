@@ -21,7 +21,7 @@ def codeBuildPipelines = {
     
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
-    env.SOVRIN_REPO_HOST = '192.168.11.115'
+    env.SOVRIN_REPO_HOST = '192.168.101.193'
 
     List _envBuildSrc = [
         'devops',
