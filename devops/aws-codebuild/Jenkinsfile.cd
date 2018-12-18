@@ -319,7 +319,7 @@ def macOSPipeline = {
                     logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
                     
-                    NexusRepo.uploadBlob {
+                    nexusRepo.uploadBlob {
                         repoDistr = 'ios/libsovtoken/rc'
                         packagePath = pkgName
                     }
