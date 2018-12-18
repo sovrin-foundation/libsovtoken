@@ -8,7 +8,7 @@ use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::{string_from_char_ptr};
 use logic::output::Outputs;
 
-type DeserializedArguments<'a> = (Did<'a>, Outputs, Option<String>, JsonCallbackUnwrapped);
+type DeserializedArguments<'a> = (Option<Did<'a>>, Outputs, Option<String>, JsonCallbackUnwrapped);
 
 pub fn deserialize_inputs<'a>(
     did: *const c_char,
@@ -20,10 +20,12 @@ pub fn deserialize_inputs<'a>(
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
-    let did = Did::from_pointer(did)
-        .ok_or(ErrorCode::CommonInvalidStructure)?
-        .validate()
-        .or(Err(ErrorCode::CommonInvalidStructure))?;
+    let did = Did::from_pointer(did).map(
+        |did| {
+            did.validate().map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))
+        }
+    );
+    let did = opt_res_to_res_opt!(did)?;
     debug!("Converted did pointer to string >>> {:?}", did);
 
     let outputs_json = string_from_char_ptr(outputs_json)
@@ -42,7 +44,7 @@ pub fn deserialize_inputs<'a>(
 }
 
 pub fn build_mint_request(
-    did: Did,
+    did: Option<Did>,
     mut outputs: Outputs,
     extra: Option<String>,
 ) -> Result<*const c_char, ErrorCode> {
@@ -95,7 +97,7 @@ mod test_build_mint_request {
         ];
 
         let did = Did::new(&"en32ansFeZNERIouv2xA");
-        let result = build_mint_request(did, outputs, None);
+        let result = build_mint_request(Some(did), outputs, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
@@ -144,7 +146,8 @@ mod test_deserialize_inputs {
     #[test]
     fn deserialize_empty_did() {
         let result = call_deserialize_inputs(Some(ptr::null()), None, None, None);
-        assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
+        let (did, _, _, _) = result.unwrap();
+        assert_eq!(None, did);
     }
 
     #[test]

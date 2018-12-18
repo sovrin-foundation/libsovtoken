@@ -45,6 +45,33 @@ pub fn build_and_submit_verify_on_mint() {
 }
 
 #[test]
+pub fn build_and_submit_verify_on_mint_with_empty_did() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: None
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+    let txo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
+
+    //We need to wait a little before trying to verify txn
+    sleep(1000);
+
+    let (get_utxo_req, payment_method) = indy::payments::Payment::build_verify_req(wallet.handle, None, &txo).unwrap();
+    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
+    let res = indy::payments::Payment::parse_verify_response(&payment_method, &res).unwrap();
+
+    let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+    assert!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().is_empty());
+    assert_eq!(res_parsed.as_object().unwrap().get("receipts").unwrap().as_array().unwrap().get(0).unwrap().as_object().unwrap().get("receipt").unwrap().as_str().unwrap(), txo);
+}
+
+#[test]
 pub fn build_and_submit_verify_on_xfer() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
