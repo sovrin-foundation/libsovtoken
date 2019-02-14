@@ -11,7 +11,7 @@ RUN apt-get -qq update -y && apt-get -qq install -y sudo zip unzip cmake autocon
     && useradd -m -d /home/token_user -s /bin/bash -p $(openssl passwd -1 "token") token_user \
     && usermod -aG sudo token_user \
     && cd /tmp \
-    && curl https://download.libsodium.org/libsodium/releases/libsodium-1.0.14.tar.gz | tar -xz \
+    && curl https://download.libsodium.org/libsodium/releases/old/libsodium-1.0.14.tar.gz | tar -xz \
     && cd libsodium-1.0.14 \
     && ./autogen.sh \
     && ./configure \

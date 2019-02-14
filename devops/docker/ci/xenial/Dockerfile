@@ -1,4 +1,4 @@
-FROM evernym/libsovtoken:base-xenial-0.12.0
+FROM evernym/libsovtoken:base-xenial-0.14.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -69,4 +69,4 @@ COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.49.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.50.0

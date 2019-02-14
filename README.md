@@ -18,7 +18,7 @@
 
 # LibSovToken
 
-Adds Sovrin's token functionality to HyperLedger's Indy-SDK. 
+Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 
 
 <a id="requirements"></a>
@@ -45,25 +45,25 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 
         git clone https://github.com/hyperledger/indy-sdk.git
         cd indy-sdk
-        git checkout stable 
+        git checkout stable
         cd libindy
-        cargo clean 
+        cargo clean
         cargo update
         cargo build
-    
+
     Libsovtoken build needs to know how to find Indy-SDK. This is done
     through the environment variable LIBINDY_DIR.
-    
+
     Create an environment variable LIBINDY_DIR. Have it point the directory
     containing indy-sdk binaries.
-    
+
     Use `pwd` to get path to current directory
-    
+
     Add this to your bash profile:
-    
-        # EXAMPLE 
+
+        # EXAMPLE
         export LIBINDY_DIR='/my/path/to/indy-sdk/libindy/target/debug/'
-    
+
     *Note* anytime you get latest for indy-sdk, you must rebuild the
     libraries before building libsovtoken, as the libsovtoken build does not
     compile indy-sdk.
@@ -78,12 +78,12 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 
 ### Build the pool
 
-    cd devops/indy-pool/ && docker build -t indy_pool . 
+    cd devops/indy-pool/ && docker build -t indy_pool .
 
 
-<a id="run-the-poool"></a>
+<a id="run-the-pool"></a>
 
-### run the poool
+### run the pool
 
     docker run -itd -p 9701-9708:9701-9708 indy_pool
 
@@ -110,4 +110,3 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 ## How To Contribute
 
 Please follow the guide [here](./doc/pull-request.md).
-
