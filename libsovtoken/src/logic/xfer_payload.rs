@@ -270,7 +270,7 @@ fn do_serialize_signature(v: serde_json::Value, is_top_level: bool) -> Result<St
                 if key == "raw" || key == "hash" || key == "enc" {
                     let mut ctx = Hash::new_context()?;
                     ctx.update(&value.as_str().ok_or(ErrorCode::CommonInvalidState)?.as_bytes()).map_err(|_| ErrorCode::CommonInvalidState)?;
-                    value = serde_json::Value::String(ctx.finish2().map_err(|_| ErrorCode::CommonInvalidState)?.as_ref().to_hex());
+                    value = serde_json::Value::String(ctx.finish().map_err(|_| ErrorCode::CommonInvalidState)?.as_ref().to_hex());
                 }
                 result = result + key + ":" + &do_serialize_signature(value, false)?;
                 in_middle = true;
