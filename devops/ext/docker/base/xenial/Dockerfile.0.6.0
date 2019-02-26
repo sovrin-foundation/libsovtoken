@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ruby \
         ruby-dev \
         rubygems \
+        build-essential \
     && gem install --no-ri --no-rdoc fpm -v $FPM_VERSION \
     && rm -rf /var/lib/apt/lists/*
 
