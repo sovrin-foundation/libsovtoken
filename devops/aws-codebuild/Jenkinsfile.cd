@@ -21,7 +21,7 @@ def codeBuildPipelines = {
     
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
-    env.SOVRIN_REPO_HOST = '192.168.11.115'
+    env.SOVRIN_REPO_HOST = '192.168.101.193'
 
     List _envBuildSrc = [
         'devops',
@@ -146,7 +146,9 @@ def codeBuildPipelines = {
         }
 
         stage('Set release parameters') {
+            logger.info("Finding Release version")
             def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+            logger.info("Release version for sovrin repo: $releaseVersion")
 
             debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
             logger.info("Package version for sovrin repo: $debPVersion")
