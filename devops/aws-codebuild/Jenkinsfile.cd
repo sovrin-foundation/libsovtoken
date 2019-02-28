@@ -1,7 +1,7 @@
 #!groovy
 
 def sovLibrary = library(identifier: 'sovrin-aws-codebuild@master', retriever: modernSCM(
-    github(credentialsId: 'sovrin-ci', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
+    github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
 )).com.sovrin.pipeline
 
 logger = sovLibrary.Logger.new(this)
@@ -13,12 +13,12 @@ utils = sovLibrary.Utils.new(this)
 // TODO set proper labels
 def nodeLabels = [
     codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
-    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos', 
+    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
 ]
 
 def codeBuildPipelines = {
     def packageName = 'libsovtoken'
-    
+
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
     env.SOVRIN_REPO_HOST = '192.168.101.193'
@@ -29,7 +29,7 @@ def codeBuildPipelines = {
         'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
         'libsovtoken/build_scripts/android/android_settings.txt'
     ]
-    
+
     def srcVersion
 
     stage('Checkout sources from SCM') {
@@ -281,7 +281,7 @@ def macOSPipeline = {
                 error(msg)
             }
         }
-        
+
         stage('Checkout sources from SCM') {
             checkout scm
         }
@@ -289,24 +289,24 @@ def macOSPipeline = {
         def sovrinRepo = sovLibrary.SovrinRepo.new(this)
         def utils = sovLibrary.Utils.new(this)
 
-        
+
         withEnv([
                     "PATH+RUST=${RUST_PATH}",
                     "PATH+BREW=/usr/local/bin",
                     "PATH+CURL=/usr/local/opt/curl/bin"
-                ]) { 
-            
+                ]) {
+
             dir('libsovtoken/build_scripts/ios/mac/') {
-                
+
                 stage('mac.01.libindy.setup') {
                     sh './mac.01.env.setup.sh'
                 }
-                
+
                 stage('mac.14.libsovtoken.build.sh') {
                     sh "./mac.14.libsovtoken.build.sh"
                 }
             }
-            
+
             dir('libsovtoken') {
                 stage('Upload libsovtoken universal package to Sovrin repo') {
                     String pkgName
@@ -314,7 +314,7 @@ def macOSPipeline = {
                     pkgName = utils.shStdout("ls ${packageName}*.zip")
                     logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
-                    
+
                     sovrinRepo.upload {
                         repoDistr = 'ios-rc'
                         packagePath = pkgName
