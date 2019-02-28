@@ -1,7 +1,7 @@
 #!groovy
 
 def sovLibrary = library(identifier: 'sovrin-aws-codebuild@master', retriever: modernSCM(
-    github(credentialsId: 'sovrin-ci', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
+    github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
 )).com.sovrin.pipeline
 
 logger = sovLibrary.Logger.new(this)
