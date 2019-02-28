@@ -1,6 +1,6 @@
 //!  what does this module do?
 
-use openssl::hash::{hash2, MessageDigest, Hasher, DigestBytes};
+use openssl::hash::{hash, MessageDigest, Hasher, DigestBytes};
 use indy::ErrorCode;
 
 pub const HASH_OUTPUT_LEN: usize = 32;
@@ -29,7 +29,7 @@ impl Hash {
     }
 
     pub fn hash_empty() -> Result<Digest, ErrorCode> {
-        Ok(Digest::new(hash2(MessageDigest::sha256(), &[]).map_err(|_| ErrorCode::CommonInvalidState)?))
+        Ok(Digest::new(hash(MessageDigest::sha256(), &[]).map_err(|_| ErrorCode::CommonInvalidState)?))
 
     }
 
@@ -37,7 +37,7 @@ impl Hash {
         let mut ctx = Hash::new_context()?;
         ctx.update(&[0x00]).map_err(|_| ErrorCode::CommonInvalidState)?;
         leaf.update_context(&mut ctx)?;
-        Ok(Digest::new(ctx.finish2().map_err(|_| ErrorCode::CommonInvalidState)?))
+        Ok(Digest::new(ctx.finish().map_err(|_| ErrorCode::CommonInvalidState)?))
     }
 
     pub fn hash_nodes<T>(left: &T, right: &T) -> Result<Digest, ErrorCode> where T: Hashable {
@@ -45,7 +45,7 @@ impl Hash {
         ctx.update(&[0x01]).map_err(|_| ErrorCode::CommonInvalidState)?;
         left.update_context(&mut ctx)?;
         right.update_context(&mut ctx)?;
-        Ok(Digest::new(ctx.finish2().map_err(|_| ErrorCode::CommonInvalidState)?))
+        Ok(Digest::new(ctx.finish().map_err(|_| ErrorCode::CommonInvalidState)?))
     }
 
 }
@@ -66,7 +66,7 @@ impl Hash {
 /// extern crate openssl;
 /// extern crate sovtoken;
 /// extern crate indy;
-/// use self::openssl::hash::{hash2, MessageDigest, Hasher, DigestBytes};
+/// use self::openssl::hash::{hash, MessageDigest, Hasher, DigestBytes};
 /// use self::sovtoken::logic::hash::Hashable;
 /// use self::indy::ErrorCode;
 ///

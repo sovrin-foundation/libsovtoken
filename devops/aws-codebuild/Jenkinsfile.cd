@@ -37,7 +37,6 @@ def codeBuildPipelines = {
     }
 
     def sovrinRepo = sovLibrary.SovrinRepo.new(this)
-    def nexusRepo = sovLibrary.NexusRepo.new(this)
     def git = sovLibrary.Git.new(this)
     def buildCtx = sovLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
     def awsCBHelper = sovLibrary.AwsCodeBuildHelper.new(this, buildCtx)
@@ -109,8 +108,8 @@ def codeBuildPipelines = {
                 archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
 
                 logger.info("Uploading package '$archName' to sovrin repo")
-                nexusRepo.uploadBlob {
-                    repoDistr = 'android/libsovtoken/rc'
+                sovrinRepo.upload {
+                    repoDistr = 'android-rc'
                     packagePath = archName
                 }
             }
@@ -136,8 +135,7 @@ def codeBuildPipelines = {
             lastRevision = sovrinRepo.getLastRevision {
                 delegate.packageName = packageName
                 packageSrcVersion = srcVersion
-                repoDistr = 'xenial'
-                component = 'rc'
+                repoDistr = 'xenial-rc'
             }
 
             if (lastRevision) {
@@ -152,8 +150,7 @@ def codeBuildPipelines = {
             def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
             logger.info("Release version for sovrin repo: $releaseVersion")
 
-            logger.info("Finding Package version")
-            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion)
+            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
             logger.info("Package version for sovrin repo: $debPVersion")
 
             // TODO crate and rpm
@@ -213,8 +210,7 @@ def codeBuildPipelines = {
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
                 sovrinRepo.upload {
-                    repoDistr = 'xenial'
-                    component = 'rc'
+                    repoDistr = 'xenial-rc'
                     packagePath = debName
                 }
 
@@ -290,7 +286,7 @@ def macOSPipeline = {
             checkout scm
         }
 
-        def nexusRepo = sovLibrary.NexusRepo.new(this)
+        def sovrinRepo = sovLibrary.SovrinRepo.new(this)
         def utils = sovLibrary.Utils.new(this)
 
         
@@ -319,8 +315,8 @@ def macOSPipeline = {
                     logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
                     
-                    nexusRepo.uploadBlob {
-                        repoDistr = 'ios/libsovtoken/rc'
+                    sovrinRepo.upload {
+                        repoDistr = 'ios-rc'
                         packagePath = pkgName
                     }
                 }
