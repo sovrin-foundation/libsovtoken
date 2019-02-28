@@ -1,4 +1,4 @@
-FROM sovrin/dockerbase:rust-xenial-0.8.0
+FROM sovrin/dockerbase:rust-xenial-0.12.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG u_id=1000
