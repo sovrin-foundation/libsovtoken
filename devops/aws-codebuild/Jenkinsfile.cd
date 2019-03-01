@@ -108,9 +108,11 @@ def codeBuildPipelines = {
                 archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
 
                 logger.info("Uploading package '$archName' to sovrin repo")
-                sovrinRepo.upload {
-                    repoDistr = 'android-rc'
+                sovrinRepo.uploadFile {
+                    component = 'rc'
                     packagePath = archName
+                    packageName = 'libsovtoken'
+                    systemType = 'android'
                 }
             }
 
@@ -208,7 +210,8 @@ def codeBuildPipelines = {
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
                 sovrinRepo.upload {
-                    repoDistr = 'xenial-rc'
+                    repoDistr = 'xenial'
+                    component = 'rc'
                     packagePath = debName
                 }
 
@@ -313,9 +316,11 @@ def macOSPipeline = {
                     logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
 
-                    sovrinRepo.upload {
-                        repoDistr = 'ios-rc'
+                    sovrinRepo.uploadBlob {
+                        component = 'rc'
                         packagePath = pkgName
+                        packageName = 'libsovtoken'
+                        systemType = 'ios'
                     }
                 }
             }
