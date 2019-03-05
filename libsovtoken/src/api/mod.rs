@@ -1,8 +1,9 @@
 //! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
 //!
 
-use libc::c_char;
-use indy;
+//use libc::c_char;
+use std::os::raw::c_char;
+use indy_sys;
 
 use indy::payments::Payment;
 use indy::ledger::Ledger;
@@ -33,11 +34,15 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
+use std::sync::mpsc::channel;
+
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
+use utils::callbacks::closure_to_cb_ec;
+use std::ffi::CString;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -944,46 +949,78 @@ pub extern fn sovtoken_init() -> i32 {
     debug!("sovtoken_init() started");
     debug!("Going to call Payment::register");
 
-    if let Err(e) = Payment::register_method(
-        PAYMENT_METHOD_NAME,
-        Some(create_payment_address_handler),
-        Some(add_request_fees_handler),
-        Some(parse_response_with_fees_handler),
-        Some(build_get_utxo_request_handler),
-        Some(parse_get_utxo_response_handler),
-        Some(build_payment_req_handler),
-        Some(parse_payment_response_handler),
-        Some(build_mint_txn_handler),
-        Some(build_set_txn_fees_handler),
-        Some(build_get_txn_fees_handler),
-        Some(parse_get_txn_fees_response_handler),
-        Some(build_verify_req_handler),
-        Some(parse_verify_response_handler),
-    ) {
-        debug!("Payment::register failed with {:?}", e);
-        return e as i32
-    };
+    let (sender, receiver) = channel();
+
+    let closure: Box<FnMut(ErrorCode) + Send> = Box::new(move |err| {
+        sender.send(err).unwrap();
+    });
+
+    let (cmd_handle, cb) = closure_to_cb_ec(closure);
+
+    let payment_method_name = CString::new(PAYMENT_METHOD_NAME).unwrap();
+
+    unsafe {
+        indy_sys::payments::indy_register_payment_method(
+            cmd_handle,
+            payment_method_name.as_ptr(),
+            Some(create_payment_address_handler),
+            Some(add_request_fees_handler),
+            Some(parse_response_with_fees_handler),
+            Some(build_get_utxo_request_handler),
+            Some(parse_get_utxo_response_handler),
+            Some(build_payment_req_handler),
+            Some(parse_payment_response_handler),
+            Some(build_mint_txn_handler),
+            Some(build_set_txn_fees_handler),
+            Some(build_get_txn_fees_handler),
+            Some(parse_get_txn_fees_response_handler),
+            Some(build_verify_req_handler),
+            Some(parse_verify_response_handler),
+            cb,
+        );
+    }
+
+
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
 
-    if let Err(e) = Ledger::register_transaction_parser_for_sp(
-        GET_UTXO,
-        Some(get_utxo_state_proof_parser),
-        Some(free_parsed_state_proof)
-    ) {
-        debug!("Ledger::register_transaction_parser_for_sp for GET_UTXO failed with {:?}", e);
-        return e as i32
-    };
+    let (sender_one, receiver_one) = channel();
 
+    let closure_one: Box<FnMut(ErrorCode) + Send> = Box::new(move |err| {
+        sender_one.send(err).unwrap();
+    });
+
+    let (cmd_handle_sp, cb_sp) = closure_to_cb_ec(closure_one);
+    
+    unsafe {
+        indy_sys::ledger::indy_register_transaction_parser_for_sp(
+            cmd_handle_sp,
+            c_pointer_from_string(GET_UTXO.to_string()),
+            some(get_utxo_state_proof_parser),
+            Some(free_parsed_state_proof),
+            cb_sp
+        );
+    }
+
+    let (sender_one, receiver_two) = channel();
+
+    let closure_two: Box<FnMut(ErrorCode) + Send> = Box::new(move |err| {
+        sender_one.send(err).unwrap();
+    });
+
+    let (cmd_handle_fees, cb_sp_fees) = closure_to_cb_ec(closure_two);
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
-    if let Err(e) =  Ledger::register_transaction_parser_for_sp(
-        GET_FEES,
-        Some(get_fees_state_proof_parser),
-        Some(free_parsed_state_proof)
-    ) {
-        debug!("Ledger::register_transaction_parser_for_sp for GET_FEES failed with {:?}", e);
-        return e as i32
-    };
+
+
+    unsafe {
+        indy_sys::ledger::indy_register_transaction_parser_for_sp(
+            cmd_handle_fees,
+            c_pointer_from_string(GET_FEES.to_string()),
+            Some(get_fees_state_proof_parser),
+            Some(free_parsed_state_proof),
+            cb
+        );
+    }
 
     debug!("sovtoken_init() returning ErrorCode::Success");
     return ErrorCode::Success as i32;

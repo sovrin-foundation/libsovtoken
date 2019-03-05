@@ -41,8 +41,7 @@ extern crate android_logger;
 // evernym/sovrin crates
 // ------------------------------------------
 
-
-extern crate indy;                      // lib-sdk project
+extern crate indy_sys;                      // lib-sdk project
 
 
 // ------------------------------------------

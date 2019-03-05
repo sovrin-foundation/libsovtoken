@@ -10,6 +10,6 @@ pub mod general;
 #[macro_use] pub mod logger;
 #[macro_use] pub mod conversions;
 pub mod random;
-
+pub mod callbacks;
 #[cfg(any(test, feature = "integration"))]
 pub mod test;
