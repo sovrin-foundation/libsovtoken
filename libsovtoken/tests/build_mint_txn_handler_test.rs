@@ -18,7 +18,7 @@ use std::ptr;
 use std::ffi::CString;
 
 use indy::utils::results::ResultHandler;
-use indy::ErrorCode;
+use utils::ErrorCode;
 
 use utils::wallet::Wallet;
 use utils::parse_mint_response::ParseMintResponse;

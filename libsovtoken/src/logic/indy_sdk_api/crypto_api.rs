@@ -1,9 +1,9 @@
 //! Indy-sdk crypto functions
-use indy::{IndyHandle, ErrorCode};
-use indy::crypto::{Crypto, Key};
+use logic::indy_sdk_api::crypto::{Key, Crypto};
 use logic::config::payment_address_config::PaymentAddressConfig;
 use utils::base58::serialize_bytes;
 use utils::json_conversion::JsonSerialize;
+use utils::{ErrorCode, IndyHandle};
 
 /**
     This defines the interfaces for INDY SDK crypto apis, which can be replaced with different implementations

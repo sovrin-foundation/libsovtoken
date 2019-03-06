@@ -8,7 +8,7 @@ mod utils;
 use sovtoken::utils::random::rand_string;
 use std::{thread, time};
 use std::collections::HashMap;
-use indy::ErrorCode;
+use utils::ErrorCode;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 

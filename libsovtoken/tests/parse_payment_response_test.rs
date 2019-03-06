@@ -4,7 +4,7 @@ extern crate sovtoken;
 extern crate indy;
 extern crate serde_json;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 
 static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
     "op": "REPLY",

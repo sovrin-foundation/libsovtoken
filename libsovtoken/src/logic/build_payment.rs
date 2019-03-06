@@ -1,6 +1,6 @@
 //! what is this module for?
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use libc::c_char;
 use logic::config::payment_config::PaymentRequest;
 use logic::input::Inputs;
@@ -89,7 +89,7 @@ fn build_payment_request_pointer(
 
 #[cfg(test)]
 mod test_deserialize_inputs {
-    use indy::ErrorCode;
+    use utils::ErrorCode;
     use libc::c_char;
     use std::ptr;
     use utils::test::default;

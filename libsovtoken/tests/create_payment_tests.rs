@@ -19,7 +19,7 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::test::callbacks;

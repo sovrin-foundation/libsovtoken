@@ -7,7 +7,7 @@ mod utils;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use sovtoken::logic::parsers::common::UTXO;
 use sovtoken::utils::constants::txn_types::ATTRIB;
 

@@ -4,7 +4,7 @@
     **These should only be used for testing**
 */
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver};
@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::os::raw::c_char;
 use std::ffi::CStr;
 
-// use indy::ErrorCode;
+// use utils::ErrorCode;
 
 type Callbacks<F> = Mutex<HashMap<i32, Box<F>>>;
 

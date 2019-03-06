@@ -1,6 +1,6 @@
 extern crate indy;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use std::time::Duration;
 
 const SUBMIT_RETRY_CNT: usize = 3;

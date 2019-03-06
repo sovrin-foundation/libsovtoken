@@ -4,13 +4,16 @@ use serde::Serialize;
 use serde_json;
 use std::ffi::CString;
 use libc::c_char;
-use indy::{IndyHandle, ErrorCode, ledger::Ledger};
+use utils::{IndyHandle, ErrorCode};
 
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::random::rand_req_id;
 use utils::json_conversion::JsonSerialize;
 use utils::constants::general::PROTOCOL_VERSION;
 use logic::type_aliases::{ProtocolVersion, ReqId};
+
+use indy_sys::ledger::indy_multi_sign_request;
+use utils::callbacks::ClosureHandler;
 
 pub const DEFAULT_LIBSOVTOKEN_DID: &'static str = "LibsovtokenDid11111111";
 
@@ -55,7 +58,13 @@ impl<T> Request<T>
     pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
         let mut signed_req: String = req.to_string();
         for did in dids {
-            signed_req = Ledger::multi_sign_request(wallet_handle, did, &signed_req)?;
+            let (receiver, cmd_handle, cb) = ClosureHandler::cb_ec_string();
+            ErrorCode::from(
+                unsafe
+                {
+                    indy_multi_sign_request(cmd_handle, wallet_handle, did.as_ptr() as *const _, signed_req.as_ptr() as *const _, cb)
+                }
+            );
         }
         Ok(signed_req)
     }

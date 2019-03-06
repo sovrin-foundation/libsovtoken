@@ -7,7 +7,7 @@ extern crate indy;                      // lib-sdk project
 
 pub mod utils;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 

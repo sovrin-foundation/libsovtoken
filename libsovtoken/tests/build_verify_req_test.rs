@@ -6,7 +6,7 @@ extern crate indy;
 use std::{thread, time};
 
 mod utils;
-use indy::ErrorCode;
+use utils::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 use sovtoken::logic::parsers::common::TXO;

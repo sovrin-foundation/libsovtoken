@@ -8,7 +8,7 @@ extern crate bs58;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::logic::address;

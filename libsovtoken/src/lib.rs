@@ -18,8 +18,9 @@ extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
 extern crate sha2;
-
-
+extern crate num_traits;
+#[macro_use]
+extern crate num_derive;
 // ------------------------------------------
 // crates from crate.io etc that require macro
 // ------------------------------------------
@@ -30,6 +31,7 @@ extern crate sha2;
 
 #[cfg(any(test, feature = "integration"))]
 #[macro_use] extern crate lazy_static;
+
 
 // ------------------------------------------
 // android crates
@@ -42,7 +44,6 @@ extern crate android_logger;
 // ------------------------------------------
 
 extern crate indy_sys;                      // lib-sdk project
-
 
 // ------------------------------------------
 // define our crate by defining the modules in the project

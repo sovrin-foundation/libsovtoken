@@ -2,7 +2,7 @@
 //!  Implementations for Serde Json serialization/deserialization
 //!
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use serde::{Serialize, Deserialize};
 use serde_json::{Error, from_str, to_string};
 
@@ -80,7 +80,7 @@ macro_rules! json_c_pointer {
 mod json_conversion_tests {
     
     use utils::json_conversion::{JsonDeserialize, JsonSerialize};
-    use indy::ErrorCode;
+    use utils::ErrorCode;
 
     // helper structures and data
     #[derive(Debug, Serialize, Deserialize)]

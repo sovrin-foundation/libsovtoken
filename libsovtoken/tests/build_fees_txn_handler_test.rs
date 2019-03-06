@@ -6,7 +6,7 @@ extern crate indy;                      // lib-sdk project
 extern crate bs58;
 pub mod utils;
 
-use indy::ErrorCode;
+use utils::ErrorCode;
 use libc::c_char;
 use sovtoken::utils::ffi_support;
 use sovtoken::utils::test::callbacks;

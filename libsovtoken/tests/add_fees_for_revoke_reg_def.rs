@@ -4,7 +4,7 @@ extern crate sovtoken;
 extern crate indy;
 
 mod utils;
-use indy::ErrorCode;
+use utils::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 use std::{thread, time};
