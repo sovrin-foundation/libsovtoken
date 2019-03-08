@@ -1,5 +1,3 @@
-extern crate indy;
-
 use sovtoken::logic::config::set_fees_config::SetFees;
 use sovtoken::logic::request::Request;
 use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;

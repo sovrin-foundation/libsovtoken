@@ -808,7 +808,7 @@ pub extern "C" fn build_verify_req_handler(
 ) -> i32 {
     trace!("api::build_verify_req called >> wallet_handle {}", wallet_handle);
 
-    let (did, txo, cb) = match verify::deserialize(did, txo, cb) {
+/*    let (did, txo, cb) = match verify::deserialize(did, txo, cb) {
         Ok(a) => a,
         Err(ec) => {
             trace!("api::build_verify_req << res {:?}", ec);
@@ -829,7 +829,8 @@ pub extern "C" fn build_verify_req_handler(
 
     trace!("api::build_verify_req << res {:?}", res);
 
-    res as i32
+    res as i32*/
+    1 as i32
 }
 
 /// Parse response of verification of txo

@@ -1,10 +1,9 @@
-extern crate indy;
 extern crate serde_json;
 
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use sovtoken::utils::json_conversion::JsonDeserialize;
 use sovtoken::logic::request::Request;
 use sovtoken::logic::config::output_mint_config::MintRequest;

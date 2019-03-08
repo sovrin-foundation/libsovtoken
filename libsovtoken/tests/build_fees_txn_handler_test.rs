@@ -2,11 +2,10 @@
 #[macro_use] extern crate serde_derive;
 extern crate libc;
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
 extern crate bs58;
 pub mod utils;
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use libc::c_char;
 use sovtoken::utils::ffi_support;
 use sovtoken::utils::test::callbacks;

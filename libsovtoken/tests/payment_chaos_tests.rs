@@ -1,13 +1,12 @@
 extern crate libc;
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
 
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 
 pub mod utils;
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 

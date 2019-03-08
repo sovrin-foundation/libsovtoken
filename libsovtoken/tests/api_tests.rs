@@ -2,9 +2,8 @@
 //! tests for API related functions
 
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use sovtoken::api::sovtoken_init;
 
 
