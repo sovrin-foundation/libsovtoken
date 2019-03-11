@@ -1,6 +1,6 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 mod utils;
 use utils::setup::{Setup, SetupConfig};

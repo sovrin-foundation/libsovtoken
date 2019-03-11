@@ -33,7 +33,7 @@ pub fn create_nym(
 ) -> Result<DidAndVerKey, ErrorCode> {
     let (did, verkey) = _new_did(wallet_handle,"{}").unwrap();
 
-    let (receiver, command_handle, cb) = ClosureHandler::cb_ec_string();
+    let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
 
     let submitter_did = c_str!(did_trustee);
     let target_did = c_str!(&did);
@@ -56,11 +56,19 @@ pub fn create_nym(
     err.try_err()?;
     let req_nym = Ok(val)?;
 
-    //indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, &did_trustee, &req_nym)?;
-    let (receiver, command_handle, cb) = ClosureHandler::cb_ec_string();
+    let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
 
-    let err = Ledger::_sign_and_submit_request(command_handle, pool_handle, wallet_handle, submitter_did, request_json, cb);
-    
+    let submitter_did = c_str!(submitter_did);
+    let request_json = c_str!(request_json);
+
+    let err = ErrorCode::from(unsafe {
+        indy_sys::indy_sign_and_submit_request(command_handle,
+                                             pool_handle,
+                                             wallet_handle,
+                                             submitter_did.as_ptr(),
+                                             request_json.as_ptr(),
+                                             cb)
+    });
 
     Ok((did, verkey))
 }

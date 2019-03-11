@@ -3,7 +3,7 @@ extern crate libc;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate log;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 mod utils;
 

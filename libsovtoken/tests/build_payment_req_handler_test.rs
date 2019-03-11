@@ -1,6 +1,6 @@
 extern crate env_logger;
 extern crate libc;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 extern crate bs58;
 
 #[macro_use] extern crate log;

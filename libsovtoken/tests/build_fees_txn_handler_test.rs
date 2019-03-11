@@ -1,7 +1,7 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 extern crate libc;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 extern crate bs58;
 pub mod utils;
 

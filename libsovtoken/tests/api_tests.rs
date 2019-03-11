@@ -1,7 +1,7 @@
 //!
 //! tests for API related functions
 
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 use sovtoken::utils::ErrorCode;
 use sovtoken::api::sovtoken_init;

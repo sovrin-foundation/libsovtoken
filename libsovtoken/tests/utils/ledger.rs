@@ -1,11 +1,23 @@
 use sovtoken::utils::ErrorCode;
 use std::time::Duration;
+use sovtoken::utils::callbacks::ClosureHandler;
 
 const SUBMIT_RETRY_CNT: usize = 3;
 
 pub fn submit_request_with_retries(pool_handle: i32, request_json: &str, previous_response: &str) -> Result<String, ErrorCode> {
     _submit_retry(_extract_seq_no_from_reply(previous_response).unwrap(), || {
-        indy::ledger::Ledger::submit_request(pool_handle, request_json)
+        let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
+
+        let request_json = c_str!(request_json);
+
+        let err = ErrorCode::from(unsafe { indy_sys::indy_submit_request(command_handle, pool_handle, request_json.as_ptr(), cb) });
+        err.try_err()?;
+
+        let (err, val) = receiver.recv()?;
+
+        err.try_err()?;
+
+        Ok(val)
     })
 }
 

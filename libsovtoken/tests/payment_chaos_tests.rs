@@ -1,5 +1,5 @@
 extern crate libc;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;

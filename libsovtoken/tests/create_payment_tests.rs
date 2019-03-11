@@ -10,7 +10,7 @@ extern crate rand;
 #[macro_use] extern crate serde_derive;
 
 extern crate bs58;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 use libc::c_char;
 use rand::Rng;

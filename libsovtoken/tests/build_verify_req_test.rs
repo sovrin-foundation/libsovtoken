@@ -1,7 +1,6 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate sovtoken;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 use std::{thread, time};
 
