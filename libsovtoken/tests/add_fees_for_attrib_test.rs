@@ -1,13 +1,12 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate indy;
-extern crate sovtoken;
+#[macro_use] extern crate sovtoken;
 
 mod utils;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use sovtoken::logic::parsers::common::UTXO;
 use sovtoken::utils::constants::txn_types::ATTRIB;
 

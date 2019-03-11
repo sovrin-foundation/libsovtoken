@@ -1,10 +1,9 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate sovtoken;
-extern crate indy;
+#[macro_use] extern crate sovtoken;
 
 mod utils;
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 use std::{thread, time};

@@ -3,12 +3,11 @@
  */
 
 extern crate env_logger;
-extern crate indy;
 extern crate sovtoken;
 
-use self::indy::ErrorCode;
-use self::indy::wallet::Wallet as IndyWallet;
+use sovtoken::utils::ErrorCode;
 use self::sovtoken::utils::random::rand_string;
+use sovtoken::utils::callbacks::ClosureHandler;
 
 static USEFUL_CREDENTIALS : &'static str = r#"
    {
@@ -69,23 +68,68 @@ impl Wallet {
     
     fn open(&mut self) -> Result<i32, ErrorCode> {
         let config : String = Wallet::create_wallet_config(&self.name);
-        let handle = IndyWallet::open(&config, USEFUL_CREDENTIALS)?;
+
+        let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
+
+        let config = c_str!(&config);
+        let credentials = c_str!(USEFUL_CREDENTIALS);
+
+        let _err = ErrorCode::from(unsafe {
+            indy_sys::indy_open_wallet(command_handle, config.as_ptr(), credentials.as_ptr(), cb)
+        });
+
+        _err.try_err()?;
+        let (_err, val) = receiver.recv()?;
+        _err.try_err()?;
+        let handle = Ok(val);
+
         self.handle = handle;
         return Ok(handle);
     }
 
     fn create(&self) -> Result<(), ErrorCode> {
         let config = Wallet::create_wallet_config(&self.name);
-        return IndyWallet::create(&config, USEFUL_CREDENTIALS)
+        let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
+
+        let config = c_str!(&config);
+        let credentials = c_str!(USEFUL_CREDENTIALS);
+
+        let err =ErrorCode::from(unsafe {
+            indy_sys::indy_create_wallet(command_handle, config.as_ptr(), credentials.as_ptr(), cb)
+        });
+        err.try_err()?;
+        match receiver.recv() {
+            Ok(err) => err.try_err(),
+            Err(e) => Err(ErrorCode::from(e))
+        }
     }
 
     fn close(&self) -> Result<(), ErrorCode> {
-        IndyWallet::close(self.handle)
+        let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
+
+        let err = ErrorCode::from(unsafe { indy_sys::indy_close_wallet(command_handle, self.handle, cb) });
+        err.try_err()?;
+        match receiver.recv() {
+            Ok(err) => err.try_err(),
+            Err(e) => Err(ErrorCode::from(e))
+        }
     }
 
     fn delete(&self) -> Result<(), ErrorCode> {
         let config : String = Wallet::create_wallet_config(&self.name);
-        return IndyWallet::delete(&config, USEFUL_CREDENTIALS)
+        let (receiver, command_handle, cb) = ClosureHandler::cb_ec();
+
+        let config = c_str!(&config);
+        let credentials = c_str!(USEFUL_CREDENTIALS);
+
+        let err = ErrorCode::from(unsafe {
+            indy_sys::indy_delete_wallet(command_handle, config.as_ptr(), credentials.as_ptr(), cb)
+        });
+        err.try_err()?;
+        match receiver.recv() {
+            Ok(err) => err.try_err(),
+            Err(e) => Err(ErrorCode::from(e))
+        }
     }
 }
 
