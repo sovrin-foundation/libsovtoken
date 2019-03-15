@@ -1,6 +1,14 @@
 //! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
 //!
+/// use statements are listed the following pattern:
+/// follow this or risk having gum thrown in your hair
+///
+/// first: standard rust imports
+/// second: imported crates
+/// third: libsovtoken name spaces
+///
 
+use std::ffi::CString;
 use std::os::raw::c_char;
 use indy_sys;
 
@@ -30,15 +38,12 @@ use logic::payments::{CreatePaymentHandler};
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
-use std::sync::mpsc::channel;
-
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
 use utils::ErrorCode;
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
-use std::ffi::CString;
 use utils::callbacks::ClosureHandler;
 
 /// This method generates private part of payment address
@@ -946,7 +951,8 @@ pub extern fn sovtoken_init() -> i32 {
     debug!("sovtoken_init() started");
     debug!("Going to call Payment::register");
 
-    let (receiver, cmd_handle, cb) = ClosureHandler::cb_ec();
+    // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
+    let (_receiver, cmd_handle, cb) = ClosureHandler::cb_ec();
 
     let payment_method_name = CString::new(PAYMENT_METHOD_NAME).unwrap();
 
@@ -975,7 +981,8 @@ pub extern fn sovtoken_init() -> i32 {
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
 
-    let (receiver_utxo, cmd_handle_utxo, cb_utxo) = ClosureHandler::cb_ec();
+    // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
+    let (_receiver_utxo, cmd_handle_utxo, cb_utxo) = ClosureHandler::cb_ec();
 
 
     unsafe {
@@ -990,7 +997,8 @@ pub extern fn sovtoken_init() -> i32 {
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
 
-    let (receiver_fees, cmd_handle_fees, cb_fees) = ClosureHandler::cb_ec();
+    // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
+    let (_receiver_fees, cmd_handle_fees, cb_fees) = ClosureHandler::cb_ec();
 
 
     unsafe {
