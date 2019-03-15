@@ -1,13 +1,14 @@
 extern crate env_logger;
 extern crate libc;
-#[macro_use] extern crate sovtoken;
+extern crate sovtoken;
+extern crate indy;                      // lib-sdk project
 extern crate bs58;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-use sovtoken::utils::ErrorCode;
+use utils::ErrorCode;
 use indy::utils::results::ResultHandler;
 use libc::c_char;
 use sovtoken::logic::address;

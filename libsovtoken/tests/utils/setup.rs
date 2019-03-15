@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
+use indy;
 use sovtoken;
 use sovtoken::logic::parsers::common::ResponseOperations;
 use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;

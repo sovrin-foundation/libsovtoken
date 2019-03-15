@@ -4,6 +4,7 @@ use std::fs;
 use utils::environment::EnvironmentUtils;
 use std::io::Write;
 use sovtoken::utils::random::rand_string;
+extern crate indy;
 
 pub fn create_pool_config() -> String {
     let path = create_genesis_txn_file_for_test_pool("p1", None, None);

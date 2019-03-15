@@ -4,6 +4,7 @@ Helpers dealing with addresses
 For integration tests
 */
 
+use indy::payments::Payment;
 use utils::wallet::Wallet;
 use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
 
