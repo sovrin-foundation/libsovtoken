@@ -56,9 +56,10 @@ impl<T> Request<T>
     }
 
     pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
-        let mut signed_req: String = req.to_string();
+        let signed_req: String = req.to_string();
         for did in dids {
-            let (receiver, cmd_handle, cb) = ClosureHandler::cb_ec_string();
+            // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
+            let (_receiver, cmd_handle, cb) = ClosureHandler::cb_ec_string();
             ErrorCode::from(
                 unsafe
                 {
