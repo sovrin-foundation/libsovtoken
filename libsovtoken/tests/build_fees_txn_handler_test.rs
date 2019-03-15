@@ -4,16 +4,18 @@ extern crate libc;
 extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
 extern crate bs58;
-pub mod utils;
 
-use utils::ErrorCode;
+
 use libc::c_char;
-use sovtoken::utils::ffi_support;
-use sovtoken::utils::test::callbacks;
 use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
+use sovtoken::utils::ErrorCode;
+use sovtoken::utils::ffi_support;
+use sovtoken::utils::test::callbacks;
+
+pub mod utils;
 use utils::payment::fees;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;

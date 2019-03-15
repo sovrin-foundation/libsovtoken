@@ -7,7 +7,7 @@ extern crate sovtoken;
 mod utils;
 use std::{thread, time};
 use std::collections::HashMap;
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 use sovtoken::utils::random::rand_string;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;

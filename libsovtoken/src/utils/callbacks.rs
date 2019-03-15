@@ -1,13 +1,10 @@
-use utils::{ErrorCode, IndyHandle};
-
-use utils::sequence::SequenceUtils;
-
-use std::os::raw::c_char;
+//!
 
 use std::collections::HashMap;
-use std::slice;
 use std::ffi::CStr;
 use std::fmt::Display;
+use std::os::raw::c_char;
+use std::slice;
 use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver};
 
@@ -21,6 +18,9 @@ use indy_sys::{ResponseEmptyCB,
           ResponseSliceCB,
           ResponseStringSliceCB,
           ResponseBoolCB};
+
+use utils::{ErrorCode, IndyHandle};
+use utils::sequence::SequenceUtils;
 
 fn log_error<T: Display>(e: T) {
     warn!("Unable to send through libindy callback: {}", e);
