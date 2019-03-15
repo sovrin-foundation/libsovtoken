@@ -10,7 +10,8 @@ extern crate rand;
 #[macro_use] extern crate serde_derive;
 
 extern crate bs58;
-#[macro_use] extern crate sovtoken;
+extern crate sovtoken;
+extern crate indy;                      // lib-sdk project
 
 use libc::c_char;
 use rand::Rng;
@@ -18,7 +19,7 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 
-use sovtoken::utils::ErrorCode;
+use utils::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::test::callbacks;

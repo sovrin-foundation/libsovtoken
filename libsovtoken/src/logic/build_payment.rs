@@ -171,6 +171,7 @@ mod test_deserialize_inputs {
 #[cfg(test)]
 mod test_handle_signing {
     use super::*;
+    use indy::utils::results::ResultHandler;
     use logic::request::Request;
     use utils::test::{default, callbacks};
 
@@ -178,11 +179,7 @@ mod test_handle_signing {
     fn call_handle_signing(input_payload: Result<XferPayload, ErrorCode>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = callbacks::cb_ec_string();
         handle_signing(command_handle, input_payload, cb.unwrap());
-        let err = ErrorCode::Success;
-        err.try_err()?;
-        let (err, val) = receiver.recv()?;
-        err.try_err()?;
-        Ok(val)
+        ResultHandler::one(ErrorCode::Success, receiver)
     }
 
     #[test]

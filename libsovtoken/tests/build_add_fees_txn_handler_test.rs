@@ -1,6 +1,7 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-#[macro_use] extern crate sovtoken;
+extern crate sovtoken;
+extern crate indy;
 pub mod utils;
 
 use std::sync::mpsc::channel;

@@ -1,9 +1,13 @@
 extern crate libc;
 
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate serde_json;
-#[macro_use] extern crate log;
-#[macro_use] extern crate sovtoken;
+extern crate sovtoken;
+#[macro_use]
+extern crate serde_derive;
+extern crate indy;                      // lib-sdk project
+#[macro_use]
+extern crate serde_json;
+#[macro_use]
+extern crate log;
 
 mod utils;
 
@@ -14,7 +18,7 @@ use std::ptr;
 use std::ffi::CString;
 
 use indy::utils::results::ResultHandler;
-use sovtoken::utils::ErrorCode;
+use utils::ErrorCode;
 
 use utils::wallet::Wallet;
 use utils::parse_mint_response::ParseMintResponse;
