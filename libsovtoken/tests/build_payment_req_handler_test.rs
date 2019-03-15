@@ -8,18 +8,18 @@ extern crate bs58;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-use utils::ErrorCode;
 use indy::utils::results::ResultHandler;
 use libc::c_char;
-use sovtoken::logic::address;
-use sovtoken::logic::parsers::common::TXO;
-use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
-use sovtoken::utils::ffi_support::c_pointer_from_string;
-use sovtoken::utils::test::callbacks;
 use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 use std::sync::mpsc::channel;
+use sovtoken::logic::address;
+use sovtoken::logic::parsers::common::TXO;
+use sovtoken::utils::ErrorCode;
+use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
+use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::test::callbacks;
 
 mod utils;
 use utils::wallet::Wallet;

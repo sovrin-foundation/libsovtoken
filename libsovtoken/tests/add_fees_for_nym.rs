@@ -3,10 +3,11 @@
 extern crate indy;
 extern crate sovtoken;
 
+use std::collections::HashMap;
+use sovtoken::utils::ErrorCode;
+
 mod utils;
 
-use utils::ErrorCode;
-use std::collections::HashMap;
 use utils::payment::get_utxo;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;

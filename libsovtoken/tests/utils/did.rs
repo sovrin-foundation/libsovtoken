@@ -1,6 +1,7 @@
 extern crate indy;
+extern crate sovtoken;
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 
 type DidAndVerKey = (String, String);
 

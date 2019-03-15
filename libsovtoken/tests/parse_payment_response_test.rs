@@ -1,10 +1,10 @@
 extern crate env_logger;
-extern crate libc;
-extern crate sovtoken;
 extern crate indy;
+extern crate libc;
 extern crate serde_json;
+extern crate sovtoken;
 
-use utils::ErrorCode;
+use sovtoken::utils::ErrorCode;
 
 static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
     "op": "REPLY",

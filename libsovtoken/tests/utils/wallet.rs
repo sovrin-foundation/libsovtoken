@@ -6,9 +6,9 @@ extern crate env_logger;
 extern crate indy;
 extern crate sovtoken;
 
-use self::indy::ErrorCode;
 use self::indy::wallet::Wallet as IndyWallet;
 use self::sovtoken::utils::random::rand_string;
+use self::sovtoken::utils::ErrorCode;
 
 static USEFUL_CREDENTIALS : &'static str = r#"
    {

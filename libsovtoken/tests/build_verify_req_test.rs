@@ -5,11 +5,12 @@ extern crate indy;
 
 use std::{thread, time};
 
+use sovtoken::utils::ErrorCode;
+use sovtoken::logic::parsers::common::TXO;
+
 mod utils;
-use utils::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
-use sovtoken::logic::parsers::common::TXO;
 
 
 fn sleep(msec: u64) {

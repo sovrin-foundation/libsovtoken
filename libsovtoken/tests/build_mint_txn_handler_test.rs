@@ -9,8 +9,6 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
-mod utils;
-
 use libc::c_char;
 use std::sync::mpsc::channel;
 use std::time::Duration;
@@ -18,12 +16,8 @@ use std::ptr;
 use std::ffi::CString;
 
 use indy::utils::results::ResultHandler;
-use utils::ErrorCode;
 
-use utils::wallet::Wallet;
-use utils::parse_mint_response::ParseMintResponse;
-use utils::setup::{Setup, SetupConfig};
-
+use sovtoken::utils::ErrorCode;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
 use sovtoken::utils::constants::txn_fields::OUTPUTS;
@@ -32,6 +26,11 @@ use sovtoken::utils::json_conversion::JsonDeserialize;
 use sovtoken::logic::config::output_mint_config::MintRequest;
 use sovtoken::logic::request::Request;
 
+mod utils;
+
+use utils::wallet::Wallet;
+use utils::parse_mint_response::ParseMintResponse;
+use utils::setup::{Setup, SetupConfig};
 
 
 // ***** HELPER METHODS *****

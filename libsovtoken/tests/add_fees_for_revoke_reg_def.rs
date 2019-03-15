@@ -3,13 +3,16 @@
 extern crate sovtoken;
 extern crate indy;
 
+use std::{thread, time};
+use std::collections::HashMap;
+
+use sovtoken::utils::random::rand_string;
+use sovtoken::utils::ErrorCode;
+
 mod utils;
-use utils::ErrorCode;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
-use std::{thread, time};
-use sovtoken::utils::random::rand_string;
-use std::collections::HashMap;
+
 
 pub const SCHEMA_VERSION: &'static str = "1.0";
 pub const GVT_SCHEMA_ATTRIBUTES: &'static str = r#"["name", "age", "sex", "height"]"#;

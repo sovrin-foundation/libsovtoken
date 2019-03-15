@@ -1,19 +1,19 @@
 //!
 //!
+use libc::c_char;
 use serde::Serialize;
 use serde_json;
 use std::ffi::CString;
-use libc::c_char;
-use utils::{IndyHandle, ErrorCode};
-
-use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
-use utils::random::rand_req_id;
-use utils::json_conversion::JsonSerialize;
-use utils::constants::general::PROTOCOL_VERSION;
-use logic::type_aliases::{ProtocolVersion, ReqId};
 
 use indy_sys::ledger::indy_multi_sign_request;
+
+use logic::type_aliases::{ProtocolVersion, ReqId};
+use utils::{IndyHandle, ErrorCode};
 use utils::callbacks::ClosureHandler;
+use utils::constants::general::PROTOCOL_VERSION;
+use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
+use utils::json_conversion::JsonSerialize;
+use utils::random::rand_req_id;
 
 pub const DEFAULT_LIBSOVTOKEN_DID: &'static str = "LibsovtokenDid11111111";
 

@@ -1,6 +1,8 @@
 //!
 //! tests for Payment related functions
 
+
+extern crate bs58;
 extern crate env_logger;
 extern crate libc;
 extern crate rand;
@@ -9,9 +11,8 @@ extern crate rand;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-extern crate bs58;
-extern crate sovtoken;
 extern crate indy;                      // lib-sdk project
+extern crate sovtoken;
 
 use libc::c_char;
 use rand::Rng;
@@ -19,10 +20,10 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 
-use utils::ErrorCode;
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::test::callbacks;
+use sovtoken::utils::ErrorCode;
 mod utils;
 
 // ***** HELPER TEST DATA  *****

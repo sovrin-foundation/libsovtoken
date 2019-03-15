@@ -1,7 +1,8 @@
-use utils::ErrorCode;
-
+//!
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
+
+use utils::ErrorCode;
 
 pub struct ResultHandler {}
 

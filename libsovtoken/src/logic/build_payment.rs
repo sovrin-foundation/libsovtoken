@@ -1,14 +1,16 @@
 //! what is this module for?
 
-use utils::ErrorCode;
 use libc::c_char;
+use serde_json;
+
 use logic::config::payment_config::PaymentRequest;
 use logic::input::Inputs;
 use logic::output::Outputs;
 use logic::xfer_payload::XferPayload;
-use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
 use utils::base58::{IntoBase58, FromBase58};
-use serde_json;
+use utils::ErrorCode;
+use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
+
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, Option<String>, BuildPaymentRequestCb);
@@ -58,7 +60,6 @@ pub fn handle_signing(
     cb(command_handle, error_code as i32, pointer);
 }
 
-
 fn build_payment_request_pointer(
     signed_payload: Result<XferPayload, ErrorCode>
 ) -> Result<*const c_char, ErrorCode> {
@@ -86,12 +87,12 @@ fn build_payment_request_pointer(
         });
 }
 
-
 #[cfg(test)]
 mod test_deserialize_inputs {
-    use utils::ErrorCode;
+
     use libc::c_char;
     use std::ptr;
+    use utils::ErrorCode;
     use utils::test::default;
 
     use super::{
@@ -99,7 +100,6 @@ mod test_deserialize_inputs {
         DeserializedArguments,
         deserialize_inputs,
     };
-
 
     pub fn call_deserialize_inputs(
         inputs_json: Option<*const c_char>,
@@ -167,14 +167,13 @@ mod test_deserialize_inputs {
     }
 }
 
-
 #[cfg(test)]
 mod test_handle_signing {
     use super::*;
-    use indy::utils::results::ResultHandler;
     use logic::request::Request;
+    use utils::ErrorCode;
+    use utils::results::ResultHandler;
     use utils::test::{default, callbacks};
-
 
     fn call_handle_signing(input_payload: Result<XferPayload, ErrorCode>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = callbacks::cb_ec_string();
