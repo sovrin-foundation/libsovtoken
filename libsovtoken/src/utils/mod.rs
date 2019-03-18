@@ -339,6 +339,20 @@ impl ErrorCode {
     }
 }
 
+impl From<indy::ErrorCode> for ErrorCode {
+    fn from(e : indy::ErrorCode) -> Self {
+        let i: i32 = num_traits::ToPrimitive::to_i32(&e).unwrap();
+        ErrorCode::from(i)
+    }
+}
+
+impl Into<indy::ErrorCode> for ErrorCode {
+    fn into(self) -> indy::ErrorCode {
+        let i: i32 = num_traits::ToPrimitive::to_i32(&self).unwrap();
+        indy::ErrorCode::from(i)
+    }
+}
+
 impl From<i32> for ErrorCode {
     fn from(i: i32) -> Self {
         let conversion = num_traits::FromPrimitive::from_i32(i);
