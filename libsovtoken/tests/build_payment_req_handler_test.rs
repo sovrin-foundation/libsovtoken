@@ -8,10 +8,11 @@ extern crate bs58;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
+use indy::utils::callbacks::ClosureHandler;
 use indy::utils::results::ResultHandler;
-use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
+use std::os::raw::c_char;
 use std::time::Duration;
 use std::sync::mpsc::channel;
 use sovtoken::logic::address;
@@ -19,7 +20,6 @@ use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::ErrorCode;
 use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
-use sovtoken::utils::test::callbacks;
 
 mod utils;
 use utils::wallet::Wallet;
@@ -180,7 +180,7 @@ fn success_signed_request() {
         ]
     });
 
-    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
+    let (receiver, command_handle, _) = ClosureHandler::cb_ec_string();
 
 
     trace!("Calling build_payment_req");
@@ -192,7 +192,7 @@ fn success_signed_request() {
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
         ptr::null(),
-        cb
+        Some(empty_create_payment_callback)
     );
 
     assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);

@@ -150,7 +150,7 @@ fn valid_output_json_from_libindy() {
         cb
     );
 
-    assert_eq!(return_error, ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
+    assert_eq!(return_error, indy::ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
 
     let (req, payment_method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
 
