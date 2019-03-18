@@ -11,6 +11,7 @@
 
 
 use std::sync::mpsc;
+use std::convert::{From, Into};
 
 #[macro_use] pub mod ffi_support;
 #[macro_use] pub mod json_conversion;
@@ -245,6 +246,7 @@ pub enum ErrorCode
 
 
 impl ErrorCode {
+
     #[allow(non_snake_case)]
     #[allow(dead_code)]
     #[allow(unused)]
@@ -317,6 +319,7 @@ impl ErrorCode {
             PaymentInsufficientFundsError => "Payment cannot be processed because there was insufficient funds",
             PaymentSourceDoesNotExistError => "No such source on a ledger.",
             PaymentExtraFundsError => "Payment cannot be processed because there were more funds than required",
+            _ => "ErrorCode description not found",
         }
     }
 
@@ -342,6 +345,7 @@ impl From<i32> for ErrorCode {
         if conversion.is_some() {
             conversion.unwrap()
         } else {
+            // TODO: is this really a panic ???
             panic!("Unable to convert from {}, unknown error code", i)
         }
     }

@@ -5,6 +5,13 @@ use sovtoken::utils::ErrorCode;
 
 type DidAndVerKey = (String, String);
 
+
+//impl From<indy::ErrorCode> for ErrorCode {
+//    fn from(item: indy::ErrorCode) -> Self {
+//        item as ErrorCode
+//    }
+//}
+
 #[derive(Clone, Copy)]
 pub enum NymRole
 {
@@ -32,7 +39,7 @@ pub fn create_nym(
     pool_handle: i32,
     did_trustee: &str,
     role: NymRole
-) -> Result<DidAndVerKey, ErrorCode> {
+) -> Result<DidAndVerKey, sovtoken::utils::ErrorCode> {
     let (did, verkey) = indy::did::Did::new(wallet_handle, "{}").unwrap();
 
     let req_nym = indy::ledger::Ledger::build_nym_request(
@@ -72,7 +79,7 @@ Create and store the initial dids of trustees.
 
 Includes the initial trustee.
 */
-pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) -> Result<Vec<DidAndVerKey>, ErrorCode> {
+pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) -> Result<Vec<DidAndVerKey>, sovtoken::utils::ErrorCode> {
     let first = initial_trustee(wallet_handle);
 
     let mut trustees = create_multiple_nym(
