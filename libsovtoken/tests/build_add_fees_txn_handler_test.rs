@@ -8,16 +8,16 @@ use std::sync::mpsc::channel;
 use std::time::Duration;
 
 use indy::{IndyHandle, ErrorCode};
+use indy::utils::callbacks::ClosureHandler;
 use indy::utils::results::ResultHandler;
+use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
-use sovtoken::logic::parsers::common::TXO;
-use sovtoken::utils::test::callbacks;
 use utils::wallet::Wallet;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
-    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
+    let (receiver, command_handle, cb) =  ClosureHandler::cb_ec_string();
     let did = "mydid1";
     let extra = extra.map(c_pointer_from_string).unwrap_or(std::ptr::null());
     let error_code = sovtoken::api::add_request_fees_handler(
@@ -213,5 +213,5 @@ fn build_add_fees_to_request_works_for_invalid_utxo() {
 
     let err = indy::payments::Payment::add_request_fees(wallet.handle, Some(&did), &fake_request, &inputs, &outputs, None).unwrap_err();
 
-    assert_eq!(err, ErrorCode::CommonInvalidStructure)
+    assert_eq!(err, indy::ErrorCode::CommonInvalidStructure)
 }

@@ -88,7 +88,7 @@ pub fn build_and_submit_nym_with_fees_insufficient_funds() {
     let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
     let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
     let err = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(err, indy::ErrorCode::PaymentInsufficientFundsError);
 }
 
 #[test]
@@ -153,7 +153,7 @@ pub fn build_and_submit_nym_with_fees_utxo_already_spent() {
     let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
     let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
     let err = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err, indy::ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -233,7 +233,7 @@ pub fn build_and_submit_nym_with_fees_from_invalid_did_and_check_utxo_remain_uns
     let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req, &inputs, &outputs, None).unwrap();
     let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees).unwrap();
     let err = indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap_err();
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    assert_eq!(err, indy::ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2);
@@ -286,7 +286,7 @@ pub fn build_and_submit_nym_with_fees_from_other_nym_txn() {
 
     let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[1], &nym_req_with_fees_2).unwrap();
     let err = indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap_err();
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    assert_eq!(err, indy::ErrorCode::CommonInvalidStructure);
 
     let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees_1).unwrap();
     indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap();

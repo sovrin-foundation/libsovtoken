@@ -90,5 +90,5 @@ pub fn parse_payment_response_works() {
 pub fn parse_payment_response_works_for_invalid() {
     sovtoken::api::sovtoken_init();
     let resp = indy::payments::Payment::parse_payment_response("sov", "123").unwrap_err();
-    assert_eq!(resp, ErrorCode::CommonInvalidStructure);
+    assert_eq!(resp, indy::ErrorCode::CommonInvalidStructure);
 }

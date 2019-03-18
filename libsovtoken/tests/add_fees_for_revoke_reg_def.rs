@@ -27,7 +27,7 @@ fn send_revoc_reg_def_with_fees(issuer_did: &str,
                                 extra: Option<&str>,
                                 wallet_handle: i32,
                                 pool_handle: i32,
-                                cred_def_id: Option<String>) -> Result<String, ErrorCode> {
+                                cred_def_id: Option<String>) -> Result<String, indy::ErrorCode> {
     let cred_def_id = cred_def_id.unwrap_or_else(|| {
         let (_, id, _) = create_cred_def(issuer_did,
                                                 name,
@@ -194,7 +194,7 @@ pub fn build_and_submit_revoc_reg_def_works_with_fees_and_spent_utxo() {
                                                    pool_handle,
                                                    None).unwrap_err();
 
-    assert_eq!(parsed_err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -233,5 +233,5 @@ pub fn build_and_submit_revoc_reg_def_works_with_fees_and_insufficient_funds() {
                                                    pool_handle,
                                                    None).unwrap_err();
 
-    assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentInsufficientFundsError);
 }

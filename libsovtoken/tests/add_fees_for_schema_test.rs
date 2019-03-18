@@ -20,7 +20,7 @@ fn send_schema_with_fees(did: &str,
                          pool_handle: i32,
                          inputs_json: &str,
                          outputs_json: &str,
-                         extra: Option<&str>) -> Result<(String, String, String, String), ErrorCode> {
+                         extra: Option<&str>) -> Result<(String, String, String, String), indy::ErrorCode> {
     let (schema_id, schema_json) = indy::anoncreds::Issuer::create_schema(did, name, version, attrs).unwrap();
     let schema_req = indy::ledger::Ledger::build_schema_request(did, &schema_json).unwrap();
     let schema_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &schema_req).unwrap();
@@ -98,7 +98,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     }]).to_string();
 
     let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_1, None).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([{
         "recipient": addresses[0],
@@ -106,7 +106,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     }]).to_string();
 
     let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_2, None).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::PaymentExtraFundsError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -137,7 +137,7 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
     send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
     let err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err, indy::ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 
@@ -178,7 +178,7 @@ pub fn build_and_submit_schema_with_fees_twice_and_check_utxo_remain_unspent() {
 
     let err = send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
 
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    assert_eq!(err, indy::ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2)

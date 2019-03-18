@@ -1,8 +1,9 @@
 extern crate indy;
 extern crate sovtoken;
 
+use indy::ErrorCode;
 use std::time::Duration;
-use sovtoken::utils::ErrorCode;
+
 
 const SUBMIT_RETRY_CNT: usize = 3;
 
