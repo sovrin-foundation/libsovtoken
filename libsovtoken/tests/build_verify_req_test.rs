@@ -186,7 +186,7 @@ pub fn build_and_submit_verify_req_for_unexistant_utxo() {
     let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
     let err = indy::payments::Payment::parse_verify_response(&payment_method, &res).unwrap_err();
 
-    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err, indy::ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -199,5 +199,5 @@ fn build_verify_req_works_for_invalid_utxo() {
 
     let err = indy::payments::Payment::build_verify_req(wallet.handle, Some(&did), receipt).unwrap_err();
 
-    assert_eq!(err, ErrorCode::CommonInvalidStructure)
+    assert_eq!(err, indy::ErrorCode::CommonInvalidStructure)
 }

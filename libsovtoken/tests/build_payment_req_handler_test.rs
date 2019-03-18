@@ -64,7 +64,7 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
 }
 
 fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
-                            inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
+                            inputs: &str, outputs: &str) -> Result<String, indy::ErrorCode> {
     let (req, method) = indy::payments::Payment::build_payment_req(wallet_handle,
                                                                    Some(did), inputs, outputs, None).unwrap();
     let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
@@ -197,7 +197,7 @@ fn success_signed_request() {
 
     assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);
 
-    let request_string = ResultHandler::one(ErrorCode::Success, receiver).unwrap();
+    let request_string = ResultHandler::one(indy::ErrorCode::Success, receiver).unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);
@@ -273,7 +273,7 @@ fn success_signed_request_from_libindy() {
         closure
     );
 
-    let request_string = ResultHandler::one_timeout(ErrorCode::Success, receiver, Duration::from_secs(5)).unwrap();
+    let request_string = ResultHandler::one_timeout(indy::ErrorCode::Success, receiver, Duration::from_secs(5)).unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);
@@ -372,7 +372,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_1).unwrap_err();
-    assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(res, indy::ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([
         {
@@ -386,7 +386,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_2).unwrap_err();
-    assert_eq!(res, ErrorCode::PaymentExtraFundsError);
+    assert_eq!(res, indy::ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -422,7 +422,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "amount": 20
     }]).to_string();
     let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err, indy::ErrorCode::PaymentSourceDoesNotExistError);
 
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
@@ -447,7 +447,7 @@ pub fn build_payment_with_invalid_utxo() {
     ]).to_string();
 
     let err = indy::payments::Payment::build_payment_req(wallet.handle, Some(&did), &inputs, &outputs, None).unwrap_err();
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    assert_eq!(err, indy::ErrorCode::CommonInvalidStructure);
 }
 
 pub fn build_payment_req_for_not_owned_payment_address() {

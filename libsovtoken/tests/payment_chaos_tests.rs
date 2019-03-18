@@ -39,7 +39,7 @@ pub fn pay_without_outputs_fails() {
     ]).to_string();
 
     let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::CommonInvalidStructure);
+    assert_eq!(ec, indy::ErrorCode::CommonInvalidStructure);
 
 }
 
@@ -72,7 +72,7 @@ pub fn pay_without_inputs_fails() {
     ]).to_string();
 
     let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::CommonInvalidStructure);
+    assert_eq!(ec, indy::ErrorCode::CommonInvalidStructure);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ pub fn pay_from_non_existent_payment_source_fails() {
     ]).to_string();
 
     let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::WalletItemNotFound);
+    assert_eq!(ec, indy::ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -140,7 +140,7 @@ pub fn pay_from_existent_and_non_existent_payment_source_fails() {
     ]).to_string();
 
     let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::WalletItemNotFound);
+    assert_eq!(ec, indy::ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------

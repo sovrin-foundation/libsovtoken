@@ -8,7 +8,7 @@ extern crate sovtoken;
 
 use self::indy::wallet::Wallet as IndyWallet;
 use self::sovtoken::utils::random::rand_string;
-use self::sovtoken::utils::ErrorCode;
+use self::indy::ErrorCode;
 
 static USEFUL_CREDENTIALS : &'static str = r#"
    {

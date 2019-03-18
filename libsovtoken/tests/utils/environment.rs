@@ -1,3 +1,6 @@
+// TODO:  this should be removed and the warning fixed.  this is temporary
+#![allow(deprecated)]
+
 use std::env;
 use std::path::PathBuf;
 
