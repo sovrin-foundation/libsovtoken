@@ -4,6 +4,7 @@ extern crate sovtoken;
 extern crate indy;
 pub mod utils;
 
+use std::os::raw::c_char;
 use std::sync::mpsc::channel;
 use std::time::Duration;
 
@@ -16,8 +17,15 @@ use sovtoken::utils::ffi_support::c_pointer_from_str;
 use utils::wallet::Wallet;
 
 
+
+// ***** HELPER METHODS *****
+extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: i32, _payment_req: *const c_char) -> i32 {
+    return ErrorCode::Success as i32;
+}
+
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) =  ClosureHandler::cb_ec_string();
+
     let did = "mydid1";
     let extra = extra.map(c_pointer_from_string).unwrap_or(std::ptr::null());
     let error_code = sovtoken::api::add_request_fees_handler(
@@ -28,7 +36,7 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, ext
         c_pointer_from_string(inputs),
         c_pointer_from_string(outputs),
         extra,
-        cb
+        Some(empty_create_payment_callback)
     );
 
     return ResultHandler::one(ErrorCode::from(error_code), receiver); 

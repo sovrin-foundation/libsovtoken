@@ -107,7 +107,7 @@ pub fn build_and_submit_attrib_with_fees_incorrect_funds() {
     }]).to_string();
 
     let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs_1).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([{
         "recipient": addresses[0],
@@ -115,7 +115,7 @@ pub fn build_and_submit_attrib_with_fees_incorrect_funds() {
     }]).to_string();
 
     let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs_2).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::PaymentExtraFundsError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -145,7 +145,7 @@ pub fn build_and_submit_attrib_with_fees_from_invalid_did_and_check_utxo_remain_
     }]).to_string();
 
     let parsed_err = _send_attrib_with_fees(&did_new, Some(ATTRIB_RAW_DATA), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::CommonInvalidStructure);
+    assert_eq!(parsed_err, indy::ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2);
@@ -188,10 +188,10 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     assert_eq!(ATTRIB_RAW_DATA, data);
 
     let parsed_err = _send_attrib_with_fees(dids[0], Some(ATTRIB_RAW_DATA_2), wallet.handle, pool_handle, &inputs, &outputs).unwrap_err();
-    assert_eq!(parsed_err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(parsed_err, indy::ErrorCode::PaymentSourceDoesNotExistError);
 }
 
-fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
+fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, indy::ErrorCode> {
     let attrib_req = indy::ledger::Ledger::build_attrib_request(did, did,  None, data, None).unwrap();
     let attrib_req_signed = indy::ledger::Ledger::sign_request(wallet_handle, did, &attrib_req).unwrap();
     let (attrib_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet_handle, Some(did), &attrib_req_signed, inputs, outputs, None).unwrap();
