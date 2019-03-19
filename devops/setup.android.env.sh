@@ -69,7 +69,7 @@ download_and_unzip_dependencies_for_all_architectures(){
     #TODO Get dependencies in more optimized way
     pushd ${ANDROID_BUILD_FOLDER}
         if [ ! -d "indy-android-dependencies" ] ; then
-            git clone https://github.com/sovrin/indy-android-dependencies.git
+            git clone https://github.com/sovrin-foundation/indy-android-dependencies.git
             pushd ${ANDROID_BUILD_FOLDER}/indy-android-dependencies/prebuilt/
 #                git checkout tags/v1.0.1
                 find . -name "*.zip" | xargs -P 5 -I FILENAME sh -c 'unzip -o -qq -d "$(dirname "FILENAME")" "FILENAME"'
