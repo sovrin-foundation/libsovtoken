@@ -23,6 +23,7 @@ use logic::config::{
 };
 use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::indy_sdk_api::ledger;
 use logic::minting;
 use logic::verify;
 use logic::parsers::{
@@ -822,7 +823,7 @@ pub extern "C" fn build_verify_req_handler(
     };
     let did = did.map(|s| String::from(s));
 
-    let res = indy::ledger::Ledger::build_get_txn_request_async(
+    let res = ledger::Ledger::build_get_txn_request_async(
         did.as_ref().map(|x| &**x),
         Some(LEDGER_ID),
         txo.seq_no as i32,
