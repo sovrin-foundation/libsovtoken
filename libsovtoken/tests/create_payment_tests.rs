@@ -11,7 +11,7 @@ extern crate rand;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-extern crate indy;                      // lib-sdk project
+extern crate indyrs as indy;                      // lib-sdk project
 extern crate sovtoken;
 
 use libc::c_char;
@@ -25,6 +25,8 @@ use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::test::callbacks;
 use sovtoken::utils::ErrorCode;
 mod utils;
+
+use indy::future::Future;
 
 // ***** HELPER TEST DATA  *****
 const WALLET_ID: i32 = 99;
@@ -153,8 +155,8 @@ pub fn create_address_two_times_with_the_same_seed() {
 
     let seed = json!({"seed": "00000000000000000000000000000000"}).to_string();
 
-    let _pa1 = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap();
-    let err = indy::payments::Payment::create_payment_address(wallet.handle, "sov", &seed).unwrap_err();
+    let _pa1 = indy::payments::create_payment_address(wallet.handle, "sov", &seed).wait().unwrap();
+    let err = indy::payments::create_payment_address(wallet.handle, "sov", &seed).wait().unwrap_err();
 
-    assert_eq!(err, indy::ErrorCode::WalletItemAlreadyExists);
+    assert_eq!(err.error_code, indy::ErrorCode::WalletItemAlreadyExists);
 }

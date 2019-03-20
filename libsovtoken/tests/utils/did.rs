@@ -1,7 +1,7 @@
-extern crate indy;
+extern crate indyrs as indy;
 extern crate sovtoken;
 
-use sovtoken::utils::ErrorCode;
+use indy::future::Future;
 
 type DidAndVerKey = (String, String);
 
@@ -39,20 +39,20 @@ pub fn create_nym(
     pool_handle: i32,
     did_trustee: &str,
     role: NymRole
-) -> Result<DidAndVerKey, sovtoken::utils::ErrorCode> {
-    let (did, verkey) = indy::did::Did::new(wallet_handle, "{}").unwrap();
+) -> DidAndVerKey {
+    let (did, verkey) = indy::did::create_and_store_my_did(wallet_handle, "{}").wait().unwrap();
 
-    let req_nym = indy::ledger::Ledger::build_nym_request(
+    let req_nym = indy::ledger::build_nym_request(
         did_trustee,
         &did,
         Some(&verkey),
         None,
         role.prepare()
-    )?;
+    ).wait().unwrap();
 
-    indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet_handle, &did_trustee, &req_nym)?;
+    indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, &did_trustee, &req_nym).wait().unwrap();
 
-    Ok((did, verkey))
+    (did, verkey)
 }
 
 /**
@@ -64,14 +64,14 @@ pub fn create_multiple_nym(
     did_trustee: &str,
     n: u8,
     role: NymRole
-) -> Result<Vec<DidAndVerKey>, ErrorCode> {
+) -> Vec<DidAndVerKey> {
     let mut v: Vec<(String, String)> = Vec::new();
     for _ in 0..n {
-        let new_did = create_nym(wallet_handle, pool_handle, did_trustee, role)?;
+        let new_did = create_nym(wallet_handle, pool_handle, did_trustee, role);
         v.push(new_did);
     }
 
-    Ok(v)
+    v
 }
 
 /**
@@ -79,7 +79,7 @@ Create and store the initial dids of trustees.
 
 Includes the initial trustee.
 */
-pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) -> Result<Vec<DidAndVerKey>, sovtoken::utils::ErrorCode> {
+pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) -> Vec<DidAndVerKey> {
     let first = initial_trustee(wallet_handle);
 
     let mut trustees = create_multiple_nym(
@@ -88,10 +88,10 @@ pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) 
         &first.0,
         num_trustees - 1,
         NymRole::Trustee
-    )?;
+    );
     trustees.insert(0, first);
 
-    Ok(trustees)
+    trustees
 }
 
 /**
@@ -102,7 +102,7 @@ pub fn initial_trustee(wallet_handle: i32) -> DidAndVerKey {
         "seed":"000000000000000000000000Trustee1"
     }).to_string();
 
-    indy::did::Did::new(wallet_handle, &first_json_seed).unwrap()
+    indy::did::create_and_store_my_did(wallet_handle, &first_json_seed).wait().unwrap()
 }
 
 /**

@@ -3,19 +3,15 @@ extern crate libc;
 extern crate sovtoken;
 #[macro_use]
 extern crate serde_derive;
-extern crate indy;                      // lib-sdk project
+extern crate indyrs as indy;                     // lib-sdk project
 #[macro_use]
 extern crate serde_json;
 #[macro_use]
 extern crate log;
 
 use libc::c_char;
-use std::sync::mpsc::channel;
-use std::time::Duration;
 use std::ptr;
 use std::ffi::CString;
-
-use indy::utils::results::ResultHandler;
 
 use sovtoken::utils::ErrorCode;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
@@ -32,6 +28,7 @@ use utils::wallet::Wallet;
 use utils::parse_mint_response::ParseMintResponse;
 use utils::setup::{Setup, SetupConfig};
 
+use indy::future::Future;
 
 // ***** HELPER METHODS *****
 
@@ -130,29 +127,19 @@ fn  valid_output_json() {
     }
 }
 
-#[test]
+#[test] // TODO: look carefully on changes
 fn valid_output_json_from_libindy() {
     sovtoken::api::sovtoken_init();
     let did = "Th7MpTaRZVRYnPiabds81Y";
     let wallet = Wallet::new();
     let outputs_str = VALID_OUTPUT_JSON;
-    let (sender, receiver) = channel();
 
-    let cb = move |ec, req, payment_method| {
-        sender.send((ec, req, payment_method)).unwrap();
-    };
-
-    let return_error = indy::payments::Payment::build_mint_req_async(
+    let (req, payment_method) = indy::payments::build_mint_req(
         wallet.handle,
         Some(did),
         outputs_str,
         None,
-        cb
-    );
-
-    assert_eq!(return_error, indy::ErrorCode::Success, "Expecting Valid JSON for 'build_mint_txn_handler'");
-
-    let (req, payment_method) = ResultHandler::two_timeout(return_error, receiver, Duration::from_secs(5)).unwrap();
+    ).wait().unwrap();
 
     let mint_request_json_value : serde_json::Value = serde_json::from_str(&req).unwrap();
     let mint_operation = mint_request_json_value
@@ -204,12 +191,12 @@ pub fn build_and_submit_mint_txn_works() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(
+    let (mint_req, _) = indy::payments::build_mint_req(
         wallet.handle,
         Some(dids[0]),
         &output_json,
         None,
-    ).unwrap();
+    ).wait().unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -221,7 +208,7 @@ pub fn build_and_submit_mint_txn_works() {
 
     trace!("{:?}", &mint_req);
 
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
+    let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
@@ -259,12 +246,12 @@ pub fn build_and_submit_mint_txn_works_with_empty_did() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(
+    let (mint_req, _) = indy::payments::build_mint_req(
         wallet.handle,
         None,
         &output_json,
         None,
-    ).unwrap();
+    ).wait().unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -276,7 +263,7 @@ pub fn build_and_submit_mint_txn_works_with_empty_did() {
 
     trace!("{:?}", &mint_req);
 
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
+    let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
@@ -314,12 +301,12 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(
+    let (mint_req, _) = indy::payments::build_mint_req(
         wallet.handle,
         Some(dids[0]),
         &output_json,
         None
-    ).unwrap();
+    ).wait().unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -331,10 +318,10 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
 
     trace!("{:?}", &mint_req);
 
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
+    let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
+    let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
@@ -366,12 +353,12 @@ fn mint_10_billion_tokens() {
         "amount": tokens,
     }]).to_string();
 
-    let (mint_req, _) = indy::payments::Payment::build_mint_req(
+    let (mint_req, _) = indy::payments::build_mint_req(
         wallet.handle,
         Some(dids[0]),
         &output_json,
         None
-    ).unwrap();
+    ).wait().unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -383,7 +370,7 @@ fn mint_10_billion_tokens() {
 
     trace!("{:?}", &mint_req);
 
-    let result = indy::ledger::Ledger::submit_request(pool_handle, &mint_req).unwrap();
+    let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
 
     trace!("{:?}", &response);

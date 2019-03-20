@@ -1,20 +1,20 @@
-extern crate indy;
+extern crate indyrs as indy;
 extern crate sovtoken;
 
-use indy::ErrorCode;
 use std::time::Duration;
 
+use indy::future::Future;
 
 const SUBMIT_RETRY_CNT: usize = 3;
 
-pub fn submit_request_with_retries(pool_handle: i32, request_json: &str, previous_response: &str) -> Result<String, ErrorCode> {
+pub fn submit_request_with_retries(pool_handle: i32, request_json: &str, previous_response: &str) -> Result<String, indy::IndyError> {
     _submit_retry(_extract_seq_no_from_reply(previous_response).unwrap(), || {
-        indy::ledger::Ledger::submit_request(pool_handle, request_json)
+        indy::ledger::submit_request(pool_handle, request_json).wait()
     })
 }
 
-fn _submit_retry<F>(minimal_timestamp: u64, submit_action: F) -> Result<String, ErrorCode>
-    where F: Fn() -> Result<String, ErrorCode> {
+fn _submit_retry<F>(minimal_timestamp: u64, submit_action: F) -> Result<String, indy::IndyError>
+    where F: Fn() -> Result<String, indy::IndyError> {
     let mut i = 0;
     let action_result = loop {
         let action_result = submit_action()?;

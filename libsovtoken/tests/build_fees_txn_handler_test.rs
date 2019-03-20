@@ -2,7 +2,7 @@
 #[macro_use] extern crate serde_derive;
 extern crate libc;
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
+extern crate indyrs as indy;                     // lib-sdk project
 extern crate bs58;
 
 

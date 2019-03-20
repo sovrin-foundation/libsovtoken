@@ -15,6 +15,7 @@ use serde_json;
 
 const PROTOCOL_VERSION: usize = 2;
 
+use indy::future::Future;
 
 /**
 Config to be passed to [`Setup::new`].
@@ -159,10 +160,10 @@ impl<'a> Setup<'a>
     {
         let pc_string = pool::create_pool_config();
         let pool_config = Some(pc_string.as_str());
-        indy::pool::Pool::set_protocol_version(PROTOCOL_VERSION).unwrap();
+        indy::pool::set_protocol_version(PROTOCOL_VERSION).wait().unwrap();
 
         let pool_name = pool::create_pool_ledger(pool_config);
-        let pool_handle = indy::pool::Pool::open_ledger(&pool_name, None).unwrap();      
+        let pool_handle = indy::pool::open_pool_ledger(&pool_name, None).wait().unwrap();
 
         pool_handle  
     }
@@ -170,7 +171,6 @@ impl<'a> Setup<'a>
     fn create_users(wallet: &Wallet, pool_handle: i32, did_trustee: &str, num_users: u8) -> Entities
     {
         did::create_multiple_nym(wallet.handle, pool_handle, did_trustee, num_users, did::NymRole::User)
-            .unwrap()
             .into_iter()
             .map(Entity::new)
             .collect()
@@ -179,7 +179,6 @@ impl<'a> Setup<'a>
     fn create_trustees(wallet: &Wallet, pool_handle: i32, num_trustees: u8) -> Entities
     {
         did::initial_trustees(num_trustees, wallet.handle, pool_handle)
-            .unwrap()
             .into_iter()
             .map(Entity::new)
             .collect()
