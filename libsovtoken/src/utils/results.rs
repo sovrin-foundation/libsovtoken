@@ -1,6 +1,5 @@
 //!
 use std::sync::mpsc::Receiver;
-use std::time::Duration;
 
 use utils::ErrorCode;
 
@@ -20,6 +19,18 @@ fn map_recv_channel_error_error_code(err: ::std::sync::mpsc::RecvError) -> Error
 }
 
 impl ResultHandler {
+    pub fn empty(err: ErrorCode, receiver: Receiver<ErrorCode>) -> Result<(), ErrorCode> {
+        try_err!(err);
+
+        match receiver.recv().map_err(map_recv_channel_error_error_code) {
+            Ok(err) => {
+                try_err!(err);
+                Ok(())
+            }
+            Err(e) => Err(e)
+        }
+    }
+
     pub fn one<T>(err: ErrorCode, receiver: Receiver<(ErrorCode, T)>) -> Result<T, ErrorCode> {
         try_err!(err);
 

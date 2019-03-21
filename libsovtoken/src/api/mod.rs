@@ -35,7 +35,7 @@ use logic::parsers::{
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor}
 };
-use logic::payments::{CreatePaymentHandler};
+use logic::payments::CreatePaymentHandler;
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
@@ -46,6 +46,7 @@ use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::callbacks::ClosureHandler;
+use utils::results::ResultHandler;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -954,64 +955,76 @@ pub extern fn sovtoken_init() -> i32 {
     debug!("sovtoken_init() started");
     debug!("Going to call Payment::register");
 
-    // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
-    let (_receiver, cmd_handle, cb) = ClosureHandler::cb_ec();
+    let (receiver, cmd_handle, cb) = ClosureHandler::cb_ec();
 
     let payment_method_name = CString::new(PAYMENT_METHOD_NAME).unwrap();
 
-    unsafe {
-        indy_sys::payments::indy_register_payment_method(
-            cmd_handle,
-            payment_method_name.as_ptr(),
-            Some(create_payment_address_handler),
-            Some(add_request_fees_handler),
-            Some(parse_response_with_fees_handler),
-            Some(build_get_utxo_request_handler),
-            Some(parse_get_utxo_response_handler),
-            Some(build_payment_req_handler),
-            Some(parse_payment_response_handler),
-            Some(build_mint_txn_handler),
-            Some(build_set_txn_fees_handler),
-            Some(build_get_txn_fees_handler),
-            Some(parse_get_txn_fees_response_handler),
-            Some(build_verify_req_handler),
-            Some(parse_verify_response_handler),
-            cb,
-        );
-    }
-
-
+    let err = unsafe {
+        ErrorCode::from(
+            indy_sys::payments::indy_register_payment_method(
+                cmd_handle,
+                payment_method_name.as_ptr(),
+                Some(create_payment_address_handler),
+                Some(add_request_fees_handler),
+                Some(parse_response_with_fees_handler),
+                Some(build_get_utxo_request_handler),
+                Some(parse_get_utxo_response_handler),
+                Some(build_payment_req_handler),
+                Some(parse_payment_response_handler),
+                Some(build_mint_txn_handler),
+                Some(build_set_txn_fees_handler),
+                Some(build_get_txn_fees_handler),
+                Some(parse_get_txn_fees_response_handler),
+                Some(build_verify_req_handler),
+                Some(parse_verify_response_handler),
+                cb,
+            )
+        )
+    };
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
 
-    // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
-    let (_receiver_utxo, cmd_handle_utxo, cb_utxo) = ClosureHandler::cb_ec();
+    let (receiver_utxo, cmd_handle_utxo, cb_utxo) = ClosureHandler::cb_ec();
 
-
-    unsafe {
-        indy_sys::ledger::indy_register_transaction_parser_for_sp(
-            cmd_handle_utxo,
-            c_pointer_from_string(GET_UTXO.to_string()),
-            Some(get_utxo_state_proof_parser),
-            Some(free_parsed_state_proof),
-            cb_utxo
-        );
-    }
+    let err_utxo = unsafe {
+        ErrorCode::from(
+            indy_sys::ledger::indy_register_transaction_parser_for_sp(
+                cmd_handle_utxo,
+                c_pointer_from_string(GET_UTXO.to_string()),
+                Some(get_utxo_state_proof_parser),
+                Some(free_parsed_state_proof),
+                cb_utxo
+            )
+        )
+    };
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
 
-    // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
-    let (_receiver_fees, cmd_handle_fees, cb_fees) = ClosureHandler::cb_ec();
+    let (receiver_fees, cmd_handle_fees, cb_fees) = ClosureHandler::cb_ec();
 
+    let err_fees = unsafe {
+        ErrorCode::from(
+            indy_sys::ledger::indy_register_transaction_parser_for_sp(
+                cmd_handle_fees,
+                c_pointer_from_string(GET_FEES.to_string()),
+                Some(get_fees_state_proof_parser),
+                Some(free_parsed_state_proof),
+                cb_fees
+            )
+        )
+    };
 
-    unsafe {
-        indy_sys::ledger::indy_register_transaction_parser_for_sp(
-            cmd_handle_fees,
-            c_pointer_from_string(GET_FEES.to_string()),
-            Some(get_fees_state_proof_parser),
-            Some(free_parsed_state_proof),
-            cb_fees
-        );
+    // TODO: DISCUSS  I think we should rather wait and check for a result of all functions above than call return.
+    if let Err(err) = ResultHandler::empty(err, receiver) {
+        return err as i32;
+    }
+
+    if let Err(err) = ResultHandler::empty(err_utxo, receiver_utxo) {
+        return err as i32;
+    }
+
+    if let Err(err) = ResultHandler::empty(err_fees, receiver_fees) {
+        return err as i32;
     }
 
     debug!("sovtoken_init() returning ErrorCode::Success");

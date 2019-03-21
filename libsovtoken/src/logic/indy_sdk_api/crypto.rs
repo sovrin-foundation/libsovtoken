@@ -1,7 +1,6 @@
 use utils::{ErrorCode, IndyHandle};
 
 use std::ffi::CString;
-use std::time::Duration;
 
 use indy_sys::crypto;
 use indy_sys::{ResponseStringCB,
