@@ -67,14 +67,14 @@ if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     fi
 
     #2) Install required native libraries and utilities (libsodium is added with URL to homebrew since version<1.0.15 is required)
-    brew install pkg-config
+    brew install pkg-config 0.29.2
     brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/65effd2b617bade68a8a2c5b39e1c3089cc0e945/Formula/libsodium.rb
-    brew install automake
-    brew install autoconf
-    brew install cmake
-    brew install openssl
-    brew install zmq
-    brew install wget
-    brew install truncate
-    brew install libzip
+    brew install automake 1.16.1_1
+    brew install autoconf 2.69
+    brew install cmake 3.13.3
+    brew install openssl 1.0.2q
+    brew install zmq 4.2.3
+    brew install wget 1.20.1_3
+    brew install truncate 0.9
+    brew install libzip 1.5.1
 fi
