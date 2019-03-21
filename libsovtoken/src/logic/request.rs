@@ -58,7 +58,7 @@ impl<T> Request<T>
         let mut signed_req: String = req.to_string();
 
         for did in dids {
-            signed_req = ledger::Ledger::multi_sign_request(wallet_handle, did, &signed_req)?; // TODO: checkme. sync call
+            signed_req = ledger::Ledger::multi_sign_request(wallet_handle, did, &signed_req)?;
         }
         Ok(signed_req)
     }

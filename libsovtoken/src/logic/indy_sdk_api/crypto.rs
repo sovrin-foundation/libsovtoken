@@ -38,29 +38,6 @@ impl Key {
     /// Creates key pair in wallet
     /// # Arguments
     /// * `wallet_handle` - wallet handle (created by Wallet::open)
-    /// * `my_key_json` - key information as json
-    /// * `timeout` - the maximum time this function waits for a response
-    ///
-    /// # Example
-    /// my_key_json
-    /// {
-    ///     "seed": string, (optional) Seed that allows deterministic key creation (if not set random one will be created).
-    ///                                Can be UTF-8, base64 or hex string.
-    ///     "crypto_type": string, // Optional (if not set then ed25519 curve is used); Currently only 'ed25519' value is supported for this field.
-    /// }
-    /// # Returns
-    /// verkey of generated key pair, also used as key identifier
-    pub fn create_timeout(wallet_handle: IndyHandle, my_key_json: Option<&str>, timeout: Duration) -> Result<String, ErrorCode> {
-        let (receiver, command_handle, cb) = ClosureHandler::cb_ec_string();
-
-        let err = Key::_create(command_handle, wallet_handle, my_key_json, cb);
-
-        ResultHandler::one_timeout(err, receiver, timeout)
-    }
-
-    /// Creates key pair in wallet
-    /// # Arguments
-    /// * `wallet_handle` - wallet handle (created by Wallet::open)
     /// * `my_key_json` - Optional key information as json. If none then defaults are used.
     /// * `closure` - The closure that is called when finished
     ///
@@ -102,22 +79,6 @@ impl Crypto {
         let err = Crypto::_sign(command_handle, wallet_handle, signer_vk, message, cb);
 
         ResultHandler::one(err, receiver)
-    }
-
-    /// Signs a message with a key
-    /// # Arguments
-    /// * `wallet_handle` - wallet handle (created by Wallet::open)
-    /// * `signer_vk` - key id or verkey of my key. The key must be created by calling Key::create or Did::new
-    /// * `message` - the data to be signed
-    /// * `timeout` - the maximum time this function waits for a response
-    /// # Returns
-    /// the signature
-    pub fn sign_timeout(wallet_handle: IndyHandle, signer_vk: &str, message: &[u8], timeout: Duration) -> Result<Vec<u8>, ErrorCode> {
-        let (receiver, command_handle, cb) = ClosureHandler::cb_ec_slice();
-
-        let err = Crypto::_sign(command_handle, wallet_handle, signer_vk, message, cb);
-
-        ResultHandler::one_timeout(err, receiver, timeout)
     }
 
     /// Signs a message with a key
