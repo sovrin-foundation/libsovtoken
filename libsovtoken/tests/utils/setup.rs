@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 use indy;
+use indy::future::Future;
 use sovtoken;
 use sovtoken::logic::parsers::common::ResponseOperations;
 use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
@@ -14,8 +15,6 @@ use utils::wallet::Wallet;
 use serde_json;
 
 const PROTOCOL_VERSION: usize = 2;
-
-use indy::future::Future;
 
 /**
 Config to be passed to [`Setup::new`].
@@ -315,4 +314,8 @@ impl FromIterator<Entity> for Entities
 
         Entities(v)
     }
+}
+
+fn set_default_logger(){
+    ::indy::logger::set_default_logger(None).ok();
 }

@@ -19,7 +19,7 @@ use logic::api_internals::{
 use logic::build_payment;
 use logic::config::{
     get_fees_config::GetFeesRequest,
-    get_utxo_config::*,
+    get_utxo_config:: *,
 };
 use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
@@ -214,7 +214,7 @@ pub extern "C" fn add_request_fees_handler(
         request_json_map,
         Box::new(add_request_fees::closure_cb_response(command_handle, cb))
     );
-    
+
     match result {
         Err(e) => {
             error!("api::add_request_fees_handler Received error adding fees to request_json");
@@ -466,7 +466,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  _submitter_did: *const c_char,
                                                  payment_address: *const c_char,
-                                                 cb: JsonCallback)-> i32 {
+                                                 cb: JsonCallback) -> i32 {
     trace!("api::build_get_utxo_request_handler called");
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
@@ -510,7 +510,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
     command_handle: i32,
     resp_json: *const c_char,
     cb: JsonCallback
-)-> i32 {
+) -> i32 {
 
     trace!("api::parse_get_utxo_response_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
@@ -547,7 +547,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
         }
     };
 
-    let reply_str: String = match reply.to_json().map_err(map_err_err!())  {
+    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
@@ -694,7 +694,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
     command_handle: i32,
     resp_json: *const c_char,
     cb: JsonCallback
-)-> i32{
+) -> i32 {
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     trace!("api::parse_get_txn_fees_response_handler called");
@@ -714,7 +714,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
     debug!("Deserialized parse_get_txn_fees_response_handler arguments");
 
     let fees_json_obj =
-        match parse_fees_from_get_txn_fees_response(resp_json_string){
+        match parse_fees_from_get_txn_fees_response(resp_json_string) {
             Ok(s) => {
                 s
             },
@@ -724,7 +724,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
             }
         };
     info!("Parsed get_txn_fees_response, result: {:?}", fees_json_obj);
-    let fees_json_ptr : *const c_char = c_pointer_from_string(fees_json_obj);
+    let fees_json_ptr: *const c_char = c_pointer_from_string(fees_json_obj);
     cb(command_handle, ErrorCode::Success as i32, fees_json_ptr);
 
     let res = ErrorCode::Success as i32;
@@ -756,7 +756,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
  */
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(
-    command_handle:i32,
+    command_handle: i32,
     wallet_handle: i32,
     submitter_did: *const c_char,
     outputs_json: *const c_char,
@@ -947,7 +947,9 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 #[no_mangle]
 pub extern fn sovtoken_init() -> i32 {
 
-    super::utils::logger::init_log();
+    if let Err(err) = ::utils::logger::SovtokenLogger::init() {
+        return err as i32;
+    }
 
     debug!("sovtoken_init() started");
     debug!("Going to call Payment::register");

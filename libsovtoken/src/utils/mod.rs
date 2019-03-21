@@ -12,9 +12,9 @@
 
 #[macro_use] pub mod ffi_support;
 #[macro_use] pub mod json_conversion;
-#[macro_use] pub mod logger;
 #[macro_use] pub mod conversions;
 #[macro_use] pub mod macros;
+#[macro_use] pub mod logger;
 
 pub mod base58;
 pub mod callbacks;

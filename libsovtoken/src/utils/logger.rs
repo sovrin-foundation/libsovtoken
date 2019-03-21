@@ -1,89 +1,101 @@
 //! Logger module contains helper functions for using error!, debug!, trace! etc logging
 //! functions and macros in libsovtoken
 
+use std::ffi::CString;
+use std::ptr::null;
+use libc::c_void;
 
-use std::env;
-use std::io::Write;
+use indy_sys::logger::{EnabledCB, LogCB, FlushCB};
+use log;
+use log::{Record, Metadata, LevelFilter};
 
-use env_logger::{Builder, fmt};
-use log::{Record, Level, Metadata, Log, LevelFilter};
-#[cfg(target_os = "android")]
-use android_logger;
-#[cfg(target_os = "android")]
-use android_logger::Filter;
+use logic::indy_sdk_api;
+use utils::ErrorCode;
 
+pub struct SovtokenLogger {
+    context: *const c_void,
+    enabled: Option<EnabledCB>,
+    log: LogCB,
+    flush: Option<FlushCB>,
+}
 
-/**
-    Routes logging to console all of the time regardless of RUST_LOG setting.  helpful for unit tests
-*/
-pub struct ConsoleLogger;
+impl SovtokenLogger {
+    fn new(context: *const c_void, enabled: Option<EnabledCB>, log: LogCB, flush: Option<FlushCB>) -> Self {
+        SovtokenLogger { context, enabled, log, flush }
+    }
 
-impl Log for ConsoleLogger {
+    pub fn init() -> Result<(), ErrorCode> {
+        // logging, as implemented, crashes with VCX for android and ios, so
+        // for this hotfix (IS-1164) simply return OK
+        if cfg!(target_os = "android") || cfg!(target_os = "ios") {
+            return Ok(());
+        }
+
+        let (context, enabled, log, flush) = indy_sdk_api::logger::get_logger()?;
+
+        let log = match log {
+            Some(log) => log,
+            None => return Err(ErrorCode::CommonInvalidState)
+        };
+
+        let logger = SovtokenLogger::new(context, enabled, log, flush);
+
+        log::set_boxed_logger(Box::new(logger)).ok();
+        log::set_max_level(LevelFilter::Trace);
+        Ok(())
+    }
+}
+
+impl log::Log for SovtokenLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Trace
+        if let Some(enabled_cb) = self.enabled {
+            let level = metadata.level() as u32;
+            let target = c_str!(metadata.target());
+
+            enabled_cb(self.context,
+                       level,
+                       target.as_ptr(),
+            )
+        } else { true }
     }
 
     fn log(&self, record: &Record) {
-        if self.enabled(record.metadata()) {
-            println!("\r\n{:>5}|{:<30}|{:>35}:{:<4}| {}",
-                record.level(),
-                record.target(),
-                record.file().unwrap(),
-                record.line().unwrap(),
-                record.args()
-            );
-        }
+        let log_cb = self.log;
+
+        let level = record.level() as u32;
+
+        let target = record.target();
+        let message = record.args().to_string();
+        let module_path = record.module_path();
+        let file = record.file();
+
+        let target = c_str!(target);
+        let message = c_str!(message);
+        let module_path_str = opt_c_str!(module_path);
+        let file_str = opt_c_str!(file);
+
+        let line = record.line().unwrap_or(0);
+
+        log_cb(self.context,
+               level,
+               target.as_ptr(),
+               message.as_ptr(),
+               opt_c_ptr!(module_path, module_path_str),
+               opt_c_ptr!(file, file_str),
+               line,
+        )
     }
 
     fn flush(&self) {
-
+        if let Some(flush_cb) = self.flush {
+            flush_cb(self.context)
+        }
     }
 }
 
-/**
-    Required call to get logging in libsovtoken to appear, depending on call (debug! vs error! etc)
-    and RUST_LOG env setting.
-*/
-pub fn init_log() {
-    if cfg!(target_os = "android") {
-        #[cfg(target_os = "android")]
-        let log_filter = match env::var("RUST_LOG") {
-            Ok(val) => match val.to_lowercase().as_ref(){
-                "error" => Filter::default().with_min_level(Level::Error),
-                "warn" => Filter::default().with_min_level(Level::Warn),
-                "info" => Filter::default().with_min_level(Level::Info),
-                "debug" => Filter::default().with_min_level(Level::Debug),
-                "trace" => Filter::default().with_min_level(Level::Trace),
-                _ => Filter::default().with_min_level(Level::Error),
-            },
-            Err(..) => Filter::default().with_min_level(Level::Error)
-        };
+unsafe impl Sync for SovtokenLogger {}
 
-        //Set logging to off when deploying production android app.
-        #[cfg(target_os = "android")]
-        android_logger::init_once(log_filter);
-
-        info!("Logging for Android");
-    } else{
-        Builder::new()
-            .format(|buf: &mut fmt::Formatter, record: &Record| {
-                writeln!(
-                    buf,
-                    "{:>5}|{:<30}|{:>35}:{:<4}| {}",
-                    record.level(),
-                    record.target(),
-                    record.file().unwrap(),
-                    record.line().unwrap(),
-                    record.args()
-                )
-            })
-            .filter(None, LevelFilter::Off)
-            .parse(env::var("RUST_LOG").as_ref().map(String::as_str).unwrap_or(""))
-            .try_init()
-            .ok();
-    }
-
-}
+unsafe impl Send for SovtokenLogger {}
 
 macro_rules! _map_err {
     ($lvl:expr, $expr:expr) => (
