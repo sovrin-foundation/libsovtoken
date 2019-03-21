@@ -65,7 +65,7 @@ impl Hash {
 /// ```
 /// extern crate openssl;
 /// extern crate sovtoken;
-/// extern crate indy;
+/// extern crate indyrs as indy;
 /// use self::openssl::hash::{hash, MessageDigest, Hasher, DigestBytes};
 /// use self::sovtoken::logic::hash::Hashable;
 /// use self::indy::ErrorCode;

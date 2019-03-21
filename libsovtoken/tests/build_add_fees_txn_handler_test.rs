@@ -7,10 +7,8 @@ extern crate indyrs as indy;
 
 pub mod utils;
 
-use std::os::raw::c_char;
-
-use sovtoken::utils::callbacks::ClosureHandler;
 use sovtoken::utils::results::ResultHandler;
+use sovtoken::utils::test::callbacks;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
@@ -20,13 +18,8 @@ use indy::{ErrorCode, IndyHandle};
 use indy::future::Future;
 
 
-// ***** HELPER METHODS *****
-extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: i32, _payment_req: *const c_char) -> i32 {
-    return ErrorCode::Success as i32;
-}
-
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
-    let (receiver, command_handle, _) =  ClosureHandler::cb_ec_string();
+    let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
 
     let did = "mydid1";
     let extra = extra.map(c_pointer_from_string).unwrap_or(std::ptr::null());
@@ -38,7 +31,7 @@ fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, ext
         c_pointer_from_string(inputs),
         c_pointer_from_string(outputs),
         extra,
-        Some(empty_create_payment_callback)
+        cb
     );
 
     return ResultHandler::one(ErrorCode::from(error_code), receiver);

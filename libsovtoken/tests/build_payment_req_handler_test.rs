@@ -15,9 +15,9 @@ use sovtoken::logic::address;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::ErrorCode;
 use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
-use sovtoken::utils::callbacks::ClosureHandler;
 use sovtoken::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::test::callbacks;
 
 mod utils;
 use utils::wallet::Wallet;
@@ -179,8 +179,7 @@ fn success_signed_request() {
         ]
     });
 
-    let (receiver, command_handle, _) = ClosureHandler::cb_ec_string();
-
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     trace!("Calling build_payment_req");
 
@@ -191,7 +190,7 @@ fn success_signed_request() {
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
         ptr::null(),
-        Some(empty_create_payment_callback)
+        cb
     );
 
     assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);

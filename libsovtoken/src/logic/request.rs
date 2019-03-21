@@ -5,15 +5,14 @@ use serde::Serialize;
 use serde_json;
 use std::ffi::CString;
 
-use indy_sys::ledger::indy_multi_sign_request;
-
 use logic::type_aliases::{ProtocolVersion, ReqId};
 use utils::{IndyHandle, ErrorCode};
-use utils::callbacks::ClosureHandler;
 use utils::constants::general::PROTOCOL_VERSION;
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::json_conversion::JsonSerialize;
 use utils::random::rand_req_id;
+
+use logic::indy_sdk_api::ledger;
 
 pub const DEFAULT_LIBSOVTOKEN_DID: &'static str = "LibsovtokenDid11111111";
 
@@ -25,20 +24,20 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
-    pub identifier : String,
+    pub identifier: String,
 }
 
-impl<T> Request<T> 
+impl<T> Request<T>
     where T: Serialize
 {
-    pub fn new(operation: T, identifier : Option<String>) -> Self {
+    pub fn new(operation: T, identifier: Option<String>) -> Self {
         let req_id = rand_req_id();
         return Request {
             operation,
             protocol_version: PROTOCOL_VERSION,
             req_id,
             identifier: identifier.unwrap_or(DEFAULT_LIBSOVTOKEN_DID.to_string())
-        }
+        };
     }
 
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
@@ -56,16 +55,10 @@ impl<T> Request<T>
     }
 
     pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
-        let signed_req: String = req.to_string();
+        let mut signed_req: String = req.to_string();
+
         for did in dids {
-            // TODO:  allocating a receiver we don't use.  change how command handle and cb are allocated.
-            let (_receiver, cmd_handle, cb) = ClosureHandler::cb_ec_string();
-            ErrorCode::from(
-                unsafe
-                {
-                    indy_multi_sign_request(cmd_handle, wallet_handle, did.as_ptr() as *const _, signed_req.as_ptr() as *const _, cb)
-                }
-            );
+            signed_req = ledger::Ledger::multi_sign_request(wallet_handle, did, &signed_req)?; // TODO: checkme. sync call
         }
         Ok(signed_req)
     }
