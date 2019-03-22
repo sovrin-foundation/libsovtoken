@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.${BASE_DOCKER_VERSION}
       context: base/$OSNAME
       network: ${DOCKER_BUILD_NETWORK:-bridge}
-    image: evernym/dockerbase:base-${OSNAME}-${BASE_DOCKER_VERSION}
+    image: sovrin/dockerbase:base-${OSNAME}-${BASE_DOCKER_VERSION}
 
   rust:
     build:
@@ -16,7 +16,7 @@ services:
       network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - RUST_VERSION
-    image: evernym/dockerbase:rust-${OSNAME}-${RUST_DOCKER_VERSION}
+    image: sovrin/dockerbase:rust-${OSNAME}-${RUST_DOCKER_VERSION}
 
   python3:
     build:
@@ -25,7 +25,7 @@ services:
       network: ${DOCKER_BUILD_NETWORK:-bridge}
       args:
           - PYTHON3_VERSION
-    image: evernym/dockerbase:python3-${OSNAME}-${PYTHON3_DOCKER_VERSION}
+    image: sovrin/dockerbase:python3-${OSNAME}-${PYTHON3_DOCKER_VERSION}
 
   android_ndk:
     build:
@@ -35,4 +35,4 @@ services:
       args:
           - PYTHON3_VERSION
           - ANDROID_NDK_VERSION
-    image: evernym/dockerbase:android_ndk-${OSNAME}-${ANDROID_NDK_DOCKER_VERSION}
+    image: sovrin/dockerbase:android_ndk-${OSNAME}-${ANDROID_NDK_DOCKER_VERSION}

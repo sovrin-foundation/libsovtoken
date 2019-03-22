@@ -1,4 +1,4 @@
-FROM evernym/base:0.2.0-centos7
+FROM sovrin/base:0.2.0-centos7
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG RUST_VERSION
