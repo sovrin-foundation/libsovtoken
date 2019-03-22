@@ -67,14 +67,14 @@ if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     fi
 
     #2) Install required native libraries and utilities (libsodium is added with URL to homebrew since version<1.0.15 is required)
-    brew install pkg-config
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/pkg-config.rb
     brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/65effd2b617bade68a8a2c5b39e1c3089cc0e945/Formula/libsodium.rb
-    brew install automake
-    brew install autoconf
-    brew install cmake
-    brew install openssl
-    brew install zmq
-    brew install wget
-    brew install truncate
-    brew install libzip
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/automake.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/autoconf.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/autoconf.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/9231c3cf11de64593a593a279e89f903044bf9e8/Formula/openssl.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/46f0da84e2af9416e0b5ec410024c1a272a0ab9a/Formula/zeromq.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7377a5bd3e702dadd9ca8b59a6bdeee54e8dc97f/Formula/wget.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/f84b6f4f1493b5db71bb6ea9d560f4f3d295f1a0/Formula/truncate.rb
+    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/6fa49cf7bb8dbe1c918ec7acd568b0c5b98e21ed/Formula/libzip.rb
 fi

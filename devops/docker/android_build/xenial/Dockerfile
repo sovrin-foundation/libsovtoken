@@ -1,6 +1,6 @@
 ARG ANDROID_PREBUILT_DIR=/tmp/android/libsovtoken_prebuilt
 
-FROM evernym/libsovtoken:android_ndk-xenial-0.4.0
+FROM sovrin/libsovtoken:android_ndk-xenial-0.4.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG ANDROID_PREBUILT_DIR
@@ -12,7 +12,7 @@ RUN chmod -R 777 ${ANDROID_PREBUILT_DIR}
 ############################################
 
 
-FROM evernym/libsovtoken:android_ndk-xenial-0.4.0
+FROM sovrin/libsovtoken:android_ndk-xenial-0.4.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG u_id=1000

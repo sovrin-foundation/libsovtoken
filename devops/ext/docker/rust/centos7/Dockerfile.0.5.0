@@ -1,4 +1,4 @@
-FROM evernym/dockerbase:base-centos7-0.3.0
+FROM sovrin/dockerbase:base-centos7-0.3.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG RUST_VERSION
