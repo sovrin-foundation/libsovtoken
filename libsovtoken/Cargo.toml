@@ -22,12 +22,10 @@ crate-type = ["staticlib", "rlib", "cdylib"]
 [dependencies]
 bs58 = {version="0.2.2", features = ["check"]}
 base64 = "0.6.0"
-env_logger = "0.5.10"
 hex = "0.2.0"
 lazy_static = "0.2"
 libc = "0.2.41"
 log = "0.4.1"
-log-panics = "2.0.0"
 openssl = "0.10"
 rand = "0.4.2"
 indy-sys = "1.8.1"
@@ -52,9 +50,6 @@ codegen-units = 16
 panic = 'unwind'
 incremental = false
 overflow-checks = false
-
-[target.'cfg(target_os = "android")'.dependencies]
-android_logger = "0.5"
 
 [features]
 default = ["integration"]
