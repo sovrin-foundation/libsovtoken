@@ -223,7 +223,6 @@ def codeBuildPipelines = {
                 dir("sovrin-packaging") {
                     downloadPackagingUtils()
                 }
-                sh "touch $packageName-$debPVersion*.deb"
                 debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
