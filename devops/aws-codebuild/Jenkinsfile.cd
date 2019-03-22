@@ -1,27 +1,27 @@
 #!groovy
 
-def evLibrary = library(identifier: 'evernym-aws-codebuild@v0.4.0-aws-codebuild', retriever: modernSCM(
-    github(credentialsId: 'evernym-github-machine-user', repoOwner: 'evernym', repository: 'jenkins-shared')
-)).com.evernym.pipeline
+def sovLibrary = library(identifier: 'sovrin-aws-codebuild@master', retriever: modernSCM(
+    github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
+)).com.sovrin.pipeline
 
-logger = evLibrary.Logger.new(this)
+logger = sovLibrary.Logger.new(this)
 logger.setGlobalLevel('TRACE')
 
-notifier = evLibrary.Notifier.new(this)
-utils = evLibrary.Utils.new(this)
+notifier = sovLibrary.Notifier.new(this)
+utils = sovLibrary.Utils.new(this)
 
 // TODO set proper labels
 def nodeLabels = [
     codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
-    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos', 
+    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
 ]
 
 def codeBuildPipelines = {
     def packageName = 'libsovtoken'
-    
+
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
-    env.SOVRIN_REPO_HOST = '192.168.11.115'
+    env.SOVRIN_REPO_HOST = '192.168.101.193'
 
     List _envBuildSrc = [
         'devops',
@@ -29,18 +29,17 @@ def codeBuildPipelines = {
         'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
         'libsovtoken/build_scripts/android/android_settings.txt'
     ]
-    
+
     def srcVersion
 
     stage('Checkout sources from SCM') {
         checkout scm
     }
 
-    def evernymRepo = evLibrary.EvernymRepo.new(this)
-    def sovrinRepo = evLibrary.SovrinRepo.new(this)
-    def git = evLibrary.Git.new(this)
-    def buildCtx = evLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
-    def awsCBHelper = evLibrary.AwsCodeBuildHelper.new(this, buildCtx)
+    def sovrinRepo = sovLibrary.SovrinRepo.new(this)
+    def git = sovLibrary.Git.new(this)
+    def buildCtx = sovLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
+    def awsCBHelper = sovLibrary.AwsCodeBuildHelper.new(this, buildCtx)
 
     stage('Resolve current source version') {
         srcVersion = utils.srcVersion(projectType: 'rust')
@@ -73,7 +72,7 @@ def codeBuildPipelines = {
                 'export PROJECT_DIR=$PWD',
                 'make -C devops image_lst_android_build'
             ]
-            envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
+            envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
             envBuildEnvv = [
                 [name: 'OSNAME', value: osname],
                 [name: 'LST_ANDROID_BUILD_DOCKER_TAG', value: buildImageTag],
@@ -102,16 +101,18 @@ def codeBuildPipelines = {
             }
         }
 
-        stage('Upload android archives to Evernym repo') {
+        stage('Upload android archives to Sovrin repo') {
             String archName
 
             dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
                 archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
 
-                logger.info("Uploading package '$archName' to evernym repo")
-                evernymRepo.upload {
-                    repoDistr = 'android'
+                logger.info("Uploading package '$archName' to sovrin repo")
+                sovrinRepo.uploadFile {
+                    component = 'rc'
                     packagePath = archName
+                    packageName = 'libsovtoken'
+                    systemType = 'android'
                 }
             }
 
@@ -133,10 +134,10 @@ def codeBuildPipelines = {
         def cratePVersion
 
         stage('Resolve last debian revision') {
-            lastRevision = evernymRepo.getLastRevision {
+            lastRevision = sovrinRepo.getLastRevision {
                 delegate.packageName = packageName
                 packageSrcVersion = srcVersion
-                repoDistr = 'agency-dev'
+                repoDistr = 'xenial-rc'
             }
 
             if (lastRevision) {
@@ -147,10 +148,12 @@ def codeBuildPipelines = {
         }
 
         stage('Set release parameters') {
+            logger.info("Finding Release version")
             def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+            logger.info("Release version for sovrin repo: $releaseVersion")
 
             debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
-            logger.info("Package version for evernym repo: $debPVersion")
+            logger.info("Package version for sovrin repo: $debPVersion")
 
             // TODO crate and rpm
             //cratePVersion = utils.packageVersion('crate', srcVersion, releaseVersion)
@@ -172,7 +175,7 @@ def codeBuildPipelines = {
                 'export PROJECT_DIR=$PWD',
                 'make -C devops image_lst_base'
             ]
-            envBuildLocalName = "evernym/libsovtoken:$buildImageTag"
+            envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
             envBuildEnvv = [
                 [name: 'OSNAME', value: osname],
                 [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
@@ -207,22 +210,13 @@ def codeBuildPipelines = {
             dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
                 debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
 
-                logger.info("Uploading debian package '$debName' to evernym repo")
-                evernymRepo.upload {
-                    repoDistr = 'agency_dev'
+                logger.info("Uploading debian package '$debName' to sovrin repo")
+                sovrinRepo.upload {
+                    repoDistr = 'xenial'
+                    component = 'rc'
                     packagePath = debName
                 }
 
-                if (env.BRANCH_NAME == 'stable') {
-                    logger.info("Uploading debian package '$debName' to sovrin repo")
-                    sshagent(credentials: ['SovrinRepoSSHKey']) {
-                        sovrinRepo.upload {
-                            repoDistr = 'sdk'
-                            packagePath = debName
-                            component = 'rc'
-                        }
-                    }
-                }
             }
 
             notifier.email {
@@ -235,7 +229,7 @@ def codeBuildPipelines = {
         /*
         ['agency_dev', 'agency_qa'].each { distr ->
             stage("Promote deb from $distr") {
-                evernymRepo.promote {
+                sovrinRepo.promote {
                     repoDistr = distr
                     delegate.packageName = packageName
                     delegate.packageVersion = debPVersion
@@ -290,43 +284,45 @@ def macOSPipeline = {
                 error(msg)
             }
         }
-        
+
         stage('Checkout sources from SCM') {
             checkout scm
         }
 
-        def evernymRepo = evLibrary.EvernymRepo.new(this)
-        def utils = evLibrary.Utils.new(this)
+        def sovrinRepo = sovLibrary.SovrinRepo.new(this)
+        def utils = sovLibrary.Utils.new(this)
 
-        
+
         withEnv([
                     "PATH+RUST=${RUST_PATH}",
                     "PATH+BREW=/usr/local/bin",
                     "PATH+CURL=/usr/local/opt/curl/bin"
-                ]) { 
-            
+                ]) {
+
             dir('libsovtoken/build_scripts/ios/mac/') {
-                
+
                 stage('mac.01.libindy.setup') {
                     sh './mac.01.env.setup.sh'
                 }
-                
+
                 stage('mac.14.libsovtoken.build.sh') {
                     sh "./mac.14.libsovtoken.build.sh"
                 }
             }
-            
+
             dir('libsovtoken') {
-                stage('Upload libsovtoken universal package to Evernym repo') {
+                stage('Upload libsovtoken universal package to Sovrin repo') {
                     String pkgName
                     def repoUrl
                     pkgName = utils.shStdout("ls ${packageName}*.zip")
-                    logger.info("Uploading libsovtoken package '$pkgName' to evernym repo")
+                    logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
-                    
-                    evernymRepo.upload {
-                        repoDistr = 'ios'
+
+                    sovrinRepo.uploadBlob {
+                        component = 'rc'
                         packagePath = pkgName
+                        packageName = 'libsovtoken'
+                        systemType = 'ios'
                     }
                 }
             }
