@@ -1,4 +1,3 @@
-extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
 extern crate indyrs as indy;                      // lib-sdk project

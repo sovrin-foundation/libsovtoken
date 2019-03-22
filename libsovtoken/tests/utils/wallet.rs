@@ -2,7 +2,6 @@
  * A set of test helpers dealing with the wallet.
  */
 
-extern crate env_logger;
 extern crate indyrs as indy;
 extern crate sovtoken;
 

@@ -3,7 +3,6 @@
 
 
 extern crate bs58;
-extern crate env_logger;
 extern crate libc;
 extern crate rand;
 

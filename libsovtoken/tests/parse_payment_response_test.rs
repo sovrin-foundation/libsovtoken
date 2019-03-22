@@ -1,4 +1,3 @@
-extern crate env_logger;
 extern crate indyrs as indy;
 extern crate libc;
 extern crate serde_json;
