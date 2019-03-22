@@ -21,7 +21,7 @@ check_defined = $(if $(value $1),, $(error Undefined $1$(if $2,	($2))$(if $(valu
 log_var = $(info Value of $1 is [$($1)])
 
 # DOCKER ROUTINE
-LIB_IMG_NAME=evernym/dockerbase
+LIB_IMG_NAME=sovrin/dockerbase
 
 docker_env_value = $(call check_non_empty,$(shell grep '^ENV $(1)=' $(2) | cut -d '=' -f 2), \
 				   "Value for ENV $(1) not found in dockerfile $(2)")

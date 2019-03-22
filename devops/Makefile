@@ -38,10 +38,10 @@ LIBS = $(LIB_DYNAMIC) $(LIB_STATIC)
 # package related variables
 PACKAGE_NAME ?= $(LIBNAME)
 PRE_PACKAGE_GOALS := pre_package $(LIB_DYNAMIC)
-FPM_P_MAINTAINER := Evernym
-FPM_P_URL := https://github.com/evernym/libsovtoken
+FPM_P_MAINTAINER := Sovrin
+FPM_P_URL := https://github.com/sovrin-foundation/libsovtoken
 FPM_P_LICENSE := Apache License 2.0
-FPM_P_VENDOR := Evernym
+FPM_P_VENDOR := Sovrin
 FPM_P_DESCRIPTION := libsovtoken writen in Rust
 FPM_P_NAME = $(PACKAGE_NAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
@@ -50,7 +50,7 @@ FPM_P_OUTPUT_DIR = $(LIB_TARGET_DIR)
 FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 
 # docker related variables
-DOCKER_NAME ?= evernym/libsovtoken
+DOCKER_NAME ?= sovrin/libsovtoken
 LST_BASE_DOCKER_TAG ?=
 LST_CI_DOCKER_TAG ?=
 LST_ANDROID_NDK_DOCKER_TAG ?=

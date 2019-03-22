@@ -4,8 +4,8 @@
 ; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
 ;
 [subrepo]
-	remote = git@github.com:evernym/jenkins-shared.git
-	branch = devops-shared
-	commit = b5a66d849305d92b27c63a66823c98326133b125
-	parent = 8e9ced906b91c26fb41aaf92de813c02aa8f58cb
+	remote = git@github.com:sovrin-foundation/aws-codebuild-pipeline-plugin.git
+	branch = master
+	commit = 54befadc69efa4ebd82908fe1cff56cba4858a05
+	parent = 60e81af3f38b3c0d1691e363b472ccd3f828d559
 	cmdver = 0.3.1
