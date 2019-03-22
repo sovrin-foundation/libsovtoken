@@ -1,9 +1,7 @@
 //!
 use std::sync::mpsc::Receiver;
 
-use utils::ErrorCode;
-
-pub struct ResultHandler {}
+use ErrorCode;
 
 macro_rules! try_err {
     ($x:ident) => {
@@ -12,6 +10,8 @@ macro_rules! try_err {
         }
     }
 }
+
+pub struct ResultHandler {}
 
 fn map_recv_channel_error_error_code(err: ::std::sync::mpsc::RecvError) -> ErrorCode {
     warn!("Channel returned an error - {:?}", err);
@@ -22,13 +22,11 @@ impl ResultHandler {
     pub fn empty(err: ErrorCode, receiver: Receiver<ErrorCode>) -> Result<(), ErrorCode> {
         try_err!(err);
 
-        match receiver.recv().map_err(map_recv_channel_error_error_code) {
-            Ok(err) => {
-                try_err!(err);
-                Ok(())
-            }
-            Err(e) => Err(e)
-        }
+        let err = receiver.recv().map_err(map_recv_channel_error_error_code)?;
+
+        try_err!(err);
+
+        Ok(())
     }
 
     pub fn one<T>(err: ErrorCode, receiver: Receiver<(ErrorCode, T)>) -> Result<T, ErrorCode> {

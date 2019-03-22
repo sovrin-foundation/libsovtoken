@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 
-use sovtoken::utils::ErrorCode;
+use sovtoken::ErrorCode;
 use sovtoken::utils::json_conversion::JsonDeserialize;
 use sovtoken::logic::request::Request;
 use sovtoken::logic::config::output_mint_config::MintRequest;
@@ -13,7 +13,7 @@ use utils;
 
 use indy::future::Future;
 
-pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, trustee_dids: &Vec<&str>) -> Result<utils::parse_mint_response::ParseMintResponse, indy::ErrorCode> {
+pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, trustee_dids: &Vec<&str>) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
     let vec_outputs:Vec<HashMap<&str, serde_json::Value>> = cfg.iter().map(|(pa, am)| {
         let mut map = HashMap::new();
         map.insert("recipient", serde_json::Value::String(pa.clone()));

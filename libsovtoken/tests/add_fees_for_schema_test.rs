@@ -3,14 +3,16 @@
 extern crate indyrs as indy;
 extern crate sovtoken;
 
-mod utils;
 use std::{thread, time};
 use std::collections::HashMap;
+
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
 use sovtoken::utils::random::rand_string;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
-
-use indy::future::Future;
+mod utils;
 
 fn send_schema_with_fees(did: &str,
                          name: &str,
@@ -98,7 +100,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     }]).to_string();
 
     let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_1, None).unwrap_err();
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([{
         "recipient": addresses[0],
@@ -106,7 +108,7 @@ pub fn build_and_submit_schema_with_fees_insufficient_funds() {
     }]).to_string();
 
     let parsed_err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_2, None).unwrap_err();
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentExtraFundsError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -137,7 +139,7 @@ pub fn build_and_submit_schema_with_fees_double_spend() {
     send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap();
 
     let err = send_schema_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
-    assert_eq!(err.error_code, indy::ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 
@@ -178,7 +180,7 @@ pub fn build_and_submit_schema_with_fees_twice_and_check_utxo_remain_unspent() {
 
     let err = send_schema_with_fees(dids[0], name.as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None).unwrap_err();
 
-    assert_eq!(err.error_code, indy::ErrorCode::CommonInvalidStructure);
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2)

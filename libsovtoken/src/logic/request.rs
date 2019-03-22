@@ -6,7 +6,7 @@ use serde_json;
 use std::ffi::CString;
 
 use logic::type_aliases::{ProtocolVersion, ReqId};
-use utils::{IndyHandle, ErrorCode};
+use {IndyHandle, ErrorCode};
 use utils::constants::general::PROTOCOL_VERSION;
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::json_conversion::JsonSerialize;

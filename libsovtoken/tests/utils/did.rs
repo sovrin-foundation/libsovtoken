@@ -6,8 +6,8 @@ use indy::future::Future;
 type DidAndVerKey = (String, String);
 
 
-//impl From<indy::ErrorCode> for ErrorCode {
-//    fn from(item: indy::ErrorCode) -> Self {
+//impl From<ErrorCode> for ErrorCode {
+//    fn from(item: ErrorCode) -> Self {
 //        item as ErrorCode
 //    }
 //}

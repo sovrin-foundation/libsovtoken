@@ -1,7 +1,7 @@
 //!  Base58 helper functions
 
 
-use utils::ErrorCode;
+use ErrorCode;
 use bs58;
 use bs58::decode::DecodeError;
 /**

@@ -11,7 +11,8 @@ use std::ffi::CString;
 use std::ptr;
 use std::sync::mpsc::{Receiver};
 use std::time::Duration;
-use sovtoken::utils::ErrorCode;
+
+use sovtoken::ErrorCode;
 use sovtoken::utils::ffi_support;
 use sovtoken::utils::test::callbacks;
 

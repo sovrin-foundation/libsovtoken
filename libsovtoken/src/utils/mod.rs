@@ -25,8 +25,3 @@ pub mod sequence;
 pub mod results;
 #[cfg(any(test, feature = "integration"))]
 pub mod test;
-
-pub type IndyHandle = i32;
-
-pub use indy::ErrorCode;
-

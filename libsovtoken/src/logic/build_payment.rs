@@ -8,7 +8,7 @@ use logic::input::Inputs;
 use logic::output::Outputs;
 use logic::xfer_payload::XferPayload;
 use utils::base58::{IntoBase58, FromBase58};
-use utils::ErrorCode;
+use ErrorCode;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
 
 
@@ -92,7 +92,7 @@ mod test_deserialize_inputs {
 
     use libc::c_char;
     use std::ptr;
-    use utils::ErrorCode;
+    use ErrorCode;
     use utils::test::default;
 
     use super::{
@@ -171,7 +171,7 @@ mod test_deserialize_inputs {
 mod test_handle_signing {
     use super::*;
     use logic::request::Request;
-    use utils::ErrorCode;
+    use ErrorCode;
     use utils::results::ResultHandler;
     use utils::test::{default, callbacks};
 

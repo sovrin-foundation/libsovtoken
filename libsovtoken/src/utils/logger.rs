@@ -10,7 +10,7 @@ use log;
 use log::{Record, Metadata, LevelFilter};
 
 use logic::indy_sdk_api;
-use utils::ErrorCode;
+use ErrorCode;
 
 pub struct SovtokenLogger {
     context: *const c_void,

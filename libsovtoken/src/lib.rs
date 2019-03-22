@@ -53,3 +53,5 @@ pub mod utils;
 pub mod api;
 pub mod logic;
 pub mod libraries;
+
+pub use indy::{ErrorCode, IndyHandle};

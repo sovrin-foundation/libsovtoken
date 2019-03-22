@@ -11,9 +11,12 @@ extern crate bs58;
 use std::ptr;
 use std::ffi::CString;
 use std::os::raw::c_char;
+
+use indy::future::Future;
+
 use sovtoken::logic::address;
 use sovtoken::logic::parsers::common::TXO;
-use sovtoken::utils::ErrorCode;
+use sovtoken::ErrorCode;
 use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use sovtoken::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
@@ -23,7 +26,6 @@ mod utils;
 use utils::wallet::Wallet;
 use utils::setup::{SetupConfig, Setup};
 
-use indy::future::Future;
 
 // ***** HELPER METHODS *****
 extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: i32, _payment_req: *const c_char) -> i32 {
@@ -195,7 +197,7 @@ fn success_signed_request() {
 
     assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);
 
-    let request_string = ResultHandler::one(indy::ErrorCode::Success, receiver).unwrap();
+    let request_string = ResultHandler::one(ErrorCode::Success, receiver).unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);
@@ -360,7 +362,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_1).unwrap_err();
-    assert_eq!(res.error_code, indy::ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(res.error_code, ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([
         {
@@ -374,7 +376,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_2).unwrap_err();
-    assert_eq!(res.error_code, indy::ErrorCode::PaymentExtraFundsError);
+    assert_eq!(res.error_code, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -410,7 +412,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "amount": 20
     }]).to_string();
     let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap_err();
-    assert_eq!(err.error_code, indy::ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
@@ -435,7 +437,7 @@ pub fn build_payment_with_invalid_utxo() {
     ]).to_string();
 
     let err = indy::payments::build_payment_req(wallet.handle, Some(&did), &inputs, &outputs, None).wait().unwrap_err();
-    assert_eq!(err.error_code, indy::ErrorCode::CommonInvalidStructure);
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure);
 }
 
 pub fn build_payment_req_for_not_owned_payment_address() {
@@ -464,5 +466,5 @@ pub fn build_payment_req_for_not_owned_payment_address() {
     ]).to_string();
 
     let err = indy::payments::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).wait().unwrap_err();
-    assert_eq!(err.error_code, indy::ErrorCode::WalletItemNotFound);
+    assert_eq!(err.error_code, ErrorCode::WalletItemNotFound);
 }

@@ -1,7 +1,7 @@
 //!  what does this module do?
 
 use openssl::hash::{hash, MessageDigest, Hasher, DigestBytes};
-use utils::ErrorCode;
+use ErrorCode;
 
 pub const HASH_OUTPUT_LEN: usize = 32;
 

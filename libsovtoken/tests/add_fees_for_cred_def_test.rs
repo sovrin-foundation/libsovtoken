@@ -7,14 +7,14 @@ extern crate sovtoken;
 
 use std::{thread, time};
 use std::collections::HashMap;
-use sovtoken::utils::random::rand_string;
-
-mod utils;
-
-use utils::setup::{Setup, SetupConfig};
-use utils::wallet::Wallet;
 
 use indy::future::Future;
+
+use sovtoken::ErrorCode;
+use sovtoken::utils::random::rand_string;
+mod utils;
+use utils::setup::{Setup, SetupConfig};
+use utils::wallet::Wallet;
 
 fn send_cred_def_with_fees(did: &str,
                            name: &str,
@@ -138,7 +138,7 @@ pub fn build_and_submit_cred_def_with_fees_insufficient_funds() {
     }]).to_string();
 
     let parsed_err = send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_1, None, None).unwrap_err();
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([{
         "recipient": addresses[0],
@@ -146,7 +146,7 @@ pub fn build_and_submit_cred_def_with_fees_insufficient_funds() {
     }]).to_string();
 
     let parsed_err = send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs_2, None, None).unwrap_err();
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentExtraFundsError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -177,7 +177,7 @@ pub fn build_and_submit_cred_def_with_fees_double_spend() {
     send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None, None).unwrap();
 
     let parsed_err = send_cred_def_with_fees(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None, None).unwrap_err();
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -207,7 +207,7 @@ pub fn build_and_submit_cred_def_with_fees_twice_and_check_utxo_remain_unspent()
 
     let schema = Some(create_schema_json(dids[0], rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle));
     let parsed_err = send_cred_def_with_fees(&did_new, rand_string(3).as_str(), SCHEMA_VERSION, GVT_SCHEMA_ATTRIBUTES, wallet.handle, pool_handle, &inputs, &outputs, None, schema).unwrap_err();
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::CommonInvalidStructure);
+    assert_eq!(parsed_err.error_code, ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2);

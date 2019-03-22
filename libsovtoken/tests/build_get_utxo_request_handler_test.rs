@@ -3,13 +3,14 @@
 extern crate sovtoken;
 extern crate indyrs as indy;
 
+use indy::future::Future;
+
 mod utils;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 use sovtoken::logic::address::strip_qualifier_from_address;
 use sovtoken::logic::address::verkey_from_unqualified_address;
 
-use indy::future::Future;
 
 #[test]
 pub fn build_and_submit_get_utxo_request() {

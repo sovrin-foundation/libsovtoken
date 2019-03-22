@@ -5,6 +5,8 @@ extern crate serde_derive;
 extern crate sovtoken;
 extern crate indyrs as indy;
 
+use indy::future::Future;
+
 pub mod utils;
 
 use sovtoken::utils::results::ResultHandler;
@@ -12,10 +14,8 @@ use sovtoken::utils::test::callbacks;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
+use sovtoken::{ErrorCode, IndyHandle};
 use utils::wallet::Wallet;
-
-use indy::{ErrorCode, IndyHandle};
-use indy::future::Future;
 
 
 fn call_add_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
@@ -184,7 +184,7 @@ fn test_add_fees_to_request_valid_from_libindy_for_not_owned_payment_address() {
     }]);
 
     let err = indy::payments::add_request_fees(wallet_2.handle, Some(dids[0]), &fake_request.to_string(), &inputs.to_string(), &outputs.to_string(), None).wait().unwrap_err();
-    assert_eq!(err.error_code, indy::ErrorCode::WalletItemNotFound);
+    assert_eq!(err.error_code, ErrorCode::WalletItemNotFound);
 }
 
 #[test]
@@ -208,5 +208,5 @@ fn build_add_fees_to_request_works_for_invalid_utxo() {
 
     let err = indy::payments::add_request_fees(wallet.handle, Some(&did), &fake_request, &inputs, &outputs, None).wait().unwrap_err();
 
-    assert_eq!(err.error_code, indy::ErrorCode::CommonInvalidStructure)
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure)
 }

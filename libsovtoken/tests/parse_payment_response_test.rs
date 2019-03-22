@@ -6,6 +6,8 @@ extern crate sovtoken;
 
 use indy::future::Future;
 
+use sovtoken::ErrorCode;
+
 static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
     "op": "REPLY",
     "protocolVersion": 2,
@@ -90,5 +92,5 @@ pub fn parse_payment_response_works() {
 pub fn parse_payment_response_works_for_invalid() {
     sovtoken::api::sovtoken_init();
     let resp = indy::payments::parse_payment_response("sov", "123").wait().unwrap_err();
-    assert_eq!(resp.error_code, indy::ErrorCode::CommonInvalidStructure);
+    assert_eq!(resp.error_code, ErrorCode::CommonInvalidStructure);
 }

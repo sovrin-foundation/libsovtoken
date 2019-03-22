@@ -20,13 +20,13 @@ use std::ptr;
 use std::ffi::CString;
 use std::time::Duration;
 
+use indy::future::Future;
+
 use sovtoken::logic::config::payment_address_config::PaymentAddressConfig;
 use sovtoken::logic::address::unqualified_address_from_address;
 use sovtoken::utils::test::callbacks;
-use sovtoken::utils::ErrorCode;
+use sovtoken::ErrorCode;
 mod utils;
-
-use indy::future::Future;
 
 // ***** HELPER TEST DATA  *****
 const WALLET_ID: i32 = 99;
@@ -158,5 +158,5 @@ pub fn create_address_two_times_with_the_same_seed() {
     let _pa1 = indy::payments::create_payment_address(wallet.handle, "sov", &seed).wait().unwrap();
     let err = indy::payments::create_payment_address(wallet.handle, "sov", &seed).wait().unwrap_err();
 
-    assert_eq!(err.error_code, indy::ErrorCode::WalletItemAlreadyExists);
+    assert_eq!(err.error_code, ErrorCode::WalletItemAlreadyExists);
 }

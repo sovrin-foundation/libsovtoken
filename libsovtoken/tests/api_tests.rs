@@ -4,7 +4,7 @@
 extern crate sovtoken;
 
 use sovtoken::api::sovtoken_init;
-use sovtoken::utils::ErrorCode;
+use sovtoken::ErrorCode;
 
 
 #[test]

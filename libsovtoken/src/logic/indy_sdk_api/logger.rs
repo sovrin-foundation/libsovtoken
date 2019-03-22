@@ -1,4 +1,4 @@
-use utils::ErrorCode;
+use ErrorCode;
 
 use libc::c_void;
 use indy_sys::logger::{EnabledCB, LogCB, FlushCB};

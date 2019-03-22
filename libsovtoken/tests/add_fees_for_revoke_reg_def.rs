@@ -8,14 +8,13 @@ extern crate indyrs as indy;
 use std::{thread, time};
 use std::collections::HashMap;
 
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
 use sovtoken::utils::random::rand_string;
-
-mod utils;
-
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
-
-use indy::future::Future;
+mod utils;
 
 pub const SCHEMA_VERSION: &'static str = "1.0";
 pub const GVT_SCHEMA_ATTRIBUTES: &'static str = r#"["name", "age", "sex", "height"]"#;
@@ -197,7 +196,7 @@ pub fn build_and_submit_revoc_reg_def_works_with_fees_and_spent_utxo() {
                                                   pool_handle,
                                                   None).unwrap_err();
 
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -236,5 +235,5 @@ pub fn build_and_submit_revoc_reg_def_works_with_fees_and_insufficient_funds() {
                                                   pool_handle,
                                                   None).unwrap_err();
 
-    assert_eq!(parsed_err.error_code, indy::ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(parsed_err.error_code, ErrorCode::PaymentInsufficientFundsError);
 }

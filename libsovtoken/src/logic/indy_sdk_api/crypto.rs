@@ -1,4 +1,4 @@
-use utils::{ErrorCode, IndyHandle};
+use {ErrorCode, IndyHandle};
 
 use std::ffi::CString;
 

@@ -1,4 +1,4 @@
-use utils::ErrorCode;
+use ErrorCode;
 
 const INSUFFICIENT_FUNDS_ERROR: &str = "InsufficientFundsError";
 const EXTRA_FUNDS_ERROR: &str = "ExtraFundsError";

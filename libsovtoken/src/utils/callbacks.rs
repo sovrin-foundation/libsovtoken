@@ -12,7 +12,7 @@ use indy_sys::{ResponseEmptyCB,
                ResponseStringCB,
                ResponseSliceCB};
 
-use utils::{ErrorCode, IndyHandle};
+use {ErrorCode, IndyHandle};
 use utils::sequence::SequenceUtils;
 
 fn log_error<T: Display>(e: T) {

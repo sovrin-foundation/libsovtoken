@@ -13,7 +13,9 @@ use libc::c_char;
 use std::ptr;
 use std::ffi::CString;
 
-use sovtoken::utils::ErrorCode;
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
 use sovtoken::utils::constants::txn_fields::OUTPUTS;
@@ -27,8 +29,6 @@ mod utils;
 use utils::wallet::Wallet;
 use utils::parse_mint_response::ParseMintResponse;
 use utils::setup::{Setup, SetupConfig};
-
-use indy::future::Future;
 
 // ***** HELPER METHODS *****
 

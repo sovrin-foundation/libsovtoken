@@ -10,6 +10,7 @@
 
 use std::ffi::CString;
 use std::os::raw::c_char;
+
 use indy_sys;
 
 use logic::api_internals::{
@@ -40,7 +41,7 @@ use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
-use utils::ErrorCode;
+use ErrorCode;
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};

@@ -5,13 +5,15 @@ extern crate indyrs as indy;
 
 use std::{thread, time};
 
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
 use sovtoken::logic::parsers::common::TXO;
 
 mod utils;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 
-use indy::future::Future;
 
 fn sleep(msec: u64) {
     let ms = time::Duration::from_millis(msec);
@@ -186,7 +188,7 @@ pub fn build_and_submit_verify_req_for_unexistant_utxo() {
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
     let err = indy::payments::parse_verify_payment_response(&payment_method, &res).wait().unwrap_err();
 
-    assert_eq!(err.error_code, indy::ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -199,5 +201,5 @@ fn build_verify_req_works_for_invalid_utxo() {
 
     let err = indy::payments::build_verify_payment_req(wallet.handle, Some(&did), receipt).wait().unwrap_err();
 
-    assert_eq!(err.error_code, indy::ErrorCode::CommonInvalidStructure)
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure)
 }

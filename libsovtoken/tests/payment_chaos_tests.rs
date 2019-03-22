@@ -5,11 +5,13 @@ extern crate indyrs as indy;                      // lib-sdk project
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
+
 pub mod utils;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
-
-use indy::future::Future;
 
 // ------------------------------------------------------------------------------------------------
 #[test]
@@ -39,7 +41,7 @@ pub fn pay_without_outputs_fails() {
     ]).to_string();
 
     let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
-    assert_eq!(ec.error_code, indy::ErrorCode::CommonInvalidStructure);
+    assert_eq!(ec.error_code, ErrorCode::CommonInvalidStructure);
 
 }
 
@@ -72,7 +74,7 @@ pub fn pay_without_inputs_fails() {
     ]).to_string();
 
     let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
-    assert_eq!(ec.error_code, indy::ErrorCode::CommonInvalidStructure);
+    assert_eq!(ec.error_code, ErrorCode::CommonInvalidStructure);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -105,7 +107,7 @@ pub fn pay_from_non_existent_payment_source_fails() {
     ]).to_string();
 
     let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
-    assert_eq!(ec.error_code, indy::ErrorCode::WalletItemNotFound);
+    assert_eq!(ec.error_code, ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -140,7 +142,7 @@ pub fn pay_from_existent_and_non_existent_payment_source_fails() {
     ]).to_string();
 
     let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
-    assert_eq!(ec.error_code, indy::ErrorCode::WalletItemNotFound);
+    assert_eq!(ec.error_code, ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------

@@ -14,8 +14,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
 
-use utils::IndyHandle;
-use utils::ErrorCode;
+use IndyHandle;
+use ErrorCode;
 
 use logic::address;
 use logic::indy_sdk_api::crypto_api::CryptoAPI;
