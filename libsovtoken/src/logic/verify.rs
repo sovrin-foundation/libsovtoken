@@ -1,6 +1,6 @@
 use libc::c_char;
 
-use indy::ErrorCode;
+use ErrorCode;
 use logic::did::Did;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;

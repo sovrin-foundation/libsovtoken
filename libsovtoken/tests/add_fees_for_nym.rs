@@ -1,12 +1,16 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate indy;
+extern crate indyrs as indy;
 extern crate sovtoken;
+
+use std::collections::HashMap;
+
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
 
 mod utils;
 
-use indy::ErrorCode;
-use std::collections::HashMap;
 use utils::payment::get_utxo;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
@@ -36,21 +40,21 @@ pub fn build_and_submit_nym_with_fees() {
         "amount": 9
     }]).to_string();
 
-    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new, verkey_new) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).unwrap();
-    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
-    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
-    let parsed_resp = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap();
+    let nym_req = indy::ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).wait().unwrap();
+    let nym_req_signed = indy::ledger::sign_request(wallet.handle, dids[0], &nym_req).wait().unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).wait().unwrap();
+    let nym_resp = indy::ledger::submit_request(pool_handle, &nym_req_with_fees).wait().unwrap();
+    let parsed_resp = indy::payments::parse_response_with_fees(&pm, &nym_resp).wait().unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
     assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
     assert_eq!(parsed_resp_json[0].get("recipient").unwrap().as_str().unwrap(), addresses[0]);
 
-    let get_nym_req = indy::ledger::Ledger::build_get_nym_request(Some(dids[0]), &did_new).unwrap();
-    let get_nym_resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_nym_req).unwrap();
+    let get_nym_req = indy::ledger::build_get_nym_request(Some(dids[0]), &did_new).wait().unwrap();
+    let get_nym_resp = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_nym_req).wait().unwrap();
     let get_nym_resp_json: serde_json::Value = serde_json::from_str(&get_nym_resp).unwrap();
     assert!(get_nym_resp_json.as_object().unwrap().get("result").unwrap().as_object().unwrap().get("data").is_some());
 }
@@ -80,14 +84,14 @@ pub fn build_and_submit_nym_with_fees_insufficient_funds() {
         "amount": 9
     }]).to_string();
 
-    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new, verkey_new) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).unwrap();
-    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
-    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
-    let err = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentInsufficientFundsError);
+    let nym_req = indy::ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).wait().unwrap();
+    let nym_req_signed = indy::ledger::sign_request(wallet.handle, dids[0], &nym_req).wait().unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).wait().unwrap();
+    let nym_resp = indy::ledger::submit_request(pool_handle, &nym_req_with_fees).wait().unwrap();
+    let err = indy::payments::parse_response_with_fees(&pm, &nym_resp).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::PaymentInsufficientFundsError);
 }
 
 #[test]
@@ -103,12 +107,12 @@ pub fn build_and_submit_nym_with_no_fees() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new, verkey_new) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).unwrap();
-    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
-    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_signed).unwrap();
-    let resp = indy::payments::Payment::parse_response_with_fees("sov", &nym_resp).unwrap();
+    let nym_req = indy::ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).wait().unwrap();
+    let nym_req_signed = indy::ledger::sign_request(wallet.handle, dids[0], &nym_req).wait().unwrap();
+    let nym_resp = indy::ledger::submit_request(pool_handle, &nym_req_signed).wait().unwrap();
+    let resp = indy::payments::parse_response_with_fees("sov", &nym_resp).wait().unwrap();
     assert_eq!(resp, json!([]).to_string());
 }
 
@@ -137,22 +141,22 @@ pub fn build_and_submit_nym_with_fees_utxo_already_spent() {
         "amount": 9
     }]).to_string();
 
-    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new, verkey_new) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).unwrap();
-    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
-    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
-    indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap();
+    let nym_req = indy::ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).wait().unwrap();
+    let nym_req_signed = indy::ledger::sign_request(wallet.handle, dids[0], &nym_req).wait().unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).wait().unwrap();
+    let nym_resp = indy::ledger::submit_request(pool_handle, &nym_req_with_fees).wait().unwrap();
+    indy::payments::parse_response_with_fees(&pm, &nym_resp).wait().unwrap();
 
-    let (did_new_2, verkey_new_2) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new_2, verkey_new_2) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new_2,  Some(&verkey_new_2), None, None).unwrap();
-    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
-    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
-    let err = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
+    let nym_req = indy::ledger::build_nym_request(dids[0], &did_new_2,  Some(&verkey_new_2), None, None).wait().unwrap();
+    let nym_req_signed = indy::ledger::sign_request(wallet.handle, dids[0], &nym_req).wait().unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).wait().unwrap();
+    let nym_resp = indy::ledger::submit_request(pool_handle, &nym_req_with_fees).wait().unwrap();
+    let err = indy::payments::parse_response_with_fees(&pm, &nym_resp).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -180,13 +184,13 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
         "amount": 9
     }]).to_string();
 
-    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new, verkey_new) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).unwrap();
-    let nym_req_signed = indy::ledger::Ledger::sign_request(wallet.handle, dids[0], &nym_req).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).unwrap();
-    let nym_resp = indy::ledger::Ledger::submit_request(pool_handle, &nym_req_with_fees).unwrap();
-    let parsed_resp = indy::payments::Payment::parse_response_with_fees(&pm, &nym_resp).unwrap();
+    let nym_req = indy::ledger::build_nym_request(dids[0], &did_new,  Some(&verkey_new), None, None).wait().unwrap();
+    let nym_req_signed = indy::ledger::sign_request(wallet.handle, dids[0], &nym_req).wait().unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_signed, &inputs, &outputs, None).wait().unwrap();
+    let nym_resp = indy::ledger::submit_request(pool_handle, &nym_req_with_fees).wait().unwrap();
+    let parsed_resp = indy::payments::parse_response_with_fees(&pm, &nym_resp).wait().unwrap();
 
     let parsed_resp_json: Vec<HashMap<String, serde_json::Value>> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_resp_json.len(), 1);
@@ -225,14 +229,14 @@ pub fn build_and_submit_nym_with_fees_from_invalid_did_and_check_utxo_remain_uns
         "amount": 9
     }]).to_string();
 
-    let (did_new, verkey_new) = indy::did::Did::new(wallet.handle, "{}").unwrap();
-    let (did_new_2, _) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new, verkey_new) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
+    let (did_new_2, _) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req = indy::ledger::Ledger::build_nym_request(&did_new_2, &did_new,  Some(&verkey_new), None, None).unwrap();
-    let (nym_req_with_fees, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req, &inputs, &outputs, None).unwrap();
-    let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees).unwrap();
-    let err = indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap_err();
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    let nym_req = indy::ledger::build_nym_request(&did_new_2, &did_new,  Some(&verkey_new), None, None).wait().unwrap();
+    let (nym_req_with_fees, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req, &inputs, &outputs, None).wait().unwrap();
+    let resp = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees).wait().unwrap();
+    let err = indy::payments::parse_response_with_fees(&pm, &resp).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure);
 
     let utxo_2 = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &addresses[0]);
     assert_eq!(utxo, utxo_2);
@@ -268,13 +272,13 @@ pub fn build_and_submit_nym_with_fees_from_other_nym_txn() {
     // User 1 generates fees for his nym and sends it to the ledger
     // Malicious node gets the request from user, fetches fees from it and sends its own nym with that fees
     // It should not be accepted by other nodes and nym from user should be written
-    let (did_new_1, verkey_new_1) = indy::did::Did::new(wallet.handle, "{}").unwrap();
-    let (did_new_2, verkey_new_2) = indy::did::Did::new(wallet.handle, "{}").unwrap();
+    let (did_new_1, verkey_new_1) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
+    let (did_new_2, verkey_new_2) = indy::did::create_and_store_my_did(wallet.handle, "{}").wait().unwrap();
 
-    let nym_req_1 = indy::ledger::Ledger::build_nym_request(dids[0], &did_new_1,  Some(&verkey_new_1), None, None).unwrap();
-    let nym_req_2 = indy::ledger::Ledger::build_nym_request(dids[1], &did_new_2,  Some(&verkey_new_2), None, None).unwrap();
+    let nym_req_1 = indy::ledger::build_nym_request(dids[0], &did_new_1,  Some(&verkey_new_1), None, None).wait().unwrap();
+    let nym_req_2 = indy::ledger::build_nym_request(dids[1], &did_new_2,  Some(&verkey_new_2), None, None).wait().unwrap();
 
-    let (nym_req_with_fees_1, pm) = indy::payments::Payment::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_1, &inputs, &outputs, None).unwrap();
+    let (nym_req_with_fees_1, pm) = indy::payments::add_request_fees(wallet.handle, Some(dids[0]), &nym_req_1, &inputs, &outputs, None).wait().unwrap();
 
     let nym_req_with_fees_1_parsed = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&nym_req_with_fees_1).unwrap();
     let fees: &serde_json::Value = nym_req_with_fees_1_parsed.get("fees").unwrap();
@@ -283,10 +287,10 @@ pub fn build_and_submit_nym_with_fees_from_other_nym_txn() {
     nym_req_without_fees.insert("fees".to_string(), fees.clone());
     let nym_req_with_fees_2 = serde_json::to_string(&nym_req_without_fees).unwrap();
 
-    let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[1], &nym_req_with_fees_2).unwrap();
-    let err = indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap_err();
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    let resp = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[1], &nym_req_with_fees_2).wait().unwrap();
+    let err = indy::payments::parse_response_with_fees(&pm, &resp).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure);
 
-    let resp = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees_1).unwrap();
-    indy::payments::Payment::parse_response_with_fees(&pm, &resp).unwrap();
+    let resp = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &nym_req_with_fees_1).wait().unwrap();
+    indy::payments::parse_response_with_fees(&pm, &resp).wait().unwrap();
 }

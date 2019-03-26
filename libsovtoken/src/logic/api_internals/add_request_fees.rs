@@ -1,6 +1,6 @@
 //! TODO ???
 
-use indy::ErrorCode;
+use ErrorCode;
 use libc::c_char;
 use logic::xfer_payload::{XferPayload, serialize_signature};
 use logic::input::Inputs;
@@ -164,7 +164,7 @@ fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Opti
 #[cfg(test)]
 mod test_deserialize_inputs {
     use libc::c_char;
-    use indy::ErrorCode;
+    use ErrorCode;
     use serde_json;
     use std::ptr;
     use utils::constants::txn_types::XFER_PUBLIC;

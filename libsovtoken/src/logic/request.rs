@@ -1,16 +1,18 @@
 //!
 //!
+use libc::c_char;
 use serde::Serialize;
 use serde_json;
 use std::ffi::CString;
-use libc::c_char;
-use indy::{IndyHandle, ErrorCode, ledger::Ledger};
 
-use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
-use utils::random::rand_req_id;
-use utils::json_conversion::JsonSerialize;
-use utils::constants::general::PROTOCOL_VERSION;
 use logic::type_aliases::{ProtocolVersion, ReqId};
+use {IndyHandle, ErrorCode};
+use utils::constants::general::PROTOCOL_VERSION;
+use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
+use utils::json_conversion::JsonSerialize;
+use utils::random::rand_req_id;
+
+use logic::indy_sdk_api::ledger;
 
 pub const DEFAULT_LIBSOVTOKEN_DID: &'static str = "LibsovtokenDid11111111";
 
@@ -22,20 +24,20 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
-    pub identifier : String,
+    pub identifier: String,
 }
 
-impl<T> Request<T> 
+impl<T> Request<T>
     where T: Serialize
 {
-    pub fn new(operation: T, identifier : Option<String>) -> Self {
+    pub fn new(operation: T, identifier: Option<String>) -> Self {
         let req_id = rand_req_id();
         return Request {
             operation,
             protocol_version: PROTOCOL_VERSION,
             req_id,
             identifier: identifier.unwrap_or(DEFAULT_LIBSOVTOKEN_DID.to_string())
-        }
+        };
     }
 
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {
@@ -54,8 +56,9 @@ impl<T> Request<T>
 
     pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
         let mut signed_req: String = req.to_string();
+
         for did in dids {
-            signed_req = Ledger::multi_sign_request(wallet_handle, did, &signed_req)?;
+            signed_req = ledger::Ledger::multi_sign_request(wallet_handle, did, &signed_req)?;
         }
         Ok(signed_req)
     }
