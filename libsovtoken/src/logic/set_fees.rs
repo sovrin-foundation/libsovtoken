@@ -1,6 +1,6 @@
 //! This module is for ???
 
-use indy::ErrorCode;
+use ErrorCode;
 use libc::c_char;
 use logic::config::set_fees_config::{SetFees, SetFeesMap};
 use logic::did::Did;

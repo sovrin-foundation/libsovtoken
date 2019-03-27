@@ -1,25 +1,25 @@
-extern crate env_logger;
 extern crate libc;
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
+extern crate indyrs as indy;                      // lib-sdk project
 extern crate bs58;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 
-use indy::ErrorCode;
-use indy::utils::results::ResultHandler;
-use libc::c_char;
-use sovtoken::logic::address;
-use sovtoken::logic::parsers::common::TXO;
-use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
-use sovtoken::utils::ffi_support::c_pointer_from_string;
-use sovtoken::utils::test::callbacks;
 use std::ptr;
 use std::ffi::CString;
-use std::time::Duration;
-use std::sync::mpsc::channel;
+use std::os::raw::c_char;
+
+use indy::future::Future;
+
+use sovtoken::logic::address;
+use sovtoken::logic::parsers::common::TXO;
+use sovtoken::ErrorCode;
+use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
+use sovtoken::utils::results::ResultHandler;
+use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::test::callbacks;
 
 mod utils;
 use utils::wallet::Wallet;
@@ -64,11 +64,11 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
 }
 
 fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
-                            inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
-    let (req, method) = indy::payments::Payment::build_payment_req(wallet_handle,
-                                                                   Some(did), inputs, outputs, None).unwrap();
-    let res = indy::ledger::Ledger::submit_request(pool_handle, &req).unwrap();
-    indy::payments::Payment::parse_payment_response(&method, &res)
+                            inputs: &str, outputs: &str) -> Result<String, indy::IndyError> {
+    let (req, method) = indy::payments::build_payment_req(wallet_handle,
+                                                                   Some(did), inputs, outputs, None).wait().unwrap();
+    let res = indy::ledger::submit_request(pool_handle, &req).wait().unwrap();
+    indy::payments::parse_payment_response(&method, &res).wait()
 }
 
 // ***** UNIT TESTS ****
@@ -182,7 +182,6 @@ fn success_signed_request() {
 
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
-
     trace!("Calling build_payment_req");
 
     let error_code = sovtoken::api::build_payment_req_handler(
@@ -209,7 +208,7 @@ fn success_signed_request() {
     assert!(request.get("reqId").is_some());
 }
 
-#[test]
+#[test] // TODO: look carefully on changes
 fn success_signed_request_from_libindy() {
 
     sovtoken::api::sovtoken_init();
@@ -255,25 +254,15 @@ fn success_signed_request_from_libindy() {
         ]
     });
 
-    let (sender, receiver) = channel();
-
-    let closure = move|error_code, req, _| {
-        sender.send((error_code, req)).unwrap();
-    };
-
-
     trace!("Calling build_payment_req");
 
-    let _ = indy::payments::Payment::build_payment_req_async(
+    let (request_string, _) = indy::payments::build_payment_req(
         wallet.handle,
         Some(&did),
         &inputs.to_string(),
         &outputs.to_string(),
         None,
-        closure
-    );
-
-    let request_string = ResultHandler::one_timeout(ErrorCode::Success, receiver, Duration::from_secs(5)).unwrap();
+    ).wait().unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);
@@ -372,7 +361,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_1).unwrap_err();
-    assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(res.error_code, ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([
         {
@@ -386,7 +375,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_2).unwrap_err();
-    assert_eq!(res, ErrorCode::PaymentExtraFundsError);
+    assert_eq!(res.error_code, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -422,7 +411,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "amount": 20
     }]).to_string();
     let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap_err();
-    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
@@ -436,7 +425,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
 pub fn build_payment_with_invalid_utxo() {
     sovtoken::api::sovtoken_init();
     let wallet = Wallet::new();
-    let (did, _) = indy::did::Did::new(wallet.handle, &json!({"seed": "000000000000000000000000Trustee1"}).to_string()).unwrap();
+    let (did, _) = indy::did::create_and_store_my_did(wallet.handle, &json!({"seed": "000000000000000000000000Trustee1"}).to_string()).wait().unwrap();
 
     let inputs = json!(["txo:sov:1234"]).to_string();
     let outputs = json!([
@@ -446,8 +435,8 @@ pub fn build_payment_with_invalid_utxo() {
         }
     ]).to_string();
 
-    let err = indy::payments::Payment::build_payment_req(wallet.handle, Some(&did), &inputs, &outputs, None).unwrap_err();
-    assert_eq!(err, ErrorCode::CommonInvalidStructure);
+    let err = indy::payments::build_payment_req(wallet.handle, Some(&did), &inputs, &outputs, None).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure);
 }
 
 pub fn build_payment_req_for_not_owned_payment_address() {
@@ -475,6 +464,6 @@ pub fn build_payment_req_for_not_owned_payment_address() {
         }
     ]).to_string();
 
-    let err = indy::payments::Payment::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).unwrap_err();
-    assert_eq!(err, indy::ErrorCode::WalletItemNotFound);
+    let err = indy::payments::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::WalletItemNotFound);
 }

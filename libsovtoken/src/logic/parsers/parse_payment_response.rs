@@ -1,6 +1,6 @@
 //! types used for parse_payment_response_handler
 
-use indy::ErrorCode;
+use ErrorCode;
 use logic::address::add_qualifer_to_address;
 use logic::input::Inputs;
 use logic::output::Outputs;

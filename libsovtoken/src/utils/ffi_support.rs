@@ -4,7 +4,7 @@
 
 use libc::c_char;
 use std::ffi::{CString, CStr};
-use indy::ErrorCode;
+use ErrorCode;
 use utils::json_conversion::JsonDeserialize;
 
 /**
@@ -112,7 +112,7 @@ mod ffi_support_tests {
     use serde_json::Value;
     use utils::general::ResultExtension;
     use utils::ffi_support::{str_from_char_ptr, cstring_from_str, deserialize_from_char_ptr, c_pointer_from_string, string_from_char_ptr};
-    use indy::ErrorCode;
+    use ErrorCode;
 
     static VALID_DUMMY_JSON: &'static str = r#"{"field1":"data"}"#;
 
