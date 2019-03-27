@@ -10,7 +10,7 @@ use self::sovtoken::utils::random::rand_string;
 
 use indy::future::Future;
 
-static USEFUL_CREDENTIALS: &'static str = r#"
+static USEFUL_CREDENTIALS : &'static str = r#"
    {
        "key": "12345678901234567890123456789012"
    }
@@ -43,8 +43,8 @@ pub struct Wallet {
 impl Wallet {
     /* constructors */
     pub fn new() -> Wallet {
-        let wallet_name: String = rand_string(20);
-        let mut wallet = Wallet { name: wallet_name, handle: -1 };
+        let wallet_name : String = rand_string(20);
+        let mut wallet = Wallet { name : wallet_name , handle: -1 };
         wallet.create();
         wallet.open();
 
@@ -65,10 +65,9 @@ impl Wallet {
         return config.to_string();
     }
 
-    /* private instance methods for open/create/etc...*/
-
+    /* private instance methods for open/create/etc...*/    
     fn open(&mut self) -> i32 {
-        let config: String = Wallet::create_wallet_config(&self.name);
+        let config : String = Wallet::create_wallet_config(&self.name);
         let handle = wallet::open_wallet(&config, USEFUL_CREDENTIALS).wait().unwrap();
         self.handle = handle;
         return handle;
@@ -79,13 +78,13 @@ impl Wallet {
         wallet::create_wallet(&config, USEFUL_CREDENTIALS).wait().unwrap()
     }
 
-    fn close(&self) {
+    fn close(&self) -> (){
         wallet::close_wallet(self.handle).wait().unwrap()
     }
 
-    fn delete(&self) {
-        let config: String = Wallet::create_wallet_config(&self.name);
-        return wallet::delete_wallet(&config, USEFUL_CREDENTIALS).wait().unwrap();
+    fn delete(&self) -> () {
+        let config : String = Wallet::create_wallet_config(&self.name);
+        return wallet::delete_wallet(&config, USEFUL_CREDENTIALS).wait().unwrap()
     }
 }
 
