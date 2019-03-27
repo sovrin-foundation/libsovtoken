@@ -8,8 +8,13 @@ logger = sovLibrary.Logger.new(this)
 notifier = sovLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
 
+def nodeLabels = [
+        codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
+        macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
+]
+
 pipelineWrapper({
-    nodeWrapper {
+    nodeWrapper(nodeLabels.codeBuild) {
         List _envBuildSrc = [
             'devops',
             'libsovtoken/Cargo.toml',
@@ -40,7 +45,9 @@ pipelineWrapper({
         }
 
         Map builds = osnames.collectEntries { osname ->
-            [(osname): {
+            [(osname): [
+                    "nodeLabel": nodeLabels.codeBuild,
+                    "build": {
                 def buildImageTag
                 def prTag = "ci-$osname"
 
@@ -115,7 +122,7 @@ pipelineWrapper({
                         }
                     }
                 }
-            }]
+            }]]
         }
 
         stage("Build and test") {

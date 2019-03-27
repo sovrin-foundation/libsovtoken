@@ -1,7 +1,7 @@
 #!groovy
 
 def sovLibrary = library(identifier: 'sovrin-aws-codebuild@master', retriever: modernSCM(
-    github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
+        github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
 )).com.sovrin.pipeline
 
 logger = sovLibrary.Logger.new(this)
@@ -10,10 +10,21 @@ logger.setGlobalLevel('TRACE')
 notifier = sovLibrary.Notifier.new(this)
 utils = sovLibrary.Utils.new(this)
 
+String srcVersion
+
+gitHubUserCredId = env.GITHUB_BOT_USER ?: 'sovbot-github'
+sovrinPackagingRepo = env.SOVRIN_PACKAGING_REPO ?: 'https://github.com/sovrin-foundation/sovrin-packaging'
+sovrinPackagingBranch = env.SOVRIN_PACKAGING_BRANCH ?: 'master'
+
+def downloadPackagingUtils() {
+    git branch: sovrinPackagingBranch, credentialsId: gitHubUserCredId, url: sovrinPackagingRepo
+    sh "pip3 install -U plumbum deb-pkg-tools"
+}
+
 // TODO set proper labels
 def nodeLabels = [
-    codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
-    macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
+        codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
+        macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
 ]
 
 def codeBuildPipelines = {
@@ -24,13 +35,11 @@ def codeBuildPipelines = {
     env.SOVRIN_REPO_HOST = '192.168.101.193'
 
     List _envBuildSrc = [
-        'devops',
-        'libsovtoken/Cargo.toml',
-        'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
-        'libsovtoken/build_scripts/android/android_settings.txt'
+            'devops',
+            'libsovtoken/Cargo.toml',
+            'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
+            'libsovtoken/build_scripts/android/android_settings.txt'
     ]
-
-    def srcVersion
 
     stage('Checkout sources from SCM') {
         checkout scm
@@ -41,9 +50,11 @@ def codeBuildPipelines = {
     def buildCtx = sovLibrary.AwsCodeBuildHelper.BuildCtx.new('libsovtoken')
     def awsCBHelper = sovLibrary.AwsCodeBuildHelper.new(this, buildCtx)
 
-    stage('Resolve current source version') {
-        srcVersion = utils.srcVersion(projectType: 'rust')
-        logger.info("Current source version: $srcVersion")
+    if (!srcVersion) {
+        stage('Resolve current source version') {
+            srcVersion = utils.srcVersion(projectType: 'rust')
+            logger.info("Current source version: $srcVersion")
+        }
     }
 
     stage('Upload source to S3') {
@@ -69,25 +80,25 @@ def codeBuildPipelines = {
             // build spec for env image
             envBuildSrc = _envBuildSrc // TODO make more accurate
             envBuildCmds = [
-                'export PROJECT_DIR=$PWD',
-                'make -C devops image_lst_android_build'
+                    'export PROJECT_DIR=$PWD',
+                    'make -C devops image_lst_android_build'
             ]
             envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
             envBuildEnvv = [
-                [name: 'OSNAME', value: osname],
-                [name: 'LST_ANDROID_BUILD_DOCKER_TAG', value: buildImageTag],
+                    [name: 'OSNAME', value: osname],
+                    [name: 'LST_ANDROID_BUILD_DOCKER_TAG', value: buildImageTag],
             ]
 
             // env and build spec
             imageTag = buildImageTag
             buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
             envv = [
-                [name: 'OSNAME', value: osname],
-                [name: 'ANDROID_ARCHS', value: "${targetArchs.join(' ')}"],
-                [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                [name: 'PACKAGE_NAME', value: packageName],
-                [name: 'GIT_SHA1_SHORT', value: git.sha1(shortN: true)],
-                [name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*all.zip"],
+                    [name: 'OSNAME', value: osname],
+                    [name: 'ANDROID_ARCHS', value: "${targetArchs.join(' ')}"],
+                    [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                    [name: 'PACKAGE_NAME', value: packageName],
+                    [name: 'GIT_SHA1_SHORT', value: git.sha1(shortN: true)],
+                    [name: 'ARTIFACTS', value: "devops/_build/android/${packageName}*all.zip"],
             ]
 
             onArtifacts = {
@@ -104,22 +115,21 @@ def codeBuildPipelines = {
         stage('Upload android archives to Sovrin repo') {
             String archName
 
+            def scriptDir = pwd()
+
             dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
                 archName = utils.shStdout("ls $packageName*$srcVersion*all.zip")
 
                 logger.info("Uploading package '$archName' to sovrin repo")
-                sovrinRepo.uploadFile {
-                    component = 'rc'
-                    packagePath = archName
-                    packageName = 'libsovtoken'
-                    systemType = 'android'
+                withCredentials([file(credentialsId: 'SovrinRepoSSHKey', variable: 'sovrin_key')]) {
+                    sh "$scriptDir/devops/android_upload.sh $srcVersion $sovrin_key $env.BRANCH_NAME $BUILD_NUMBER libsovtoken $archName"
                 }
             }
 
             notifier.email {
                 subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new android package '$archName' was published"
                 body = ("New android package '$archName' was built and published" +
-                    '\n\nCheck console output at $BUILD_URL to view the details.')
+                        '\n\nCheck console output at $BUILD_URL to view the details.')
             }
         }
     }
@@ -133,26 +143,28 @@ def codeBuildPipelines = {
         def debPVersion
         def cratePVersion
 
-        stage('Resolve last debian revision') {
-            lastRevision = sovrinRepo.getLastRevision {
-                delegate.packageName = packageName
-                packageSrcVersion = srcVersion
-                repoDistr = 'xenial-rc'
-            }
-
-            if (lastRevision) {
-                logger.info("Found last revision number: $lastRevision")
-            } else {
-                logger.info("No previous revision was found")
-            }
-        }
+//        stage('Resolve last debian revision') {
+//            lastRevision = sovrinRepo.getLastRevision {
+//                delegate.packageName = packageName
+//                packageSrcVersion = srcVersion
+//                repoDistr = 'xenial-rc'
+//            }
+//
+//            if (lastRevision) {
+//                logger.info("Found last revision number: $lastRevision")
+//            } else {
+//                logger.info("No previous revision was found")
+//            }
+//        }
 
         stage('Set release parameters') {
             logger.info("Finding Release version")
-            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+//            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "$BUILD_NUMBER"
             logger.info("Release version for sovrin repo: $releaseVersion")
 
-            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
+//            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
+            debPVersion = env.BRANCH_NAME == 'stable' ? "$srcVersion": "$srcVersion~$releaseVersion"
             logger.info("Package version for sovrin repo: $debPVersion")
 
             // TODO crate and rpm
@@ -172,25 +184,25 @@ def codeBuildPipelines = {
             // build spec for env image
             envBuildSrc = _envBuildSrc // TODO make more accurate
             envBuildCmds = [
-                'export PROJECT_DIR=$PWD',
-                'make -C devops image_lst_base'
+                    'export PROJECT_DIR=$PWD',
+                    'make -C devops image_lst_base'
             ]
             envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
             envBuildEnvv = [
-                [name: 'OSNAME', value: osname],
-                [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
+                    [name: 'OSNAME', value: osname],
+                    [name: 'LST_BASE_DOCKER_TAG', value: buildImageTag],
             ]
 
             // env and build spec
             imageTag = buildImageTag
             buildspec = 'devops/aws-codebuild/buildspec.cd.yml'
             envv = [
-                [name: 'OSNAME', value: osname],
-                [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                [name: 'ARTIFACTS', value: "libsovtoken/target/release/${packageName}*.*"],
-                [name: 'PACKAGE_NAME', value: packageName],
-                [name: 'FPM_P_VERSION', value: debPVersion],
-               // [name: 'CRATE_P_VERSION', value: cratePVersion],
+                    [name: 'OSNAME', value: osname],
+                    [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                    [name: 'ARTIFACTS', value: "libsovtoken/target/release/${packageName}*.*"],
+                    [name: 'PACKAGE_NAME', value: packageName],
+                    [name: 'FPM_P_VERSION', value: debPVersion],
+                    // [name: 'CRATE_P_VERSION', value: cratePVersion],
             ]
 
             onArtifacts = {
@@ -208,21 +220,22 @@ def codeBuildPipelines = {
             String debName
 
             dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
+                dir("sovrin-packaging") {
+                    downloadPackagingUtils()
+                }
                 debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
 
                 logger.info("Uploading debian package '$debName' to sovrin repo")
-                sovrinRepo.upload {
-                    repoDistr = 'xenial'
-                    component = 'rc'
-                    packagePath = debName
+                sh "mkdir debs &&  mv $debName ./debs/"
+                withCredentials([file(credentialsId: 'SovrinRepoSSHKey', variable: 'sovrin_key')]) {
+                    sh "./sovrin-packaging/upload_debs.py ./debs $env.SOVRIN_SDK_REPO_NAME $env.BRANCH_NAME --host $env.SOVRIN_REPO_HOST --ssh-key $sovrin_key"
                 }
-
             }
 
             notifier.email {
                 subject = '$PROJECT_NAME - Build # $BUILD_NUMBER: ' + "new deb '$debName' was published"
                 body = ("New debian package '$debName' was built and published" +
-                    '\n\nCheck console output at $BUILD_URL to view the details.')
+                        '\n\nCheck console output at $BUILD_URL to view the details.')
             }
         }
 
@@ -292,12 +305,18 @@ def macOSPipeline = {
         def sovrinRepo = sovLibrary.SovrinRepo.new(this)
         def utils = sovLibrary.Utils.new(this)
 
+        if (!srcVersion) {
+            stage('Resolve current source version') {
+                srcVersion = utils.srcVersion(projectType: 'rust')
+                logger.info("Current source version: $srcVersion")
+            }
+        }
 
         withEnv([
-                    "PATH+RUST=${RUST_PATH}",
-                    "PATH+BREW=/usr/local/bin",
-                    "PATH+CURL=/usr/local/opt/curl/bin"
-                ]) {
+                "PATH+RUST=${RUST_PATH}",
+                "PATH+BREW=/usr/local/bin",
+                "PATH+CURL=/usr/local/opt/curl/bin"
+        ]) {
 
             dir('libsovtoken/build_scripts/ios/mac/') {
 
@@ -311,21 +330,26 @@ def macOSPipeline = {
             }
 
             dir('libsovtoken') {
-                stage('Upload libsovtoken universal package to Sovrin repo') {
-                    String pkgName
-                    def repoUrl
-                    pkgName = utils.shStdout("ls ${packageName}*.zip")
-                    logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
-
-
-                    sovrinRepo.uploadBlob {
-                        component = 'rc'
-                        packagePath = pkgName
-                        packageName = 'libsovtoken'
-                        systemType = 'ios'
-                    }
-                }
+                pkgName = utils.shStdout("ls ${packageName}*.zip")
+                stash includes: pkgName, name: "iosArtifact"
             }
+        }
+    }
+}
+
+def macosUpload = {
+    String packageName = "libsovtoken"
+    stage('Upload libsovtoken universal package to Sovrin repo') {
+        unstash name: "iosArtifact"
+        String pkgName = utils.shStdout("ls ${packageName}*.zip")
+        logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
+
+        withCredentials([file(credentialsId: 'SovrinRepoSSHKey', variable: 'sovrin_key')]) {
+            version = "$srcVersion~$env.BUILD_NUMBER"
+            target = "/var/repository/repos/ios/$packageName/$env.BRANCH_NAME/$packageName-core"
+
+            sh "ssh -v -oStrictHostKeyChecking=no -i '$sovrin_key' repo@$SOVRIN_REPO_HOST mkdir -p $target/$version"
+            sh "scp -r -oStrictHostKeyChecking=no -i $sovrin_key $pkgName repo@$SOVRIN_REPO_HOST:$target/$version/"
         }
     }
 }
@@ -335,19 +359,30 @@ pipelineWrapper({
     env.USE_VPC_CONFIG = true
 
     Map builds = [
-        codeBuild: [
-            build: codeBuildPipelines,
-            nodeLabel: "$nodeLabels.codeBuild"
-        ],
-        macos: [
-            build: macOSPipeline,
-            nodeLabel: "$nodeLabels.macos"
-        ]
+            codeBuild: [
+                    build: codeBuildPipelines,
+                    nodeLabel: "$nodeLabels.codeBuild"
+            ],
+            macos: [
+                    build: macOSPipeline,
+                    nodeLabel: "$nodeLabels.macos"
+            ]
     ]
     builds.failFast = false
 
     stage("Build") {
         utils.parallel builds
+    }
+
+    Map publish = [
+            macosPublish: [
+                    build: macosUpload,
+                    nodeLabel: "$nodeLabels.codeBuild"
+            ]
+    ]
+
+    stage ('Publish') {
+        utils.parallel publish
     }
 }, { err ->
     stage("Pipeline finalizing") {
