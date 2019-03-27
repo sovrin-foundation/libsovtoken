@@ -20,7 +20,6 @@ FROM camparra/ubuntu16.04-rocksdb
 ARG uid=1000
 
 ARG indy_stream=master
-ARG token_stream=sovrin_conversion
 
 
 ARG indy_plenum_ver=1.6.735
@@ -28,8 +27,8 @@ ARG indy_node_ver=1.6.874
 ARG indy_anoncreds_ver=1.0.32
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=0.9.6~19
-ARG fees_ver=0.9.6~19
+ARG token_ver=0.9.6~2
+ARG fees_ver=0.9.6~2
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
@@ -54,13 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     indy-node=${indy_node_ver} \
     indy-anoncreds=${indy_anoncreds_ver} \
     python3-indy-crypto=${python3_indy_crypto_ver} \
-    libindy-crypto=${indy_crypto_ver}
-
-# Add Sovrin artifact repository for tokens
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
-RUN echo "deb https://repo.sovrin.org/deb xenial $token_stream" >> /etc/apt/sources.list
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+    libindy-crypto=${indy_crypto_ver} \
     sovtoken=${token_ver} \
     sovtokenfees=${fees_ver}
 
