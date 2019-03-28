@@ -1,6 +1,6 @@
 ARG ANDROID_PREBUILT_DIR=/tmp/android/libsovtoken_prebuilt
 
-FROM sovrin/libsovtoken:android_ndk-xenial-0.4.0
+FROM sovrin/libsovtoken:android_ndk-xenial-0.5.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG ANDROID_PREBUILT_DIR
@@ -50,4 +50,4 @@ ENV RUST_TARGETS=${RUST_TARGETS:-"arm-linux-androideabi armv7-linux-androideabi 
 
 # TODO some entrypoint
 
-ENV LIBSOVTOKEN_ANDROID_BUILD_ENV_VERSION=0.4.0
+ENV LIBSOVTOKEN_ANDROID_BUILD_ENV_VERSION=0.5.0
