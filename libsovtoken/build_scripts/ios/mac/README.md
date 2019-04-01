@@ -26,7 +26,7 @@ sudo xcodebuild -license
 
 ## Building
 ---------------------------------------------------------------------------
-1. Checkout the libsovtoken project using https://github.com/evernym/libsovtoken.git or git@github.com:evernym/libsovtoken.git
+1. Checkout the libsovtoken project using https://github.com/sovrin-foundation/libsovtoken.git or git@github.com:sovrin-foundation/libsovtoken.git
 1. Startup a terminal and cd into libsovtoken/libsovtoken/build_scripts/ios/mac
 1. Run the script `./mac.01.env.setup.sh` (make sure the brew install commands are successful)
     * If it succeeded, run the command `rustc --print target-list|grep -i ios`. It should output:

@@ -42,7 +42,7 @@ FPM_P_MAINTAINER := Sovrin
 FPM_P_URL := https://github.com/sovrin-foundation/libsovtoken
 FPM_P_LICENSE := Apache License 2.0
 FPM_P_VENDOR := Sovrin
-FPM_P_DESCRIPTION := libsovtoken writen in Rust
+FPM_P_DESCRIPTION := libsovtoken written in Rust
 FPM_P_NAME = $(PACKAGE_NAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
 FPM_P_DEPENDS = libindy(>=1.8.2)
