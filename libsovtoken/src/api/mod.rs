@@ -237,10 +237,10 @@ pub extern "C" fn add_request_fees_handler(
 /// from tokens-interface.md/ParseResponseWithFeesCB
 /// # Params
 /// command_handle: standard command handle
-/// req_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// req_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
-/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
@@ -388,10 +388,10 @@ pub extern "C" fn build_payment_req_handler(
 /// from tokens-interface.md/ParsePaymentResponseCB
 /// # Params
 /// command_handle: standard command handle
-/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
-/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
@@ -499,10 +499,10 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 /// from tokens-interface.md/ParseGetUTXOResponseCB
 /// # Params
 /// command_handle: standard command handle
-/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
-/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
