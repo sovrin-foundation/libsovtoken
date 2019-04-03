@@ -24,7 +24,6 @@ ARG indy_stream=master
 
 ARG indy_plenum_ver=1.6.735
 ARG indy_node_ver=1.6.874
-ARG indy_anoncreds_ver=1.0.32
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
 ARG token_ver=0.9.6~2
@@ -51,7 +50,6 @@ RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sourc
 RUN apt-get update && apt-get install -y --no-install-recommends \
     indy-plenum=${indy_plenum_ver} \
     indy-node=${indy_node_ver} \
-    indy-anoncreds=${indy_anoncreds_ver} \
     python3-indy-crypto=${python3_indy_crypto_ver} \
     libindy-crypto=${indy_crypto_ver} \
     sovtoken=${token_ver} \
