@@ -1,12 +1,18 @@
 //! Implementation of the Indy-Sdk Payment API handlers.  No business logic in these methods.
 //!
+/// use statements are listed the following pattern:
+/// follow this or risk having gum thrown in your hair
+///
+/// first: standard rust imports
+/// second: imported crates
+/// third: libsovtoken name spaces
+///
 
-use libc::c_char;
-use indy;
+use std::ffi::CString;
+use std::os::raw::c_char;
 
-use indy::payments::Payment;
-use indy::ledger::Ledger;
-use indy::ErrorCode;
+use indy_sys;
+
 use logic::api_internals::{
     add_request_fees,
     create_address
@@ -14,10 +20,11 @@ use logic::api_internals::{
 use logic::build_payment;
 use logic::config::{
     get_fees_config::GetFeesRequest,
-    get_utxo_config::*,
+    get_utxo_config:: *,
 };
 use logic::did::Did;
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use logic::indy_sdk_api::ledger;
 use logic::minting;
 use logic::verify;
 use logic::parsers::{
@@ -29,15 +36,18 @@ use logic::parsers::{
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor}
 };
-use logic::payments::{CreatePaymentHandler};
+use logic::payments::CreatePaymentHandler;
 use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
+use ErrorCode;
 use utils::constants::txn_types::{GET_FEES, GET_UTXO};
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
+use utils::callbacks::ClosureHandler;
+use utils::results::ResultHandler;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -206,7 +216,7 @@ pub extern "C" fn add_request_fees_handler(
         request_json_map,
         Box::new(add_request_fees::closure_cb_response(command_handle, cb))
     );
-    
+
     match result {
         Err(e) => {
             error!("api::add_request_fees_handler Received error adding fees to request_json");
@@ -227,10 +237,10 @@ pub extern "C" fn add_request_fees_handler(
 /// from tokens-interface.md/ParseResponseWithFeesCB
 /// # Params
 /// command_handle: standard command handle
-/// req_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// req_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
-/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
@@ -378,10 +388,10 @@ pub extern "C" fn build_payment_req_handler(
 /// from tokens-interface.md/ParsePaymentResponseCB
 /// # Params
 /// command_handle: standard command handle
-/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
-/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
@@ -458,7 +468,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  _submitter_did: *const c_char,
                                                  payment_address: *const c_char,
-                                                 cb: JsonCallback)-> i32 {
+                                                 cb: JsonCallback) -> i32 {
     trace!("api::build_get_utxo_request_handler called");
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
 
@@ -489,10 +499,10 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 /// from tokens-interface.md/ParseGetUTXOResponseCB
 /// # Params
 /// command_handle: standard command handle
-/// resp_json: json. \For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
-/// utxo_json: json. For format see https://github.com/evernym/libsovtoken/blob/master/doc/data_structures.md
+/// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
 /// CommonInvalidStructure when any of the inputs are invalid
@@ -502,7 +512,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
     command_handle: i32,
     resp_json: *const c_char,
     cb: JsonCallback
-)-> i32 {
+) -> i32 {
 
     trace!("api::parse_get_utxo_response_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
@@ -539,7 +549,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
         }
     };
 
-    let reply_str: String = match reply.to_json().map_err(map_err_err!())  {
+    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
@@ -686,7 +696,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
     command_handle: i32,
     resp_json: *const c_char,
     cb: JsonCallback
-)-> i32{
+) -> i32 {
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
     trace!("api::parse_get_txn_fees_response_handler called");
@@ -706,7 +716,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
     debug!("Deserialized parse_get_txn_fees_response_handler arguments");
 
     let fees_json_obj =
-        match parse_fees_from_get_txn_fees_response(resp_json_string){
+        match parse_fees_from_get_txn_fees_response(resp_json_string) {
             Ok(s) => {
                 s
             },
@@ -716,7 +726,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
             }
         };
     info!("Parsed get_txn_fees_response, result: {:?}", fees_json_obj);
-    let fees_json_ptr : *const c_char = c_pointer_from_string(fees_json_obj);
+    let fees_json_ptr: *const c_char = c_pointer_from_string(fees_json_obj);
     cb(command_handle, ErrorCode::Success as i32, fees_json_ptr);
 
     let res = ErrorCode::Success as i32;
@@ -748,7 +758,7 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
  */
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(
-    command_handle:i32,
+    command_handle: i32,
     wallet_handle: i32,
     submitter_did: *const c_char,
     outputs_json: *const c_char,
@@ -815,7 +825,7 @@ pub extern "C" fn build_verify_req_handler(
     };
     let did = did.map(|s| String::from(s));
 
-    let res = indy::ledger::Ledger::build_get_txn_request_async(
+    let res = ledger::Ledger::build_get_txn_request_async(
         did.as_ref().map(|x| &**x),
         Some(LEDGER_ID),
         txo.seq_no as i32,
@@ -939,51 +949,84 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 #[no_mangle]
 pub extern fn sovtoken_init() -> i32 {
 
-    super::utils::logger::init_log();
+    if let Err(err) = ::utils::logger::SovtokenLogger::init() {
+        return err as i32;
+    }
 
     debug!("sovtoken_init() started");
     debug!("Going to call Payment::register");
 
-    if let Err(e) = Payment::register_method(
-        PAYMENT_METHOD_NAME,
-        Some(create_payment_address_handler),
-        Some(add_request_fees_handler),
-        Some(parse_response_with_fees_handler),
-        Some(build_get_utxo_request_handler),
-        Some(parse_get_utxo_response_handler),
-        Some(build_payment_req_handler),
-        Some(parse_payment_response_handler),
-        Some(build_mint_txn_handler),
-        Some(build_set_txn_fees_handler),
-        Some(build_get_txn_fees_handler),
-        Some(parse_get_txn_fees_response_handler),
-        Some(build_verify_req_handler),
-        Some(parse_verify_response_handler),
-    ) {
-        debug!("Payment::register failed with {:?}", e);
-        return e as i32
+    let (receiver, cmd_handle, cb) = ClosureHandler::cb_ec();
+
+    let payment_method_name = CString::new(PAYMENT_METHOD_NAME).unwrap();
+
+    let err = unsafe {
+        ErrorCode::from(
+            indy_sys::payments::indy_register_payment_method(
+                cmd_handle,
+                payment_method_name.as_ptr(),
+                Some(create_payment_address_handler),
+                Some(add_request_fees_handler),
+                Some(parse_response_with_fees_handler),
+                Some(build_get_utxo_request_handler),
+                Some(parse_get_utxo_response_handler),
+                Some(build_payment_req_handler),
+                Some(parse_payment_response_handler),
+                Some(build_mint_txn_handler),
+                Some(build_set_txn_fees_handler),
+                Some(build_get_txn_fees_handler),
+                Some(parse_get_txn_fees_response_handler),
+                Some(build_verify_req_handler),
+                Some(parse_verify_response_handler),
+                cb,
+            )
+        )
     };
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_UTXO");
 
-    if let Err(e) = Ledger::register_transaction_parser_for_sp(
-        GET_UTXO,
-        Some(get_utxo_state_proof_parser),
-        Some(free_parsed_state_proof)
-    ) {
-        debug!("Ledger::register_transaction_parser_for_sp for GET_UTXO failed with {:?}", e);
-        return e as i32
+    let (receiver_utxo, cmd_handle_utxo, cb_utxo) = ClosureHandler::cb_ec();
+
+    let err_utxo = unsafe {
+        ErrorCode::from(
+            indy_sys::ledger::indy_register_transaction_parser_for_sp(
+                cmd_handle_utxo,
+                c_pointer_from_string(GET_UTXO.to_string()),
+                Some(get_utxo_state_proof_parser),
+                Some(free_parsed_state_proof),
+                cb_utxo
+            )
+        )
     };
 
     debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
-    if let Err(e) =  Ledger::register_transaction_parser_for_sp(
-        GET_FEES,
-        Some(get_fees_state_proof_parser),
-        Some(free_parsed_state_proof)
-    ) {
-        debug!("Ledger::register_transaction_parser_for_sp for GET_FEES failed with {:?}", e);
-        return e as i32
+
+    let (receiver_fees, cmd_handle_fees, cb_fees) = ClosureHandler::cb_ec();
+
+    let err_fees = unsafe {
+        ErrorCode::from(
+            indy_sys::ledger::indy_register_transaction_parser_for_sp(
+                cmd_handle_fees,
+                c_pointer_from_string(GET_FEES.to_string()),
+                Some(get_fees_state_proof_parser),
+                Some(free_parsed_state_proof),
+                cb_fees
+            )
+        )
     };
+
+    // TODO: DISCUSS  I think we should rather wait and check for a result of all functions above than call return.
+    if let Err(err) = ResultHandler::empty(err, receiver) {
+        return err as i32;
+    }
+
+    if let Err(err) = ResultHandler::empty(err_utxo, receiver_utxo) {
+        return err as i32;
+    }
+
+    if let Err(err) = ResultHandler::empty(err_fees, receiver_fees) {
+        return err as i32;
+    }
 
     debug!("sovtoken_init() returning ErrorCode::Success");
     return ErrorCode::Success as i32;

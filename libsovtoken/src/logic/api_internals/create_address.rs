@@ -6,7 +6,7 @@ Logic for the [`create_payment_address_handler`].
 
 use std::os::raw::c_char;
 
-use indy::ErrorCode;
+use ErrorCode;
 use logic::config::payment_address_config::PaymentAddressConfig;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::{string_from_char_ptr, cstring_from_str, c_pointer_from_str};

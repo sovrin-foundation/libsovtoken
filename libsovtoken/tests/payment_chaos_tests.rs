@@ -1,13 +1,15 @@
 extern crate libc;
 extern crate sovtoken;
-extern crate indy;                      // lib-sdk project
+extern crate indyrs as indy;                      // lib-sdk project
 
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 
-pub mod utils;
+use indy::future::Future;
 
-use indy::ErrorCode;
+use sovtoken::ErrorCode;
+
+pub mod utils;
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
 
@@ -38,8 +40,8 @@ pub fn pay_without_outputs_fails() {
     let pay_output_json = json!([
     ]).to_string();
 
-    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::CommonInvalidStructure);
+    let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
+    assert_eq!(ec.error_code, ErrorCode::CommonInvalidStructure);
 
 }
 
@@ -71,8 +73,8 @@ pub fn pay_without_inputs_fails() {
         }
     ]).to_string();
 
-    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::CommonInvalidStructure);
+    let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
+    assert_eq!(ec.error_code, ErrorCode::CommonInvalidStructure);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -104,8 +106,8 @@ pub fn pay_from_non_existent_payment_source_fails() {
         }
     ]).to_string();
 
-    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::WalletItemNotFound);
+    let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
+    assert_eq!(ec.error_code, ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -139,8 +141,8 @@ pub fn pay_from_existent_and_non_existent_payment_source_fails() {
         }
     ]).to_string();
 
-    let ec = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap_err();
-    assert_eq!(ec, ErrorCode::WalletItemNotFound);
+    let ec = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap_err();
+    assert_eq!(ec.error_code, ErrorCode::WalletItemNotFound);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -174,9 +176,9 @@ pub fn pay_with_insufficent_funds_fails() {
         }
     ]).to_string();
 
-    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+    let (payment_request, _) = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap();
 
-    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+    let payment_result = indy::ledger::submit_request(pool_handle, &payment_request).wait().unwrap();
 
     assert!(payment_result.contains("InsufficientFundsError"), "Expected InsufficientFundsError");
 }
@@ -216,9 +218,9 @@ pub fn pay_with_insufficent_funds_with_several_output_addresses_fails() {
         }
     ]).to_string();
 
-    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+    let (payment_request, _) = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap();
 
-    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+    let payment_result = indy::ledger::submit_request(pool_handle, &payment_request).wait().unwrap();
 
     assert!(payment_result.contains("InsufficientFundsError"), "Expected InsufficientFundsError");
 }
@@ -256,9 +258,9 @@ pub fn pay_with_insufficent_funds_with_several_txo_fails() {
         }
     ]).to_string();
 
-    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+    let (payment_request, _) = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap();
 
-    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+    let payment_result = indy::ledger::submit_request(pool_handle, &payment_request).wait().unwrap();
 
     assert!(payment_result.contains("InsufficientFundsError"), "Expected InsufficientFundsError");
 }
@@ -294,9 +296,9 @@ pub fn pay_with_funds_remaining_fails() {
         }
     ]).to_string();
 
-    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+    let (payment_request, _) = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap();
 
-    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+    let payment_result = indy::ledger::submit_request(pool_handle, &payment_request).wait().unwrap();
 
     assert!(payment_result.contains("ExtraFundsError"), "Expected ExtraFundsError");
 }
@@ -336,9 +338,9 @@ pub fn pay_with_funds_remaining_with_several_outputs_fails() {
         }
     ]).to_string();
 
-    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+    let (payment_request, _) = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap();
 
-    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+    let payment_result = indy::ledger::submit_request(pool_handle, &payment_request).wait().unwrap();
 
     assert!(payment_result.contains("ExtraFundsError"), "Expected ExtraFundsError");
 }
@@ -376,9 +378,9 @@ pub fn pay_with_funds_remaining_with_several_txo_fails() {
         }
     ]).to_string();
 
-    let (payment_request, _) = indy::payments::Payment::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).unwrap();
+    let (payment_request, _) = indy::payments::build_payment_req(wallet.handle, Some(dids[0]), &pay_input_json, &pay_output_json, None).wait().unwrap();
 
-    let payment_result = indy::ledger::Ledger::submit_request(pool_handle, &payment_request).unwrap();
+    let payment_result = indy::ledger::submit_request(pool_handle, &payment_request).wait().unwrap();
 
     assert!(payment_result.contains("ExtraFundsError"), "Expected ExtraFundsError");
 }

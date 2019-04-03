@@ -1,13 +1,16 @@
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 extern crate sovtoken;
-extern crate indy;
+extern crate indyrs as indy;
+
+use indy::future::Future;
 
 mod utils;
 use utils::wallet::Wallet;
 use utils::setup::{Setup, SetupConfig};
 use sovtoken::logic::address::strip_qualifier_from_address;
 use sovtoken::logic::address::verkey_from_unqualified_address;
+
 
 #[test]
 pub fn build_and_submit_get_utxo_request() {
@@ -23,9 +26,9 @@ pub fn build_and_submit_get_utxo_request() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    let (get_utxo_req, payment_method) = indy::payments::Payment::build_get_payment_sources_request(wallet.handle, Some(dids[0]), &payment_addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
-    let res = indy::payments::Payment::parse_get_payment_sources_response(&payment_method, &res).unwrap();
+    let (get_utxo_req, payment_method) = indy::payments::build_get_payment_sources_request(wallet.handle, Some(dids[0]), &payment_addresses[0]).wait().unwrap();
+    let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
+    let res = indy::payments::parse_get_payment_sources_response(&payment_method, &res).wait().unwrap();
 
     let res_parsed: Vec<serde_json::Value> = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.len(), 1);
@@ -48,9 +51,9 @@ pub fn build_and_submit_get_utxo_request_no_utxo() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    let (get_utxo_req, payment_method) = indy::payments::Payment::build_get_payment_sources_request(wallet.handle, Some(dids[0]), &payment_addresses[0]).unwrap();
-    let res = indy::ledger::Ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).unwrap();
-    let res = indy::payments::Payment::parse_get_payment_sources_response(&payment_method, &res).unwrap();
+    let (get_utxo_req, payment_method) = indy::payments::build_get_payment_sources_request(wallet.handle, Some(dids[0]), &payment_addresses[0]).wait().unwrap();
+    let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
+    let res = indy::payments::parse_get_payment_sources_response(&payment_method, &res).wait().unwrap();
 
     let res_parsed: Vec<serde_json::Value> = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.len(), 0);
@@ -69,7 +72,7 @@ pub fn payment_address_is_identifier() {
     let payment_addresses = &setup.addresses;
     let dids = setup.trustees.dids();
 
-    let (get_utxo_req, _) = indy::payments::Payment::build_get_payment_sources_request(wallet.handle, Some(dids[0]), &payment_addresses[0]).unwrap();
+    let (get_utxo_req, _) = indy::payments::build_get_payment_sources_request(wallet.handle, Some(dids[0]), &payment_addresses[0]).wait().unwrap();
     let req : serde_json::Value = serde_json::from_str(&get_utxo_req).unwrap();
     let identifier = req.as_object().unwrap().get("identifier").unwrap().as_str().unwrap();
     let unqualified_addr = strip_qualifier_from_address(&payment_addresses[0]);

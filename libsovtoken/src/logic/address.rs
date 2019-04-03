@@ -19,7 +19,7 @@
 use serde_json;
 use std::{io, str};
 
-use indy::ErrorCode;
+use ErrorCode;
 use logic::parsers::common::TXO;
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::constants::general::{PAYMENT_ADDRESS_QUALIFIER, TXO_QUALIFIER};

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use base64;
 use serde_json;
 use serde_json::Error;
-use indy::ErrorCode;
+use ErrorCode;
 use libc::c_char;
 
 use logic::parsers::common::{ResponseOperations, StateProof,

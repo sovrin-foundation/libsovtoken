@@ -1,6 +1,6 @@
 //!
 
-use indy::ErrorCode;
+use ErrorCode;
 use libc::c_char;
 use utils::ffi_support::string_from_char_ptr;
 use utils::constants::txn_fields::{RESULT, STATE_PROOF};

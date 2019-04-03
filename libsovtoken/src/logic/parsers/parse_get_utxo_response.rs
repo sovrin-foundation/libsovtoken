@@ -1,7 +1,7 @@
 //! types used for parse_get_utxo_response_handler
 
 use base64;
-use indy::ErrorCode;
+use ErrorCode;
 use libc::c_char;
 use logic::parsers::common::{ResponseOperations, TXO, StateProof, ParsedSP, KeyValuesInSP,
                              KeyValueSimpleData, extract_result_and_state_proof_from_node_reply};

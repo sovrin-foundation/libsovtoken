@@ -9,7 +9,7 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature};
 use logic::parsers::error_code_parser;
-use indy::ErrorCode;
+use ErrorCode;
 use logic::type_aliases::{ProtocolVersion, TokenAmount, TxnSeqNo, TxnVersion};
 
 /**

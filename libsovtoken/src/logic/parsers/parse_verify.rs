@@ -4,7 +4,7 @@ use logic::type_aliases::ProtocolVersion;
 use logic::parsers::common::ResponseOperations;
 use logic::output::Outputs;
 use logic::input::Inputs;
-use indy::ErrorCode;
+use ErrorCode;
 use logic::parsers::common::UTXO;
 use logic::parsers::common::TXO;
 use logic::type_aliases::TxnSeqNo;
