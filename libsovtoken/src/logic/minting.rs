@@ -1,4 +1,4 @@
-use indy::ErrorCode;
+use ErrorCode;
 use libc::c_char;
 use logic::address;
 use logic::config::output_mint_config::MintRequest;

@@ -1,4 +1,9 @@
 # Changelog
+
+## 0.9.7
+* Updated logging initialization to use libindy pattern.
+* bugfixes
+
 ## 0.9.3
 * Changed CI/CD to new stable branch.
 * CD added to the new stable branch with new stable release process

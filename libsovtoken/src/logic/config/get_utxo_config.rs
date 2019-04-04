@@ -39,14 +39,11 @@ impl GetUtxoOperationRequest {
 mod get_utxo_config_tests {
 
     use logic::address::{qualified_address_from_verkey, verkey_from_unqualified_address};
-    use utils::logger::init_log;
     use super::*;
 
     // This test ensures TOK-239 is fixed
     #[test]
     fn address_correct_removes_sovrin_id() {
-
-        init_log();
 
         let ver_key: String = "EFfodscoymgdJDuM885uEWmgCcA25P6VR6TjVqsYZLW3".to_string();
         let payment_address: String = qualified_address_from_verkey(&ver_key).unwrap();

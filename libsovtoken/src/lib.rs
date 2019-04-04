@@ -9,17 +9,13 @@
 // ------------------------------------------
 extern crate base64;
 extern crate bs58;
-extern crate env_logger;
 extern crate hex;
 extern crate libc;
-extern crate log_panics;
 extern crate openssl;
 extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
 extern crate sha2;
-
-
 // ------------------------------------------
 // crates from crate.io etc that require macro
 // ------------------------------------------
@@ -31,19 +27,13 @@ extern crate sha2;
 #[cfg(any(test, feature = "integration"))]
 #[macro_use] extern crate lazy_static;
 
-// ------------------------------------------
-// android crates
-// ------------------------------------------
-#[cfg(target_os = "android")]
-extern crate android_logger;
 
 // ------------------------------------------
 // evernym/sovrin crates
 // ------------------------------------------
 
-
-extern crate indy;                      // lib-sdk project
-
+extern crate indy_sys;                      // lib-sdk project
+extern crate indyrs as indy;                      // lib-sdk rust wrapper to get ErrorCodes
 
 // ------------------------------------------
 // define our crate by defining the modules in the project
@@ -55,3 +45,5 @@ pub mod utils;
 pub mod api;
 pub mod logic;
 pub mod libraries;
+
+pub use indy::{ErrorCode, IndyHandle};

@@ -1,10 +1,11 @@
-extern crate env_logger;
+extern crate indyrs as indy;
 extern crate libc;
-extern crate sovtoken;
-extern crate indy;
 extern crate serde_json;
+extern crate sovtoken;
 
-use indy::ErrorCode;
+use indy::future::Future;
+
+use sovtoken::ErrorCode;
 
 static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
     "op": "REPLY",
@@ -76,7 +77,7 @@ static PARSE_PAYMENT_RESPONSE_JSON: &'static str = r#"{
 #[test]
 pub fn parse_payment_response_works() {
     sovtoken::api::sovtoken_init();
-    let resp = indy::payments::Payment::parse_payment_response("sov", PARSE_PAYMENT_RESPONSE_JSON).unwrap();
+    let resp = indy::payments::parse_payment_response("sov", PARSE_PAYMENT_RESPONSE_JSON).wait().unwrap();
     let resp: Vec<serde_json::Value> = serde_json::from_str(&resp).unwrap();
     assert_eq!(resp.len(), 4);
     for utxo in resp {
@@ -89,6 +90,6 @@ pub fn parse_payment_response_works() {
 #[test]
 pub fn parse_payment_response_works_for_invalid() {
     sovtoken::api::sovtoken_init();
-    let resp = indy::payments::Payment::parse_payment_response("sov", "123").unwrap_err();
-    assert_eq!(resp, ErrorCode::CommonInvalidStructure);
+    let resp = indy::payments::parse_payment_response("sov", "123").wait().unwrap_err();
+    assert_eq!(resp.error_code, ErrorCode::CommonInvalidStructure);
 }

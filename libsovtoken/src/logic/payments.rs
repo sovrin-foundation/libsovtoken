@@ -1,6 +1,6 @@
 //! Payments module contains functions for working with payments.  :D
 
-use indy::ErrorCode;
+use ErrorCode;
 use logic::config::payment_address_config::PaymentAddressConfig;
 use logic::indy_sdk_api::crypto_api::{CryptoAPI};
 use logic::address;
