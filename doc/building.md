@@ -20,7 +20,7 @@ Downloaded openssl from [here](https://slproweb.com/products/Win32OpenSSL.html).
 
 ### Step 2 Environment Configuration
 For this example
-- all libraries and prebuilt prebuilt indy-sdk dependencies was put in `d:\engineering\libs`
+- all libraries and prebuilt indy-sdk dependencies was put in `d:\engineering\libs`
 - during open ssl install, selected the option install opensll in bin sub-directory
 
 Set the following environment variables:
