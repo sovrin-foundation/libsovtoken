@@ -65,8 +65,8 @@ impl Wallet {
         return config.to_string();
     }
 
-    /* private instance methods for open/create/etc...*/
 
+    /* private instance methods for open/create/etc...*/
     fn open(&mut self) -> i32 {
         let config: String = Wallet::create_wallet_config(&self.name);
         let handle = wallet::open_wallet(&config, USEFUL_CREDENTIALS).wait().unwrap();
