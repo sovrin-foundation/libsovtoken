@@ -1,6 +1,6 @@
 # Maintainers
 
-|Name            | GitHub      | email                      | Satus   |
+|Name            | GitHub      | email                      | Status  |
 |----------------|-------------|----------------------------|---------|
 | Cam Parra      | cam-parra   | caeparra@gmail.com         | ACTIVE  |
 | Sergey Minaev  | jovfer      | sergey.minaev@evernym.com  | ACTIVE  |
