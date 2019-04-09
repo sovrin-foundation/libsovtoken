@@ -10,7 +10,7 @@ It will be explained on an example of Indy CLI.
 * Wallet with Trustee DID
 * Created pool in Indy CLI
 
-[Small guide](https://github.com/hyperledger/indy-sdk/tree/master/doc/design/001-cli#commands) to Indy CLI commands: 
+[Small guide](https://github.com/hyperledger/indy-sdk/tree/master/docs/design/001-cli#commands) to Indy CLI commands: 
 
 ### Creating a SET_FEES transaction.
 
