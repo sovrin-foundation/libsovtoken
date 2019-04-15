@@ -105,6 +105,9 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
     1.  cargo test
 
 
+### How to build Libsovtoken from source
+* [Windows](doc/build-guides/windows-build.md)
+
 <a id="how-to-contribute"></a>
 
 ## How To Contribute
