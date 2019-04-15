@@ -110,6 +110,7 @@ fn add_fees_json() {
 
 
 #[test]
+#[ignore]
 pub fn build_and_submit_set_fees() {
     let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
@@ -146,6 +147,7 @@ pub fn build_and_submit_set_fees() {
 
 
 #[test]
+#[ignore]
 pub fn build_and_submit_set_fees_with_names() {
     let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
@@ -181,6 +183,7 @@ pub fn build_and_submit_set_fees_with_names() {
 }
 
 #[test]
+#[ignore]
 pub fn build_and_submit_set_fees_with_empty_did() {
     let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();

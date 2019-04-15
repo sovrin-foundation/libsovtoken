@@ -19,7 +19,7 @@ use logic::api_internals::{
 };
 use logic::build_payment;
 use logic::config::{
-    get_fees_config::GetFeesRequest,
+    get_auth_rule_config::GetAuthRuleRequest,
     get_utxo_config:: *,
 };
 use logic::did::Did;
@@ -34,7 +34,7 @@ use logic::parsers::{
     parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
-    parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor}
+    parse_get_auth_rule::{parse_fees_from_get_auth_rule_response}
 };
 use logic::payments::CreatePaymentHandler;
 use logic::set_fees;
@@ -42,7 +42,7 @@ use logic::xfer_payload::XferPayload;
 
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
 use ErrorCode;
-use utils::constants::txn_types::{GET_FEES, GET_UTXO};
+use utils::constants::txn_types::GET_UTXO;
 use utils::ffi_support::{str_from_char_ptr, string_from_char_ptr, c_pointer_from_string};
 use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
@@ -79,7 +79,6 @@ pub extern "C" fn create_payment_address_handler(
     config_str: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-
     trace!("api::create_payment_address_handler called");
     let (config, cb) = match create_address::deserialize_arguments(config_str, cb) {
         Ok(tup) => tup,
@@ -188,7 +187,6 @@ pub extern "C" fn add_request_fees_handler(
     extra: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-
     trace!("api::add_request_fees_handler called did (address) >> {:?}", did);
     let (inputs, outputs, extra, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
@@ -199,7 +197,7 @@ pub extern "C" fn add_request_fees_handler(
     };
 
     /*
-        Errors when the request is a XFER request becaause the 
+        Errors when the request is a XFER request becaause the
         fees should be implicit in the operation's inputs and
         outputs.
     */
@@ -251,7 +249,6 @@ pub extern "C" fn parse_response_with_fees_handler(
     req_json: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-
     trace!("api::parse_response_with_fees_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
@@ -281,8 +278,8 @@ pub extern "C" fn parse_response_with_fees_handler(
         Ok(rep) => rep,
         Err(ec) => {
             trace!("api::parse_response_with_fees_handler << result: {:?}", ec);
-            return ec as i32
-        },
+            return ec as i32;
+        }
     };
 
     let reply_str: Option<String> = match reply {
@@ -432,8 +429,8 @@ pub extern "C" fn parse_payment_response_handler(
         Ok(rep) => rep,
         Err(ec) => {
             trace!("api::parse_payment_response_handler << result: {:?}", ec);
-            return ec as i32
-        },
+            return ec as i32;
+        }
     };
 
     let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
@@ -470,7 +467,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  payment_address: *const c_char,
                                                  cb: JsonCallback) -> i32 {
     trace!("api::build_get_utxo_request_handler called");
-    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+    let handle_result = api_result_handler!( < * const c_char >, command_handle, cb);
 
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
@@ -513,7 +510,6 @@ pub extern "C" fn parse_get_utxo_response_handler(
     resp_json: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-
     trace!("api::parse_get_utxo_response_handler called");
     check_useful_c_callback!(cb, ErrorCode::CommonInvalidStructure as i32);
 
@@ -545,7 +541,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
         Ok(reply) => reply,
         Err(err) => {
             trace!("api::parse_get_utxo_response_handler << result: {:?}", err);
-            return err as i32
+            return err as i32;
         }
     };
 
@@ -592,7 +588,6 @@ pub extern "C" fn build_set_txn_fees_handler(
     fees_json: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-
     trace!("api::build_set_txn_fees_handler called >> wallet_handle {}", wallet_handle);
     let (did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
@@ -602,7 +597,7 @@ pub extern "C" fn build_set_txn_fees_handler(
         Ok(tup) => tup,
         Err(e) => {
             trace!("api::build_set_txn_fees_handler << result: {:?}", e);
-            return e as i32
+            return e as i32;
         }
     };
 
@@ -615,8 +610,8 @@ pub extern "C" fn build_set_txn_fees_handler(
         Ok(ptr) => ptr,
         Err(e) => {
             trace!("api::build_set_txn_fees_handler << result: {:?}", e);
-            return e as i32
-        },
+            return e as i32;
+        }
     };
 
     cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
@@ -644,8 +639,7 @@ pub extern "C" fn build_get_txn_fees_handler(
     submitter_did: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-
-    let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+    let handle_result = api_result_handler!( < * const c_char >, command_handle, cb);
     trace!("api::build_get_txn_fees_handler called");
 
     if cb.is_none() {
@@ -663,14 +657,14 @@ pub extern "C" fn build_get_txn_fees_handler(
         Err(e) => { return e as i32; }
     };
 
-    let get_txn_request = GetFeesRequest::new().as_request(did);
-    info!("Built GET_TXN_FEES request: {:?}", get_txn_request);
+    let get_txn_request = GetAuthRuleRequest::new().as_request(did); // ST-543: Short term solution: use GET_AUTH_RULE request instead of GET_FEES that will be removed from Node.
+    info!("Built GET_AUTH_RULE request: {:?}", get_txn_request);
 
     let request_pointer = match get_txn_request.serialize_to_pointer() {
         Ok(p) => p,
         Err(_) => {
             trace!("api::build_get_txn_fees_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
-            return ErrorCode::CommonInvalidState as i32
+            return ErrorCode::CommonInvalidState as i32;
         }
     };
 
@@ -713,19 +707,19 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
     };
 
     debug!("api::parse_get_txn_fees_response_handler >> resp_json: {:?}", resp_json_string);
-    debug!("Deserialized parse_get_txn_fees_response_handler arguments");
+    debug!("Deserialized parse_fees_from_response arguments");
 
     let fees_json_obj =
-        match parse_fees_from_get_txn_fees_response(resp_json_string) {
+        match parse_fees_from_get_auth_rule_response(resp_json_string) {
             Ok(s) => {
                 s
-            },
+            }
             Err(_) => {
                 trace!("api::parse_get_txn_fees_response_handler << result: {:?}", ErrorCode::CommonInvalidStructure);
                 return ErrorCode::CommonInvalidStructure as i32;
             }
         };
-    info!("Parsed get_txn_fees_response, result: {:?}", fees_json_obj);
+    info!("Parsed parse_fees_from_response, result: {:?}", fees_json_obj);
     let fees_json_ptr: *const c_char = c_pointer_from_string(fees_json_obj);
     cb(command_handle, ErrorCode::Success as i32, fees_json_ptr);
 
@@ -776,8 +770,8 @@ pub extern "C" fn build_mint_txn_handler(
         Ok(tup) => tup,
         Err(e) => {
             trace!("api::build_mint_txn_handle << res: {:?}", e);
-            return e as i32
-        },
+            return e as i32;
+        }
     };
 
     debug!("Deserialized build_mint_txn_handler arguments.");
@@ -786,7 +780,7 @@ pub extern "C" fn build_mint_txn_handler(
         Ok(json) => json,
         Err(e) => {
             trace!("api::build_mint_txn_handle << res: {:?}", e);
-            return e as i32
+            return e as i32;
         }
     };
     debug!("Serialized mint request as pointer.");
@@ -911,20 +905,6 @@ pub extern "C" fn get_utxo_state_proof_parser(reply_from_node: *const c_char,
 }
 
 #[no_mangle]
-pub extern "C" fn get_fees_state_proof_parser(reply_from_node: *const c_char,
-                                              parsed_sp: *mut *const c_char) -> i32 {
-    trace!("Calling get_fees_state_proof_parser.");
-
-    check_useful_c_ptr!(reply_from_node, ErrorCode::CommonInvalidParam1 as i32);
-
-    let res = get_fees_state_proof_extractor(reply_from_node, parsed_sp) as i32;
-
-    trace!("Called get_fees_state_proof_parser: <<< res: {:?}", res);
-
-    return res;
-}
-
-#[no_mangle]
 pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
     trace!("Calling free_parsed_state_proof.");
 
@@ -948,7 +928,6 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 */
 #[no_mangle]
 pub extern fn sovtoken_init() -> i32 {
-
     if let Err(err) = ::utils::logger::SovtokenLogger::init() {
         return err as i32;
     }
@@ -999,32 +978,11 @@ pub extern fn sovtoken_init() -> i32 {
         )
     };
 
-    debug!("Going to call Ledger::register_transaction_parser_for_sp for GET_FEES");
-
-    let (receiver_fees, cmd_handle_fees, cb_fees) = ClosureHandler::cb_ec();
-
-    let err_fees = unsafe {
-        ErrorCode::from(
-            indy_sys::ledger::indy_register_transaction_parser_for_sp(
-                cmd_handle_fees,
-                c_pointer_from_string(GET_FEES.to_string()),
-                Some(get_fees_state_proof_parser),
-                Some(free_parsed_state_proof),
-                cb_fees
-            )
-        )
-    };
-
-    // TODO: DISCUSS  I think we should rather wait and check for a result of all functions above than call return.
     if let Err(err) = ResultHandler::empty(err, receiver) {
         return err as i32;
     }
 
     if let Err(err) = ResultHandler::empty(err_utxo, receiver_utxo) {
-        return err as i32;
-    }
-
-    if let Err(err) = ResultHandler::empty(err_fees, receiver_fees) {
         return err as i32;
     }
 

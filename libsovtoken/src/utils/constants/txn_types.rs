@@ -29,14 +29,13 @@ pub const GET_UTXO: &'static str = "10002";
 
 pub const SET_FEES: &'static str = "20000";
 
-/**
-    #description
-    A transaction type submitted by anyone to get the current Fees costs of every transaction
-*/
-
-pub const GET_FEES: &'static str = "20001";
-
-
 pub const NYM: &'static str = "1";
 
 pub const ATTRIB: &'static str = "100";
+
+/**
+    #description
+    A transaction type submitted by anyone to get the current Ledger authentication rules (including fees costs of every transaction).
+*/
+
+pub const GET_AUTH_RULE: &'static str = "121";
