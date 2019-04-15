@@ -268,6 +268,29 @@ mod test {
         }
 
         #[test]
+        fn failure_parse_fees_from_reply_response_contained_different_fees() {
+            let get_auth_rule_response =
+                r#"{
+                "op":"REPLY",
+                "result":{
+                    "identifier":"LibindyDid111111111111",
+                    "type":"121",
+                    "data":{
+                        "EDIT--1--role--201--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
+                        "ADD--1--role--*--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":200},"need_to_be_owner":false},
+                    },
+                    "reqId":15550536
+                }
+            }"#;
+
+            let err = parse_fees_from_get_auth_rule_response(
+                get_auth_rule_response.to_string()).unwrap_err();
+
+            //comparison
+            assert_eq!(ErrorCode::CommonInvalidStructure, err);
+        }
+
+        #[test]
         fn failure_parse_fees_from_reply_response() {
             let invalid_json_response =
                 r#"{
@@ -321,7 +344,7 @@ mod test {
         }
 
         #[test]
-        fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_same_fee() {
+        fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_with_same_fees() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
             rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
             rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(Some(200)));
@@ -340,7 +363,7 @@ mod test {
         }
 
         #[test]
-        fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_different_fee() {
+        fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_with_different_fees() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
             rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
             rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(Some(2)));
@@ -350,7 +373,7 @@ mod test {
         }
 
         #[test]
-        fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_missed_fee_for_one() {
+        fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_with_missed_fees() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
             rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
             rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(None));
@@ -363,6 +386,7 @@ mod test {
         fn collect_fees_from_auth_rules_works_for_no_fees_set_for_txn() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
             rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(None));
+            rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(None));
             rules.insert("ADD--113--*--*--*".to_string(), _role_constraint(Some(90)));
             rules.insert("EDIT--114--*--*--*".to_string(), _role_constraint(Some(110)));
 

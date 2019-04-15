@@ -63,23 +63,23 @@ mod get_auth_rule_config_test {
     use utils::random::rand_string;
     use utils::constants::general::PROTOCOL_VERSION;
 
-    fn initial_get_fee_request() -> Request<GetAuthRuleRequest> {
+    fn initial_get_auth_rule_request() -> Request<GetAuthRuleRequest> {
         let identifier: String = rand_string(21);
         let did = Did::new(&identifier);
         return GetAuthRuleRequest::new().as_request(Some(did));
     }
 
-    fn assert_get_fee_request<F>(expected: serde_json::Value, f: F)
+    fn assert_get_auth_rule_request<F>(expected: serde_json::Value, f: F)
         where F: Fn(&mut Request<GetAuthRuleRequest>) -> ()
     {
-        let mut get_fee_req = initial_get_fee_request();
+        let mut get_fee_req = initial_get_auth_rule_request();
         f(&mut get_fee_req);
-        let get_fee_req_c_string = get_fee_req.serialize_to_cstring().unwrap();
-        let get_fee_req_json_str = str_from_char_ptr(get_fee_req_c_string.as_ptr()).unwrap();
-        let deserialized_get_fee_request: Request<GetAuthRuleRequest> = serde_json::from_str(get_fee_req_json_str).unwrap();
-        assert_eq!(deserialized_get_fee_request.protocol_version, PROTOCOL_VERSION);
+        let get_auth_rule_req_c_string = get_fee_req.serialize_to_cstring().unwrap();
+        let get_auth_rule_req_json_str = str_from_char_ptr(get_auth_rule_req_c_string.as_ptr()).unwrap();
+        let deserialized_get_auth_rule_request: Request<GetAuthRuleRequest> = serde_json::from_str(get_auth_rule_req_json_str).unwrap();
+        assert_eq!(deserialized_get_auth_rule_request.protocol_version, PROTOCOL_VERSION);
 
-        let operation_json_value: serde_json::Value = serde_json::from_str(&deserialized_get_fee_request.operation.to_json().unwrap()).unwrap();
+        let operation_json_value: serde_json::Value = serde_json::from_str(&deserialized_get_auth_rule_request.operation.to_json().unwrap()).unwrap();
         assert_eq!(operation_json_value, expected);
     }
 
@@ -93,7 +93,7 @@ mod get_auth_rule_config_test {
 
     #[test]
     fn valid_request() {
-        assert_get_fee_request(
+        assert_get_auth_rule_request(
             json!({
                 "type": GET_AUTH_RULE,
             }),
