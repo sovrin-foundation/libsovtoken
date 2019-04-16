@@ -72,7 +72,7 @@ pub struct TransactionData {
 pub struct TransactionMetaData2 {
     pub digest: String,
     pub from: String,
-    pub req_id: u32,
+    pub req_id: u64,
 }
 
 

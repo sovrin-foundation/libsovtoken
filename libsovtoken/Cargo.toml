@@ -36,6 +36,7 @@ serde_json = "1.0.39"
 sha2 = "0.8.0"
 sha3 = "0.8.0"
 sodiumoxide = "0.0.16"
+time = "0.1.42"
 
 
 [dev-dependencies]
