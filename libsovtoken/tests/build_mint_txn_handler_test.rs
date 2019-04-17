@@ -15,7 +15,7 @@ use std::ffi::CString;
 
 use indy::future::Future;
 
-use sovtoken::ErrorCode;
+use sovtoken::{ErrorCode, IndyHandle};
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
 use sovtoken::utils::constants::txn_fields::OUTPUTS;
@@ -23,6 +23,8 @@ use sovtoken::logic::parsers::common::ResponseOperations;
 use sovtoken::utils::json_conversion::JsonDeserialize;
 use sovtoken::logic::config::output_mint_config::MintRequest;
 use sovtoken::logic::request::Request;
+use sovtoken::utils::results::ResultHandler;
+use sovtoken::utils::test::callbacks;
 
 mod utils;
 
@@ -31,10 +33,27 @@ use utils::parse_mint_response::ParseMintResponse;
 use utils::setup::{Setup, SetupConfig};
 
 // ***** HELPER METHODS *****
+fn build_mint_req(wallet_handle: IndyHandle, did: Option<&str>, outputs: &str, extra: Option<&str>) -> Result<String, ErrorCode> {
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
+
+    let did = did.map(c_pointer_from_str).unwrap_or(std::ptr::null());
+    let extra = extra.map(c_pointer_from_str).unwrap_or(std::ptr::null());
+
+    let error_code = sovtoken::api::build_mint_txn_handler(
+        command_handle,
+        wallet_handle,
+        did,
+        c_pointer_from_str(outputs),
+        extra,
+        cb
+    );
+
+    return ResultHandler::one(ErrorCode::from(error_code), receiver);
+}
 
 // ***** HELPER TEST DATA  *****
 
-const COMMAND_HANDLE:i32 = 10;
+const COMMAND_HANDLE: i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 static VALID_OUTPUT_JSON: &'static str = r#"[{"recipient":"pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", "amount":10}]"#;
 
@@ -61,7 +80,7 @@ fn errors_with_no_outputs_json() {
 
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), ptr::null(), Some(cb_no_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_mint_txn_handler'");
-    unsafe { assert!(! CALLBACK_CALLED) }
+    unsafe { assert!(!CALLBACK_CALLED) }
 }
 
 // // the mint txn handler method requires a valid JSON format (format is described
@@ -79,11 +98,11 @@ fn errors_with_invalid_outputs_json() {
     let outputs_str_ptr = outputs_str.as_ptr();
     let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, ptr::null(), Some(cb_invalid_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
-    unsafe { assert!(! CALLBACK_CALLED) }
+    unsafe { assert!(!CALLBACK_CALLED) }
 }
 
 #[test]
-fn  valid_output_json() {
+fn valid_output_json() {
     sovtoken::api::sovtoken_init();
     static mut CALLBACK_CALLED: bool = false;
     extern "C" fn valid_output_json_cb(command_handle: i32, error_code: i32, mint_request: *const c_char) -> i32 {
@@ -91,7 +110,7 @@ fn  valid_output_json() {
         assert_eq!(command_handle, COMMAND_HANDLE);
         assert_eq!(error_code, ErrorCode::Success as i32);
         let mint_request_json_string = str_from_char_ptr(mint_request).unwrap();
-        let mint_request_json_value : serde_json::Value = serde_json::from_str(mint_request_json_string).unwrap();
+        let mint_request_json_value: serde_json::Value = serde_json::from_str(mint_request_json_string).unwrap();
         let mint_operation = mint_request_json_value
             .get("operation")
             .unwrap();
@@ -120,45 +139,11 @@ fn  valid_output_json() {
         ptr::null(),
         Some(valid_output_json_cb)
     );
-                                                            
+
     assert_eq!(return_error, ErrorCode::Success as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe {
         assert!(CALLBACK_CALLED);
     }
-}
-
-#[test] // TODO: look carefully on changes
-fn valid_output_json_from_libindy() {
-    sovtoken::api::sovtoken_init();
-    let did = "Th7MpTaRZVRYnPiabds81Y";
-    let wallet = Wallet::new();
-    let outputs_str = VALID_OUTPUT_JSON;
-
-    let (req, payment_method) = indy::payments::build_mint_req(
-        wallet.handle,
-        Some(did),
-        outputs_str,
-        None,
-    ).wait().unwrap();
-
-    let mint_request_json_value : serde_json::Value = serde_json::from_str(&req).unwrap();
-    let mint_operation = mint_request_json_value
-        .get("operation")
-        .unwrap();
-
-    let expected = json!({
-        "type": MINT_PUBLIC,
-        OUTPUTS: [
-            {
-                "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
-                "amount": 10
-            }
-        ]
-    });
-
-
-    assert_eq!("sov", payment_method);
-    assert_eq!(mint_operation, &expected);
 }
 
 #[test]
@@ -191,12 +176,12 @@ pub fn build_and_submit_mint_txn_works() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::build_mint_req(
+    let mint_req = build_mint_req(
         wallet.handle,
         Some(dids[0]),
         &output_json,
         None,
-    ).wait().unwrap();
+    ).unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -246,12 +231,12 @@ pub fn build_and_submit_mint_txn_works_with_empty_did() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::build_mint_req(
+    let mint_req = build_mint_req(
         wallet.handle,
         None,
         &output_json,
         None,
-    ).wait().unwrap();
+    ).unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -301,12 +286,12 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
         }
     ]).to_string();
 
-    let (mint_req, _) = indy::payments::build_mint_req(
+    let mint_req = build_mint_req(
         wallet.handle,
         Some(dids[0]),
         &output_json,
         None
-    ).wait().unwrap();
+    ).unwrap();
 
     trace!("{:?}", &mint_req);
 
@@ -353,12 +338,12 @@ fn mint_10_billion_tokens() {
         "amount": tokens,
     }]).to_string();
 
-    let (mint_req, _) = indy::payments::build_mint_req(
+    let mint_req = build_mint_req(
         wallet.handle,
         Some(dids[0]),
         &output_json,
         None
-    ).wait().unwrap();
+    ).unwrap();
 
     trace!("{:?}", &mint_req);
 

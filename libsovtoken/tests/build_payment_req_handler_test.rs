@@ -15,10 +15,10 @@ use indy::future::Future;
 
 use sovtoken::logic::address;
 use sovtoken::logic::parsers::common::TXO;
-use sovtoken::ErrorCode;
+use sovtoken::{ErrorCode, IndyHandle};
 use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use sovtoken::utils::results::ResultHandler;
-use sovtoken::utils::ffi_support::c_pointer_from_string;
+use sovtoken::utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
 use sovtoken::utils::test::callbacks;
 
 mod utils;
@@ -26,19 +26,44 @@ use utils::wallet::Wallet;
 use utils::setup::{SetupConfig, Setup};
 
 
-// ***** HELPER METHODS *****
-extern "C" fn empty_create_payment_callback(_command_handle_: i32, _err: i32, _payment_req: *const c_char) -> i32 {
-    return ErrorCode::Success as i32;
-}
-
 // ***** HELPER TEST DATA  *****
 
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
 const WALLET_HANDLE:i32 = 0;
-const CB : Option<extern fn(_command_handle_: i32, err: i32, payment_req_json: *const c_char) -> i32 > = Some(empty_create_payment_callback);
+const CB : Option<extern fn(_command_handle_: i32, err: i32, payment_req_json: *const c_char) -> i32 > = Some(utils::callbacks::empty_callback);
 
+// ***** HELPER METHODS *****
+fn build_payment_req(wallet_handle: IndyHandle, did: &str, inputs: &str, outputs: &str, extra: Option<String>) -> Result<String, ErrorCode> {
+    let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
+
+    let extra = extra.map(c_pointer_from_string).unwrap_or(std::ptr::null());
+
+    let error_code = sovtoken::api::build_payment_req_handler(
+        command_handle,
+        wallet_handle,
+        c_pointer_from_str(did),
+        c_pointer_from_str(inputs),
+        c_pointer_from_str(outputs),
+        extra,
+        cb
+    );
+
+    return ResultHandler::one(ErrorCode::from(error_code), receiver);
+}
+
+fn parse_payment_response(response: &str) -> Result<String, ErrorCode> {
+    let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
+
+    let error_code = sovtoken::api::parse_payment_response_handler(
+        command_handle,
+        c_pointer_from_str(response),
+        cb
+    );
+
+    return ResultHandler::one(ErrorCode::from(error_code), receiver);
+}
 
 fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
     let seeds = vec![
@@ -64,11 +89,10 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
 }
 
 fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
-                            inputs: &str, outputs: &str) -> Result<String, indy::IndyError> {
-    let (req, method) = indy::payments::build_payment_req(wallet_handle,
-                                                                   Some(did), inputs, outputs, None).wait().unwrap();
+                            inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
+    let req = build_payment_req(wallet_handle, did, inputs, outputs, None).unwrap();
     let res = indy::ledger::submit_request(pool_handle, &req).wait().unwrap();
-    indy::payments::parse_payment_response(&method, &res).wait()
+    parse_payment_response(&res)
 }
 
 // ***** UNIT TESTS ****
@@ -180,89 +204,15 @@ fn success_signed_request() {
         ]
     });
 
-    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
-
     trace!("Calling build_payment_req");
 
-    let error_code = sovtoken::api::build_payment_req_handler(
-        command_handle,
+    let request_string = build_payment_req(
         wallet.handle,
-        c_pointer_from_string(did),
-        c_pointer_from_string(inputs.to_string()),
-        c_pointer_from_string(outputs.to_string()),
-        ptr::null(),
-        cb
-    );
-
-    assert_eq!(ErrorCode::from(error_code), ErrorCode::Success);
-
-    let request_string = ResultHandler::one(ErrorCode::Success, receiver).unwrap();
-
-    let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
-    debug!("Received request {:?}", request);
-
-    assert_eq!(&expected_operation, request.get("operation").unwrap());
-    let ident = bs58::decode(&addresses[0]).with_check(None).into_vec().unwrap();
-    let ident = bs58::encode(ident).into_string();
-    assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
-    assert!(request.get("reqId").is_some());
-}
-
-#[test] // TODO: look carefully on changes
-fn success_signed_request_from_libindy() {
-
-    sovtoken::api::sovtoken_init();
-
-    let did = String::from("Th7MpTaRZVRYnPiabds81Y");
-
-    let wallet = Wallet::new();
-    debug!("wallet id = {:?}", wallet.handle);
-
-    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
-
-    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
-    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
-
-    let inputs = json!([
-            txo_1, txo_2
-        ]);
-
-    let outputs = json!([
-            {
-                "recipient": payment_addresses[2],
-                "amount": 10
-            },
-            {
-                "recipient": payment_addresses[3],
-                "amount": 22
-            }
-        ]);
-
-    let expected_operation = json!({
-        "type": XFER_PUBLIC,
-        "inputs": [
-            {"address": addresses[0], "seqNo": 1},
-            {"address": addresses[1], "seqNo": 1},
-        ],
-        "outputs": [
-            {"address": addresses[2], "amount": 10},
-            {"address": addresses[3], "amount": 22},
-        ],
-        "signatures": [
-            "bnuZUPAq5jgpqvaQBzXKBQ973yCpjL1pkqJjiBtVPybpzzKGnPv3uE3VufBVZtR6hq2y55b8MSJpPFVMqskBy3m",
-            "4HpwuknWrSpJCs2qXEMZA1kbAsP9WxJFaoHq1cH7W3yxLg5R2fHV8QPdY5Hz2bgDmGkRitLaPa3HbF65kTxNpNTe"
-        ]
-    });
-
-    trace!("Calling build_payment_req");
-
-    let (request_string, _) = indy::payments::build_payment_req(
-        wallet.handle,
-        Some(&did),
+        &did,
         &inputs.to_string(),
         &outputs.to_string(),
-        None,
-    ).wait().unwrap();
+        None
+    ).unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);
@@ -272,7 +222,6 @@ fn success_signed_request_from_libindy() {
     let ident = bs58::encode(ident).into_string();
     assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
-
 }
 
 #[test]
@@ -361,7 +310,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_1).unwrap_err();
-    assert_eq!(res.error_code, ErrorCode::PaymentInsufficientFundsError);
+    assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([
         {
@@ -375,7 +324,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
                                        &inputs, &outputs_2).unwrap_err();
-    assert_eq!(res.error_code, ErrorCode::PaymentExtraFundsError);
+    assert_eq!(res, ErrorCode::PaymentExtraFundsError);
 }
 
 #[test]
@@ -411,7 +360,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "amount": 20
     }]).to_string();
     let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap_err();
-    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 
     //utxo should stay unspent!
     let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
@@ -435,8 +384,8 @@ pub fn build_payment_with_invalid_utxo() {
         }
     ]).to_string();
 
-    let err = indy::payments::build_payment_req(wallet.handle, Some(&did), &inputs, &outputs, None).wait().unwrap_err();
-    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure);
+    let err = build_payment_req(wallet.handle, &did, &inputs, &outputs, None).unwrap_err();
+    assert_eq!(err, ErrorCode::CommonInvalidStructure);
 }
 
 pub fn build_payment_req_for_not_owned_payment_address() {
@@ -464,6 +413,6 @@ pub fn build_payment_req_for_not_owned_payment_address() {
         }
     ]).to_string();
 
-    let err = indy::payments::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).wait().unwrap_err();
-    assert_eq!(err.error_code, ErrorCode::WalletItemNotFound);
+    let err = build_payment_req(wallet_2.handle, dids[0], &inputs, &outputs, None).unwrap_err();
+    assert_eq!(err, ErrorCode::WalletItemNotFound);
 }

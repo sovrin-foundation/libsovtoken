@@ -6,6 +6,7 @@ Without this, we are warned of all unused code in each integration test.
 */
 
 pub mod anoncreds;
+pub mod callbacks;
 pub mod did;
 pub mod environment;
 pub mod ledger;
