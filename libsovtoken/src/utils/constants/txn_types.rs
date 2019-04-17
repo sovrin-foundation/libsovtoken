@@ -33,6 +33,9 @@ pub const NYM: &'static str = "1";
 
 pub const ATTRIB: &'static str = "100";
 
+pub const GET_ATTRIB: &'static str = "104";
+
+
 /**
     #description
     A transaction type submitted by anyone to get the current Ledger authentication rules (including fees costs of every transaction).
