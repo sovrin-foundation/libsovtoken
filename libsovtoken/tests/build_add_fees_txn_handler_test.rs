@@ -2,12 +2,14 @@
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate lazy_static;
 extern crate sovtoken;
 extern crate indyrs as indy;
 
 use indy::future::Future;
 
-pub mod utils;
+mod utils;
 
 use sovtoken::utils::results::ResultHandler;
 use sovtoken::utils::test::callbacks;

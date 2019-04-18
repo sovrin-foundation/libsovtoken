@@ -1,3 +1,4 @@
+#[macro_use] extern crate lazy_static;
 extern crate indyrs as indy;
 extern crate libc;
 extern crate serde_json;

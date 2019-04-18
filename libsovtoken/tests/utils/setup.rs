@@ -5,7 +5,6 @@ use indy;
 use indy::future::Future;
 use sovtoken;
 use sovtoken::logic::parsers::common::ResponseOperations;
-use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
 use utils::did;
 use utils::mint;
 use utils::payment::fees as fees_utils;
@@ -137,7 +136,7 @@ impl<'a> Setup<'a>
             }
 
             if let Some(f) = config.fees {
-                fees_utils::set_fees(pool_handle, wallet.handle, PAYMENT_METHOD_NAME, &f.to_string(), &trustee_dids, Some(trustee_dids[0]));
+                fees_utils::set_fees(pool_handle, wallet.handle, &trustee_dids[0], &f.to_string());
                 fees = Some(f);
             }
 
@@ -225,10 +224,8 @@ impl<'a> Drop for Setup<'a> {
             fees_utils::set_fees(
                 self.pool_handle,
                 self.wallet.handle,
-                PAYMENT_METHOD_NAME,
-                &reset_fees,
-                &dids,
-                Some(dids[0])
+                dids[0],
+                &reset_fees
             );
         }
     }

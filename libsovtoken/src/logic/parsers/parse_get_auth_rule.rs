@@ -76,8 +76,8 @@ pub enum Constraint {
 */
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoleConstraint {
-    pub sig_count: u32,
-    pub role: String,
+    pub sig_count: Option<u32>,
+    pub role: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Metadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -151,6 +151,8 @@ fn collect_fees_from_auth_rules(rules: &HashMap<String, Constraint>) -> Result<H
             }
         }
     }
+
+    fees.retain(|&_, v| v.is_some());
 
     Ok(fees)
 }
@@ -261,7 +263,7 @@ mod test {
 
             //define and setup expected output from the function
             let expected_json: Value = serde_json::from_str(
-                r#"{"120":null}"#).unwrap();
+                r#"{}"#).unwrap();
 
             //comparison
             assert_eq!(parsed_fees_json, expected_json, "The json objects don't match");
@@ -318,8 +320,8 @@ mod test {
 
         fn _role_constraint(fees: Option<TokenAmount>) -> Constraint {
             Constraint::RoleConstraint(RoleConstraint {
-                sig_count: 0,
-                role: String::new(),
+                sig_count: Some(0),
+                role: Some(String::new()),
                 metadata: Some(Metadata { fees }),
                 need_to_be_owner: None,
             })
@@ -391,7 +393,6 @@ mod test {
             rules.insert("EDIT--114--*--*--*".to_string(), _role_constraint(Some(110)));
 
             let mut expected_fees: HashMap<String, Option<TokenAmount>> = HashMap::new();
-            expected_fees.insert("0".to_string(), None);
             expected_fees.insert("113".to_string(), Some(90));
             expected_fees.insert("114".to_string(), Some(110));
 
@@ -424,8 +425,8 @@ mod test {
         #[test]
         fn extract_fee_works_for_single_role_constraint() {
             let constraint = Constraint::RoleConstraint(RoleConstraint {
-                sig_count: 0,
-                role: String::new(),
+                sig_count: Some(0),
+                role: Some(String::new()),
                 metadata: Some(Metadata { fees: Some(10) }),
                 need_to_be_owner: None,
             });
@@ -439,14 +440,14 @@ mod test {
             let constraint = Constraint::AndConstraint(CombinationConstraint {
                 auth_constraints: vec![
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: Some(Metadata { fees: Some(10) }),
                         need_to_be_owner: None,
                     }),
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: Some(Metadata { fees: Some(10) }),
                         need_to_be_owner: None,
                     })
@@ -462,22 +463,22 @@ mod test {
             let constraint = Constraint::OrConstraint(CombinationConstraint {
                 auth_constraints: vec![
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: Some(Metadata { fees: Some(10) }),
                         need_to_be_owner: None,
                     }),
                     Constraint::OrConstraint(CombinationConstraint {
                         auth_constraints: vec![
                             Constraint::RoleConstraint(RoleConstraint {
-                                sig_count: 0,
-                                role: String::new(),
+                                sig_count: Some(0),
+                                role: Some(String::new()),
                                 metadata: Some(Metadata { fees: Some(10) }),
                                 need_to_be_owner: None,
                             }),
                             Constraint::RoleConstraint(RoleConstraint {
-                                sig_count: 0,
-                                role: String::new(),
+                                sig_count: Some(0),
+                                role: Some(String::new()),
                                 metadata: Some(Metadata { fees: Some(10) }),
                                 need_to_be_owner: None,
                             })
@@ -495,14 +496,14 @@ mod test {
             let constraint = Constraint::AndConstraint(CombinationConstraint {
                 auth_constraints: vec![
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: Some(Metadata { fees: Some(10) }),
                         need_to_be_owner: None,
                     }),
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: Some(Metadata { fees: Some(20) }),
                         need_to_be_owner: None,
                     })
@@ -516,8 +517,8 @@ mod test {
         #[test]
         fn extract_fee_works_for_role_constraints_no_fee_set() {
             let constraint = Constraint::RoleConstraint(RoleConstraint {
-                sig_count: 0,
-                role: String::new(),
+                sig_count: Some(0),
+                role: Some(String::new()),
                 metadata: None,
                 need_to_be_owner: None,
             });
@@ -531,14 +532,14 @@ mod test {
             let constraint = Constraint::AndConstraint(CombinationConstraint {
                 auth_constraints: vec![
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: Some(Metadata { fees: Some(10) }),
                         need_to_be_owner: None,
                     }),
                     Constraint::RoleConstraint(RoleConstraint {
-                        sig_count: 0,
-                        role: String::new(),
+                        sig_count: Some(0),
+                        role: Some(String::new()),
                         metadata: None,
                         need_to_be_owner: None,
                     })
