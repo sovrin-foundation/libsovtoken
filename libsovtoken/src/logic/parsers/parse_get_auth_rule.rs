@@ -158,7 +158,7 @@ fn collect_fees_from_auth_rules(rules: &HashMap<String, Constraint>) -> Result<H
 }
 
 fn extract_txn_type(constraint_id: &str) -> Result<String, ErrorCode> {
-    constraint_id.split("--").collect::<Vec<&str>>().get(1)
+    constraint_id.split("--").collect::<Vec<&str>>().get(0)
         .map(|a| a.to_string())
         .ok_or(ErrorCode::CommonInvalidStructure)
 }
@@ -216,13 +216,13 @@ mod test {
                     "identifier":"LibindyDid111111111111",
                     "type":"121",
                     "data":{
-                        "EDIT--1--role--201--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
-                        "EDIT--1--role----201":{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"constraint_id":"ROLE","role":"2","metadata":{"fees":100},"need_to_be_owner":false}, {"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false}]},
-                        "ADD--1--role--*--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
-                        "ADD--1--role--*--2":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
-                        "ADD--0--services--*--['VALIDATOR']":{"sig_count":1,"constraint_id":"ROLE","role":"2","metadata":{"fees":200},"need_to_be_owner":true},
-                        "EDIT--0--services--['VALIDATOR']--[]":{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":200},"need_to_be_owner":false},{"sig_count":1,"constraint_id":"ROLE","role":"2","metadata":{"fees":200},"need_to_be_owner":true}]},
-                        "EDIT--119--*--*--*":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":110},"need_to_be_owner":false}
+                        "1--EDIT--role--201--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
+                        "1--EDIT--role----201":{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"constraint_id":"ROLE","role":"2","metadata":{"fees":100},"need_to_be_owner":false}, {"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false}]},
+                        "1--ADD--role--*--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
+                        "1--ADD--role--*--2":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
+                        "0--ADD--services--*--['VALIDATOR']":{"sig_count":1,"constraint_id":"ROLE","role":"2","metadata":{"fees":200},"need_to_be_owner":true},
+                        "0--EDIT--services--['VALIDATOR']--[]":{"constraint_id":"OR","auth_constraints":[{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":200},"need_to_be_owner":false},{"sig_count":1,"constraint_id":"ROLE","role":"2","metadata":{"fees":200},"need_to_be_owner":true}]},
+                        "119--EDIT--*--*--*":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":110},"need_to_be_owner":false}
                     },
                     "reqId":15550536
                 }
@@ -250,7 +250,7 @@ mod test {
                     "identifier":"LibindyDid111111111111",
                     "type":"121",
                     "data":{
-                        "EDIT--120--*--*--*":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{},"need_to_be_owner":false}
+                        "120--EDIT--*--*--*":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{},"need_to_be_owner":false}
                     },
                     "reqId":15550536
                 }
@@ -278,8 +278,8 @@ mod test {
                     "identifier":"LibindyDid111111111111",
                     "type":"121",
                     "data":{
-                        "EDIT--1--role--201--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
-                        "ADD--1--role--*--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":200},"need_to_be_owner":false},
+                        "1--EDIT--role--201--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":100},"need_to_be_owner":false},
+                        "1--ADD--role--*--0":{"sig_count":1,"constraint_id":"ROLE","role":"0","metadata":{"fees":200},"need_to_be_owner":false},
                     },
                     "reqId":15550536
                 }
@@ -330,10 +330,10 @@ mod test {
         #[test]
         fn collect_fees_from_auth_rules_works_for_unique_txn_types() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
-            rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
-            rules.insert("EDIT--1--role--201--0".to_string(), _role_constraint(Some(10)));
-            rules.insert("ADD--113--*--*--*".to_string(), _role_constraint(Some(90)));
-            rules.insert("EDIT--114--*--*--*".to_string(), _role_constraint(Some(110)));
+            rules.insert("0--EDIT--client_ip--*--*".to_string(), _role_constraint(Some(200)));
+            rules.insert("1--EDIT--role--201--0".to_string(), _role_constraint(Some(10)));
+            rules.insert("113--ADD--*--*--*".to_string(), _role_constraint(Some(90)));
+            rules.insert("114--EDIT--*--*--*".to_string(), _role_constraint(Some(110)));
 
             let mut expected_fees: HashMap<String, Option<TokenAmount>> = HashMap::new();
             expected_fees.insert("0".to_string(), Some(200));
@@ -348,13 +348,13 @@ mod test {
         #[test]
         fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_with_same_fees() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
-            rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
-            rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(Some(200)));
-            rules.insert("EDIT--0--client_port--*--*".to_string(), _role_constraint(Some(200)));
-            rules.insert("ADD--0--services--*--".to_string(), _role_constraint(Some(200)));
-            rules.insert("EDIT--1--role--0--0".to_string(), _role_constraint(Some(10)));
-            rules.insert("EDIT--1--role--201--0".to_string(), _role_constraint(Some(10)));
-            rules.insert("EDIT--1--role--201--101".to_string(), _role_constraint(Some(10)));
+            rules.insert("0--EDIT--client_ip--*--*".to_string(), _role_constraint(Some(200)));
+            rules.insert("0--EDIT--node_ip--*--*".to_string(), _role_constraint(Some(200)));
+            rules.insert("0--EDIT--client_port--*--*".to_string(), _role_constraint(Some(200)));
+            rules.insert("0--ADD--services--*--".to_string(), _role_constraint(Some(200)));
+            rules.insert("1--EDIT--role--0--0".to_string(), _role_constraint(Some(10)));
+            rules.insert("1--EDIT--role--201--0".to_string(), _role_constraint(Some(10)));
+            rules.insert("1--EDIT--role--201--101".to_string(), _role_constraint(Some(10)));
 
             let mut expected_fees: HashMap<String, Option<TokenAmount>> = HashMap::new();
             expected_fees.insert("0".to_string(), Some(200));
@@ -367,8 +367,8 @@ mod test {
         #[test]
         fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_with_different_fees() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
-            rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
-            rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(Some(2)));
+            rules.insert("0--EDIT--client_ip--*--*".to_string(), _role_constraint(Some(200)));
+            rules.insert("0--EDIT--node_ip--*--*".to_string(), _role_constraint(Some(2)));
 
             let err = collect_fees_from_auth_rules(&rules).unwrap_err();
             assert_eq!(ErrorCode::CommonInvalidStructure, err);
@@ -377,8 +377,8 @@ mod test {
         #[test]
         fn collect_fees_from_auth_rules_works_for_repeatable_txn_types_with_missed_fees() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
-            rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(Some(200)));
-            rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(None));
+            rules.insert("0--EDIT--client_ip--*--*".to_string(), _role_constraint(Some(200)));
+            rules.insert("0--EDIT--node_ip--*--*".to_string(), _role_constraint(None));
 
             let err = collect_fees_from_auth_rules(&rules).unwrap_err();
             assert_eq!(ErrorCode::CommonInvalidStructure, err);
@@ -387,10 +387,10 @@ mod test {
         #[test]
         fn collect_fees_from_auth_rules_works_for_no_fees_set_for_txn() {
             let mut rules: HashMap<String, Constraint> = HashMap::new();
-            rules.insert("EDIT--0--client_ip--*--*".to_string(), _role_constraint(None));
-            rules.insert("EDIT--0--node_ip--*--*".to_string(), _role_constraint(None));
-            rules.insert("ADD--113--*--*--*".to_string(), _role_constraint(Some(90)));
-            rules.insert("EDIT--114--*--*--*".to_string(), _role_constraint(Some(110)));
+            rules.insert("0--EDIT--client_ip--*--*".to_string(), _role_constraint(None));
+            rules.insert("0--EDIT--node_ip--*--*".to_string(), _role_constraint(None));
+            rules.insert("113--ADD--*--*--*".to_string(), _role_constraint(Some(90)));
+            rules.insert("114--EDIT--*--*--*".to_string(), _role_constraint(Some(110)));
 
             let mut expected_fees: HashMap<String, Option<TokenAmount>> = HashMap::new();
             expected_fees.insert("113".to_string(), Some(90));
@@ -407,14 +407,8 @@ mod test {
 
         #[test]
         fn extract_txn_type_works() {
-            let txn_type = extract_txn_type("EDIT--1--role--201--0").unwrap();
+            let txn_type = extract_txn_type("1--EDIT--role--201--0").unwrap();
             assert_eq!("1".to_string(), txn_type);
-        }
-
-        #[test]
-        fn extract_txn_type_works_for_invalid_constraint_id() {
-            let err = extract_txn_type("EDIT").unwrap_err();
-            assert_eq!(ErrorCode::CommonInvalidStructure, err);
         }
     }
 
