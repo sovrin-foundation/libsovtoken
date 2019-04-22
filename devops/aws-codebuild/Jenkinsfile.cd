@@ -15,6 +15,8 @@ String srcVersion
 gitHubUserCredId = env.GITHUB_BOT_USER ?: 'sovbot-github'
 sovrinPackagingRepo = env.SOVRIN_PACKAGING_REPO ?: 'https://github.com/sovrin-foundation/sovrin-packaging'
 sovrinPackagingBranch = env.SOVRIN_PACKAGING_BRANCH ?: 'master'
+LIBINDY_STREAM = "stable"
+LIBINDY_VERSION = "1.8.2"
 
 def downloadPackagingUtils() {
     git branch: sovrinPackagingBranch, credentialsId: gitHubUserCredId, url: sovrinPackagingRepo
@@ -25,6 +27,7 @@ def downloadPackagingUtils() {
 def nodeLabels = [
         codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
         macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
+        windows: env.LIBSOVTOKEN_WINDOWS_NODE_LABEL ?: 'win2016',
 ]
 
 def codeBuildPipelines = {
@@ -354,6 +357,86 @@ def macosUpload = {
     }
 }
 
+def windowsOSPipeline = {
+    stage("Windows Testing") {
+        def ws_path = "workspace/${env.JOB_NAME}".replace(' ', '_')
+        ws(ws_path) {
+            try {
+                stage('Checkout sources from SCM') {
+                    checkout scm
+                }
+
+                stage('Setup dependencies'){
+                    setupRust()
+
+                    bat 'wget -O prebuilt.zip "https://repo.sovrin.org/windows/libindy/deps/indy-sdk-deps.zip"'
+                    bat 'unzip prebuilt.zip -d prebuilt'
+
+                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/$LIBINDY_VERSION/libindy_${LIBINDY_VERSION}.zip\""
+                    bat 'unzip indy.zip -d indy'
+                }
+
+                stage('Run Indy pool') {
+                    bat "docker -H $INDY_SDK_SERVER_IP build --build-arg pool_ip=$INDY_SDK_SERVER_IP -f devops/indy-pool/Dockerfile -t indy_pool devops/indy-pool/"
+                    bat "docker -H $INDY_SDK_SERVER_IP run -d --network host --name indy_pool -p 9701-9708:9701-9708 indy_pool"
+                }
+
+                stage('Testing'){
+                    dir('libsovtoken') {
+                        echo "Libsovtoken Testing: Build"
+                        withEnv([
+                                "OPENSSL_DIR=$WORKSPACE\\prebuilt",
+                                "SODIUM_LIB_DIR=$WORKSPACE\\prebuilt\\lib",
+                                "LIBINDY_DIR=$WORKSPACE\\indy\\lib",
+                                "PATH=$WORKSPACE\\prebuilt\\lib;$WORKSPACE\\indy\\lib;$PATH",
+                                "RUST_BACKTRACE=1"
+                        ]) {
+                            bat "cargo build --release"
+                            bat "cargo test --release --no-run"
+
+                            echo "Libsovtoken Testing: Run tests"
+                            withEnv([
+                                    "RUST_TEST_THREADS=1",
+                                    "RUST_LOG=debug",
+                                    "TEST_POOL_IP=$INDY_SDK_SERVER_IP"
+                            ]) {
+                                bat "cargo test --release"
+                            }
+                        }
+
+                        stash includes: 'target/release/*.dll', name: 'windowsArtifact'
+                    }
+                }
+            } finally {
+                try {
+                    bat "docker -H $INDY_SDK_SERVER_IP stop indy_pool"
+                } catch (ignore) {
+                }
+                try {
+                    bat "docker -H $INDY_SDK_SERVER_IP rm indy_pool"
+                } catch (ignore) {
+                }
+                cleanWs()
+            }
+        }
+        cleanWs()
+    }
+}
+
+def windowsUpload = {
+    stage('Upload libsovtoken package to Sovrin repo') {
+        unstash name: "windowsArtifact"
+
+        withCredentials([file(credentialsId: 'SovrinRepoSSHKey', variable: 'repo_key')]) {
+            withEnv([
+                    "SOVRIN_REPO_HOST=$SOVRIN_REPO_HOST",
+            ]) {
+                sh "devops/windows/win-zip-and-upload.sh $srcVersion '${repo_key}' $env.BRANCH_NAME $env.BUILD_NUMBER"
+            }
+        }
+    }
+}
+
 pipelineWrapper({
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
@@ -366,6 +449,10 @@ pipelineWrapper({
             macos: [
                     build: macOSPipeline,
                     nodeLabel: "$nodeLabels.macos"
+            ],
+            windows: [
+                    build: windowsOSPipeline,
+                    nodeLabel: "$nodeLabels.windows"
             ]
     ]
     builds.failFast = false
@@ -377,6 +464,10 @@ pipelineWrapper({
     Map publish = [
             macosPublish: [
                     build: macosUpload,
+                    nodeLabel: "$nodeLabels.codeBuild"
+            ],
+            windowsPublish: [
+                    build: windowsUpload,
                     nodeLabel: "$nodeLabels.codeBuild"
             ]
     ]
@@ -395,3 +486,7 @@ pipelineWrapper({
         }
     }
 })
+
+def setupRust() {
+    shell("rustup default 1.32.0")
+}
