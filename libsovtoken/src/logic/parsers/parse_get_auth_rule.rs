@@ -158,7 +158,7 @@ fn collect_fees_from_auth_rules(rules: &HashMap<String, Constraint>) -> Result<H
 }
 
 fn extract_txn_type(constraint_id: &str) -> Result<String, ErrorCode> {
-    constraint_id.split("--").collect::<Vec<&str>>().get(1)
+    constraint_id.split("--").collect::<Vec<&str>>().get(0)
         .map(|a| a.to_string())
         .ok_or(ErrorCode::CommonInvalidStructure)
 }
@@ -407,14 +407,8 @@ mod test {
 
         #[test]
         fn extract_txn_type_works() {
-            let txn_type = extract_txn_type("EDIT--1--role--201--0").unwrap();
+            let txn_type = extract_txn_type("1--EDIT--role--201--0").unwrap();
             assert_eq!("1".to_string(), txn_type);
-        }
-
-        #[test]
-        fn extract_txn_type_works_for_invalid_constraint_id() {
-            let err = extract_txn_type("EDIT").unwrap_err();
-            assert_eq!(ErrorCode::CommonInvalidStructure, err);
         }
     }
 

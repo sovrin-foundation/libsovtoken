@@ -73,8 +73,8 @@ fn get_ledger_default_auth_rules(pool_handle: i32) {
         for (constraint_id, constraint) in constraints.iter_mut() {
             let parts: Vec<&str> = constraint_id.split("--").collect();
 
-            let action = parts[0].to_string();
-            let txn_type = parts[1].to_string();
+            let txn_type = parts[0].to_string();
+            let action = parts[1].to_string();
             let field = parts[2].to_string();
             let old_value = if action == "ADD" { None } else { Some(parts[3].to_string()) };
             let new_value = if parts[4] == "" { None } else { Some(parts[4].to_string()) };

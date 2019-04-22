@@ -27,7 +27,7 @@ pub fn build_and_submit_set_fees() {
     let dids = setup.trustees.dids();
 
     let fees = json!({
-//        "0": 1,
+        "0": 1,
 //        "1": 1,
         "101": 101,
         "102": 102,
@@ -44,10 +44,18 @@ pub fn build_and_submit_set_fees() {
     let current_fees = fees::get_fees(&wallet, pool_handle, Some(dids[0]));
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
-    assert_eq!(current_fees_value, fees);
+    assert_eq!(current_fees_value["101"].as_u64().unwrap(), 101);
+    assert_eq!(current_fees_value["102"].as_u64().unwrap(), 102);
+    assert_eq!(current_fees_value["109"].as_u64().unwrap(), 109);
+    assert_eq!(current_fees_value["111"].as_u64().unwrap(), 111);
+    assert_eq!(current_fees_value["113"].as_u64().unwrap(), 113);
+    assert_eq!(current_fees_value["114"].as_u64().unwrap(), 114);
+    assert_eq!(current_fees_value["118"].as_u64().unwrap(), 118);
+    assert_eq!(current_fees_value["119"].as_u64().unwrap(), 119);
+    assert_eq!(current_fees_value["120"].as_u64().unwrap(), 120);
 
     let fees = json!({
-//        "0": 0,
+        "0": 0,
 //        "1": 0,
         "101": 0,
         "102": 0,
