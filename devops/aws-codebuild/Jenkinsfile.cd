@@ -442,13 +442,25 @@ def windowsUpload = {
             withEnv([
                     "SOVRIN_REPO_HOST=$SOVRIN_REPO_HOST",
             ]) {
-                sh "devops/windows/win-zip-and-upload.sh $srcVersion '${repo_key}' $env.BRANCH_NAME $env.BUILD_NUMBER"
+                def suffix = getSuffix()
+                sh "devops/windows/win-zip-and-upload.sh $srcVersion '${repo_key}' $env.BRANCH_NAME $suffix"
             }
         }
     }
 }
 
-pipelineWrapper({
+def getSuffix() {
+    if (env.BRANCH_NAME == 'master') {
+        return "-$env.BUILD_NUMBER"
+    } else if (env.BRANCH_NAME == 'stable') {
+        return ""
+    } else {
+        error "Invalid branch ${env.BRANCH_NAME}"
+    }
+}
+
+
+    pipelineWrapper({
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
 

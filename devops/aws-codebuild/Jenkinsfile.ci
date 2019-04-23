@@ -193,7 +193,7 @@ pipelineWrapper({
                     }]]
         }
         
-        builds.builds('windows', [
+        builds.put('windows', [
                 build: windowsOSPipeline,
                 nodeLabel: "$nodeLabels.windows"
         ])

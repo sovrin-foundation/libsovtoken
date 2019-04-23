@@ -4,19 +4,19 @@ set -e
 set -x
 
 if [ "$1" = "--help" ] ; then
-  echo "Usage: <version> <key> <type> <number>"
+  echo "Usage: <version> <key> <type> <suffix>"
   return
 fi
 
 version="$1"
 key="$2"
 type="$3"
-number="$4"
+suffix="$4"
 
 [ -z $version ] && exit 1
 [ -z $key ] && exit 2
 [ -z $type ] && exit 3
-[ -z $number ] && exit 4
+[ -z $suffix ] && exit 4
 
 PACKAGE_NAME="libsovtoken"
 TEMP_ARCH_DIR=./${PACKAGE_NAME}-zip
@@ -34,8 +34,8 @@ popd
 rm -rf ${TEMP_ARCH_DIR}
 
 cat <<EOF | sftp -v -oStrictHostKeyChecking=no -i $key repo@$SOVRIN_REPO_HOST
-mkdir /var/repository/repos/windows/$PACKAGE_NAME/$type/$version-$number
-cd /var/repository/repos/windows/$PACKAGE_NAME/$type/$version-$number
+mkdir /var/repository/repos/windows/$PACKAGE_NAME/$type/$version$suffix
+cd /var/repository/repos/windows/$PACKAGE_NAME/$type/$version$suffix
 put -r ${PACKAGE_NAME}_"${version}".zip
-ls -l /var/repository/repos/windows/$PACKAGE_NAME/$type/$version-$number
+ls -l /var/repository/repos/windows/$PACKAGE_NAME/$type/$version$suffix
 EOF
