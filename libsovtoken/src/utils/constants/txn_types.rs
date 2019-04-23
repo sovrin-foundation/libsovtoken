@@ -22,13 +22,6 @@ pub const XFER_PUBLIC: &'static str = "10001";
 */
 pub const GET_UTXO: &'static str = "10002";
 
-/**
-    #description
-    A transaction type submitted by Sovrin Trustees to set the Fees to process a transaction
-*/
-
-pub const SET_FEES: &'static str = "20000";
-
 pub const NYM: &'static str = "1";
 
 pub const ATTRIB: &'static str = "100";

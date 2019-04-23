@@ -37,7 +37,6 @@ use logic::parsers::{
     parse_get_auth_rule::{parse_fees_from_get_auth_rule_response}
 };
 use logic::payments::CreatePaymentHandler;
-use logic::set_fees;
 use logic::xfer_payload::XferPayload;
 
 use utils::constants::general::{JsonCallback, PAYMENT_METHOD_NAME, LEDGER_ID};
@@ -558,68 +557,6 @@ pub extern "C" fn parse_get_utxo_response_handler(
     return ErrorCode::Success as i32;
 }
 
-/**
-    Set the fees for different transactions.
-
-    ### fees_json
-    A JSON object where the key is a transaction type and the value is the fee.
-
-    Will be serialized into a [`SetFeesMap`]
-
-    #### Example
-    ```JSON
-        {
-            "3": 4,
-            "10000": 12
-        }
-    ```
-
-    [`SetFeesMap`]: sovtoken::logic::config::set_fees_config::SetFeesMap
-
-    TODO: Fix links
-    TODO: Remove submitter_did, doesn't need did because request doesn't have
-    identifier.
-*/
-#[no_mangle]
-pub extern "C" fn build_set_txn_fees_handler(
-    command_handle: i32,
-    wallet_handle: i32,
-    submitter_did: *const c_char,
-    fees_json: *const c_char,
-    cb: JsonCallback
-) -> i32 {
-    trace!("api::build_set_txn_fees_handler called >> wallet_handle {}", wallet_handle);
-    let (did, set_fees, cb) = match set_fees::deserialize_inputs(
-        submitter_did,
-        fees_json,
-        cb
-    ) {
-        Ok(tup) => tup,
-        Err(e) => {
-            trace!("api::build_set_txn_fees_handler << result: {:?}", e);
-            return e as i32;
-        }
-    };
-
-    let fees_request = set_fees.as_request(did);
-
-    let fees_request_pointer_option = fees_request.serialize_to_pointer()
-        .or(Err(ErrorCode::CommonInvalidStructure));
-
-    let fees_request_pointer = match fees_request_pointer_option {
-        Ok(ptr) => ptr,
-        Err(e) => {
-            trace!("api::build_set_txn_fees_handler << result: {:?}", e);
-            return e as i32;
-        }
-    };
-
-    cb(command_handle, ErrorCode::Success as i32, fees_request_pointer);
-
-    trace!("api::build_set_txn_fees_handler << result: {:?}", ErrorCode::Success);
-    return ErrorCode::Success as i32;
-}
-
 /// Description
 ///
 ///
@@ -952,7 +889,6 @@ pub extern fn sovtoken_init() -> i32 {
                 Some(build_payment_req_handler),
                 Some(parse_payment_response_handler),
                 Some(build_mint_txn_handler),
-                Some(build_set_txn_fees_handler),
                 Some(build_get_txn_fees_handler),
                 Some(parse_get_txn_fees_response_handler),
                 Some(build_verify_req_handler),

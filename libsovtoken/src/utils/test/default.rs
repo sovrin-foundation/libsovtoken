@@ -66,13 +66,6 @@ pub fn did() -> *const c_char {
     c_pointer_from_string(did)
 }
 
-pub fn set_fees_json() -> *const c_char {
-    json_c_pointer!({
-        txn_types::XFER_PUBLIC: 3,
-        "3": 5
-    })
-}
-
 pub fn xfer_payload_unsigned() -> XferPayload {
     let inputs = inputs();
     let outputs = outputs();
