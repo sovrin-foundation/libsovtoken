@@ -191,7 +191,7 @@ pub fn build_and_submit_set_fees() {
     assert_eq!(current_fees_value["100"].as_u64().unwrap(), 1);
 
     let fees = json!({
-        "202": 0,
+        "100": 0,
         "101": 0
     }).to_string();
 
@@ -233,7 +233,7 @@ pub fn build_and_submit_set_fees_with_names() {
 }
 
 #[test]
-pub fn build_and_submit_set_fees_with_empty_did() {
+pub fn build_and_submit_get_fees_with_empty_did() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 0,
@@ -250,7 +250,8 @@ pub fn build_and_submit_set_fees_with_empty_did() {
         "ATTRIB": 2
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, None);
+    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
+
     let current_fees = get_fees(&wallet, pool_handle, None);
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
@@ -262,5 +263,5 @@ pub fn build_and_submit_set_fees_with_empty_did() {
         "ATTRIB": 0
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, None);
+    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
 }

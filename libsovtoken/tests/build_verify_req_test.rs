@@ -56,7 +56,7 @@ fn build_verify_payment_request() {
     let txo = "txo:sov:3x42qH8UkJac1BuorqjSEvuVjvYkXk8sUAqoVPn1fGCwjLPquu4CndzBHBQ5hX6RSmDVnXGdMPrnWDUN5S1ty4YQP87hW8ubMSzu9M56z1FbAQV6aMSX5h";
     let expected_operation = json!({
         "type": "3",
-        "ledgerId": "1001",
+        "ledgerId": 1001,
         "data": 28
     });
 
