@@ -45,7 +45,7 @@ FPM_P_VENDOR := Sovrin
 FPM_P_DESCRIPTION := libsovtoken written in Rust
 FPM_P_NAME = $(PACKAGE_NAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
-FPM_P_DEPENDS = libindy(>=1.8.2)
+FPM_P_DEPENDS = libindy(>=1.8.2~1045)
 FPM_P_OUTPUT_DIR = $(LIB_TARGET_DIR)
 FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 
