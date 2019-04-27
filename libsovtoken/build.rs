@@ -11,6 +11,18 @@ fn main() {
         Err(..) => panic!("Missing required environment variable LIBINDY_DIR")
     };
 
+    let target = env::var("TARGET").unwrap();
+    println!("target={}", target);
+
+    if target.find("-windows-").is_some() {
+        println!("cargo:rustc-link-lib=indy.dll");
+        println!("indy_dir={}", libindy_lib_path);
+        let libindy_lib_path = Path::new(libindy_lib_path.as_str());
+
+        println!("cargo:rustc-flags=-L {}", libindy_lib_path.as_os_str().to_str().unwrap());
+        return;
+    }
+
     println!("cargo:rustc-link-search=native={}",libindy_lib_path);
 
     if let Ok(_mode) = env::var("LIBINDY_STATIC") {
@@ -19,8 +31,6 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=indy");
     }
 
-    let target = env::var("TARGET").unwrap();
-    println!("target={}", target);
     if target.contains("linux-android") {
 
         let openssl = match env::var("OPENSSL_LIB_DIR") {
@@ -41,12 +51,5 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=ssl");
         println!("cargo:rustc-link-search=native={}", sodium);
         println!("cargo:rustc-link-lib=static=sodium");
-    }else if target.find("-windows-").is_some() {
-        println!("cargo:rustc-link-lib=dylib=ssleay32");
-        println!("cargo:rustc-link-lib=dylib=zmq");
-        println!("cargo:rustc-link-lib=dylib=sodium");
-        let prebuilt_dir = env::var("INDY_PREBUILT_DEPS_DIR").unwrap();
-        println!("cargo:rustc-flags=-L {}\\lib", prebuilt_dir);
-        return;
     }
 }

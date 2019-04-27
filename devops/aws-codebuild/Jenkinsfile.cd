@@ -15,6 +15,8 @@ String srcVersion
 gitHubUserCredId = env.GITHUB_BOT_USER ?: 'sovbot-github'
 sovrinPackagingRepo = env.SOVRIN_PACKAGING_REPO ?: 'https://github.com/sovrin-foundation/sovrin-packaging'
 sovrinPackagingBranch = env.SOVRIN_PACKAGING_BRANCH ?: 'master'
+LIBINDY_STREAM = "stable"
+LIBINDY_VERSION = "1.8.3"
 
 def downloadPackagingUtils() {
     git branch: sovrinPackagingBranch, credentialsId: gitHubUserCredId, url: sovrinPackagingRepo
@@ -24,7 +26,8 @@ def downloadPackagingUtils() {
 // TODO set proper labels
 def nodeLabels = [
         codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
-        macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
+        macos    : env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
+        windows  : env.LIBSOVTOKEN_WINDOWS_NODE_LABEL ?: 'win2016',
 ]
 
 def codeBuildPipelines = {
@@ -160,11 +163,11 @@ def codeBuildPipelines = {
         stage('Set release parameters') {
             logger.info("Finding Release version")
 //            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
-            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "$BUILD_NUMBER"
+            def releaseVersion = env.BRANCH_NAME == 'stable' ? '' : "$BUILD_NUMBER"
             logger.info("Release version for sovrin repo: $releaseVersion")
 
 //            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
-            debPVersion = env.BRANCH_NAME == 'stable' ? "$srcVersion": "$srcVersion~$releaseVersion"
+            debPVersion = env.BRANCH_NAME == 'stable' ? "$srcVersion" : "$srcVersion~$releaseVersion"
             logger.info("Package version for sovrin repo: $debPVersion")
 
             // TODO crate and rpm
@@ -253,11 +256,11 @@ def codeBuildPipelines = {
     }
 
     Map builds = [
-        xenial: xenialBuild,
-        android: [
-            build: androidBuild,
-            nodeLabel: "$nodeLabels.codeBuild"
-        ]
+            xenial : xenialBuild,
+            android: [
+                    build    : androidBuild,
+                    nodeLabel: "$nodeLabels.codeBuild"
+            ]
     ]
     builds.failFast = false
 
@@ -277,21 +280,21 @@ def macOSPipeline = {
             echo "===================== Checks for XCode and Rust environment ========================"
             INSTALLED_XCODE_VERSION = sh(script: '''xcodebuild -version | head -1 | cut -d' ' -f2''', returnStdout: true)
             echo "INSTALLED_XCODE_VERSION = ${INSTALLED_XCODE_VERSION} and xcodeMinVersion = ${xcodeMinVersion}"
-            if ( INSTALLED_XCODE_VERSION <= xcodeMinVersion ) {
+            if (INSTALLED_XCODE_VERSION <= xcodeMinVersion) {
                 msg = "The XCode version must be greater or equal ${xcodeMinVersion}"
                 echo "${msg}"
                 error(msg)
             }
 
             RUST_HOME_EXIST = sh(script: "test -d ${RUST_PATH} && echo '1' || echo '0' ", returnStdout: true).trim()
-            if ( RUST_HOME_EXIST == '0' ) {
+            if (RUST_HOME_EXIST == '0') {
                 msg = "Rust home dir does not exist. Make sure that rust is installed in the ${RUST_PATH}."
                 echo "${msg}"
                 error(msg)
             }
 
             RUSTC_VERSION = sh(script: "${RUST_PATH}/rustc --version || echo '0' ", returnStdout: true).trim()
-            if ( RUSTC_VERSION == '0' ) {
+            if (RUSTC_VERSION == '0') {
                 msg = "rustc does not exist. Make sure that rust is installed in the ${RUST_PATH}."
                 echo "${msg}"
                 error(msg)
@@ -354,18 +357,125 @@ def macosUpload = {
     }
 }
 
-pipelineWrapper({
+def windowsOSPipeline = {
+    stage("Windows Testing") {
+        def ws_path = "workspace/${env.JOB_NAME}".replace(' ', '_')
+        ws(ws_path) {
+            try {
+                stage('Checkout sources from SCM') {
+                    checkout scm
+                }
+
+                stage('Setup dependencies') {
+                    setupRust()
+
+                    bat 'wget -O prebuilt.zip "https://repo.sovrin.org/windows/libindy/deps/indy-sdk-deps.zip"'
+                    bat 'unzip prebuilt.zip -d prebuilt'
+
+                    String mainVersion = LIBINDY_VERSION.split('-').first()
+                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/$LIBINDY_VERSION/libindy_${mainVersion}.zip\""
+                    bat 'unzip indy.zip -d indy'
+                }
+
+                stage('Run Indy pool') {
+                    bat "docker -H $INDY_SDK_SERVER_IP build --build-arg pool_ip=$INDY_SDK_SERVER_IP -f devops/indy-pool/Dockerfile -t indy_pool devops/indy-pool/"
+                    bat "docker -H $INDY_SDK_SERVER_IP run -d --network host --name indy_pool -p 9701-9708:9701-9708 indy_pool"
+                }
+
+                stage('Testing') {
+                    dir('libsovtoken') {
+                        echo "Libsovtoken Testing: Build"
+                        withEnv([
+                                "OPENSSL_DIR=$WORKSPACE\\prebuilt",
+                                "SODIUM_LIB_DIR=$WORKSPACE\\prebuilt\\lib",
+                                "LIBINDY_DIR=$WORKSPACE\\indy\\lib",
+                                "PATH=$WORKSPACE\\prebuilt\\lib;$WORKSPACE\\indy\\lib;$PATH",
+                                "RUST_BACKTRACE=1"
+                        ]) {
+                            bat "cargo build --release"
+                            bat "cargo test --release --no-run"
+
+                            echo "Libsovtoken Testing: Run tests"
+                            withEnv([
+                                    "RUST_TEST_THREADS=1",
+                                    "RUST_LOG=debug",
+                                    "TEST_POOL_IP=$INDY_SDK_SERVER_IP"
+                            ]) {
+                                bat "cargo test --release"
+                            }
+                        }
+
+                        stash includes: 'target/release/*.dll,target/release/*.dll.lib', name: 'windowsArtifact'
+                    }
+                }
+            } finally {
+                try {
+                    bat "docker -H $INDY_SDK_SERVER_IP stop indy_pool"
+                } catch (ignore) {
+                }
+                try {
+                    bat "docker -H $INDY_SDK_SERVER_IP rm indy_pool"
+                } catch (ignore) {
+                }
+                cleanWs()
+            }
+        }
+        cleanWs()
+    }
+}
+
+def windowsUpload = {
+    stage('Upload libsovtoken package to Sovrin repo') {
+
+        if (!srcVersion) {
+            stage('Resolve current source version') {
+                srcVersion = utils.srcVersion(projectType: 'rust')
+                logger.info("Current source version: $srcVersion")
+            }
+        }
+
+        sh 'chmod -R 777 devops/windows'
+
+        unstash name: "windowsArtifact"
+
+        withCredentials([file(credentialsId: 'SovrinRepoSSHKey', variable: 'repo_key')]) {
+            withEnv([
+                    "SOVRIN_REPO_HOST=$SOVRIN_REPO_HOST",
+            ]) {
+                def suffix = getSuffix()
+                sh "devops/windows/win-zip-and-upload.sh $srcVersion '${repo_key}' $env.BRANCH_NAME $suffix"
+            }
+        }
+    }
+}
+
+def getSuffix() {
+    if (env.BRANCH_NAME == 'master') {
+        return "-$env.BUILD_NUMBER"
+    } else if (env.BRANCH_NAME == 'stable') {
+        return ""
+    } else {
+        error "Invalid branch ${env.BRANCH_NAME}"
+    }
+}
+
+
+    pipelineWrapper({
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
 
     Map builds = [
             codeBuild: [
-                    build: codeBuildPipelines,
+                    build    : codeBuildPipelines,
                     nodeLabel: "$nodeLabels.codeBuild"
             ],
-            macos: [
-                    build: macOSPipeline,
+            macos    : [
+                    build    : macOSPipeline,
                     nodeLabel: "$nodeLabels.macos"
+            ],
+            windows  : [
+                    build    : windowsOSPipeline,
+                    nodeLabel: "$nodeLabels.windows"
             ]
     ]
     builds.failFast = false
@@ -375,13 +485,17 @@ pipelineWrapper({
     }
 
     Map publish = [
-            macosPublish: [
-                    build: macosUpload,
+            macosPublish  : [
+                    build    : macosUpload,
+                    nodeLabel: "$nodeLabels.codeBuild"
+            ],
+            windowsPublish: [
+                    build    : windowsUpload,
                     nodeLabel: "$nodeLabels.codeBuild"
             ]
     ]
 
-    stage ('Publish') {
+    stage('Publish') {
         utils.parallel publish
     }
 }, { err ->
@@ -395,3 +509,7 @@ pipelineWrapper({
         }
     }
 })
+
+def setupRust() {
+    shell("rustup default 1.32.0")
+}

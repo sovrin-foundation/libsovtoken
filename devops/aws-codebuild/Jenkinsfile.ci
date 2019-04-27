@@ -1,29 +1,97 @@
 #!groovy
 
 def sovLibrary = library(identifier: 'sovrin-aws-codebuild@master', retriever: modernSCM(
-    github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
+        github(credentialsId: 'sovbot-github', repoOwner: 'sovrin-foundation', repository: 'aws-codebuild-pipeline-plugin')
 )).com.sovrin.pipeline
 
 logger = sovLibrary.Logger.new(this)
 notifier = sovLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
+LIBINDY_STREAM = "stable"
+LIBINDY_VERSION = "1.8.3"
 
 def nodeLabels = [
         codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
         macos: env.LIBSOVTOKEN_MACOS_NODE_LABEL ?: 'macos',
+        windows: env.LIBSOVTOKEN_WINDOWS_NODE_LABEL ?: 'win2016',
 ]
+
+def windowsOSPipeline = {
+    stage("Windows Testing") {
+        def ws_path = "workspace/${env.JOB_NAME}".replace(' ', '_')
+        ws(ws_path) {
+            try {
+                stage('Checkout sources from SCM') {
+                    checkout scm
+                }
+
+                stage('Setup dependencies'){
+                    setupRust()
+
+                    bat 'wget -O prebuilt.zip "https://repo.sovrin.org/windows/libindy/deps/indy-sdk-deps.zip"'
+                    bat 'unzip prebuilt.zip -d prebuilt'
+
+                    String mainVersion = LIBINDY_VERSION.split('-').first()
+                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/$LIBINDY_VERSION/libindy_${mainVersion}.zip\""
+                    bat 'unzip indy.zip -d indy'
+                }
+
+                stage('Run Indy pool') {
+                    bat "docker -H $INDY_SDK_SERVER_IP build --build-arg pool_ip=$INDY_SDK_SERVER_IP -f devops/indy-pool/Dockerfile -t indy_pool devops/indy-pool/"
+                    bat "docker -H $INDY_SDK_SERVER_IP run -d --network host --name indy_pool -p 9701-9708:9701-9708 indy_pool"
+                }
+
+                stage('Testing'){
+                    dir('libsovtoken') {
+                        echo "Libsovtoken Testing: Build"
+                        withEnv([
+                                "OPENSSL_DIR=$WORKSPACE\\prebuilt",
+                                "SODIUM_LIB_DIR=$WORKSPACE\\prebuilt\\lib",
+                                "LIBINDY_DIR=$WORKSPACE\\indy\\lib",
+                                "PATH=$WORKSPACE\\prebuilt\\lib;$WORKSPACE\\indy\\lib;$PATH",
+                                "RUST_BACKTRACE=1"
+                        ]) {
+                            bat "cargo build"
+                            bat "cargo test --no-run"
+
+                            echo "Libsovtoken Testing: Run tests"
+                            withEnv([
+                                    "RUST_TEST_THREADS=1",
+                                    "RUST_LOG=debug",
+                                    "TEST_POOL_IP=$INDY_SDK_SERVER_IP"
+                            ]) {
+                                bat "cargo test"
+                            }
+                        }
+                    }
+                }
+            } finally {
+                try {
+                    bat "docker -H $INDY_SDK_SERVER_IP stop indy_pool"
+                } catch (ignore) {
+                }
+                try {
+                    bat "docker -H $INDY_SDK_SERVER_IP rm indy_pool"
+                } catch (ignore) {
+                }
+                cleanWs()
+            }
+        }
+        cleanWs()
+    }
+}
 
 pipelineWrapper({
     nodeWrapper(nodeLabels.codeBuild) {
         List _envBuildSrc = [
-            'devops',
-            'libsovtoken/Cargo.toml',
-            'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
-            'libsovtoken/build_scripts/android/android_settings.txt'
+                'devops',
+                'libsovtoken/Cargo.toml',
+                'libsovtoken/build_scripts/android/libsovtoken/libsovtoken.dependencies.txt',
+                'libsovtoken/build_scripts/android/android_settings.txt'
         ]
         List osnames = [
-            'xenial',
-            //'centos7'
+                'xenial',
+                //'centos7'
         ]
         List goals = ['test_dry', 'test']
 
@@ -47,83 +115,88 @@ pipelineWrapper({
         Map builds = osnames.collectEntries { osname ->
             [(osname): [
                     "nodeLabel": nodeLabels.codeBuild,
-                    "build": {
-                def buildImageTag
-                def prTag = "ci-$osname"
+                    "build"    : {
+                        def buildImageTag
+                        def prTag = "ci-$osname"
 
-                if (osname == 'xenial') {
-                    stage('Download plugin debs') {
-                        // TODO remove that code once repo.corp sovrin.com
-                        // become available from AWS CodeBuild
+                        if (osname == 'xenial') {
+                            stage('Download plugin debs') {
+                                // TODO remove that code once repo.corp sovrin.com
+                                // become available from AWS CodeBuild
 
-                        // TODO Aptly on repo.copr.sovrin.com removes '+' signs
-                        // from debian packages making versions in filenames
-                        // not accurate (it concatenates them):
-                        //  debian package version: <src_version>+<release_version>
-                        //  debian package name:    <src_version><release_version>
+                                // TODO Aptly on repo.copr.sovrin.com removes '+' signs
+                                // from debian packages making versions in filenames
+                                // not accurate (it concatenates them):
+                                //  debian package version: <src_version>+<release_version>
+                                //  debian package name:    <src_version><release_version>
 
-                        def sovtoken_deb_version = "0.9.5"
-                        def sovtokenfees_deb_version = "0.9.5"
+                                def sovtoken_deb_version = "0.9.5"
+                                def sovtokenfees_deb_version = "0.9.5"
 
-                        sh """
+                                sh """
                             cd ./devops/docker/ci/xenial/
                             wget --no-check-certificate https://repo.sovrin.org/deb/pool/xenial/stable/s/sovtoken/sovtoken_${sovtoken_deb_version}_amd64.deb
                             wget --no-check-certificate https://repo.sovrin.org/deb/pool/xenial/stable/s/sovtokenfees/sovtokenfees_${sovtokenfees_deb_version}_amd64.deb
                         """
-                    }
-                }
-
-                stage("$osname: Resolve image tag") {
-                    def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_ci_version -s")
-                    buildImageTag = "${_imgVersion}-${osname}-ci"
-                    logger.info("CI docker image tag: $buildImageTag")
-                }
-
-                awsCBHelper.build() {
-                    projectTag = prTag
-
-                    // env and build spec
-                    imageTag = buildImageTag
-                    buildspec = 'devops/aws-codebuild/buildspec.ci.yml'
-                    envv = [
-                        [name: 'OSNAME', value: osname],
-                        [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
-                        [name: 'INDY_POOL_LOG_LEVEL', value: '10'],
-                        [name: 'INDY_POOL_DIRS', value: '/tmp /var/lib/indy/sandbox /var/log/indy/sandbox'],
-                    ]
-                    computeType = 'medium'
-
-                    // build spec for env image
-                    envBuildSrc = _envBuildSrc // TODO make more accurate
-                    envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
-                    envBuildCmds = [
-                        'export PROJECT_DIR=$PWD',
-                        'make -C devops image_lst_ci'
-                    ]
-                    envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
-                    envBuildEnvv = [
-                        [name: 'OSNAME', value: osname],
-                        [name: 'LST_CI_DOCKER_TAG', value: buildImageTag],
-                    ]
-
-                    onArtifacts = {
-                        this.stage("$osname: Archive artifacts") {
-                            // make targets' logs
-                            utils.archiveArtifacts("logs/*.log*") {
-                                truncate = true
-                                allowEmptyArchive = true
-                                truncateFileSuffix = 'trunc.log'
-                            }
-                            // nodes' logs and validators info
-                            utils.archiveArtifacts("logs/pool/*") {
-                                truncate = false
-                                allowEmptyArchive = true
                             }
                         }
-                    }
-                }
-            }]]
+
+                        stage("$osname: Resolve image tag") {
+                            def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_ci_version -s")
+                            buildImageTag = "${_imgVersion}-${osname}-ci"
+                            logger.info("CI docker image tag: $buildImageTag")
+                        }
+
+                        awsCBHelper.build() {
+                            projectTag = prTag
+
+                            // env and build spec
+                            imageTag = buildImageTag
+                            buildspec = 'devops/aws-codebuild/buildspec.ci.yml'
+                            envv = [
+                                    [name: 'OSNAME', value: osname],
+                                    [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
+                                    [name: 'INDY_POOL_LOG_LEVEL', value: '10'],
+                                    [name: 'INDY_POOL_DIRS', value: '/tmp /var/lib/indy/sandbox /var/log/indy/sandbox'],
+                            ]
+                            computeType = 'medium'
+
+                            // build spec for env image
+                            envBuildSrc = _envBuildSrc // TODO make more accurate
+                            envBuildAddPaths = ['./devops/docker/ci/xenial/*.deb']
+                            envBuildCmds = [
+                                    'export PROJECT_DIR=$PWD',
+                                    'make -C devops image_lst_ci'
+                            ]
+                            envBuildLocalName = "sovrin/libsovtoken:$buildImageTag"
+                            envBuildEnvv = [
+                                    [name: 'OSNAME', value: osname],
+                                    [name: 'LST_CI_DOCKER_TAG', value: buildImageTag],
+                            ]
+
+                            onArtifacts = {
+                                this.stage("$osname: Archive artifacts") {
+                                    // make targets' logs
+                                    utils.archiveArtifacts("logs/*.log*") {
+                                        truncate = true
+                                        allowEmptyArchive = true
+                                        truncateFileSuffix = 'trunc.log'
+                                    }
+                                    // nodes' logs and validators info
+                                    utils.archiveArtifacts("logs/pool/*") {
+                                        truncate = false
+                                        allowEmptyArchive = true
+                                    }
+                                }
+                            }
+                        }
+                    }]]
         }
+        
+        builds.put('windows', [
+                build: windowsOSPipeline,
+                nodeLabel: "$nodeLabels.windows"
+        ])
 
         stage("Build and test") {
             builds.failFast = false
@@ -139,3 +212,7 @@ pipelineWrapper({
         notifier.email()
     }
 })
+
+def setupRust() {
+    shell("rustup default 1.32.0")
+}
