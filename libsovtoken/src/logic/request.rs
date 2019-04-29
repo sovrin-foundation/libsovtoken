@@ -24,7 +24,8 @@ pub struct Request<T>
     pub operation: T,
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
-    pub identifier: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identifier : Option<String>,
 }
 
 impl<T> Request<T>
@@ -36,7 +37,7 @@ impl<T> Request<T>
             operation,
             protocol_version: PROTOCOL_VERSION,
             req_id,
-            identifier: identifier.unwrap_or(DEFAULT_LIBSOVTOKEN_DID.to_string())
+            identifier
         };
     }
 
