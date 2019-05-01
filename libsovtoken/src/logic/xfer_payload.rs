@@ -195,7 +195,7 @@ trait InputSigner<A: CryptoAPI> {
         input: &Input,
         outputs: &Outputs,
         txn_digest: &Option<String>,
-        _extra: &Option<String>,
+        extra: &Option<String>,
         cb: Box<Arc<Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
@@ -207,7 +207,7 @@ trait InputSigner<A: CryptoAPI> {
             Some(json!([input])),
             Some(json!(outputs)),
             txn_digest.clone().map(|e| json!(e)),
-            //            _extra.map(|e| json!(e))
+            extra.clone().map(|e| json!(e))
         ].into_iter().filter_map(|e| e).collect();
 
         let message = serialize_signature(json!(vals))?;
