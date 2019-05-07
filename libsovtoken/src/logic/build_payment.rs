@@ -207,6 +207,6 @@ mod test_handle_signing {
                 .get(0).unwrap().as_object().unwrap()
                 .get("address").unwrap().as_str().unwrap()
         );
-        assert_eq!("7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8G".to_string(), request.identifier);
+        assert_eq!(Some("7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8G".to_string()), request.identifier);
     }
 }
