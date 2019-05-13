@@ -44,7 +44,7 @@ impl<T> Request<T>
         };
     }
 
-    pub fn set_taa(&mut self, taa_acceptance: Option<TaaAcceptance>) {
+    pub fn set_taa_acceptance(&mut self, taa_acceptance: Option<TaaAcceptance>) {
         self.taa_acceptance = taa_acceptance;
     }
 

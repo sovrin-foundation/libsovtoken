@@ -6,15 +6,15 @@ use serde_json;
 use logic::config::payment_config::PaymentRequest;
 use logic::input::Inputs;
 use logic::output::Outputs;
-use logic::xfer_payload::XferPayload;
+use logic::xfer_payload::{XferPayload, Extra};
 use utils::base58::{IntoBase58, FromBase58};
-use utils::txn_author_agreement::{TaaAcceptance, extract_taa_acceptance_from_extra};
+use utils::txn_author_agreement::TaaAcceptance;
 use ErrorCode;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
 
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
-type DeserializedArguments = (Inputs, Outputs, Option<String>, Option<TaaAcceptance>, BuildPaymentRequestCb);
+type DeserializedArguments = (Inputs, Outputs, Option<Extra>, BuildPaymentRequestCb);
 
 pub fn deserialize_inputs(
     inputs_json: *const c_char,
@@ -28,7 +28,7 @@ pub fn deserialize_inputs(
     let inputs_json = string_from_char_ptr(inputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted inputs_json pointer to string >>> {:?}", inputs_json);
-    
+
     let outputs_json = string_from_char_ptr(outputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
@@ -44,32 +44,32 @@ pub fn deserialize_inputs(
     let extra = string_from_char_ptr(extra);
     debug!("Converted extra pointer to string >>> {:?}", extra);
 
-    let (extra, taa_acceptance) = extract_taa_acceptance_from_extra(extra)?;
+    let extra: Option<Extra> = if let Some(extra_) = extra {
+        serde_json::from_str(&extra_).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?
+    } else { None };
     debug!("Deserialized extra >>> {:?}", extra);
 
     trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
-    return Ok((inputs, outputs, extra, taa_acceptance, cb));
+    return Ok((inputs, outputs, extra, cb));
 }
 
 pub fn handle_signing(
     command_handle: i32,
-    signed_payload: Result<XferPayload, ErrorCode>,
-    taa_acceptance: Option<TaaAcceptance>,
+    result: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>,
     cb: BuildPaymentRequestCb
 ) {
-    let (error_code, pointer) = match build_payment_request_pointer(signed_payload, taa_acceptance) {
+    let (error_code, pointer) = match build_payment_request_pointer(result) {
         Ok(request_pointer) => (ErrorCode::Success, request_pointer),
         Err(ec) => (ec, c_pointer_from_str("")),
     };
-    
+
     cb(command_handle, error_code as i32, pointer);
 }
 
 fn build_payment_request_pointer(
-    signed_payload: Result<XferPayload, ErrorCode>,
-    taa_acceptance: Option<TaaAcceptance>
+    result: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>,
 ) -> Result<*const c_char, ErrorCode> {
-    let signed_payload = signed_payload?;
+    let (signed_payload, taa_acceptance) = result?;
     debug!("Signed payload >>> {:?}", signed_payload);
 
     if signed_payload.signatures.is_none() {
@@ -84,7 +84,7 @@ fn build_payment_request_pointer(
     let mut payment_request = PaymentRequest::new(signed_payload)
         .as_request(identifier);
 
-    payment_request.set_taa(taa_acceptance);
+    payment_request.set_taa_acceptance(taa_acceptance);
 
     debug!("payment_request >>> {:?}", payment_request);
 
@@ -184,9 +184,9 @@ mod test_handle_signing {
     use utils::results::ResultHandler;
     use utils::test::{default, callbacks};
 
-    fn call_handle_signing(input_payload: Result<XferPayload, ErrorCode>) -> Result<String, ErrorCode> {
+    fn call_handle_signing(input_payload: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = callbacks::cb_ec_string();
-        handle_signing(command_handle, input_payload, None,cb.unwrap());
+        handle_signing(command_handle, input_payload, cb.unwrap());
         ResultHandler::one(ErrorCode::Success, receiver)
     }
 
@@ -200,14 +200,14 @@ mod test_handle_signing {
     #[test]
     fn test_xfer_without_signatures() {
         let unsigned_payload = default::xfer_payload_unsigned();
-        let result = call_handle_signing(Ok(unsigned_payload));
+        let result = call_handle_signing(Ok((unsigned_payload, None)));
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn test_signed_xfer_payload() {
         let signed_payload = default::xfer_payload_signed();
-        let result = call_handle_signing(Ok(signed_payload)).unwrap();
+        let result = call_handle_signing(Ok((signed_payload, None))).unwrap();
         let request: Request<serde_json::value::Value> = serde_json::from_str(&result).unwrap();
         assert_eq!("10001", request.operation.get("type").unwrap());
         assert_eq!(
