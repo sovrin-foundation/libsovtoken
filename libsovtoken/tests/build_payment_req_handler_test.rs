@@ -467,3 +467,66 @@ pub fn build_payment_req_for_not_owned_payment_address() {
     let err = indy::payments::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).wait().unwrap_err();
     assert_eq!(err.error_code, ErrorCode::WalletItemNotFound);
 }
+
+#[test]
+pub fn build_payment_req_with_taa_acceptance() {
+    sovtoken::api::sovtoken_init();
+
+    let did = String::from("Th7MpTaRZVRYnPiabds81Y");
+
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
+
+    let outputs = json!([
+            {
+                "recipient": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "recipient": payment_addresses[3],
+                "amount": 22
+            }
+        ]);
+
+    let expected_operation = json!({
+        "type": XFER_PUBLIC,
+        "inputs": [
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1}
+        ],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
+        "signatures": [
+            "5MLnLHztcHQoGhUsYP9i6PgmwYxwj2dxyY2vhKsztfL8RoYjAyoQYEUqWzsLdqdfLWyVf9KEytAtRaFJh4gLzMJb",
+            "53scCkcQszJWnxrL7SKcvHyMNL9m4HHYugsNibNVYmxDZLYkanz3QpJtsStDNFjpKCakWC1HVdoMqjrVXPfwACZv"
+        ]
+    });
+
+    let extra = json!({
+        "taaAcceptance": {
+            "mechanism": "acceptance type 1",
+            "taaDigest": "050e52a57837fff904d3d059c8a123e3a04177042bf467db2b2c27abd8045d5e",
+            "time": 123456789,
+        }
+    });
+
+    let (req, _) = indy::payments::build_payment_req(wallet.handle,
+                                                          Some(&did),  &inputs.to_string(), &outputs.to_string(), Some(&extra.to_string())).wait().unwrap();
+
+    let req_parsed: serde_json::Value = serde_json::from_str(&req).unwrap();
+
+    assert!(req_parsed["taaAcceptance"].as_object().is_some());
+    assert_eq!(req_parsed["taaAcceptance"], extra);
+
+    assert_eq!(expected_operation, req_parsed["operation"]);
+}

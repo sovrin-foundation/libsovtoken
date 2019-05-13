@@ -8,12 +8,13 @@ use logic::input::Inputs;
 use logic::output::Outputs;
 use logic::xfer_payload::XferPayload;
 use utils::base58::{IntoBase58, FromBase58};
+use utils::txn_author_agreement::{TaaAcceptance, extract_taa_acceptance_from_extra};
 use ErrorCode;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
 
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
-type DeserializedArguments = (Inputs, Outputs, Option<String>, BuildPaymentRequestCb);
+type DeserializedArguments = (Inputs, Outputs, Option<String>, Option<TaaAcceptance>, BuildPaymentRequestCb);
 
 pub fn deserialize_inputs(
     inputs_json: *const c_char,
@@ -41,18 +42,22 @@ pub fn deserialize_inputs(
     debug!("Deserialized output_json >>> {:?}", outputs);
 
     let extra = string_from_char_ptr(extra);
+    debug!("Converted extra pointer to string >>> {:?}", extra);
+
+    let (extra, taa_acceptance) = extract_taa_acceptance_from_extra(extra)?;
     debug!("Deserialized extra >>> {:?}", extra);
 
     trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
-    return Ok((inputs, outputs, extra, cb));
+    return Ok((inputs, outputs, extra, taa_acceptance, cb));
 }
 
 pub fn handle_signing(
     command_handle: i32,
     signed_payload: Result<XferPayload, ErrorCode>,
+    taa_acceptance: Option<TaaAcceptance>,
     cb: BuildPaymentRequestCb
 ) {
-    let (error_code, pointer) = match build_payment_request_pointer(signed_payload) {
+    let (error_code, pointer) = match build_payment_request_pointer(signed_payload, taa_acceptance) {
         Ok(request_pointer) => (ErrorCode::Success, request_pointer),
         Err(ec) => (ec, c_pointer_from_str("")),
     };
@@ -61,7 +66,8 @@ pub fn handle_signing(
 }
 
 fn build_payment_request_pointer(
-    signed_payload: Result<XferPayload, ErrorCode>
+    signed_payload: Result<XferPayload, ErrorCode>,
+    taa_acceptance: Option<TaaAcceptance>
 ) -> Result<*const c_char, ErrorCode> {
     let signed_payload = signed_payload?;
     debug!("Signed payload >>> {:?}", signed_payload);
@@ -75,8 +81,11 @@ fn build_payment_request_pointer(
     let identifier = identifier.as_bytes().from_base58_check();
     let identifier = identifier.map(|s| s.into_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?;
 
-    let payment_request = PaymentRequest::new(signed_payload)
+    let mut payment_request = PaymentRequest::new(signed_payload)
         .as_request(identifier);
+
+    payment_request.set_taa(taa_acceptance);
+
     debug!("payment_request >>> {:?}", payment_request);
 
     return payment_request
@@ -177,7 +186,7 @@ mod test_handle_signing {
 
     fn call_handle_signing(input_payload: Result<XferPayload, ErrorCode>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = callbacks::cb_ec_string();
-        handle_signing(command_handle, input_payload, cb.unwrap());
+        handle_signing(command_handle, input_payload, None,cb.unwrap());
         ResultHandler::one(ErrorCode::Success, receiver)
     }
 

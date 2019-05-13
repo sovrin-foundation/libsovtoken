@@ -358,7 +358,7 @@ pub extern "C" fn build_payment_req_handler(
     cb: JsonCallback
 ) -> i32 {
     trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", submitter_did);
-    let (inputs, outputs, extra, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, cb) {
+    let (inputs, outputs, extra, taa_acceptance, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
             trace!("api::build_payment_req_handler << result: {:?}", error_code);
@@ -371,7 +371,8 @@ pub extern "C" fn build_payment_req_handler(
     let result = payload.sign_transfer(
         &CryptoSdk {},
         wallet_handle,
-        Box::new(move |result| build_payment::handle_signing(command_handle, result, cb))
+        taa_acceptance.clone(),
+        Box::new(move |result| build_payment::handle_signing(command_handle, result, taa_acceptance.clone(), cb))
     );
 
     let ec = match result {
