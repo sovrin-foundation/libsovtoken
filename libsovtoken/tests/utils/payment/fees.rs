@@ -24,30 +24,29 @@ struct AuthRule {
     constraint: serde_json::Value
 }
 
-pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees: &str, dids: &Vec<&str>, submitter_did: Option<&str>) -> String {
+pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees: &str, dids: &Vec<&str>, submitter_did: Option<&str>) {
     let set_fees_req = ::indy::payments::build_set_txn_fees_req(wallet_handle, submitter_did, payment_method, &fees).wait().unwrap();
     let set_fees_req = Request::<SetFees>::multi_sign_request(wallet_handle, &set_fees_req, dids.to_vec()).unwrap();
-    ::indy::ledger::submit_request(pool_handle, &set_fees_req).wait().unwrap()
+    ::indy::ledger::submit_request(pool_handle, &set_fees_req).wait().unwrap();
 
-// TODO: uncomment to set immediately
-//    let fees: HashMap<String, String> =
-//        ::serde_json::from_str::<HashMap<String, u64>>(fees).unwrap()
-//            .iter_mut()
-//            .map(|(k, _v)| (k.to_string(), k.to_string()))
-//            .collect();
-//
-//    set_auth_rules_fee(pool_handle, wallet_handle, &submitter_did.unwrap(), &json!(fees).to_string());
+    let txn_fees: HashMap<String, String> =
+        ::serde_json::from_str::<HashMap<String, u64>>(fees).unwrap()
+            .iter_mut()
+            .map(|(k, _v)| (k.to_string(), k.to_string()))
+            .collect();
+
+    set_auth_rules_fee(pool_handle, wallet_handle, &submitter_did.unwrap(), &json!(txn_fees).to_string());
 }
 
 // Helper to set fee alias for auth rules
-pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &str, rules_fee: &str) {
+pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &str, txn_fees: &str) {
     get_ledger_default_auth_rules(pool_handle);
 
     let auth_rules = AUTH_RULES.lock().unwrap();
 
-    let fees: HashMap<String, String> = ::serde_json::from_str(rules_fee).unwrap();
+    let txn_fees: HashMap<String, String> = ::serde_json::from_str(txn_fees).unwrap();
 
-    for (txn_, fee_alias) in fees {
+    for (txn_, fee_alias) in txn_fees {
         let rules = auth_rules.get(&txn_).unwrap();
 
         for auth_rule in rules {
