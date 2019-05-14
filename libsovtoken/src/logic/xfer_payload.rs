@@ -116,14 +116,17 @@ impl XferPayload {
 
         debug!("Indicator stripped from inputs");
 
-        XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), txn_digest, &self.extra.clone(), Box::new(move |signatures| {
-            match (signatures, extract_taa_acceptance_from_extra(self.extra.clone())) {
-                (Ok(signatures), Ok((extra, taa_acceptance))) => {
-                    let payload = Self::clone_payload_add_signatures(&self, signatures, extra);
+        let (extra, taa_acceptance) = extract_taa_acceptance_from_extra(self.extra.clone())?;
+        self.extra = extra;
+
+        XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), txn_digest, &self.extra.clone(), &taa_acceptance.clone(), Box::new(move |signatures| {
+            match signatures {
+                Ok(signatures) => {
+                    let payload = Self::clone_payload_add_signatures(&self, signatures);
                     info!("Built XFER payload: {:?}", payload);
-                    cb(Ok((payload, taa_acceptance)));
+                    cb(Ok((payload, taa_acceptance.clone())));
                 }
-                (Err(err), _) | (_, Err(err)) => {
+                Err(err) => {
                     error!("Got an error while signing utxos: {:?}", err);
                     cb(Err(err));
                 }
@@ -135,7 +138,7 @@ impl XferPayload {
         res
     }
 
-    fn clone_payload_add_signatures(prev: &Self, signatures: HashMap<String, String>, extra: Option<Extra>) -> Self {
+    fn clone_payload_add_signatures(prev: &Self, signatures: HashMap<String, String>) -> Self {
         let signatures = prev.inputs
             .iter()
             .map(|input_address| signatures.get(&input_address.to_string()))
@@ -146,14 +149,14 @@ impl XferPayload {
         XferPayload {
             inputs: prev.inputs.clone(),
             outputs: prev.outputs.clone(),
-            extra,
+            extra: prev.extra.clone(),
             signatures: Some(signatures),
         }
     }
 }
 
 trait InputSigner<A: CryptoAPI> {
-    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, txn_digest: &Option<String>, extra: &Option<Extra>, cb: Box<Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
+    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, txn_digest: &Option<String>, extra: &Option<Extra>, taa_acceptance: &Option<TaaAcceptance>, cb: Box<Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
                    -> Result<(), ErrorCode>
     {
         let inputs_result: Arc<Mutex<HashMap<String, String>>> = Default::default();
@@ -174,7 +177,7 @@ trait InputSigner<A: CryptoAPI> {
 
         for input in inputs {
             let cb = cb.clone();
-            match Self::sign_input(crypto_api, wallet_handle, input, outputs, txn_digest, extra, Box::new(cb)) {
+            match Self::sign_input(crypto_api, wallet_handle, input, outputs, txn_digest, extra, taa_acceptance, Box::new(cb)) {
                 err @ Err(_) => { return err; }
                 _ => ()
             }
@@ -199,6 +202,7 @@ trait InputSigner<A: CryptoAPI> {
         outputs: &Outputs,
         txn_digest: &Option<String>,
         extra: &Option<Extra>,
+        taa_acceptance: &Option<TaaAcceptance>,
         cb: Box<Arc<Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
@@ -212,6 +216,7 @@ trait InputSigner<A: CryptoAPI> {
             Some(json!(outputs)),
             txn_digest.clone().map(|e| json!(e)),
             extra.clone().map(|e| json!(e)),
+            taa_acceptance.clone().map(|e| json!(e)),
         ].into_iter().filter_map(|e| e).collect();
 
         let message = serialize_signature(json!(vals))?;
@@ -352,6 +357,7 @@ mod test_xfer_payload {
             outputs,
             &None,
             extra,
+            &None,
             Box::new(Arc::new(cb))
         )?;
         let result = receiver.recv().unwrap();
@@ -363,7 +369,7 @@ mod test_xfer_payload {
         let (sender, receiver) = channel();
         let sender = Mutex::new(sender);
         let cb = move |result| { sender.lock().unwrap().send(result).unwrap(); };
-        XferPayload::sign_inputs(&CryptoApiHandler {}, wallet_handle, inputs, outputs, &None, &None,
+        XferPayload::sign_inputs(&CryptoApiHandler {}, wallet_handle, inputs, outputs, &None, &None, &None,
                                  Box::new(cb))?;
         receiver.recv().unwrap().map(|map| map.values().cloned().collect())
     }
