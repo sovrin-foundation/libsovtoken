@@ -23,6 +23,7 @@ use logic::input::{Input, Inputs};
 use logic::output::Outputs;
 use logic::hash::Hash;
 use utils::constants::txn_types::{ATTRIB, GET_ATTRIB};
+use utils::txn_author_agreement::{TaaAcceptance, extract_taa_acceptance_from_extra};
 
 /**
  * Holds `inputs` and `outputs`
@@ -53,14 +54,16 @@ use utils::constants::txn_types::{ATTRIB, GET_ATTRIB};
  *  # }
  * ```
  */
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct XferPayload {
     pub outputs: Outputs,
     pub inputs: Inputs,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extra: Option<String>,
+    pub extra: Option<Extra>,
     pub signatures: Option<Vec<String>>
 }
+
+pub type Extra = serde_json::Value;
 
 unsafe impl Send for XferPayload {}
 
@@ -69,13 +72,13 @@ unsafe impl Sync for XferPayload {}
 impl<A: CryptoAPI> InputSigner<A> for XferPayload {}
 
 impl XferPayload {
-    pub fn new(inputs: Inputs, outputs: Outputs, extra: Option<String>) -> Self
+    pub fn new(inputs: Inputs, outputs: Outputs, extra: Option<Extra>) -> Self
     {
         return XferPayload { inputs, outputs, extra, signatures: None };
     }
 
     // TODO: Add request hash to include while signature
-    pub fn sign_fees<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: IndyHandle, txn_digest: &Option<String>, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    pub fn sign_fees<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: IndyHandle, txn_digest: &Option<String>, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         trace!("logic::xfer_payload::xfer_payload::sign_fees >> wallet_handle: {:?}", wallet_handle);
         if self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
@@ -93,7 +96,7 @@ impl XferPayload {
      * [`Input`]: Input
      * [`Inputs`]: Inputs
      */
-    pub fn sign_transfer<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    pub fn sign_transfer<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         trace!("logic::xfer_payload::xfer_payload::sign >> wallet_handle: {:?}", wallet_handle);
         if self.outputs.len() < 1 || self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
@@ -101,7 +104,7 @@ impl XferPayload {
         self.sign(crypto_api, wallet_handle, &None, cb)
     }
 
-    fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, txn_digest: &Option<String>, cb: Box<Fn(Result<XferPayload, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, txn_digest: &Option<String>, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         for output in &mut self.outputs {
             output.recipient = address::unqualified_address_from_address(&output.recipient)?;
         }
@@ -113,12 +116,15 @@ impl XferPayload {
 
         debug!("Indicator stripped from inputs");
 
-        XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), txn_digest, &self.extra.clone(), Box::new(move |signatures| {
+        let (extra, taa_acceptance) = extract_taa_acceptance_from_extra(self.extra.clone())?;
+        self.extra = extra;
+
+        XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), txn_digest, &self.extra.clone(), &taa_acceptance.clone(), Box::new(move |signatures| {
             match signatures {
                 Ok(signatures) => {
                     let payload = Self::clone_payload_add_signatures(&self, signatures);
                     info!("Built XFER payload: {:?}", payload);
-                    cb(Ok(payload));
+                    cb(Ok((payload, taa_acceptance.clone())));
                 }
                 Err(err) => {
                     error!("Got an error while signing utxos: {:?}", err);
@@ -150,7 +156,7 @@ impl XferPayload {
 }
 
 trait InputSigner<A: CryptoAPI> {
-    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, txn_digest: &Option<String>, extra: &Option<String>, cb: Box<Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
+    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, txn_digest: &Option<String>, extra: &Option<Extra>, taa_acceptance: &Option<TaaAcceptance>, cb: Box<Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
                    -> Result<(), ErrorCode>
     {
         let inputs_result: Arc<Mutex<HashMap<String, String>>> = Default::default();
@@ -171,7 +177,7 @@ trait InputSigner<A: CryptoAPI> {
 
         for input in inputs {
             let cb = cb.clone();
-            match Self::sign_input(crypto_api, wallet_handle, input, outputs, txn_digest, extra, Box::new(cb)) {
+            match Self::sign_input(crypto_api, wallet_handle, input, outputs, txn_digest, extra, taa_acceptance, Box::new(cb)) {
                 err @ Err(_) => { return err; }
                 _ => ()
             }
@@ -195,19 +201,22 @@ trait InputSigner<A: CryptoAPI> {
         input: &Input,
         outputs: &Outputs,
         txn_digest: &Option<String>,
-        _extra: &Option<String>,
+        extra: &Option<Extra>,
+        taa_acceptance: &Option<TaaAcceptance>,
         cb: Box<Arc<Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
         trace!("logic::xfer_payload::input_signer::sign_input >> input: {:?}, outputs: {:?}, wallet_handle {:?}", input, outputs, wallet_handle);
         let verkey = address::verkey_from_unqualified_address(&input.address.clone())?;
+
         debug!("Received verkey for payment address >>> {:?}", verkey);
 
         let vals: Vec<serde_json::Value> = vec![
             Some(json!([input])),
             Some(json!(outputs)),
             txn_digest.clone().map(|e| json!(e)),
-            //            _extra.map(|e| json!(e))
+            extra.clone().map(|e| json!(e)),
+            taa_acceptance.clone().map(|e| json!(e)),
         ].into_iter().filter_map(|e| e).collect();
 
         let message = serialize_signature(json!(vals))?;
@@ -334,7 +343,7 @@ mod test_xfer_payload {
         return (inps, outs);
     }
 
-    fn sign_input_sync(input: &Input, outputs: &Outputs, extra: &Option<String>) -> Result<String, ErrorCode> {
+    fn sign_input_sync(input: &Input, outputs: &Outputs, extra: &Option<Extra>) -> Result<String, ErrorCode> {
         let wallet_handle = 1;
         let (sender, receiver) = channel();
         let sender = Mutex::new(sender);
@@ -348,6 +357,7 @@ mod test_xfer_payload {
             outputs,
             &None,
             extra,
+            &None,
             Box::new(Arc::new(cb))
         )?;
         let result = receiver.recv().unwrap();
@@ -359,7 +369,7 @@ mod test_xfer_payload {
         let (sender, receiver) = channel();
         let sender = Mutex::new(sender);
         let cb = move |result| { sender.lock().unwrap().send(result).unwrap(); };
-        XferPayload::sign_inputs(&CryptoApiHandler {}, wallet_handle, inputs, outputs, &None, &None,
+        XferPayload::sign_inputs(&CryptoApiHandler {}, wallet_handle, inputs, outputs, &None, &None, &None,
                                  Box::new(cb))?;
         receiver.recv().unwrap().map(|map| map.values().cloned().collect())
     }
@@ -519,7 +529,7 @@ mod test_xfer_payload {
         let sender = Mutex::new(sender);
         let cb = move |result| { sender.lock().unwrap().send(result).unwrap(); };
         XferPayload::new(inputs, outputs, None).sign_transfer(&CryptoApiHandler {}, wallet_handle, Box::new(cb)).unwrap();
-        let signed_payload = receiver.recv().unwrap().unwrap();
+        let (signed_payload, _) = receiver.recv().unwrap().unwrap();
 
         assert_eq!(expected_inputs, signed_payload.inputs);
         assert_eq!(expected_outputs, signed_payload.outputs);
@@ -557,7 +567,7 @@ mod test_xfer_payload {
         }
 
         for _ in 0..attempts {
-            let signed_payload = receiver.recv().unwrap().unwrap();
+            let (signed_payload, _) = receiver.recv().unwrap().unwrap();
             assert_eq!(expected_signatures, signed_payload.signatures.unwrap());
         }
     }

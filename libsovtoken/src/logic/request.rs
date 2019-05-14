@@ -10,6 +10,7 @@ use {IndyHandle, ErrorCode};
 use utils::constants::general::PROTOCOL_VERSION;
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::json_conversion::JsonSerialize;
+use utils::txn_author_agreement::TaaAcceptance;
 use utils::random::rand_req_id;
 
 use logic::indy_sdk_api::ledger;
@@ -26,6 +27,8 @@ pub struct Request<T>
     pub protocol_version: ProtocolVersion,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier : Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub taa_acceptance: Option<TaaAcceptance>
 }
 
 impl<T> Request<T>
@@ -37,8 +40,13 @@ impl<T> Request<T>
             operation,
             protocol_version: PROTOCOL_VERSION,
             req_id,
-            identifier
+            identifier,
+            taa_acceptance: None,
         };
+    }
+
+    pub fn set_taa_acceptance(&mut self, taa_acceptance: Option<TaaAcceptance>) {
+        self.taa_acceptance = taa_acceptance;
     }
 
     pub fn serialize_to_cstring(&self) -> Result<CString, serde_json::Error> {

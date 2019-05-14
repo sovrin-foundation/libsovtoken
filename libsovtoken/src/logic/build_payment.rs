@@ -6,15 +6,16 @@ use serde_json;
 use logic::config::payment_config::PaymentRequest;
 use logic::input::Inputs;
 use logic::output::Outputs;
-use logic::xfer_payload::XferPayload;
+use logic::xfer_payload::{XferPayload, Extra};
 use utils::base58::{IntoBase58, FromBase58};
+use utils::txn_author_agreement::TaaAcceptance;
 use ErrorCode;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
 use logic::did::Did;
 
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
-type DeserializedArguments = (Inputs, Outputs, Option<String>, Option<Did>, BuildPaymentRequestCb);
+type DeserializedArguments = (Inputs, Outputs, Option<Extra>, Option<Did>, BuildPaymentRequestCb);
 
 pub fn deserialize_inputs<'a>(
     inputs_json: *const c_char,
@@ -51,6 +52,11 @@ pub fn deserialize_inputs<'a>(
     debug!("Deserialized output_json >>> {:?}", outputs);
 
     let extra = string_from_char_ptr(extra);
+    debug!("Converted extra pointer to string >>> {:?}", extra);
+
+    let extra: Option<Extra> = if let Some(extra_) = extra {
+        serde_json::from_str(&extra_).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?
+    } else { None };
     debug!("Deserialized extra >>> {:?}", extra);
 
     trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
@@ -59,11 +65,11 @@ pub fn deserialize_inputs<'a>(
 
 pub fn handle_signing(
     command_handle: i32,
-    signed_payload: Result<XferPayload, ErrorCode>,
+    result: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>,
     identifier: Option<Did>,
     cb: BuildPaymentRequestCb
 ) {
-    let (error_code, pointer) = match build_payment_request_pointer(signed_payload, identifier) {
+    let (error_code, pointer) = match build_payment_request_pointer(identifier, result) {
         Ok(request_pointer) => (ErrorCode::Success, request_pointer),
         Err(ec) => (ec, c_pointer_from_str("")),
     };
@@ -72,10 +78,10 @@ pub fn handle_signing(
 }
 
 fn build_payment_request_pointer(
-    signed_payload: Result<XferPayload, ErrorCode>,
-    identifier: Option<Did>
+    identifier: Option<Did>,
+    result: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>,
 ) -> Result<*const c_char, ErrorCode> {
-    let signed_payload = signed_payload?;
+    let (signed_payload, taa_acceptance) = result?;
     debug!("Signed payload >>> {:?}", signed_payload);
 
     if signed_payload.signatures.is_none() {
@@ -92,8 +98,11 @@ fn build_payment_request_pointer(
         }
     };
 
-    let payment_request = PaymentRequest::new(signed_payload)
+    let mut payment_request = PaymentRequest::new(signed_payload)
         .as_request(identifier);
+
+    payment_request.set_taa_acceptance(taa_acceptance);
+
     debug!("payment_request >>> {:?}", payment_request);
 
     return payment_request
@@ -201,7 +210,7 @@ mod test_handle_signing {
     use utils::results::ResultHandler;
     use utils::test::{default, callbacks};
 
-    fn call_handle_signing(input_payload: Result<XferPayload, ErrorCode>) -> Result<String, ErrorCode> {
+    fn call_handle_signing(input_payload: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = callbacks::cb_ec_string();
         handle_signing(command_handle, input_payload, None, cb.unwrap());
         ResultHandler::one(ErrorCode::Success, receiver)
@@ -217,14 +226,14 @@ mod test_handle_signing {
     #[test]
     fn test_xfer_without_signatures() {
         let unsigned_payload = default::xfer_payload_unsigned();
-        let result = call_handle_signing(Ok(unsigned_payload));
+        let result = call_handle_signing(Ok((unsigned_payload, None)));
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn test_signed_xfer_payload() {
         let signed_payload = default::xfer_payload_signed();
-        let result = call_handle_signing(Ok(signed_payload)).unwrap();
+        let result = call_handle_signing(Ok((signed_payload, None))).unwrap();
         let request: Request<serde_json::value::Value> = serde_json::from_str(&result).unwrap();
         assert_eq!("10001", request.operation.get("type").unwrap());
         assert_eq!(
