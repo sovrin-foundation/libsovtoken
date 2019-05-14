@@ -189,7 +189,7 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler called did (address) >> {:?}", did);
+    trace!("api::add_request_fees_handler called did (address) >> {:?}", secret!(&did));
     let (inputs, outputs, extra, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -357,7 +357,7 @@ pub extern "C" fn build_payment_req_handler(
     extra: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-    trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", submitter_did);
+    trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", secret!(&submitter_did));
     let (inputs, outputs, extra, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -479,7 +479,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
-    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, payment_address);
+    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, secret!(&payment_address));
 
     let utxo_request =
         GetUtxoOperationRequest::new(String::from(payment_address));
@@ -656,7 +656,7 @@ pub extern "C" fn build_get_txn_fees_handler(
         did.validate().map_err(map_err_trace!()).or(Err(ErrorCode::CommonInvalidStructure))
     });
 
-    debug!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, did);
+    debug!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, secret!(&did));
 
     let did = match opt_res_to_res_opt!(did) {
         Ok(did) => did,

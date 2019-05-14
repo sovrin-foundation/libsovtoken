@@ -13,7 +13,7 @@ pub fn deserialize<'a>(
     txo: *const c_char,
     cb: JsonCallback
 ) -> Result<DeserializedArguments<'a>, ErrorCode> {
-    trace!("logic::verify::deserialize >> did: {:?}, txo: {:?}", did, txo);
+    trace!("logic::verify::deserialize >> did: {:?}, txo: {:?}", secret!(&did), secret!(&txo));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
@@ -26,18 +26,18 @@ pub fn deserialize<'a>(
             })
     )?;
 
-    debug!("Converted did pointer to string >>> {:?}", did);
+    debug!("Converted did pointer to string >>> {:?}", secret!(&did));
 
     let txo = string_from_char_ptr(txo)
         .ok_or(ErrorCode::CommonInvalidStructure)?;
-    debug!("Converted txo pointer to string >>> {:?}", txo);
+    debug!("Converted txo pointer to string >>> {:?}", secret!(&txo));
 
     let txo = TXO::from_libindy_string(&txo)
         .map_err(map_err_err!())
         .map_err(|_| ErrorCode::CommonInvalidStructure)?;
     debug!("Deserialized txo: {:?}", txo);
 
-    trace!("logic::verify::deserialize << did: {:?}, txo: {:?}", did, txo);
+    trace!("logic::verify::deserialize << did: {:?}, txo: {:?}", secret!(&did), secret!(&txo));
     Ok((did, txo, cb))
 }
 
