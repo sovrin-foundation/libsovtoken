@@ -358,20 +358,21 @@ pub extern "C" fn build_payment_req_handler(
     cb: JsonCallback
 ) -> i32 {
     trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", submitter_did);
-    let (inputs, outputs, extra, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, cb) {
-        Ok(tup) => tup,
-        Err(error_code) => {
-            trace!("api::build_payment_req_handler << result: {:?}", error_code);
-            return error_code as i32;
-        }
-    };
+    let (inputs, outputs, extra, submitter_did, cb) =
+        match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, submitter_did, cb) {
+            Ok(tup) => tup,
+            Err(error_code) => {
+                trace!("api::build_payment_req_handler << result: {:?}", error_code);
+                return error_code as i32;
+            }
+        };
 
     let payload = XferPayload::new(inputs, outputs, extra);
 
     let result = payload.sign_transfer(
         &CryptoSdk {},
         wallet_handle,
-        Box::new(move |result| build_payment::handle_signing(command_handle, result, cb))
+        Box::new(move |result| build_payment::handle_signing(command_handle, result, submitter_did.clone(), cb))
     );
 
     let ec = match result {
@@ -663,7 +664,7 @@ pub extern "C" fn build_get_txn_fees_handler(
         Err(e) => None
     };
 
-    let did = Some(did.unwrap_or(Did::new("LibsovtokenDid11111111")));
+    let did = Some(did.unwrap_or(Did::new("LibsovtokenDid11111111".to_string())));
 
     let get_txn_request = GetFeesRequest::new().as_request(did);
     print!("Built GET_TXN_FEES request: {:?}", get_txn_request);

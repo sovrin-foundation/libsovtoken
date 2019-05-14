@@ -140,7 +140,7 @@ fn errors_with_no_submitter_did_json() {
 fn success_signed_request() {
     sovtoken::api::sovtoken_init();
 
-    let did = String::from("287asdjkh2323kjnbakjs");
+    let did = String::from("V4SGRU86Z58d6TV7PBUe6f");
 
     let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
@@ -187,7 +187,7 @@ fn success_signed_request() {
     let error_code = sovtoken::api::build_payment_req_handler(
         command_handle,
         wallet.handle,
-        c_pointer_from_string(did),
+        c_pointer_from_string(did.clone()),
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
         ptr::null(),
@@ -202,9 +202,7 @@ fn success_signed_request() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    let ident = bs58::decode(&addresses[0]).with_check(None).into_vec().unwrap();
-    let ident = bs58::encode(ident).into_string();
-    assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
+    assert_eq!(&did, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 }
 
@@ -268,9 +266,7 @@ fn success_signed_request_from_libindy() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    let ident = bs58::decode(&addresses[0]).with_check(None).into_vec().unwrap();
-    let ident = bs58::encode(ident).into_string();
-    assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
+    assert_eq!(&did, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 
 }

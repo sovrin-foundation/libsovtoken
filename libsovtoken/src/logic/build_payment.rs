@@ -10,15 +10,17 @@ use logic::xfer_payload::XferPayload;
 use utils::base58::{IntoBase58, FromBase58};
 use ErrorCode;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_str};
+use logic::did::Did;
 
 
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
-type DeserializedArguments = (Inputs, Outputs, Option<String>, BuildPaymentRequestCb);
+type DeserializedArguments = (Inputs, Outputs, Option<String>, Option<Did>, BuildPaymentRequestCb);
 
-pub fn deserialize_inputs(
+pub fn deserialize_inputs<'a>(
     inputs_json: *const c_char,
     outputs_json: *const c_char,
     extra: *const c_char,
+    did: *const c_char,
     cb: Option<BuildPaymentRequestCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
     trace!("logic::build_payment::deserialize_inputs >> inputs_json: {:?}, outputs_json: {:?}, extra: {:?}", inputs_json, outputs_json, extra);
@@ -27,7 +29,15 @@ pub fn deserialize_inputs(
     let inputs_json = string_from_char_ptr(inputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted inputs_json pointer to string >>> {:?}", inputs_json);
-    
+
+    let did = Did::from_pointer(did).map(
+        |did| {
+            did.validate().map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))
+        }
+    );
+    let did = opt_res_to_res_opt!(did)?;
+    debug!("Converted did pointer to string >>> {:?}", did);
+
     let outputs_json = string_from_char_ptr(outputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
@@ -44,24 +54,26 @@ pub fn deserialize_inputs(
     debug!("Deserialized extra >>> {:?}", extra);
 
     trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
-    return Ok((inputs, outputs, extra, cb));
+    return Ok((inputs, outputs, extra, did, cb));
 }
 
 pub fn handle_signing(
     command_handle: i32,
     signed_payload: Result<XferPayload, ErrorCode>,
+    identifier: Option<Did>,
     cb: BuildPaymentRequestCb
 ) {
-    let (error_code, pointer) = match build_payment_request_pointer(signed_payload) {
+    let (error_code, pointer) = match build_payment_request_pointer(signed_payload, identifier) {
         Ok(request_pointer) => (ErrorCode::Success, request_pointer),
         Err(ec) => (ec, c_pointer_from_str("")),
     };
-    
+
     cb(command_handle, error_code as i32, pointer);
 }
 
 fn build_payment_request_pointer(
-    signed_payload: Result<XferPayload, ErrorCode>
+    signed_payload: Result<XferPayload, ErrorCode>,
+    identifier: Option<Did>
 ) -> Result<*const c_char, ErrorCode> {
     let signed_payload = signed_payload?;
     debug!("Signed payload >>> {:?}", signed_payload);
@@ -71,9 +83,14 @@ fn build_payment_request_pointer(
         return Err(ErrorCode::CommonInvalidStructure);
     }
 
-    let identifier = signed_payload.inputs[0].address.clone();
-    let identifier = identifier.as_bytes().from_base58_check();
-    let identifier = identifier.map(|s| s.into_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?;
+    let identifier = match identifier.map(String::from) {
+        Some(idr) => idr,
+        None => {
+            let addr = signed_payload.inputs[0].address.clone();
+            let idr = addr.as_bytes().from_base58_check();
+            idr.map(|s| s.into_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?
+        }
+    };
 
     let payment_request = PaymentRequest::new(signed_payload)
         .as_request(identifier);
@@ -101,35 +118,44 @@ mod test_deserialize_inputs {
         deserialize_inputs,
     };
 
-    pub fn call_deserialize_inputs(
+    pub fn call_deserialize_inputs<'a>(
         inputs_json: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
         extra: Option<*const c_char>,
+        did: Option<*const c_char>,
         cb: Option<Option<BuildPaymentRequestCb>>
     ) -> Result<DeserializedArguments, ErrorCode> {
         let inputs_json = inputs_json.unwrap_or_else(default::inputs_json_pointer);
         let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
         let extra = extra.unwrap_or(ptr::null());
+        let did = did.unwrap_or_else(default::did);
         let cb = cb.unwrap_or(Some(default::empty_callback_string));
 
-        return deserialize_inputs(inputs_json, outputs_json, extra, cb);
+        return deserialize_inputs(inputs_json, outputs_json, extra, did, cb);
     }
 
     #[test]
     fn deserialize_empty_inputs() {
-        let result = call_deserialize_inputs(Some(ptr::null()), None, None, None);
+        let result = call_deserialize_inputs(Some(ptr::null()), None, None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_empty_outputs() {
-        let result = call_deserialize_inputs(None, Some(ptr::null()), None, None);
+        let result = call_deserialize_inputs(None, Some(ptr::null()), None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
+    fn deserialize_empty_did() {
+        let result = call_deserialize_inputs(None, None, None, Some(ptr::null()), None);
+        assert!(result.is_ok());
+    }
+
+
+    #[test]
     fn deserialize_empty_callback() {
-        let result = call_deserialize_inputs(None, None, None, Some(None));
+        let result = call_deserialize_inputs(None, None, None, None, Some(None));
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
@@ -142,7 +168,7 @@ mod test_deserialize_inputs {
                 "seqNo": 2
             }
         });
-        let result = call_deserialize_inputs(Some(inputs_json), None, None, None);
+        let result = call_deserialize_inputs(Some(inputs_json), None, None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
@@ -156,13 +182,13 @@ mod test_deserialize_inputs {
                 "seqNo": 5,
             }
         });
-        let result = call_deserialize_inputs(None, Some(outputs_json), None, None);
+        let result = call_deserialize_inputs(None, Some(outputs_json), None, None, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
 
     #[test]
     fn deserialize_valid() {
-        let result = call_deserialize_inputs(None, None, None, None);
+        let result = call_deserialize_inputs(None, None, None, None, None);
         assert!(result.is_ok());
     }
 }
@@ -177,7 +203,7 @@ mod test_handle_signing {
 
     fn call_handle_signing(input_payload: Result<XferPayload, ErrorCode>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = callbacks::cb_ec_string();
-        handle_signing(command_handle, input_payload, cb.unwrap());
+        handle_signing(command_handle, input_payload, None, cb.unwrap());
         ResultHandler::one(ErrorCode::Success, receiver)
     }
 
