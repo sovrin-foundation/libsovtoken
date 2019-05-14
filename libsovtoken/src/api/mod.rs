@@ -660,7 +660,7 @@ pub extern "C" fn build_get_txn_fees_handler(
 
     let did = match opt_res_to_res_opt!(did) {
         Ok(did) => did,
-        Err(e) => None
+        Err(_e) => None
     };
 
     let did = Some(did.unwrap_or(Did::new("LibsovtokenDid11111111")));
