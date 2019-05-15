@@ -40,24 +40,32 @@ pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees
 
 // Helper to set fee alias for auth rules
 pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &str, txn_fees: &str) {
-    get_ledger_default_auth_rules(pool_handle);
+    _get_default_ledger_auth_rules(pool_handle);
 
     let auth_rules = AUTH_RULES.lock().unwrap();
 
-    let txn_fees: HashMap<String, String> = ::serde_json::from_str(txn_fees).unwrap();
+    let fees: HashMap<String, String> = ::serde_json::from_str(txn_fees).unwrap();
 
-    for (txn_, fee_alias) in txn_fees {
-        let rules = auth_rules.get(&txn_).unwrap();
+    let mut responses: Vec<Box<Future<Item=String, Error=::indy::IndyError>>> = Vec::new();
 
-        for auth_rule in rules {
-            let mut constraint = auth_rule.constraint.clone();
-            set_constraint_fee(&mut constraint, &fee_alias);
-            send_auth_rule(pool_handle, wallet_handle, submitter_did, auth_rule, &constraint);
+    for (txn_, fee_alias) in fees {
+        if let Some(rules) = auth_rules.get(&txn_) {
+            for auth_rule in rules {
+                let mut constraint = auth_rule.constraint.clone();
+                _set_fee_to_constraint(&mut constraint, &fee_alias);
+                responses.push(_send_auth_rule(pool_handle, wallet_handle, submitter_did, auth_rule, &constraint));
+            }
         }
     }
+
+    let _response = responses
+        .into_iter()
+        .map(|response| _check_auth_rule_responses(response))
+        .collect::<Vec<()>>();
 }
 
-fn send_auth_rule(pool_handle: i32, wallet_handle: i32, submitter_did: &str, auth_rule: &AuthRule, constraint: &serde_json::Value) {
+fn _send_auth_rule(pool_handle: i32, wallet_handle: i32, submitter_did: &str,
+                   auth_rule: &AuthRule, constraint: &serde_json::Value) -> Box<Future<Item=String, Error=::indy::IndyError>> {
     let auth_rule_request = ::indy::ledger::build_auth_rule_request(submitter_did,
                                                                     &auth_rule.txn_type,
                                                                     &auth_rule.action,
@@ -66,12 +74,17 @@ fn send_auth_rule(pool_handle: i32, wallet_handle: i32, submitter_did: &str, aut
                                                                     auth_rule.new_value.as_ref().map(String::as_str),
                                                                     &constraint.to_string(),
     ).wait().unwrap();
-    let auth_rule_response = ::indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, submitter_did, &auth_rule_request).wait().unwrap();
-    let response: serde_json::Value = ::serde_json::from_str(&auth_rule_response).unwrap();
-    assert_eq!(response["op"].as_str().unwrap(), "REPLY");
+
+    ::indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, submitter_did, &auth_rule_request)
 }
 
-fn get_ledger_default_auth_rules(pool_handle: i32) {
+fn _check_auth_rule_responses(response: Box<Future<Item=String, Error=::indy::IndyError>>) {
+    let response = response.wait().unwrap();
+    let response: serde_json::Value = ::serde_json::from_str(&response).unwrap();
+    assert_eq!("REPLY", response["op"].as_str().unwrap());
+}
+
+fn _get_default_ledger_auth_rules(pool_handle: i32) {
     lazy_static! {
         static ref GET_DEFAULT_AUTH_CONSTRAINTS: Once = ONCE_INIT;
 
@@ -110,14 +123,14 @@ fn get_ledger_default_auth_rules(pool_handle: i32) {
     })
 }
 
-fn set_constraint_fee(constraint: &mut serde_json::Value, fee_alias: &str) {
+fn _set_fee_to_constraint(constraint: &mut serde_json::Value, fee_alias: &str) {
     match constraint["constraint_id"].as_str().unwrap() {
         "ROLE" => {
             constraint["metadata"]["fees"] = json!(fee_alias);
         }
         "OR" | "AND" => {
             for mut constraint in constraint["auth_constraints"].as_array_mut().unwrap() {
-                set_constraint_fee(&mut constraint, fee_alias)
+                _set_fee_to_constraint(&mut constraint, fee_alias)
             }
         }
         _ => { panic!() }

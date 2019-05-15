@@ -142,9 +142,7 @@ pub fn build_and_submit_set_fees() {
     }).to_string();
 
     fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
-
 }
-
 
 #[test]
 pub fn build_and_submit_set_fees_with_names() {
@@ -200,7 +198,7 @@ pub fn build_and_submit_set_fees_with_empty_did() {
         "ATTRIB": 2
     }).to_string();
 
-    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, None);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
     let current_fees = fees::get_fees(&wallet, pool_handle, None);
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
@@ -212,6 +210,6 @@ pub fn build_and_submit_set_fees_with_empty_did() {
         "ATTRIB": 0
     }).to_string();
 
-    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, None);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
 
 }
