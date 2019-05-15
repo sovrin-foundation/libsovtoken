@@ -206,10 +206,10 @@ trait InputSigner<A: CryptoAPI> {
         cb: Box<Arc<Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
-        trace!("logic::xfer_payload::input_signer::sign_input >> input: {:?}, outputs: {:?}, wallet_handle {:?}", input, outputs, wallet_handle);
+        trace!("logic::xfer_payload::input_signer::sign_input >> input: {:?}, outputs: {:?}, wallet_handle {:?}", secret!(&input), secret!(&outputs), wallet_handle);
         let verkey = address::verkey_from_unqualified_address(&input.address.clone())?;
 
-        debug!("Received verkey for payment address >>> {:?}", verkey);
+        debug!("Received verkey for payment address >>> {:?}", secret!(&verkey));
 
         let vals: Vec<serde_json::Value> = vec![
             Some(json!([input])),
@@ -221,13 +221,13 @@ trait InputSigner<A: CryptoAPI> {
 
         let message = serialize_signature(json!(vals))?;
 
-        debug!("Message to sign >>> {:?}", &message);
+        debug!("Message to sign >>> {:?}", secret!(&message));
 
         let input_key = input.to_string();
 
         let ca = move |signature: Result<String, ErrorCode>| {
             let key = input_key.clone();
-            debug!("Received encoded signature >>> {:?} for input {:?}", signature, key);
+            debug!("Received encoded signature >>> {:?} for input {:?}", secret!(&signature), secret!(&key));
             cb(signature, key);
         };
 
