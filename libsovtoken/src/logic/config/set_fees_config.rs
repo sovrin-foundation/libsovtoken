@@ -44,7 +44,7 @@ pub type SetFeesMap = HashMap<String, TokenAmount>;
         fees.insert(String::from(txn_types::XFER_PUBLIC), 10);
         fees.insert(String::from("15"), 3);
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
-        let did = Did::new(&identifier).validate().unwrap();
+        let did = Did::new(identifier).validate().unwrap();
         let set_fees = SetFees::new(fees).validate().unwrap();
         let set_fees_request = set_fees.as_request(Some(did));
         let json_pointer = set_fees_request.serialize_to_pointer().unwrap();
@@ -246,8 +246,8 @@ mod fees_config_test {
 
         let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
         let set_fees = SetFees::new(hash_map).validate().unwrap();
-        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
-        let did = Did::new(&identifier).validate().unwrap();
+        let identifier = String::from("V4SGRU86Z58d6TV7PBUe6f");
+        let did = Did::new(identifier).validate().unwrap();
         let request = set_fees.as_request(Some(did));
         let fees_from_request = serde_json::to_value(&request.operation.fees).unwrap();
         assert_eq!(expected, fees_from_request)

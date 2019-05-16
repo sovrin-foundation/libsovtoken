@@ -54,7 +54,7 @@ use logic::xfer_payload::XferPayload;
 
      [`build_payment_req_handler`]: ../../../api/fn.build_payment_req_handler.html
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct PaymentRequest {
     #[serde(rename = "type")]
     txn_type: String,

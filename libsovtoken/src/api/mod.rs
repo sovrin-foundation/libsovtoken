@@ -189,7 +189,7 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler called did (address) >> {:?}", did);
+    trace!("api::add_request_fees_handler called did (address) >> {:?}", secret!(&did));
     let (inputs, outputs, extra, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -357,21 +357,22 @@ pub extern "C" fn build_payment_req_handler(
     extra: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-    trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", submitter_did);
-    let (inputs, outputs, extra, cb) = match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, cb) {
-        Ok(tup) => tup,
-        Err(error_code) => {
-            trace!("api::build_payment_req_handler << result: {:?}", error_code);
-            return error_code as i32;
-        }
-    };
+    trace!("api::build_payment_req_handler called >> submitter_did (address) {:?}", secret!(&submitter_did));
+    let (inputs, outputs, extra, submitter_did, cb) =
+        match build_payment::deserialize_inputs(inputs_json, outputs_json, extra, submitter_did, cb) {
+            Ok(tup) => tup,
+            Err(error_code) => {
+                trace!("api::build_payment_req_handler << result: {:?}", error_code);
+                return error_code as i32;
+            }
+        };
 
     let payload = XferPayload::new(inputs, outputs, extra);
 
     let result = payload.sign_transfer(
         &CryptoSdk {},
         wallet_handle,
-        Box::new(move |result| build_payment::handle_signing(command_handle, result, cb))
+        Box::new(move |result| build_payment::handle_signing(command_handle, result, submitter_did.clone(), cb))
     );
 
     let ec = match result {
@@ -479,7 +480,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
             return ErrorCode::CommonInvalidStructure as i32;
         }
     };
-    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, payment_address);
+    debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, secret!(&payment_address));
 
     let utxo_request =
         GetUtxoOperationRequest::new(String::from(payment_address));
@@ -656,15 +657,17 @@ pub extern "C" fn build_get_txn_fees_handler(
         did.validate().map_err(map_err_trace!()).or(Err(ErrorCode::CommonInvalidStructure))
     });
 
-    debug!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, did);
+    debug!("api::build_get_txn_fees_handler >> wallet_handle: {:?}, submitter_did: {:?}", wallet_handle, secret!(&did));
 
     let did = match opt_res_to_res_opt!(did) {
         Ok(did) => did,
-        Err(e) => { return e as i32; }
+        Err(_e) => None
     };
 
+    let did = Some(did.unwrap_or(Did::new("LibsovtokenDid11111111".to_string())));
+
     let get_txn_request = GetFeesRequest::new().as_request(did);
-    info!("Built GET_TXN_FEES request: {:?}", get_txn_request);
+    print!("Built GET_TXN_FEES request: {:?}", get_txn_request);
 
     let request_pointer = match get_txn_request.serialize_to_pointer() {
         Ok(p) => p,

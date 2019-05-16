@@ -56,7 +56,6 @@ pub fn c_pointer_from_string(string: String) -> *const c_char {
 */
 pub fn deserialize_from_char_ptr<'a, S: JsonDeserialize<'a>>(str_ptr: *const c_char) -> Result<S, ErrorCode> {
     let json_string = str_from_char_ptr(str_ptr).ok_or(ErrorCode::CommonInvalidStructure)?;
-    println!("deserializing = {:?}",json_string);
 
     let result = S::from_json(json_string).map_err(|_| ErrorCode::CommonInvalidStructure);
     return result;
