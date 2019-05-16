@@ -31,7 +31,7 @@ fn txn_name_to_code(txn: &str) -> String {
 
 type DeserializedArguments = (Option<Did>, SetFees, JsonCallbackUnwrapped);
 
-pub fn deserialize_inputs<'a>(
+pub fn deserialize_inputs(
     did: *const c_char,
     fees_json: *const c_char,
     cb: JsonCallback
@@ -70,7 +70,7 @@ mod test_deserialize_inputs {
     use utils::test::default;
     use utils::ffi_support::{c_pointer_from_str};
 
-    pub fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs(
         did: Option<*const c_char>,
         set_fees_json: Option<*const c_char>,
         cb: Option<JsonCallback>

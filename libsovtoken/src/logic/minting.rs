@@ -10,12 +10,12 @@ use logic::output::Outputs;
 
 type DeserializedArguments = (Option<Did>, Outputs, Option<String>, JsonCallbackUnwrapped);
 
-pub fn deserialize_inputs<'a>(
+pub fn deserialize_inputs(
     did: *const c_char,
     outputs_json: *const c_char,
     extra: *const c_char,
     cb: JsonCallback
-) -> Result<DeserializedArguments<'a>, ErrorCode> {
+) -> Result<DeserializedArguments, ErrorCode> {
     trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}, extra: {:?}", secret!(&did), secret!(&outputs_json), secret!(&extra));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
@@ -76,7 +76,7 @@ mod test_build_mint_request {
     use utils::ffi_support::{c_pointer_from_str};
     use utils::test::default;
 
-    pub fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs(
         did: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
         extra: Option<*const c_char>,

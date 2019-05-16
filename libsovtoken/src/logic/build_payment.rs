@@ -31,13 +31,10 @@ pub fn deserialize_inputs(
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
     debug!("Converted inputs_json pointer to string >>> {:?}", secret!(&inputs_json));
 
-    let did = Did::from_pointer(did).map(
-        |did| {
-            did.validate().map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))
-        }
-    );
-    let did = opt_res_to_res_opt!(did)?;
-    debug!("Converted did pointer to string >>> {:?}", did);
+    let did = if let Some(did) = Did::from_pointer(did) {
+        Some(did.validate().map_err(map_err_err!()).map_err(|_| ErrorCode::CommonInvalidStructure)?)
+    } else {None};
+    debug!("Converted did pointer to string >>> {:?}", secret!(&did));
 
     let outputs_json = string_from_char_ptr(outputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
@@ -127,7 +124,7 @@ mod test_deserialize_inputs {
         deserialize_inputs,
     };
 
-    pub fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs(
         inputs_json: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
         extra: Option<*const c_char>,
