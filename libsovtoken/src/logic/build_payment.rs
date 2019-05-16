@@ -17,19 +17,19 @@ use logic::did::Did;
 type BuildPaymentRequestCb = extern fn(ch: i32, err: i32, request_json: *const c_char) -> i32;
 type DeserializedArguments = (Inputs, Outputs, Option<Extra>, Option<Did>, BuildPaymentRequestCb);
 
-pub fn deserialize_inputs<'a>(
+pub fn deserialize_inputs(
     inputs_json: *const c_char,
     outputs_json: *const c_char,
     extra: *const c_char,
     did: *const c_char,
     cb: Option<BuildPaymentRequestCb>
 ) -> Result<DeserializedArguments, ErrorCode> {
-    trace!("logic::build_payment::deserialize_inputs >> inputs_json: {:?}, outputs_json: {:?}, extra: {:?}", inputs_json, outputs_json, extra);
+    trace!("logic::build_payment::deserialize_inputs >> inputs_json: {:?}, outputs_json: {:?}, extra: {:?}", secret!(&inputs_json), secret!(&outputs_json), secret!(&extra));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
     let inputs_json = string_from_char_ptr(inputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
-    debug!("Converted inputs_json pointer to string >>> {:?}", inputs_json);
+    debug!("Converted inputs_json pointer to string >>> {:?}", secret!(&inputs_json));
 
     let did = Did::from_pointer(did).map(
         |did| {
@@ -41,15 +41,15 @@ pub fn deserialize_inputs<'a>(
 
     let outputs_json = string_from_char_ptr(outputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure).map_err(map_err_err!())?;
-    debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
+    debug!("Converted outputs_json pointer to string >>> {:?}", secret!(&outputs_json));
 
     let inputs: Inputs = serde_json::from_str(&inputs_json).map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized input_json >>> {:?}", inputs);
+    debug!("Deserialized input_json >>> {:?}", secret!(&inputs));
 
     let outputs: Outputs = serde_json::from_str(&outputs_json).map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized output_json >>> {:?}", outputs);
+    debug!("Deserialized output_json >>> {:?}", secret!(&outputs));
 
     let extra = string_from_char_ptr(extra);
     debug!("Converted extra pointer to string >>> {:?}", extra);
@@ -57,9 +57,9 @@ pub fn deserialize_inputs<'a>(
     let extra: Option<Extra> = if let Some(extra_) = extra {
         serde_json::from_str(&extra_).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?
     } else { None };
-    debug!("Deserialized extra >>> {:?}", extra);
+    debug!("Deserialized extra >>> {:?}", secret!(&extra));
 
-    trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", inputs, outputs, extra);
+    trace!("logic::build_payment::deserialize_inputs << inputs: {:?}, outputs: {:?}, extra: {:?}", secret!(&inputs), secret!(&outputs), secret!(&extra));
     return Ok((inputs, outputs, extra, did, cb));
 }
 
@@ -82,7 +82,7 @@ fn build_payment_request_pointer(
     result: Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>,
 ) -> Result<*const c_char, ErrorCode> {
     let (signed_payload, taa_acceptance) = result?;
-    debug!("Signed payload >>> {:?}", signed_payload);
+    debug!("Signed payload >>> {:?}", secret!(&signed_payload));
 
     if signed_payload.signatures.is_none() {
         error!("Building an unsigned payment request.");

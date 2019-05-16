@@ -36,7 +36,7 @@ pub fn deserialize_inputs<'a>(
     fees_json: *const c_char,
     cb: JsonCallback
 ) -> Result<DeserializedArguments, ErrorCode> {
-    trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", did, fees_json);
+    trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", secret!(&did), secret!(&fees_json));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
     let did = Did::from_pointer(did).map(|did| {
