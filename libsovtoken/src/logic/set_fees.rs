@@ -29,13 +29,13 @@ fn txn_name_to_code(txn: &str) -> String {
     }
 }
 
-type DeserializedArguments<'a> = (Option<Did<'a>>, SetFees, JsonCallbackUnwrapped);
+type DeserializedArguments = (Option<Did>, SetFees, JsonCallbackUnwrapped);
 
-pub fn deserialize_inputs<'a>(
+pub fn deserialize_inputs(
     did: *const c_char,
     fees_json: *const c_char,
     cb: JsonCallback
-) -> Result<DeserializedArguments<'a>, ErrorCode> {
+) -> Result<DeserializedArguments, ErrorCode> {
     trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", secret!(&did), secret!(&fees_json));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
@@ -70,11 +70,11 @@ mod test_deserialize_inputs {
     use utils::test::default;
     use utils::ffi_support::{c_pointer_from_str};
 
-    pub fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs(
         did: Option<*const c_char>,
         set_fees_json: Option<*const c_char>,
         cb: Option<JsonCallback>
-    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+    ) -> Result<DeserializedArguments, ErrorCode> {
         let did_json = did.unwrap_or_else(default::did);
         let set_fees_json = set_fees_json.unwrap_or_else(default::set_fees_json);
         let cb = cb.unwrap_or(Some(default::empty_callback_string));

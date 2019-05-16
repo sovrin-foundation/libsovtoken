@@ -29,17 +29,17 @@ pub enum DidError {
     The did needs to be between 20 and 21 characters and contain only
     alphanumeric characters.
 */
-#[derive(Debug, PartialEq, Eq)]
-pub struct Did<'a>(&'a str);
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Did(String);
 
-impl<'a> Did<'a> {
+impl Did {
 
-    pub fn new(did_string: &'a str) -> Self {
+    pub fn new(did_string: String) -> Self {
         return Did(did_string);
     }
 
     pub fn from_pointer(pointer: *const c_char) -> Option<Self> {
-        return str_from_char_ptr(pointer).map(Self::new);
+        return str_from_char_ptr(pointer).map(|st| st.to_string()).map(Self::new);
     }
 
     /**
@@ -54,28 +54,31 @@ impl<'a> Did<'a> {
                 use sovtoken::logic::did::Did;
                 use sovtoken::logic::did::DidError;
             
-                let did_invalid = Did::new("123456789[11234567891");
+                let did_invalid = Did::new("123456789[11234567891".to_string());
                 let error = did_invalid.validate().unwrap_err();
                 assert_eq!(DidError::InvalidChar('['), error);
             # }
         ```
     */
     pub fn validate(self) -> Result<Self, DidError> {
-        let Did(did_string) = self;
-        let res_did = did_string.from_base58().map_err(map_err_err!());
+
+        let (res_did, len) = {
+            let did_string = &self.0;
+            (did_string.from_base58().map_err(map_err_err!()), did_string.len())
+        };
 
         match res_did {
             Ok(ref vec) if vec.len() == 32 || vec.len() == 16 => Ok(self),
             Ok(ref vec) => Err(DidError::InvalidLength(vec.len())),
             Err(DecodeError::InvalidCharacter {character: b, index: _}) => Err(DidError::InvalidChar(b as char)),
             Err(DecodeError::NonAsciiCharacter {index: _}) => Err(DidError::InvalidChar(0 as char)),
-            Err(_) => Err(DidError::InvalidLength(did_string.len()))
+            Err(_) => Err(DidError::InvalidLength(len))
         }
     }
 }
 
-impl<'a> From<Did<'a>> for String {
-    fn from(did: Did<'a>) -> String {
+impl From<Did> for String {
+    fn from(did: Did) -> String {
         return String::from(did.0);
     }
 }
@@ -109,22 +112,22 @@ mod test_did_validation {
 
     #[test]
     fn did_invalid_length() {
-        assert_eq!(Err(DidError::InvalidLength(17)), Did::new(&"1123456789abcdef1".as_bytes().into_base58()).validate());
+        assert_eq!(Err(DidError::InvalidLength(17)), Did::new("1123456789abcdef1".as_bytes().into_base58()).validate());
     }
 
     #[test]
     fn did_invalid_char() {
-        assert_eq!(Err(DidError::InvalidChar('!')), Did::new("123456789abcd!efghij").validate());
+        assert_eq!(Err(DidError::InvalidChar('!')), Did::new("123456789abcd!efghij".to_string()).validate());
     }
 
     #[test]
     fn did_valid_length_16() {
-        assert!(Did::new(&"1123456789abcdef".as_bytes().into_base58()).validate().is_ok());
+        assert!(Did::new("1123456789abcdef".as_bytes().into_base58()).validate().is_ok());
     }
 
     #[test]
     fn did_valid_length_32() {
-        assert!(Did::new(&"1123456789abcdef1123456789abcdef".as_bytes().into_base58()).validate().is_ok());
+        assert!(Did::new("1123456789abcdef1123456789abcdef".as_bytes().into_base58()).validate().is_ok());
     }
 
     #[test]

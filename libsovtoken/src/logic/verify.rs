@@ -6,13 +6,13 @@ use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 use logic::parsers::common::TXO;
 
-type DeserializedArguments<'a> = (Option<Did<'a>>, TXO, JsonCallbackUnwrapped);
+type DeserializedArguments = (Option<Did>, TXO, JsonCallbackUnwrapped);
 
-pub fn deserialize<'a>(
+pub fn deserialize(
     did: *const c_char,
     txo: *const c_char,
     cb: JsonCallback
-) -> Result<DeserializedArguments<'a>, ErrorCode> {
+) -> Result<DeserializedArguments, ErrorCode> {
     trace!("logic::verify::deserialize >> did: {:?}, txo: {:?}", secret!(&did), secret!(&txo));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
