@@ -73,7 +73,7 @@ mod output_mint_config_test {
 
     fn initial_mint_request() -> Request<MintRequest> {
         let identifier: String = rand_string(21);
-        let did = Did::new(&identifier);
+        let did = Did::new(identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let outputs = vec![output];
         return MintRequest::new(outputs, Some(did), None);
@@ -96,7 +96,7 @@ mod output_mint_config_test {
     #[test]
     fn create_request_with_mint_config() {
         let identifier: String = rand_string(21);
-        let did = Did::new(&identifier);
+        let did = Did::new(identifier);
         let output = Output::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 10);
         let outputs = vec![output];
         let request = MintRequest::from_config(outputs.clone(), Some(did), None);

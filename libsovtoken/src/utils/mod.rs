@@ -25,3 +25,4 @@ pub mod sequence;
 pub mod results;
 #[cfg(any(test, feature = "integration"))]
 pub mod test;
+pub mod txn_author_agreement;

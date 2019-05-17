@@ -16,8 +16,8 @@ use utils::constants::txn_types::GET_FEES;
         use sovtoken::logic::config::get_fees_config::GetFeesRequest;
         use sovtoken::logic::did::Did;
 
-        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
-        let did = Did::new(&identifier).validate().unwrap();
+        let identifier = String::from("V4SGRU86Z58d6TV7PBUe6f");
+        let did = Did::new(identifier).validate().unwrap();
         let get_fees_request = GetFeesRequest::new().as_request(Some(did));
         let json_pointer = get_fees_request.serialize_to_pointer().unwrap();
     ```
@@ -65,7 +65,7 @@ mod get_fees_config_test {
 
     fn initial_get_fee_request() -> Request<GetFeesRequest> {
         let identifier: String = rand_string(21);
-        let did = Did::new(&identifier);
+        let did = Did::new(identifier);
         return GetFeesRequest::new().as_request(Some(did));
     }
 
@@ -86,7 +86,7 @@ mod get_fees_config_test {
     #[test]
     fn create_request_with_fees_config() {
         let identifier: String = rand_string(21);
-        let did = Did::new(&identifier);
+        let did = Did::new(identifier);
         let request = GetFeesRequest::new().as_request(Some(did));
         assert_eq!(request.operation.txn_type, GET_FEES.to_string());
     }
