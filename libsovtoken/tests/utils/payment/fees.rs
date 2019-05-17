@@ -98,7 +98,7 @@ fn _get_default_ledger_auth_rules(pool_handle: i32) {
         let constraints = get_auth_rule_response["result"]["data"].as_object_mut().unwrap();
 
         for (constraint_id, constraint) in constraints.iter_mut() {
-            let parts: Vec<&str> = constraint_id.split("--").collect();
+            let parts: Vec<&str> = constraint_id[2..].split("--").collect();
 
             let txn_type = parts[0].to_string();
             let action = parts[1].to_string();
