@@ -8,7 +8,7 @@ use serde_json;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 
-type DeserializedArguments<'a> = (Option<Did>, SetFees, JsonCallbackUnwrapped);
+type DeserializedArguments = (Option<Did>, SetFees, JsonCallbackUnwrapped);
 
 pub fn deserialize_inputs(
     did: *const c_char,
