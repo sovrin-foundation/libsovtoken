@@ -250,7 +250,7 @@ pub fn build_and_submit_mint_txn_works_with_empty_did() {
 
     let (mint_req, _) = indy::payments::build_mint_req(
         wallet.handle,
-        None,
+        Some(&dids[0]),
         &output_json,
         None,
     ).wait().unwrap();

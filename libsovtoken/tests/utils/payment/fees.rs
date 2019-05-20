@@ -51,9 +51,11 @@ pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &
     for (txn_, fee_alias) in fees {
         if let Some(rules) = auth_rules.get(&txn_) {
             for auth_rule in rules {
-                let mut constraint = auth_rule.constraint.clone();
-                _set_fee_to_constraint(&mut constraint, &fee_alias);
-                responses.push(_send_auth_rule(pool_handle, wallet_handle, submitter_did, auth_rule, &constraint));
+                let mut constraint: ::serde_json::Value = auth_rule.constraint.clone();
+                if !constraint.as_object().map(::serde_json::Map::is_empty).unwrap_or(true) {
+                    _set_fee_to_constraint(&mut constraint, &fee_alias);
+                    responses.push(_send_auth_rule(pool_handle, wallet_handle, submitter_did, auth_rule, &constraint));
+                }
             }
         }
     }
@@ -98,7 +100,7 @@ fn _get_default_ledger_auth_rules(pool_handle: i32) {
         let constraints = get_auth_rule_response["result"]["data"].as_object_mut().unwrap();
 
         for (constraint_id, constraint) in constraints.iter_mut() {
-            let parts: Vec<&str> = constraint_id[2..].split("--").collect();
+            let parts: Vec<&str> = constraint_id.split("--").collect();
 
             let txn_type = parts[0].to_string();
             let action = parts[1].to_string();
