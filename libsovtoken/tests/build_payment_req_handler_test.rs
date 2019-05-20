@@ -141,7 +141,7 @@ fn errors_with_no_submitter_did_json() {
 fn success_signed_request() {
     sovtoken::api::sovtoken_init();
 
-    let did = String::from("287asdjkh2323kjnbakjs");
+    let did = String::from("V4SGRU86Z58d6TV7PBUe6f");
 
     let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
@@ -188,7 +188,7 @@ fn success_signed_request() {
     let error_code = sovtoken::api::build_payment_req_handler(
         command_handle,
         wallet.handle,
-        c_pointer_from_string(did),
+        c_pointer_from_string(did.clone()),
         c_pointer_from_string(inputs.to_string()),
         c_pointer_from_string(outputs.to_string()),
         ptr::null(),
@@ -203,9 +203,7 @@ fn success_signed_request() {
     debug!("Received request {:?}", request);
 
     assert_eq!(&expected_operation, request.get("operation").unwrap());
-    let ident = bs58::decode(&addresses[0]).with_check(None).into_vec().unwrap();
-    let ident = bs58::encode(ident).into_string();
-    assert_eq!(&ident, request.get("identifier").unwrap().as_str().unwrap());
+    assert_eq!(&did, request.get("identifier").unwrap().as_str().unwrap());
     assert!(request.get("reqId").is_some());
 }
 
@@ -260,6 +258,69 @@ fn success_signed_request_from_libindy() {
     let (request_string, _) = indy::payments::build_payment_req(
         wallet.handle,
         Some(&did),
+        &inputs.to_string(),
+        &outputs.to_string(),
+        None,
+    ).wait().unwrap();
+
+    let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
+    debug!("Received request {:?}", request);
+
+    assert_eq!(&expected_operation, request.get("operation").unwrap());
+    assert_eq!(&did, request.get("identifier").unwrap().as_str().unwrap());
+    assert!(request.get("reqId").is_some());
+
+}
+
+#[test] // TODO: look carefully on changes
+fn success_signed_request_from_libindy_no_identifier() {
+
+    sovtoken::api::sovtoken_init();
+
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
+
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
+
+    let outputs = json!([
+            {
+                "recipient": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "recipient": payment_addresses[3],
+                "amount": 22
+            }
+        ]);
+
+    let expected_operation = json!({
+        "type": XFER_PUBLIC,
+        "inputs": [
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1},
+        ],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
+        "signatures": [
+            "bnuZUPAq5jgpqvaQBzXKBQ973yCpjL1pkqJjiBtVPybpzzKGnPv3uE3VufBVZtR6hq2y55b8MSJpPFVMqskBy3m",
+            "4HpwuknWrSpJCs2qXEMZA1kbAsP9WxJFaoHq1cH7W3yxLg5R2fHV8QPdY5Hz2bgDmGkRitLaPa3HbF65kTxNpNTe"
+        ]
+    });
+
+    trace!("Calling build_payment_req");
+
+    let (request_string, _) = indy::payments::build_payment_req(
+        wallet.handle,
+        None,
         &inputs.to_string(),
         &outputs.to_string(),
         None,

@@ -8,15 +8,15 @@ use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::{string_from_char_ptr};
 use logic::output::Outputs;
 
-type DeserializedArguments<'a> = (Option<Did<'a>>, Outputs, Option<String>, JsonCallbackUnwrapped);
+type DeserializedArguments = (Option<Did>, Outputs, Option<String>, JsonCallbackUnwrapped);
 
-pub fn deserialize_inputs<'a>(
+pub fn deserialize_inputs(
     did: *const c_char,
     outputs_json: *const c_char,
     extra: *const c_char,
     cb: JsonCallback
-) -> Result<DeserializedArguments<'a>, ErrorCode> {
-    trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}, extra: {:?}", did, outputs_json, extra);
+) -> Result<DeserializedArguments, ErrorCode> {
+    trace!("logic::minting::deserialize_inputs >> did: {:?}, outputs_json: {:?}, extra: {:?}", secret!(&did), secret!(&outputs_json), secret!(&extra));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
     trace!("Unwrapped callback.");
 
@@ -26,20 +26,20 @@ pub fn deserialize_inputs<'a>(
         }
     );
     let did = opt_res_to_res_opt!(did)?;
-    debug!("Converted did pointer to string >>> {:?}", did);
+    debug!("Converted did pointer to string >>> {:?}", secret!(&did));
 
     let outputs_json = string_from_char_ptr(outputs_json)
         .ok_or(ErrorCode::CommonInvalidStructure)?;
-    debug!("Converted outputs_json pointer to string >>> {:?}", outputs_json);
+    debug!("Converted outputs_json pointer to string >>> {:?}", secret!(&outputs_json));
 
     let outputs: Outputs = serde_json::from_str(&outputs_json)
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-    debug!("Deserialized output_json >>> {:?}", outputs);
+    debug!("Deserialized output_json >>> {:?}", secret!(&outputs));
 
     let extra = string_from_char_ptr(extra);
-    debug!("Deserialized extra >>> {:?}", extra);
+    debug!("Deserialized extra >>> {:?}", secret!(&extra));
 
-    trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}, extra: {:?}", did, outputs, extra);
+    trace!("logic::minting::deserialize_inputs << did: {:?}, outputs: {:?}, extra: {:?}", secret!(&did), secret!(&outputs), secret!(&extra));
     return Ok((did, outputs, extra, cb));
 }
 
@@ -48,7 +48,7 @@ pub fn build_mint_request(
     mut outputs: Outputs,
     extra: Option<String>,
 ) -> Result<*const c_char, ErrorCode> {
-    trace!("logic::minting::build_mint_request >> did: {:?}, outputs: {:?}", did, outputs);
+    trace!("logic::minting::build_mint_request >> did: {:?}, outputs: {:?}", secret!(&did), secret!(&outputs));
 
     for output in &mut outputs {
         let address = address::unqualified_address_from_address(&output.recipient)?;
@@ -57,7 +57,7 @@ pub fn build_mint_request(
     trace!("Stripped pay:sov: from outputs");
 
     let mint_request = MintRequest::from_config(outputs, did, extra);
-    info!("Built a mint request >>> {:?}", mint_request);
+    info!("Built a mint request >>> {:?}", secret!(&mint_request));
 
     let ptr = mint_request.serialize_to_pointer()
         .or(Err(ErrorCode::CommonInvalidStructure));
@@ -76,12 +76,12 @@ mod test_build_mint_request {
     use utils::ffi_support::{c_pointer_from_str};
     use utils::test::default;
 
-    pub fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs(
         did: Option<*const c_char>,
         outputs_json: Option<*const c_char>,
         extra: Option<*const c_char>,
         cb: Option<JsonCallback>
-    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+    ) -> Result<DeserializedArguments, ErrorCode> {
         let req_json = did.unwrap_or_else(default::did);
         let outputs_json = outputs_json.unwrap_or_else(default::outputs_json_pointer);
         let extra = extra.unwrap_or(null());
@@ -96,7 +96,7 @@ mod test_build_mint_request {
             Output::new(String::from("pad:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"), 12)
         ];
 
-        let did = Did::new(&"en32ansFeZNERIouv2xA");
+        let did = Did::new("en32ansFeZNERIouv2xA".to_string());
         let result = build_mint_request(Some(did), outputs, None);
         assert_eq!(ErrorCode::CommonInvalidStructure, result.unwrap_err());
     }
