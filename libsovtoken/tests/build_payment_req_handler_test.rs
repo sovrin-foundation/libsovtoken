@@ -6,6 +6,7 @@ extern crate bs58;
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate lazy_static;
 
 use std::ptr;
 use std::ffi::CString;

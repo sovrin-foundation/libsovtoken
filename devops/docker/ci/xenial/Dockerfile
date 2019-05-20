@@ -36,9 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #         or python3-rocksdb are not specified here)
 ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.5}
 ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
-ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.8.0~dev791}
+ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.8.0~dev794}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.32}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.8.0~dev932}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.8.0~dev935}
 ENV TOKEN_VER  ${TOKEN_VER:-0.9.6~25}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.list \

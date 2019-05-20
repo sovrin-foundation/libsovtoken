@@ -667,7 +667,6 @@ pub extern "C" fn build_get_txn_fees_handler(
     let did = Some(did.unwrap_or(Did::new("LibsovtokenDid11111111".to_string())));
 
     let get_txn_request = GetFeesRequest::new().as_request(did);
-    print!("Built GET_TXN_FEES request: {:?}", get_txn_request);
 
     let request_pointer = match get_txn_request.serialize_to_pointer() {
         Ok(p) => p,
