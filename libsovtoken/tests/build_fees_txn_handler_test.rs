@@ -108,7 +108,29 @@ fn add_fees_json() {
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
 }
 
+#[test]
+fn add_fees_json_for_any_key() {
+    sovtoken::api::sovtoken_init();
+    let fees = json!({
+        "3": 6,
+        "TXN_ALIAS": 12,
+        "TXN ALIAS WITH SPACE": 12,
+    });
+    let expected_operation = json!({
+        "type": "20000",
+        "fees": fees,
+    });
 
+    let did = bs58::encode("1234567890123456").into_string();
+    let (ec_initial, receiver) = call_set_fees(&did, fees);
+    let (ec_callback, fees_request) = receiver.recv().unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&fees_request).unwrap();
+
+    assert_eq!(ErrorCode::Success, ec_initial);
+    assert_eq!(ErrorCode::Success, ec_callback);
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+}
 
 #[test]
 pub fn build_and_submit_set_fees() {
@@ -167,8 +189,8 @@ pub fn build_and_submit_set_fees_with_names() {
     let current_fees = fees::get_fees(&wallet, pool_handle, Some(dids[0]));
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
-    assert_eq!(current_fees_value["1"].as_u64().unwrap(), 1);
-    assert_eq!(current_fees_value["100"].as_u64().unwrap(), 2);
+    assert_eq!(current_fees_value["NYM"].as_u64().unwrap(), 1);
+    assert_eq!(current_fees_value["ATTRIB"].as_u64().unwrap(), 2);
 
     let fees = json!({
         "NYM": 0,
@@ -202,8 +224,8 @@ pub fn build_and_submit_set_fees_with_empty_did() {
     let current_fees = fees::get_fees(&wallet, pool_handle, None);
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
-    assert_eq!(current_fees_value["1"].as_u64().unwrap(), 1);
-    assert_eq!(current_fees_value["100"].as_u64().unwrap(), 2);
+    assert_eq!(current_fees_value["NYM"].as_u64().unwrap(), 1);
+    assert_eq!(current_fees_value["ATTRIB"].as_u64().unwrap(), 2);
 
     let fees = json!({
         "NYM": 0,
