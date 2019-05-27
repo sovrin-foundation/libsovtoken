@@ -39,7 +39,7 @@ ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
 ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.8.0~dev802}
 ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.32}
 ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.8.0~dev943}
-ENV TOKEN_VER  ${TOKEN_VER:-0.9.6~25}
+ENV TOKEN_VER  ${TOKEN_VER:-0.9.6~33}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \

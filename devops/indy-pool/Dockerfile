@@ -27,8 +27,8 @@ ARG indy_node_ver=1.8.0~dev943
 ARG indy_anoncreds_ver=1.0.32
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=0.9.6~25
-ARG fees_ver=0.9.6~25
+ARG token_ver=0.9.6~33
+ARG fees_ver=0.9.6~33
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
