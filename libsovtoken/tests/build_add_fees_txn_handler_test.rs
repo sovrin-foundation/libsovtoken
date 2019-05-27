@@ -4,6 +4,8 @@ extern crate serde_json;
 extern crate serde_derive;
 extern crate sovtoken;
 extern crate indyrs as indy;
+#[macro_use]
+extern crate lazy_static;
 
 use indy::future::Future;
 
