@@ -2,6 +2,6 @@
 
 pub type TxnSeqNo = u64;
 pub type TokenAmount = u64;
-pub type ReqId = u32;
+pub type ReqId = u64;
 pub type ProtocolVersion = u32;
 pub type TxnVersion = String;

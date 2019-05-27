@@ -4,6 +4,7 @@ use libc::c_char;
 use serde::Serialize;
 use serde_json;
 use std::ffi::CString;
+use time;
 
 use logic::type_aliases::{ProtocolVersion, ReqId};
 use {IndyHandle, ErrorCode};
@@ -35,7 +36,7 @@ impl<T> Request<T>
     where T: Serialize
 {
     pub fn new(operation: T, identifier: Option<String>) -> Self {
-        let req_id = rand_req_id();
+        let req_id = time::get_time().sec as u64 * (1e9 as u64) + time::get_time().nsec as u64;
         return Request {
             operation,
             protocol_version: PROTOCOL_VERSION,
