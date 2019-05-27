@@ -11,11 +11,7 @@ use libc::c_char;
 use std::ffi::CString;
 use std::ptr;
 
-use indy::future::Future;
-
 use sovtoken::ErrorCode;
-use sovtoken::logic::request::Request;
-use sovtoken::logic::config::set_fees_config::SetFees;
 use sovtoken::utils::ffi_support;
 use sovtoken::utils::test::callbacks;
 use sovtoken::utils::results::ResultHandler;
@@ -44,16 +40,6 @@ fn build_get_fees(wallet_handle: i32, did: Option<&str>) -> Result<String, Error
     let did = did.map(ffi_support::c_pointer_from_str).unwrap_or(std::ptr::null());
 
     let ec = sovtoken::api::build_get_txn_fees_handler(command_handle, wallet_handle, did, cb);
-
-    return ResultHandler::one(ErrorCode::from(ec), receiver);
-}
-
-fn parse_get_txn_fees_response(response: &str) -> Result<String, ErrorCode> {
-    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
-
-    let response_pointer = ffi_support::c_pointer_from_str(response);
-
-    let ec = sovtoken::api::parse_get_txn_fees_response_handler(command_handle, response_pointer, cb);
 
     return ResultHandler::one(ErrorCode::from(ec), receiver);
 }
@@ -140,12 +126,6 @@ fn build_get_fees_req() {
     let request_value: serde_json::value::Value = serde_json::from_str(&get_fees_request).unwrap();
 
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
-}
-
-#[test]
-fn build_get_fees_error_with_invalid_did() {
-    let err = build_get_fees(WALLET_ID, Some(FAKE_DID)).unwrap_err();
-    assert_eq!(ErrorCode::CommonInvalidStructure, err);
 }
 
 #[test]
