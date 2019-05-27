@@ -8,6 +8,8 @@ extern crate indyrs as indy;                     // lib-sdk project
 extern crate serde_json;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate lazy_static;
 
 use libc::c_char;
 use std::ptr;
@@ -233,7 +235,7 @@ pub fn build_and_submit_mint_txn_works_with_empty_did() {
 
     let mint_req = build_mint_req(
         wallet.handle,
-        None,
+        Some(&dids[0]),
         &output_json,
         None,
     ).unwrap();

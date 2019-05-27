@@ -5,12 +5,10 @@
 extern crate bs58;
 extern crate libc;
 
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate log;
+#[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate lazy_static;
 
 extern crate indyrs as indy;                      // lib-sdk project
 extern crate sovtoken;

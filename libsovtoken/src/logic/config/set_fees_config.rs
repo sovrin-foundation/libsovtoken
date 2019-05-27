@@ -44,7 +44,7 @@ pub type SetFeesMap = HashMap<String, TokenAmount>;
         fees.insert(String::from(txn_types::XFER_PUBLIC), 10);
         fees.insert(String::from("15"), 3);
         let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
-        let did = Did::new(&identifier).validate().unwrap();
+        let did = Did::new(identifier).validate().unwrap();
         let set_fees = SetFees::new(fees).validate().unwrap();
         let set_fees_request = set_fees.as_request(Some(did));
         let json_pointer = set_fees_request.serialize_to_pointer().unwrap();
@@ -89,8 +89,7 @@ impl SetFees {
     /**
         Validate `self.fees`.
 
-        Checks `self.fees` is not empty and the keys are string
-        integers.
+        Checks `self.fees` is not empty.
 
         ## Examples
 
@@ -108,25 +107,6 @@ impl SetFees {
             let validated = set_fees.validate();
 
             assert_eq!(SetFeesError::Empty, validated.unwrap_err());
-        ```
-
-        #### Fees with non-string-integer keys
-        Returns a [`SetFeesError::KeyNotInteger`].
-        ```
-            use std::collections::HashMap;
-            use sovtoken::logic::config::set_fees_config::{
-                SetFees,
-                SetFeesError,
-            };
-
-            let mut fees = HashMap::new();
-            // Key should be "10001"
-            let key = String::from("XFER_PUBLIC");
-            fees.insert(key.clone(), 10);
-            let set_fees = SetFees::new(fees);
-            let validated = set_fees.validate();
-
-            assert_eq!(SetFeesError::KeyNotInteger(key), validated.unwrap_err())
         ```
 
         #### Valid Fees
@@ -148,23 +128,12 @@ impl SetFees {
         ```
 
         [`SetFeesError::Empty`]: ./enum.SetFeesError.html#variant.Empty
-        [`SetFeesError::KeyNotInteger`]: ./enum.SetFeesError.html#variant.KeyNotInteger
     */
     pub fn validate(self) -> Result<Self, SetFeesError> {
         if self.fees.is_empty() {
             return Err(SetFeesError::Empty);
         }
 
-        {
-            let key_not_integer = self.fees
-                .keys()
-                .find(|&key| key.parse::<u32>().is_err());
-            
-            if let Some(key) = key_not_integer {
-                return Err(SetFeesError::KeyNotInteger(key.to_owned()));
-            }
-        }
-    
         return Ok(self);
     }
 
@@ -175,14 +144,12 @@ impl SetFees {
 
     ### Includes
     - `SetFeesError::Empty`
-    - `SetFeesError::KeyNotInteger(&str)`
 
     [`SetFees::validate`]: ./struct.SetFees.html#method.validate
 */
 #[derive(Debug, PartialEq, Eq)]
 pub enum SetFeesError {
     Empty,
-    KeyNotInteger(String)
 }
 
 impl fmt::Display for SetFeesError {
@@ -195,7 +162,6 @@ impl Error for SetFeesError {
     fn description(&self) -> &str {
         match self {
             &SetFeesError::Empty => "Set fees was empty.",
-            &SetFeesError::KeyNotInteger(_) => "A Set fees key wasn't a integer string.",
         }
     }
 }
@@ -225,29 +191,40 @@ mod fees_config_test {
     }
 
     #[test]
-    fn test_validation_fees_key_not_string_integer() {
+    fn test_validation_fees_key_string_integer() {
+        let set_fees_json = json!({
+            "1000": 10,
+        });
+        let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
+        let set_fees = SetFees::new(hash_map);
+        assert!(set_fees.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validation_fees_key_aliases() {
         let set_fees_json = json!({
             "XFER_PUBLIC": 10,
+            "ALIAS": 10,
         });
-        let expected = SetFeesError::KeyNotInteger(String::from("XFER_PUBLIC"));
 
         let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
         let set_fees = SetFees::new(hash_map);
-        assert_eq!(expected, set_fees.validate().unwrap_err());
+        assert!(set_fees.validate().is_ok());
     }
 
     #[test]
     fn create_valid_set_fees_request() {
         let set_fees_json = json!({
             "3": 10,
-            "1000": 12
+            "1000": 12,
+            "ALIAS": 10,
         });
         let expected = set_fees_json.clone();
 
         let hash_map: SetFeesMap = serde_json::from_value(set_fees_json).unwrap();
         let set_fees = SetFees::new(hash_map).validate().unwrap();
-        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
-        let did = Did::new(&identifier).validate().unwrap();
+        let identifier = String::from("V4SGRU86Z58d6TV7PBUe6f");
+        let did = Did::new(identifier).validate().unwrap();
         let request = set_fees.as_request(Some(did));
         let fees_from_request = serde_json::to_value(&request.operation.fees).unwrap();
         assert_eq!(expected, fees_from_request)

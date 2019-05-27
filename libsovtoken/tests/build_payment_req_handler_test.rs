@@ -6,6 +6,7 @@ extern crate bs58;
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate lazy_static;
 
 use std::ptr;
 use std::ffi::CString;
@@ -164,7 +165,7 @@ fn errors_with_no_submitter_did_json() {
 fn success_signed_request() {
     sovtoken::api::sovtoken_init();
 
-    let did = String::from("287asdjkh2323kjnbakjs");
+    let did = String::from("V4SGRU86Z58d6TV7PBUe6f");
 
     let wallet = Wallet::new();
     debug!("wallet id = {:?}", wallet.handle);
@@ -213,6 +214,69 @@ fn success_signed_request() {
         &outputs.to_string(),
         None
     ).unwrap();
+
+    let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
+    debug!("Received request {:?}", request);
+
+    assert_eq!(&expected_operation, request.get("operation").unwrap());
+    assert_eq!(&did, request.get("identifier").unwrap().as_str().unwrap());
+    assert!(request.get("reqId").is_some());
+
+}
+
+#[test] // TODO: look carefully on changes
+fn success_signed_request_from_libindy_no_identifier() {
+
+    sovtoken::api::sovtoken_init();
+
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
+
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
+
+    let outputs = json!([
+            {
+                "recipient": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "recipient": payment_addresses[3],
+                "amount": 22
+            }
+        ]);
+
+    let expected_operation = json!({
+        "type": XFER_PUBLIC,
+        "inputs": [
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1},
+        ],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
+        "signatures": [
+            "bnuZUPAq5jgpqvaQBzXKBQ973yCpjL1pkqJjiBtVPybpzzKGnPv3uE3VufBVZtR6hq2y55b8MSJpPFVMqskBy3m",
+            "4HpwuknWrSpJCs2qXEMZA1kbAsP9WxJFaoHq1cH7W3yxLg5R2fHV8QPdY5Hz2bgDmGkRitLaPa3HbF65kTxNpNTe"
+        ]
+    });
+
+    trace!("Calling build_payment_req");
+
+    let (request_string, _) = indy::payments::build_payment_req(
+        wallet.handle,
+        None,
+        &inputs.to_string(),
+        &outputs.to_string(),
+        None,
+    ).wait().unwrap();
 
     let request: serde_json::value::Value = serde_json::from_str(&request_string).unwrap();
     debug!("Received request {:?}", request);
@@ -413,6 +477,140 @@ pub fn build_payment_req_for_not_owned_payment_address() {
         }
     ]).to_string();
 
-    let err = build_payment_req(wallet_2.handle, dids[0], &inputs, &outputs, None).unwrap_err();
-    assert_eq!(err, ErrorCode::WalletItemNotFound);
+    let err = indy::payments::build_payment_req(wallet_2.handle, Some(dids[0]), &inputs, &outputs, None).wait().unwrap_err();
+    assert_eq!(err.error_code, ErrorCode::WalletItemNotFound);
+}
+
+#[test]
+pub fn build_payment_req_with_taa_acceptance() {
+    sovtoken::api::sovtoken_init();
+
+    let did = String::from("Th7MpTaRZVRYnPiabds81Y");
+
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
+
+    let outputs = json!([
+            {
+                "recipient": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "recipient": payment_addresses[3],
+                "amount": 22
+            }
+        ]);
+
+    let taa_acceptance = json!({
+        "mechanism": "acceptance type 1",
+        "taaDigest": "050e52a57837fff904d3d059c8a123e3a04177042bf467db2b2c27abd8045d5e",
+        "time": 123456789,
+    });
+
+    let extra = json!({
+        "taaAcceptance": taa_acceptance.clone()
+    });
+
+    let expected_operation = json!({
+        "type": XFER_PUBLIC,
+        "inputs": [
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1}
+        ],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
+        "signatures": [
+            "39qpBrMNPsf8MVz8KfnipRjBTGp6zV5pqkdkN36eVXW6F7XFESZwEvpqYDAvmiejSJMhqRJRcigWns2weQ6J9KuA",
+            "3Q4pVUGPNADdJT273zpHA4hRnGRAsnRG1BBow5UktVxK8ZTKfw9M9FMkHJDv4ERgRqJx1Wtwfd5Rv3QvuMXon8iN"
+        ]
+    });
+
+    let (req, _) = indy::payments::build_payment_req(wallet.handle,
+                                                          Some(&did),  &inputs.to_string(), &outputs.to_string(), Some(&extra.to_string())).wait().unwrap();
+
+    let req_parsed: serde_json::Value = serde_json::from_str(&req).unwrap();
+
+    assert!(req_parsed["taaAcceptance"].as_object().is_some());
+    assert_eq!(req_parsed["taaAcceptance"], taa_acceptance);
+
+    assert_eq!(expected_operation, req_parsed["operation"]);
+}
+
+#[test]
+pub fn build_payment_req_with_taa_acceptance_and_additional_extra() {
+    sovtoken::api::sovtoken_init();
+
+    let did = String::from("Th7MpTaRZVRYnPiabds81Y");
+
+    let wallet = Wallet::new();
+    debug!("wallet id = {:?}", wallet.handle);
+
+    let (payment_addresses, addresses) = generate_payment_addresses(&wallet);
+    let txo_1 = TXO { address: payment_addresses[0].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+    let txo_2 = TXO { address: payment_addresses[1].clone(), seq_no: 1 }.to_libindy_string().unwrap();
+
+    let inputs = json!([
+            txo_1, txo_2
+        ]);
+
+    let outputs = json!([
+            {
+                "recipient": payment_addresses[2],
+                "amount": 10
+            },
+            {
+                "recipient": payment_addresses[3],
+                "amount": 22
+            }
+        ]);
+
+    let taa_acceptance = json!({
+        "mechanism": "acceptance type 1",
+        "taaDigest": "050e52a57837fff904d3d059c8a123e3a04177042bf467db2b2c27abd8045d5e",
+        "time": 123456789,
+    });
+
+    let extra = json!({
+        "data": "some extra data",
+        "taaAcceptance": taa_acceptance.clone()
+    });
+
+    let expected_operation = json!({
+        "type": XFER_PUBLIC,
+        "inputs": [
+            {"address": addresses[0], "seqNo": 1},
+            {"address": addresses[1], "seqNo": 1}
+        ],
+        "outputs": [
+            {"address": addresses[2], "amount": 10},
+            {"address": addresses[3], "amount": 22},
+        ],
+        "signatures": [
+            "4FLEt14msxsfWoLe58ASjxh7M1h7CFwDFE7U3RMgBm6JGVqWYQ4GwMEkXL8G2WqhKF8TG61R7GMmpx3VP5op2uJ6",
+            "5EGxtU9THegBbQqKXDTv71VBcNRJQNS9N2HWS267dhRSorpQkJHPbnknHfLRxqnZJynVEZ9FpuzDRW4EtAQJDy5r"
+        ],
+        "extra": {
+            "data": "some extra data"
+        },
+    });
+
+    let (req, _) = indy::payments::build_payment_req(wallet.handle,
+                                                     Some(&did),  &inputs.to_string(), &outputs.to_string(), Some(&extra.to_string())).wait().unwrap();
+
+    let req_parsed: serde_json::Value = serde_json::from_str(&req).unwrap();
+
+    assert!(req_parsed["taaAcceptance"].as_object().is_some());
+    assert_eq!(req_parsed["taaAcceptance"], taa_acceptance);
+
+    assert_eq!(expected_operation, req_parsed["operation"]);
 }

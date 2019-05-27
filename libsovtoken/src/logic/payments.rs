@@ -35,7 +35,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
         trace!("calling self.injected_api.indy_create_key");
         let verkey = self.injected_api.indy_create_key(wallet_id, config)?;
 
-        trace!("got verkey from self.injected_api.indy_create_key {}", verkey);
+        trace!("got verkey from self.injected_api.indy_create_key {}", secret!(&verkey));
         return address::qualified_address_from_verkey(&verkey);
     }
 
@@ -51,7 +51,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
 
         let cb_closure = move |err: ErrorCode, verkey: String| {
             let res = if ErrorCode::Success == err {
-                trace!("got verkey from self.injected_api.indy_create_key_async {}", verkey);
+                trace!("got verkey from self.injected_api.indy_create_key_async {}", secret!(&verkey));
                 address::qualified_address_from_verkey(&verkey)
             } else {
                 Err(err)

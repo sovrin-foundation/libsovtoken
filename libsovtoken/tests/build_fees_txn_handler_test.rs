@@ -1,7 +1,6 @@
-#[macro_use]
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate lazy_static;
 extern crate libc;
 extern crate sovtoken;
 extern crate indyrs as indy;                     // lib-sdk project
@@ -25,6 +24,7 @@ mod utils;
 
 use utils::setup::{Setup, SetupConfig};
 use utils::wallet::Wallet;
+use utils::payment::fees;
 
 // ***** HELPER METHODS *****
 fn build_set_fees(wallet_handle: i32, did: Option<&str>, fees_json: &str) -> Result<String, ErrorCode> {
@@ -56,23 +56,6 @@ fn parse_get_txn_fees_response(response: &str) -> Result<String, ErrorCode> {
     let ec = sovtoken::api::parse_get_txn_fees_response_handler(command_handle, response_pointer, cb);
 
     return ResultHandler::one(ErrorCode::from(ec), receiver);
-}
-
-pub fn set_fees(pool_handle: i32, wallet_handle: i32, fees: &str, dids: &Vec<&str>, submitter_did: Option<&str>) -> String {
-    let set_fees_req = build_set_fees(wallet_handle, submitter_did, &fees).unwrap();
-
-    let set_fees_req = Request::<SetFees>::multi_sign_request(wallet_handle, &set_fees_req, dids.to_vec()).unwrap();
-
-    indy::ledger::submit_request(pool_handle, &set_fees_req).wait().unwrap()
-}
-
-pub fn get_fees(wallet: &Wallet, pool_handle: i32, submitter_did: Option<&str>) -> String {
-    let get_fees_req = build_get_fees(
-        wallet.handle,
-        submitter_did,
-    ).unwrap();
-    let result = indy::ledger::submit_request(pool_handle, &get_fees_req).wait().unwrap();
-    parse_get_txn_fees_response(&result).unwrap()
 }
 
 // ***** HELPER TEST DATA  *****
@@ -166,7 +149,29 @@ fn build_get_fees_error_with_invalid_did() {
 }
 
 #[test]
+fn add_fees_json_for_any_key() {
+    sovtoken::api::sovtoken_init();
+    let wallet = Wallet::new();
+    let fees = json!({
+        "3": 6,
+        "TXN_ALIAS": 12,
+        "TXN ALIAS WITH SPACE": 12,
+    });
+    let expected_operation = json!({
+        "type": "20000",
+        "fees": fees,
+    });
+
+    let did = bs58::encode("1234567890123456").into_string();
+    let fees_request = build_set_fees(wallet.handle, Some(&did), &fees.to_string()).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&fees_request).unwrap();
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+}
+
+#[test]
 pub fn build_and_submit_set_fees() {
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 0,
@@ -183,8 +188,8 @@ pub fn build_and_submit_set_fees() {
         "101": 2
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
-    let current_fees = get_fees(&wallet, pool_handle, Some(dids[0]));
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
+    let current_fees = fees::get_fees(&wallet, pool_handle, Some(dids[0]));
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
     assert_eq!(current_fees_value["101"].as_u64().unwrap(), 2);
@@ -195,12 +200,12 @@ pub fn build_and_submit_set_fees() {
         "101": 0
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
 }
-
 
 #[test]
 pub fn build_and_submit_set_fees_with_names() {
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 0,
@@ -217,23 +222,24 @@ pub fn build_and_submit_set_fees_with_names() {
         "ATTRIB": 2
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
-    let current_fees = get_fees(&wallet, pool_handle, Some(dids[0]));
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
+    let current_fees = fees::get_fees(&wallet, pool_handle, Some(dids[0]));
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
-    assert_eq!(current_fees_value["1"].as_u64().unwrap(), 1);
-    assert_eq!(current_fees_value["100"].as_u64().unwrap(), 2);
+    assert_eq!(current_fees_value["NYM"].as_u64().unwrap(), 1);
+    assert_eq!(current_fees_value["ATTRIB"].as_u64().unwrap(), 2);
 
     let fees = json!({
         "NYM": 0,
         "ATTRIB": 0
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
 }
 
 #[test]
 pub fn build_and_submit_get_fees_with_empty_did() {
+    let payment_method = sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 0,
@@ -250,18 +256,17 @@ pub fn build_and_submit_get_fees_with_empty_did() {
         "ATTRIB": 2
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
-
-    let current_fees = get_fees(&wallet, pool_handle, None);
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
+    let current_fees = fees::get_fees(&wallet, pool_handle, None);
     let current_fees_value: serde_json::Value = serde_json::from_str(&current_fees).unwrap();
 
-    assert_eq!(current_fees_value["1"].as_u64().unwrap(), 1);
-    assert_eq!(current_fees_value["100"].as_u64().unwrap(), 2);
+    assert_eq!(current_fees_value["NYM"].as_u64().unwrap(), 1);
+    assert_eq!(current_fees_value["ATTRIB"].as_u64().unwrap(), 2);
 
     let fees = json!({
         "NYM": 0,
         "ATTRIB": 0
     }).to_string();
 
-    set_fees(pool_handle, wallet.handle, &fees, &dids, Some(dids[0]));
+    fees::set_fees(pool_handle, wallet.handle, &payment_method, &fees, &dids, Some(dids[0]));
 }
