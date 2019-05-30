@@ -12,7 +12,6 @@ use utils::constants::general::PROTOCOL_VERSION;
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::json_conversion::JsonSerialize;
 use utils::txn_author_agreement::TaaAcceptance;
-use utils::random::rand_req_id;
 
 use logic::indy_sdk_api::ledger;
 
