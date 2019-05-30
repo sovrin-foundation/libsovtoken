@@ -1,1 +1,1 @@
-libindy=1.9.0=stable
+libindy=1.9.0-74=rc

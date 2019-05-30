@@ -7,8 +7,8 @@ def sovLibrary = library(identifier: 'sovrin-aws-codebuild@master', retriever: m
 logger = sovLibrary.Logger.new(this)
 notifier = sovLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
-LIBINDY_STREAM = "stable"
-LIBINDY_VERSION = "1.9.0"
+LIBINDY_STREAM = "rc"
+LIBINDY_VERSION = "1.9.0-74"
 
 def nodeLabels = [
         codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',
