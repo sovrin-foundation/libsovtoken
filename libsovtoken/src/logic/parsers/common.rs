@@ -84,7 +84,7 @@ pub struct SignatureValues {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionMetaData {
     pub seq_no: TxnSeqNo,
-    pub txn_time: u32,
+    pub txn_time: u64,
 }
 
 /**

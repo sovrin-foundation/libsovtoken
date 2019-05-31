@@ -52,3 +52,15 @@ macro_rules! rust_slice {
         unsafe { slice::from_raw_parts($x, $y as usize) }
     }
 }
+
+#[cfg(debug_assertions)]
+#[macro_export]
+macro_rules! secret {
+    ($val:expr) => {{ $val }};
+}
+
+#[cfg(not(debug_assertions))]
+#[macro_export]
+macro_rules! secret {
+    ($val:expr) => {{ "_" }};
+}

@@ -29,14 +29,14 @@ pub fn deserialize_arguments(
         .ok_or(ErrorCode::CommonInvalidStructure)
         .map_err(map_err_err!())?;
 
-    debug!("api::create_payment_address_handler json_config_string >> {:?}", json_config_string);
+    debug!("api::create_payment_address_handler json_config_string >> {:?}", secret!(&json_config_string));
 
     // TODO: Only continue when seed is missing, not on any error.
     let config = PaymentAddressConfig::from_json(&json_config_string)
         .map_err(map_err_trace!())
         .unwrap_or(PaymentAddressConfig { seed: "".to_string() });
 
-    debug!("api::create_payment_address_handler PaymentAddressConfig >> {:?}", config);
+    debug!("api::create_payment_address_handler PaymentAddressConfig >> {:?}", secret!(&config));
 
     Ok((config, cb))
 }
@@ -52,7 +52,7 @@ pub fn create_address_cb(command_handle: i32, cb: JsonCallbackUnwrapped) -> impl
             return;
         }
 
-        debug!("create_payment_address_handler returning payment address of '{}'", &payment_address);
+        debug!("create_payment_address_handler returning payment address of '{}'", secret!(&payment_address));
         let payment_address_cstring = cstring_from_str(payment_address);
         let payment_address_ptr = payment_address_cstring.as_ptr();
 

@@ -29,7 +29,7 @@ pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i
 
     let mint_req = Request::<MintRequest>::multi_sign_request(wallet_handle, &mint_req, trustee_dids.to_vec()).unwrap();
 
-    let result = indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, did, &mint_req).wait().unwrap();
+    let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
 
     utils::parse_mint_response::ParseMintResponse::from_json(&result).map_err(|_| ErrorCode::CommonInvalidStructure)
 }

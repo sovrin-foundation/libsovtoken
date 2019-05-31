@@ -16,6 +16,7 @@ extern crate rand;
 extern crate serde;
 extern crate sodiumoxide;
 extern crate sha2;
+extern crate time;
 // ------------------------------------------
 // crates from crate.io etc that require macro
 // ------------------------------------------
@@ -33,7 +34,8 @@ extern crate sha2;
 // ------------------------------------------
 
 extern crate indy_sys;                      // lib-sdk project
-extern crate indyrs as indy;                      // lib-sdk rust wrapper to get ErrorCodes
+extern crate indyrs as indy;
+extern crate core;                      // lib-sdk rust wrapper to get ErrorCodes
 
 // ------------------------------------------
 // define our crate by defining the modules in the project

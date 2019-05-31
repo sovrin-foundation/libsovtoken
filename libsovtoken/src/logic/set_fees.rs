@@ -8,35 +8,14 @@ use serde_json;
 use utils::constants::general::{JsonCallback, JsonCallbackUnwrapped};
 use utils::ffi_support::string_from_char_ptr;
 
-const NYM: &'static str = "1";
-const ATTRIB: &'static str = "100";
-const SCHEMA: &'static str = "101";
-const CRED_DEF: &'static str = "102";
-const REVOC_REG_DEF: &'static str = "113";
-const REVOC_REG_ENTRY: &'static str = "114";
-const XFER_PUBLIC: &'static str = "10001";
+type DeserializedArguments = (Option<Did>, SetFees, JsonCallbackUnwrapped);
 
-fn txn_name_to_code(txn: &str) -> String {
-    match txn {
-        "NYM" => NYM.to_string(),
-        "ATTRIB" => ATTRIB.to_string(),
-        "SCHEMA" => SCHEMA.to_string(),
-        "CRED_DEF" => CRED_DEF.to_string(),
-        "REVOC_REG_DEF" => REVOC_REG_DEF.to_string(),
-        "REVOC_REG_ENTRY" => REVOC_REG_ENTRY.to_string(),
-        "XFER_PUBLIC" => XFER_PUBLIC.to_string(),
-        val @ _ => val.to_string()
-    }
-}
-
-type DeserializedArguments<'a> = (Option<Did<'a>>, SetFees, JsonCallbackUnwrapped);
-
-pub fn deserialize_inputs<'a>(
+pub fn deserialize_inputs(
     did: *const c_char,
     fees_json: *const c_char,
     cb: JsonCallback
-) -> Result<DeserializedArguments<'a>, ErrorCode> {
-    trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", did, fees_json);
+) -> Result<DeserializedArguments, ErrorCode> {
+    trace!("logic::set_fees::deserialize_inputs >> did: {:?}, fees_json: {:?}", secret!(&did), secret!(&fees_json));
     let cb = cb.ok_or(ErrorCode::CommonInvalidStructure)?;
 
     let did = Did::from_pointer(did).map(|did| {
@@ -50,9 +29,6 @@ pub fn deserialize_inputs<'a>(
 
     let set_fees_map: SetFeesMap = serde_json::from_str(&set_fees_json).map_err(map_err_err!())
         .or(Err(ErrorCode::CommonInvalidStructure))?;
-
-    let set_fees_map: SetFeesMap = set_fees_map.iter()
-        .map(|(key, val)| (txn_name_to_code(key), val.clone())).collect();
 
     let set_fees = SetFees::new(set_fees_map)
         .validate().map_err(map_err_err!())
@@ -70,11 +46,11 @@ mod test_deserialize_inputs {
     use utils::test::default;
     use utils::ffi_support::{c_pointer_from_str};
 
-    pub fn call_deserialize_inputs<'a>(
+    pub fn call_deserialize_inputs(
         did: Option<*const c_char>,
         set_fees_json: Option<*const c_char>,
         cb: Option<JsonCallback>
-    ) -> Result<DeserializedArguments<'a>, ErrorCode> {
+    ) -> Result<DeserializedArguments, ErrorCode> {
         let did_json = did.unwrap_or_else(default::did);
         let set_fees_json = set_fees_json.unwrap_or_else(default::set_fees_json);
         let cb = cb.unwrap_or(Some(default::empty_callback_string));
@@ -135,7 +111,7 @@ mod test_deserialize_inputs {
     }
 
     #[test]
-    fn deserialize_fees_key_not_string_int() {
+    fn deserialize_fees_key_alias() {
         let invalid_fees = json_c_pointer!({
             "XFER_PUBLIC": 5,
             "3": 1,
@@ -144,7 +120,7 @@ mod test_deserialize_inputs {
         let (_, fees, _) = call_deserialize_inputs(None, Some(invalid_fees), None).unwrap();
 
         assert_eq!(fees.fees.len(), 2);
-        assert_eq!(fees.fees.get("10001"), Some(&5));
+        assert_eq!(fees.fees.get("XFER_PUBLIC"), Some(&5));
         assert_eq!(fees.fees.get("3"), Some(&1));
     }
 
