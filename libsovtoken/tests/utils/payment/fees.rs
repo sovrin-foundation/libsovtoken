@@ -159,7 +159,7 @@ pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &
 fn _send_auth_rules(pool_handle: i32, wallet_handle: i32, submitter_did: &str, data: &Vec<AuthRule>) {
     let data = ::serde_json::to_string(&data).unwrap();
 
-    let auth_rules_request = ::indy::ledger::libindy_build_auth_rules_request(submitter_did, &data).wait().unwrap();
+    let auth_rules_request = ::indy::ledger::build_auth_rules_request(submitter_did, &data).wait().unwrap();
 
     let auth_rules_response = ::indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, submitter_did, &auth_rules_request).wait().unwrap();
 

@@ -1,4 +1,4 @@
-FROM sovrin/libsovtoken:base-xenial-0.23.0
+FROM sovrin/libsovtoken:base-xenial-0.24.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
