@@ -42,16 +42,22 @@ pub struct GetAuthRuleResult {
 /**
    Enum of the constraint type within the GAT_AUTH_RULE result data
     # parameters
-   ROLE - The final constraint
-   Combination - Combine multiple constraints all of them must be met
-   Empty - action is forbidden
+   Role - The final constraint
+   And - Combine multiple constraints all of them must be met
+   Or - Combine multiple constraints any of them must be met
+   Forbidden - action is forbidden
 */
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(untagged)]
+#[serde(tag = "constraint_id")]
 pub enum Constraint {
-    CombinationConstraint(CombinationConstraint),
+    #[serde(rename = "OR")]
+    OrConstraint(CombinationConstraint),
+    #[serde(rename = "AND")]
+    AndConstraint(CombinationConstraint),
+    #[serde(rename = "ROLE")]
     RoleConstraint(RoleConstraint),
-    EmptyConstraint(EmptyConstraint),
+    #[serde(rename = "FORBIDDEN")]
+    ForbiddenConstraint(ForbiddenConstraint),
 }
 
 /**
@@ -64,7 +70,6 @@ pub enum Constraint {
 */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RoleConstraint {
-    pub constraint_id: String,
     pub sig_count: Option<u32>,
     pub role: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -78,7 +83,7 @@ pub struct RoleConstraint {
 */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct EmptyConstraint {}
+pub struct ForbiddenConstraint {}
 
 /**
    The constraint metadata
@@ -97,7 +102,6 @@ pub struct Metadata {
 */
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CombinationConstraint {
-    pub constraint_id: String,
     pub auth_constraints: Vec<Constraint>
 }
 
@@ -139,49 +143,27 @@ pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &
 
     let fees: HashMap<String, String> = ::serde_json::from_str(txn_fees).unwrap();
 
-    let mut responses: Vec<Box<Future<Item=String, Error=::indy::IndyError>>> = Vec::new();
+    let mut auth_rules: Vec<AuthRule> = auth_rules.clone();
 
-    for (txn_, fee_alias) in fees {
-        for auth_rule in auth_rules.iter() {
-            if auth_rule.auth_type == txn_ {
-                let mut constraint = auth_rule.constraint.clone();
-                _set_fee_to_constraint(&mut constraint, &fee_alias);
-
-                match constraint {
-                    Constraint::EmptyConstraint(_) => {}
-                    mut constraint @ _ => {
-                        responses.push(_send_auth_rule(pool_handle, wallet_handle, submitter_did, auth_rule, &constraint));
-                    }
-                }
+    auth_rules
+        .iter_mut()
+        .for_each(|auth_rule| {
+            if let Some(fee_alias) = fees.get(&auth_rule.auth_type) {
+                _set_fee_to_constraint(&mut auth_rule.constraint, &fee_alias);
             }
-        }
-    }
+        });
 
-    let _response = responses
-        .into_iter()
-        .map(|response| _check_auth_rule_responses(response))
-        .collect::<Vec<()>>();
+    _send_auth_rules(pool_handle, wallet_handle, submitter_did, &auth_rules)
 }
 
-fn _send_auth_rule(pool_handle: i32, wallet_handle: i32, submitter_did: &str,
-                   auth_rule: &AuthRule, constraint: &Constraint) -> Box<Future<Item=String, Error=::indy::IndyError>> {
-    let constraint_json = ::serde_json::to_string(&constraint).unwrap();
+fn _send_auth_rules(pool_handle: i32, wallet_handle: i32, submitter_did: &str, data: &Vec<AuthRule>) {
+    let data = ::serde_json::to_string(&data).unwrap();
 
-    let auth_rule_request = ::indy::ledger::build_auth_rule_request(submitter_did,
-                                                                    &auth_rule.auth_type,
-                                                                    &auth_rule.auth_action,
-                                                                    &auth_rule.field,
-                                                                    auth_rule.old_value.as_ref().map(String::as_str),
-                                                                    auth_rule.new_value.as_ref().map(String::as_str),
-                                                                    &constraint_json,
-    ).wait().unwrap();
+    let auth_rules_request = ::indy::ledger::libindy_build_auth_rules_request(submitter_did, &data).wait().unwrap();
 
-    ::indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, submitter_did, &auth_rule_request)
-}
+    let auth_rules_response = ::indy::ledger::sign_and_submit_request(pool_handle, wallet_handle, submitter_did, &auth_rules_request).wait().unwrap();
 
-fn _check_auth_rule_responses(response: Box<Future<Item=String, Error=::indy::IndyError>>) {
-    let response = response.wait().unwrap();
-    let response: serde_json::Value = ::serde_json::from_str(&response).unwrap();
+    let response: serde_json::Value = ::serde_json::from_str(&auth_rules_response).unwrap();
     assert_eq!("REPLY", response["op"].as_str().unwrap());
 }
 
@@ -208,12 +190,12 @@ fn _set_fee_to_constraint(constraint: &mut Constraint, fee_alias: &str) {
         Constraint::RoleConstraint(constraint) => {
             constraint.metadata.as_mut().map(|meta| meta.fees = Some(fee_alias.to_string()));
         }
-        Constraint::CombinationConstraint(constraint) => {
+        Constraint::AndConstraint(constraint) | Constraint::OrConstraint(constraint) => {
             for mut constraint in constraint.auth_constraints.iter_mut() {
                 _set_fee_to_constraint(&mut constraint, fee_alias)
             }
         }
-        Constraint::EmptyConstraint(_) => {}
+        Constraint::ForbiddenConstraint(_) => {}
     }
 }
 
