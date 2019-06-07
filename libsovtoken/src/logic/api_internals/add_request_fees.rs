@@ -249,10 +249,28 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_inputs_invalid_inputs_json() {
+        // no `address` field
         let invalid_json = json_c_pointer!([
             {
-                "addres": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "add": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
                 "seqNo": 4
+            }
+        ]);
+        error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);
+
+        // negative `seqNo`
+        let invalid_json = json_c_pointer!([
+            {
+                "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC",
+                "seqNo": -4
+            }
+        ]);
+        error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);
+
+        // no `seqNo` field
+        let invalid_json = json_c_pointer!([
+            {
+                "address": "pay:sov:d0kitWxupHvZ4i0NHJhoj79RcUeyt3YlwAc8Hbcy87iRLSZC"
             }
         ]);
         error_deserialize_inputs_inputs(invalid_json, ErrorCode::CommonInvalidStructure);
@@ -260,10 +278,28 @@ mod test_deserialize_inputs {
 
     #[test]
     fn deserialize_inputs_invalid_outputs_json() {
+        // no `address` field
         let invalid_json = json_c_pointer!([
             {
-                "address": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYkVRPd0QJzfJ8FdhZWs",
-                "amount": "10"
+                "add": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYk",
+                "amount": 10
+            }
+        ]);
+        error_deserialize_inputs_ouputs(invalid_json, ErrorCode::CommonInvalidStructure);
+
+        // negative `amount`
+        let invalid_json = json_c_pointer!([
+            {
+                "recipient": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYk",
+                "amount": -10
+            }
+        ]);
+        error_deserialize_inputs_ouputs(invalid_json, ErrorCode::CommonInvalidStructure);
+
+        // no `amount` field
+        let invalid_json = json_c_pointer!([
+            {
+                "recipient": "pay:sov:ql33nBkjGw6szxPT6LLRUIejn9TZAYk",
             }
         ]);
         error_deserialize_inputs_ouputs(invalid_json, ErrorCode::CommonInvalidStructure);

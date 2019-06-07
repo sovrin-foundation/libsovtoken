@@ -273,6 +273,14 @@ pub mod address_tests {
     }
 
     #[test]
+    fn test_unqualified_address_from_verkey_invalid_verkey() {
+        let vk_bytes = rand_bytes(VERKEY_LEN - 1);
+        let verkey = vk_bytes.into_base58();
+        let err = unqualified_address_from_verkey(&verkey).unwrap_err();
+        assert_eq!(ErrorCode::CommonInvalidStructure, err);
+    }
+
+    #[test]
     fn test_verkey_invalid_address_length_long_and_short() {
         validate_address_invalid_verkey_len(30);
         validate_address_invalid_verkey_len(40);
@@ -286,6 +294,13 @@ pub mod address_tests {
         let result = validate_address(&invalid_address);
         let error = result.unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
+
+    #[test]
+    fn test_address_from_unqualified_address() {
+        let unqualified_address = gen_random_base58_address();
+        let address = address_from_unqualified_address(&unqualified_address).unwrap();
+        assert_eq!(format!("pay:sov:{}", unqualified_address), address);
     }
 
     #[test]
@@ -325,6 +340,14 @@ pub mod address_tests {
         let fq_address = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, bad_addr);
         let error = validate_address(&fq_address).unwrap_err();
         assert_eq!(ErrorCode::CommonInvalidStructure, error);
+    }
+
+    #[test]
+    fn test_unqualified_address() {
+        let address = gen_random_base58_address();
+        let qualified_address = format!("pay:sov:{}", address);
+        let unqualified_address = unqualified_address_from_address(&qualified_address).unwrap();
+        assert_eq!(address, unqualified_address);
     }
 
     #[test]
@@ -374,5 +397,24 @@ pub mod address_tests {
             let fa = format!("{}{}", PAYMENT_ADDRESS_QUALIFIER, &addresses[i]);
             assert_eq!(validate_address(&fa).unwrap(), verkeys[i])
         }
+    }
+
+    #[test]
+    fn string_to_txo_works() {
+        let txo_str = "txo:sov:fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7WmMSpWL";
+        let result_txo = string_to_txo(txo_str).unwrap();
+        assert_eq!(TXO {address:"pay:sov:iTQzpdRdugkJ2gLD5vW5c159dncSL9jbAtu3WfPcb8qWD9bUd".to_string(), seq_no: 1}, result_txo);
+    }
+
+    #[test]
+    fn string_to_txo_fail_for_no_qualifier() {
+        let txo_str = "fkjZEd8eTBnYJsw7m7twMph3UYD7j2SoWcDM45DkmRx8eq2SkQnzxoLxyMT1RBAat9x86MwXNJH88Pxf9u7JsM5m8ApXn3bvgbtS5cegZzNp7WmMSpWL";
+        assert!(string_to_txo(txo_str).is_err());
+    }
+
+    #[test]
+    fn string_to_txo_fail_for_invalid_txo() {
+        let txo_str = "txo:sov:fkjZEd8eTBnYJsw7m";
+        assert!(string_to_txo(txo_str).is_err());
     }
 }

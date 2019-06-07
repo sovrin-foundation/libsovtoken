@@ -49,6 +49,8 @@ pub fn build_and_submit_attrib_with_fees() {
     assert_eq!(parsed_utxos[0].amount, 9);
     assert_eq!(parsed_utxos[0].recipient, addresses[0]);
 
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
     assert_eq!(ATTRIB_RAW_DATA, data);
@@ -79,6 +81,8 @@ pub fn build_and_submit_attrib_with_fees_and_no_change() {
 
     let parsed_utxos: Vec<UTXO> = serde_json::from_str(&parsed_resp).unwrap();
     assert_eq!(parsed_utxos.len(), 0);
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
@@ -185,6 +189,8 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     assert_eq!(parsed_utxos.len(), 1);
     assert_eq!(parsed_utxos[0].amount, 9);
     assert_eq!(parsed_utxos[0].recipient, addresses[0]);
+
+    std::thread::sleep(std::time::Duration::from_millis(100));
 
     let get_attrib_resp = send_get_attrib_req(&wallet, pool_handle, dids[0], dids[0], Some("endpoint"));
     let data = get_data_from_attrib_reply(get_attrib_resp);
