@@ -8,17 +8,71 @@ use std::{thread, time};
 
 use indy::future::Future;
 
-use sovtoken::ErrorCode;
-use sovtoken::logic::parsers::common::TXO;
-
 mod utils;
-use utils::wallet::Wallet;
-use utils::setup::{Setup, SetupConfig};
 
+use sovtoken::{ErrorCode, IndyHandle};
+use sovtoken::logic::parsers::common::TXO;
+use sovtoken::utils::results::ResultHandler;
+use sovtoken::utils::test::callbacks;
+use sovtoken::utils::ffi_support::c_pointer_from_str;
+use utils::wallet::Wallet;
+
+use utils::setup::{Setup, SetupConfig};
 
 fn sleep(msec: u64) {
     let ms = time::Duration::from_millis(msec);
     thread::sleep(ms);
+}
+
+fn build_verify_payment_req(wallet_handle: IndyHandle, did: Option<&str>, txo: &str) -> Result<String, ErrorCode> {
+    let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
+
+    let did = did.map(c_pointer_from_str).unwrap_or(std::ptr::null());
+
+    let error_code = sovtoken::api::build_verify_req_handler(
+        command_handle,
+        wallet_handle,
+        did,
+        c_pointer_from_str(txo),
+        cb
+    );
+
+    return ResultHandler::one(ErrorCode::from(error_code), receiver);
+}
+
+fn parse_verify_payment_response(response: &str) -> Result<String, ErrorCode> {
+    let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
+
+    let error_code = sovtoken::api::parse_verify_response_handler(
+        command_handle,
+        c_pointer_from_str(response),
+        cb
+    );
+
+    return ResultHandler::one(ErrorCode::from(error_code), receiver);
+}
+
+#[test]
+fn build_verify_payment_request() {
+    let txo = "txo:sov:3x42qH8UkJac1BuorqjSEvuVjvYkXk8sUAqoVPn1fGCwjLPquu4CndzBHBQ5hX6RSmDVnXGdMPrnWDUN5S1ty4YQP87hW8ubMSzu9M56z1FbAQV6aMSX5h";
+    let expected_operation = json!({
+        "type": "3",
+        "ledgerId": 1001,
+        "data": 28
+    });
+
+    let request = build_verify_payment_req(1, None, txo).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&request).unwrap();
+
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+}
+
+#[test]
+fn build_verify_payment_for_invalid_txo() {
+    let txo = "txo:sov:3x42qH8";
+    let res = build_verify_payment_req(1, None, txo).unwrap_err();
+    assert_eq!(ErrorCode::CommonInvalidStructure, res);
 }
 
 #[test]
@@ -39,9 +93,9 @@ pub fn build_and_submit_verify_on_mint() {
     //We need to wait a little before trying to verify txn
     sleep(1000);
 
-    let (get_utxo_req, payment_method) = indy::payments::build_verify_payment_req(wallet.handle, Some(dids[0]), &txo).wait().unwrap();
+    let get_utxo_req = build_verify_payment_req(wallet.handle, Some(dids[0]), &txo).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let res = indy::payments::parse_verify_payment_response(&payment_method, &res).wait().unwrap();
+    let res = parse_verify_payment_response(&res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
     assert!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().is_empty());
@@ -66,9 +120,9 @@ pub fn build_and_submit_verify_on_mint_with_empty_did() {
     //We need to wait a little before trying to verify txn
     sleep(1000);
 
-    let (get_utxo_req, payment_method) = indy::payments::build_verify_payment_req(wallet.handle, None, &txo).wait().unwrap();
+    let get_utxo_req = build_verify_payment_req(wallet.handle, None, &txo).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let res = indy::payments::parse_verify_payment_response(&payment_method, &res).wait().unwrap();
+    let res = parse_verify_payment_response(&res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
     assert!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().is_empty());
@@ -109,9 +163,9 @@ pub fn build_and_submit_verify_on_xfer() {
     //We need to wait a little before trying to verify txn
     sleep(1000);
 
-    let (get_utxo_req, payment_method) = indy::payments::build_verify_payment_req(wallet.handle, Some(dids[0]), &new_utxo).wait().unwrap();
+    let get_utxo_req = build_verify_payment_req(wallet.handle, Some(dids[0]), &new_utxo).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let res = indy::payments::parse_verify_payment_response(&payment_method, &res).wait().unwrap();
+    let res = parse_verify_payment_response(&res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().get(0).unwrap().as_str().unwrap(), txo);
@@ -157,9 +211,9 @@ pub fn build_and_submit_verify_on_fees() {
     //We need to wait a little before trying to verify txn
     sleep(1000);
 
-    let (get_utxo_req, payment_method) = indy::payments::build_verify_payment_req(wallet.handle, Some(dids[0]), &new_utxo).wait().unwrap();
+    let get_utxo_req = build_verify_payment_req(wallet.handle, Some(dids[0]), &new_utxo).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let res = indy::payments::parse_verify_payment_response(&payment_method, &res).wait().unwrap();
+    let res = parse_verify_payment_response(&res).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.as_object().unwrap().get("sources").unwrap().as_array().unwrap().get(0).unwrap().as_str().unwrap(), txo);
@@ -185,11 +239,11 @@ pub fn build_and_submit_verify_req_for_unexistant_utxo() {
     //We need to wait a little before trying to verify txn
     sleep(1000);
 
-    let (get_utxo_req, payment_method) = indy::payments::build_verify_payment_req(wallet.handle, Some(dids[0]), &txo).wait().unwrap();
+    let get_utxo_req = build_verify_payment_req(wallet.handle, Some(dids[0]), &txo).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let err = indy::payments::parse_verify_payment_response(&payment_method, &res).wait().unwrap_err();
+    let err = parse_verify_payment_response(&res).unwrap_err();
 
-    assert_eq!(err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
+    assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
 #[test]
@@ -200,7 +254,7 @@ fn build_verify_req_works_for_invalid_utxo() {
 
     let receipt = "txo:sov:1234";
 
-    let err = indy::payments::build_verify_payment_req(wallet.handle, Some(&did), receipt).wait().unwrap_err();
+    let err = build_verify_payment_req(wallet.handle, Some(&did), receipt).unwrap_err();
 
-    assert_eq!(err.error_code, ErrorCode::CommonInvalidStructure)
+    assert_eq!(err, ErrorCode::CommonInvalidStructure)
 }
