@@ -460,7 +460,7 @@ def getSuffix() {
 }
 
 
-    pipelineWrapper({
+pipelineWrapper({
     //put code build containers inside a vpc under our dev account
     env.USE_VPC_CONFIG = true
 
