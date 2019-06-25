@@ -110,6 +110,41 @@ Adds Sovrin's token functionality to HyperLedger's Indy-SDK.
 
 <a id="how-to-contribute"></a>
 
+## Installing the Sovtoken
+
+### Release channels
+The Sovtoken release process defines the following release channels:
+
+* `master` - development builds for each push to master branch.
+* `stable` - stable releases.
+
+### Ubuntu based distributions (Ubuntu 16.04)
+It is recommended to install the SDK packages with APT:
+
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
+    sudo add-apt-repository "deb https://repo.sovrin.org/sdk/deb xenial {release channel}"
+    sudo apt-get update
+    sudo apt-get install -y libsovtoken
+
+### Windows
+
+1. Go to `https://repo.sovrin.org/windows/libsovtoken/{release-channel}`
+2. Download last version of libsovtoken.
+3. Unzip archives to the directory where you want to save library.
+
+### iOS
+1. Go to `https://repo.sovrin.org/ios/libsovtoken/{release-channel}/libsovtoken-core/`.
+2. 5 target architecture are supported as of now aarch64-apple-ios, armv7-apple-ios, armv7s-apple-ios, i386-apple-ios, x86_64-apple-ios and universal.
+3. Download latest version of libsovtoken.
+4. Unzip archives to the directory where you want to save library.
+
+### Android
+
+1. Go to `https://repo.sovrin.org/android/libsovtoken/{release-channel}`.
+2. 3 architecture are supported as of now arm,arm64 and x86.
+3. Download latest version of libsovtoken.
+4. Unzip archives to the directory where you want to save library.
+
 ## How To Contribute
 
 Please follow the guide [here](./doc/pull-request.md).
