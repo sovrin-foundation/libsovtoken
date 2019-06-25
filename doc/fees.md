@@ -40,6 +40,7 @@ For this example, constraint for changing metadata for default auth_rule will be
 * Open `indy-cli`
 * Open wallet: `wallet open <wallet_name> key=<wallet_encryption_key>`
 * Load libsovtoken: `load-plugin library=libsovtoken.[so|dll] initializer=sovtoken_init`
+* Use your did: `did use <your_did>`
 * Make a transaction with a command `ledger set-fees-prepare payment_method=sov fees=add_new_steward:42` to set fees to 42 sovatom for add_new_steward.
 
 Indy CLI will print the transaction after these steps. Example output:
