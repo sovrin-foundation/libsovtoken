@@ -39,8 +39,9 @@ download_libindy(){
     #$1 Branch
     #$2 Version
     #$3 Arch
+    base_version=$(cut -d'-' -f1 <<< $2)
     command pushd ${PREBUILT} > /dev/null
-        curl -sSLO https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$2.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/$1/$2/libindy_android_$3_$base_version.zip
         unzip -o -qq "libindy_android_$3_$2.zip"
         rm "libindy_android_$3_$2.zip"
     command popd > /dev/null
