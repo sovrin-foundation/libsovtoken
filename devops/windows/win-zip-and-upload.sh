@@ -16,7 +16,6 @@ suffix="$4"
 [ -z $version ] && exit 1
 [ -z $key ] && exit 2
 [ -z $type ] && exit 3
-[ -z $suffix ] && exit 4
 
 PACKAGE_NAME="libsovtoken"
 TEMP_ARCH_DIR=./${PACKAGE_NAME}-zip
