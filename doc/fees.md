@@ -12,7 +12,7 @@
     "operation": {
         "type": "20000",
         "fees": {
-            "add_new_steward": 42,,
+            "add_new_steward": 42,
         }
     },
 }
