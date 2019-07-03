@@ -17,6 +17,7 @@ use logic::api_internals::{
     add_request_fees,
     create_address
 };
+use logic::address;
 use logic::build_payment;
 use logic::config::{
     get_fees_config::GetFeesRequest,
@@ -48,6 +49,8 @@ use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::callbacks::ClosureHandler;
 use utils::results::ResultHandler;
+use indy_sys::{ResponseBoolCB, ResponseSliceCB};
+
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -939,6 +942,73 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
     return ErrorCode::Success as i32;
 }
 
+#[no_mangle]
+pub extern "C" fn sign_with_address_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    address: *const c_char,
+    message_raw: *const u8,
+    message_len: u32,
+    cb: Option<ResponseSliceCB>
+) -> i32 {
+    trace!("api::sign_with_address_handler called >> submitter_did (address) {:?}", secret!(&address));
+
+    match _check_address_is_vk(address) {
+        Ok(verkey) => {
+            unsafe {
+                let vk = CString::new(verkey).unwrap();
+                indy_sys::crypto::indy_crypto_sign(command_handle, wallet_handle, vk.as_ptr(), message_raw, message_len, cb)
+            }
+        },
+        Err(err) => {
+            if let Some(callback) = cb {
+                callback(command_handle, err as i32, ::std::ptr::null(), 0);
+            }
+            err as i32
+        }
+    }
+}
+
+pub extern "C" fn verify_with_address_handler(
+    command_handle: i32,
+    address: *const c_char,
+    message_raw: *const u8,
+    message_len: u32,
+    signature_raw: *const u8,
+    signature_len: u32,
+    cb: Option<ResponseBoolCB>
+) -> i32 {
+    trace!("api::verify_with_address_handler called >> submitter_did (address) {:?}", secret!(&address));
+
+    match _check_address_is_vk(address) {
+        Ok(verkey) => {
+            unsafe {
+                let vk = CString::new(verkey).unwrap();
+                indy_sys::crypto::indy_crypto_verify(command_handle, vk.as_ptr(), message_raw, message_len, signature_raw, signature_len, cb)
+            }
+        },
+        Err(err) => {
+            if let Some(callback) = cb {
+                callback(command_handle, err as i32, false);
+            }
+            err as i32
+        }
+    }
+}
+
+fn _check_address_is_vk(address: *const c_char) -> Result<String, ErrorCode> {
+    match str_from_char_ptr(address) {
+        Some(s) => {
+            let unqualified = address::unqualified_address_from_address(s)?;
+            let verkey = address::verkey_from_unqualified_address(&unqualified)?;
+            Ok(verkey)
+        },
+        None => {
+            Err(ErrorCode::CommonInvalidStructure)
+        }
+    }
+}
+
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
 
@@ -980,6 +1050,8 @@ pub extern fn sovtoken_init() -> i32 {
                 Some(parse_get_txn_fees_response_handler),
                 Some(build_verify_req_handler),
                 Some(parse_verify_response_handler),
+                Some(sign_with_address_handler),
+                Some(verify_with_address_handler),
                 cb,
             )
         )

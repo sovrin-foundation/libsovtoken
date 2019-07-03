@@ -5,7 +5,7 @@
 */
 
 use ErrorCode;
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver};
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ type Callbacks<F> = Mutex<HashMap<i32, Box<F>>>;
 macro_rules! closure_cb {
     ($closure:ident, $($name:ident : $ntype:ty),*) => {{
         lazy_static! {
-            static ref COMMAND_HANDLE_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
+            static ref COMMAND_HANDLE_COUNTER: AtomicUsize = AtomicUsize::new(4);
             static ref CALLBACKS: Callbacks<FnMut(i32, $($ntype),*) + Send> = Default::default();
         }
 

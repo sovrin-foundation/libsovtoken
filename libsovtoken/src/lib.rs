@@ -14,7 +14,6 @@ extern crate libc;
 extern crate openssl;
 extern crate rand;
 extern crate serde;
-extern crate sodiumoxide;
 extern crate sha2;
 extern crate time;
 // ------------------------------------------
