@@ -26,8 +26,8 @@ ARG indy_plenum_ver=1.9.0
 ARG indy_node_ver=1.9.0~rc3
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=0.9.14~rc12
-ARG fees_ver=0.9.14~rc12
+ARG token_ver=1.0.0~rc13
+ARG fees_ver=1.0.0~rc13
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
