@@ -19,16 +19,15 @@ FROM camparra/ubuntu16.04-rocksdb
 
 ARG uid=1000
 
-ARG indy_stream=master
+ARG indy_stream=rc
 
 
-ARG indy_plenum_ver=1.9.0~dev808
-ARG indy_node_ver=1.9.0~dev987
-ARG indy_anoncreds_ver=1.0.32
+ARG indy_plenum_ver=1.9.0
+ARG indy_node_ver=1.9.0~rc3
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=0.9.13~41
-ARG fees_ver=0.9.13~41
+ARG token_ver=1.0.0~rc13
+ARG fees_ver=1.0.0~rc13
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
