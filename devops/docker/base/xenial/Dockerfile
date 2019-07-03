@@ -23,7 +23,7 @@ ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH # TODO ??? is it r
 
 ENV LIBINDY_VERSION=1.10.0~77
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
-    && echo "deb https://repo.sovrin.org/sdk/deb xenial rc" >> /etc/apt/sources.list \
+    && echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
         libssl-dev \
         libindy=${LIBINDY_VERSION} \
