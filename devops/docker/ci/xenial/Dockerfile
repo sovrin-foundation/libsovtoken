@@ -1,10 +1,9 @@
-FROM sovrin/libsovtoken:base-xenial-0.25.0
+FROM sovrin/libsovtoken:base-xenial-0.26.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
 ARG PYTHON3_INDY_CRYPTO_VERSION
 ARG INDY_PLENUM_VERSION
-ARG INDY_ANONCREDS_VERSION
 ARG INDY_NODE_VERSION
 
 ARG SOVRIN_REPO_IP
@@ -36,17 +35,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #         or python3-rocksdb are not specified here)
 ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.5}
 ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
-ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.8.0}
-ENV INDY_ANONCREDS_VERSION ${INDY_ANONCREDS_VERSION:-1.0.11}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.8.0}
-ENV TOKEN_VER  ${TOKEN_VER:-0.9.12}
-RUN echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list
-RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
+ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.9.0}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.9.0~rc3}
+ENV TOKEN_VER  ${TOKEN_VER:-1.0.0~rc13}
+RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
+RUN echo "deb https://repo.sovrin.org/deb xenial rc" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
         libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
         python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
         indy-plenum=${INDY_PLENUM_VERSION} \
-        indy-anoncreds=${INDY_ANONCREDS_VERSION} \
         indy-node=${INDY_NODE_VERSION} \
         sovtoken=${TOKEN_VER} \
         sovtokenfees=${TOKEN_VER} \
@@ -69,4 +66,4 @@ COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.60.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.66.0

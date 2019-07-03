@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.0
+* bugfixes
+
 ## 0.10.0
 * Updated `build_set_txn_fees_handler` function to accept any aliases.
 * Updated `build_payment_req_handler` function to accept and to handle `Transaction Author Agreement` passed inside `extra_json`.

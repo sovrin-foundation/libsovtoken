@@ -19,16 +19,15 @@ FROM camparra/ubuntu16.04-rocksdb
 
 ARG uid=1000
 
-ARG indy_stream=stable
+ARG indy_stream=rc
 
 
-ARG indy_plenum_ver=1.8.0
-ARG indy_node_ver=1.8.0
-ARG indy_anoncreds_ver=1.0.11
+ARG indy_plenum_ver=1.9.0
+ARG indy_node_ver=1.9.0~rc3
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=0.9.12
-ARG fees_ver=0.9.12
+ARG token_ver=1.0.0~rc13
+ARG fees_ver=1.0.0~rc13
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
@@ -51,7 +50,6 @@ RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sourc
 RUN apt-get update && apt-get install -y --no-install-recommends \
     indy-plenum=${indy_plenum_ver} \
     indy-node=${indy_node_ver} \
-    indy-anoncreds=${indy_anoncreds_ver} \
     python3-indy-crypto=${python3_indy_crypto_ver} \
     libindy-crypto=${indy_crypto_ver} \
     sovtoken=${token_ver} \

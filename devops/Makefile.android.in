@@ -20,6 +20,7 @@ ANDROID_NDK_ARCHIVE_NAME := $(ANDROID_NDK_NAME)-$(call to_lower,$(shell uname))-
 
 LIBINDY_DEP_SPEC := $(subst =, ,$(call get_android_dependency,libindy,$(LIBSOVTOKEN_DEPS_FILE)))
 LIBINDY_VERSION ?= $(word 2,$(LIBINDY_DEP_SPEC))
+LIBINDY_VERSION_BASE ?= $(word 1,$(subst -, ,$(LIBINDY_VERSION)))
 LIBINDY_BRANCH ?= $(word 3,$(LIBINDY_DEP_SPEC))
 
 ANDROID_ARCHS ?= arm armv7 arm64 x86 x86_64
@@ -42,9 +43,9 @@ $(ANDROID_PREBUILT_DIR)/openssl_%.zip: | $(ANDROID_PREBUILT_DIR)
 $(ANDROID_PREBUILT_DIR)/libsodium_%.zip: | $(ANDROID_PREBUILT_DIR)
 	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/deps/sodium/libsodium_$*.zip
 
-.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
-$(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip: | $(ANDROID_PREBUILT_DIR)
-	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/$(LIBINDY_BRANCH)/$(LIBINDY_VERSION)/libindy_android_$*_$(LIBINDY_VERSION).zip
+.PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION_BASE).zip
+$(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION_BASE).zip: | $(ANDROID_PREBUILT_DIR)
+	cd $(@D) && curl -fLO $(REPO_SOVRIN_ORG_ANDROID_PREBUILT_URL)/$(LIBINDY_BRANCH)/$(LIBINDY_VERSION)/libindy_android_$*_$(LIBINDY_VERSION_BASE).zip
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/%
 $(ANDROID_PREBUILT_DIR)/%: $(ANDROID_PREBUILT_DIR)/%.zip
@@ -52,7 +53,7 @@ $(ANDROID_PREBUILT_DIR)/%: $(ANDROID_PREBUILT_DIR)/%.zip
 	touch $@
 
 .PRECIOUS: $(ANDROID_PREBUILT_DIR)/libindy_%
-$(ANDROID_PREBUILT_DIR)/libindy_%: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip
+$(ANDROID_PREBUILT_DIR)/libindy_%: $(ANDROID_PREBUILT_DIR)/libindy_android_%_$(LIBINDY_VERSION_BASE).zip
 	unzip -o -qq -d $(<D) $<
 	touch $@
 
