@@ -13,6 +13,7 @@ use utils::constants::txn_fields::OUTPUTS;
 use utils::ffi_support::c_pointer_from_string;
 use logic::parsers::common::KeyValueSimpleDataVerificationType;
 use utils::constants::txn_fields::{FROM, NEXT, ADDRESS};
+use logic::parsers::common::NumericalSuffixAscendingNoGapsData;
 
 type UTXOs = Vec<UTXOInner>;
 
@@ -116,7 +117,6 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         Ok((r, s)) => (r, s),
         Err(_) => return ErrorCode::CommonInvalidStructure
     };
-
     // TODO: No validation of outputs being done. This has to fixed by creating an `Address` with
     // a single private field called `address` and with implementation defining `new` and a getter.
     // The `new` method will do the validation.
@@ -172,7 +172,7 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
 
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData {
         kvs,
-        verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(from, next, prefix)
+        verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {from, next, prefix})
     });
     let proof_nodes = match state_proof.proof_nodes {
         Some(o) => o,
@@ -595,7 +595,7 @@ mod parse_get_utxo_responses_tests {
                 (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:21")), Some("1".to_string())),
                 (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:14")), Some("1".to_string()))
             ],
-                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(None, None, "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es".to_string())
+                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {from: None, next: None, prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es".to_string()})
             }),
             multi_signature: json!({
                 "participants": ["Beta", "Delta", "Gamma"],
@@ -631,7 +631,7 @@ mod parse_get_utxo_responses_tests {
                     "identifier": "6ouriXMZkLeHsuXrN1X1fd",
                     "reqId": 15424,
                     "from": 4,
-                    "next": 9
+                    "next": 9,
                     "outputs":[
                       [
                          "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
@@ -657,7 +657,7 @@ mod parse_get_utxo_responses_tests {
                          "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
                          8,
                          1
-                      ],
+                      ]
                    ],
                     "state_proof":{
                       "root_hash":"EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1",
@@ -685,7 +685,6 @@ mod parse_get_utxo_responses_tests {
         let json_str_ptr = json_str.as_ptr();
 
         let mut new_str_ptr = ::std::ptr::null();
-
         let return_error = get_utxo_state_proof_extractor(json_str_ptr, &mut new_str_ptr);
         assert_eq!(return_error, ErrorCode::Success);
 
@@ -699,7 +698,12 @@ mod parse_get_utxo_responses_tests {
                 (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7")), Some("1".to_string())),
                 (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8")), Some("1".to_string())),
             ],
-                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(Some(4), Some(9), "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es".to_string())
+                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(
+                    NumericalSuffixAscendingNoGapsData {
+                        from: Some(4),
+                        next: Some(9),
+                        prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es".to_string()
+                    })
             }),
             multi_signature: json!({
                 "participants": ["Beta", "Delta", "Gamma"],
