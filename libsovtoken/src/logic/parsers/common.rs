@@ -135,7 +135,18 @@ pub struct KeyValuesSubTrieData {
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct KeyValueSimpleData {
-    pub kvs: Vec<(String /* key */, Option<String /* val */>)>
+    pub kvs: Vec<(String /* key */, Option<String /* val */>)>,
+    #[serde(default = "KeyValueSimpleDataVerificationType::Simple")]
+    pub verification_type: KeyValueSimpleDataVerificationType
+}
+
+/**
+ Options of common state proof check process
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub enum KeyValueSimpleDataVerificationType {
+    Simple(),
+    NumericalSuffixAscendingNoGaps(Option<u64>, Option<u64>, String)
 }
 
 /**
