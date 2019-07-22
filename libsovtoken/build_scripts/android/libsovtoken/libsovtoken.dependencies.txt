@@ -1,1 +1,1 @@
-libindy=1.10.0-77=rc
+libindy=1.10.0-1195=master
