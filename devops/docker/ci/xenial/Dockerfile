@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.5}
 ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
 ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.9.0~dev836}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.9.0~dev1029}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.9.0~dev1028}
 ENV TOKEN_VER  ${TOKEN_VER:-1.0.0~dev65}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.list \

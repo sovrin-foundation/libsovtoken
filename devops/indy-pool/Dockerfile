@@ -23,7 +23,7 @@ ARG indy_stream=master
 
 
 ARG indy_plenum_ver=1.9.0~dev836
-ARG indy_node_ver=1.9.0~dev1029
+ARG indy_node_ver=1.9.0~dev1028
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
 ARG token_ver=1.0.0~dev65
