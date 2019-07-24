@@ -135,7 +135,32 @@ pub struct KeyValuesSubTrieData {
 */
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct KeyValueSimpleData {
-    pub kvs: Vec<(String /* key */, Option<String /* val */>)>
+    pub kvs: Vec<(String /* key */, Option<String /* val */>)>,
+    #[serde(default)]
+    pub verification_type: KeyValueSimpleDataVerificationType
+}
+
+/**
+ Options of common state proof check process
+*/
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[serde(tag = "type")]
+pub enum KeyValueSimpleDataVerificationType {
+    Simple,
+    NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData)
+}
+
+impl Default for KeyValueSimpleDataVerificationType {
+    fn default() -> Self {
+        KeyValueSimpleDataVerificationType::Simple
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub struct NumericalSuffixAscendingNoGapsData {
+    pub from: Option<u64>,
+    pub next: Option<u64>,
+    pub prefix: String
 }
 
 /**
@@ -196,6 +221,20 @@ mod common_tests {
             json_str_ptr).unwrap_err();
 
         assert_eq!(return_error, ErrorCode::CommonInvalidStructure);
+    }
+
+    #[test]
+    fn test_deserialize_vertype_simple() {
+        let obj: KeyValuesInSP = KeyValuesInSP::Simple(KeyValueSimpleData {
+            kvs: vec![("a".to_string(), Some("b".to_string()))],
+            verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {
+                from: Some(1),
+                next: Some(2),
+                prefix: "abc".to_string()
+            })
+        });
+        let json = serde_json::to_string(&obj).unwrap();
+        let vertype: KeyValuesInSP = serde_json::from_str(&json).unwrap();
     }
 
     #[test]
