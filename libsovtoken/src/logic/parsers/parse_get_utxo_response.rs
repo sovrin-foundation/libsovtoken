@@ -158,7 +158,7 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
                 Ok(p) => p,
                 Err(_) => return ErrorCode::CommonInvalidStructure
             };
-            prefix
+            prefix + ":"
         },
         None => return ErrorCode::CommonInvalidStructure
     };
