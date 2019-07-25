@@ -108,7 +108,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
 // Assumes a valid address. The delimeter `:` has to be the same as used on ledger
 pub fn get_utxo_state_key(address: &str, seq_no: TxnSeqNo) -> String {
-    base64::encode(&format!("{}:{}", address, seq_no))
+    format!("{}:{}", address, seq_no)
 }
 
 pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp: *mut *const c_char) -> ErrorCode {
@@ -383,7 +383,7 @@ mod parse_get_utxo_responses_tests {
         let address = "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q";
         let seq_no = 32;
         let key = get_utxo_state_key(&address, seq_no);
-        assert_eq!(key, base64::encode("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q:32"));
+        assert_eq!(key, "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q:32");
     }
 
     #[test]
