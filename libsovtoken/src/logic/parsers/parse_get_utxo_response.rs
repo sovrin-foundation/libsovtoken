@@ -1,6 +1,5 @@
 //! types used for parse_get_utxo_response_handler
 
-use base64;
 use ErrorCode;
 use libc::c_char;
 use logic::parsers::common::{ResponseOperations, TXO, StateProof, ParsedSP, KeyValuesInSP,
@@ -574,28 +573,28 @@ mod parse_get_utxo_responses_tests {
             proof_nodes: String::from("+QHF4hOgCBgvwaPO/KIJjOyzhA9dx8yXqPgqKY9sqKPIAZgHujTsgICA2cQggsExxCCCwTGAgICAgICAgICAgICAgICAgICAgICAgICAgICCwTH4VrQAJqUzRQSFdRSktjYXdSeGRXNkdWc2puWkJhMWVjR2RDc3NuN0toV1lKWkdUWGdMN0VzOjoEREJ+KujHB//IMaixsQMlj9+4DLVQHzu4WJczS7X8ED+G2AoMk4QTH20sQPm8C23HQjM7dFR6HIi99DdtySfD9VnTGsoDyHJeCRAIf9srqEpWYrQ1nq9jBE67eMCBK+ewpvMu2UxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTGAgICAgICA+DnEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMYCAgICAgID4cYCAgKDXpPuRat5Zsa2SRHuGjslN7/QaBcZvwSae8dKLWybem4CAoAzQlchQvYEDh57N1ilzx/G5Gj05oHksuf4nOK/6KGqfoF/sqT9NVI/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA"),
             root_hash: String::from("EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1"),
             kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:16")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:17")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:20")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:13")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:3")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:19")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:11")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:18")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:15")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:10")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:9")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:12")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:2")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:21")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:14")), Some("1".to_string()))
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:16"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:17"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:20"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:13"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:3"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:19"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:11"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:18"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:15"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:10"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:9"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:12"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:2"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:21"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:14"), Some("1".to_string()))
             ],
-                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {from: None, next: None, prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es".to_string()})
+                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {from: None, next: None, prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:".to_string()})
             }),
             multi_signature: json!({
                 "participants": ["Beta", "Delta", "Gamma"],
@@ -692,17 +691,17 @@ mod parse_get_utxo_responses_tests {
             proof_nodes: String::from("+QHF4hOgCBgvwaPO/KIJjOyzhA9dx8yXqPgqKY9sqKPIAZgHujTsgICA2cQggsExxCCCwTGAgICAgICAgICAgICAgICAgICAgICAgICAgICCwTH4VrQAJqUzRQSFdRSktjYXdSeGRXNkdWc2puWkJhMWVjR2RDc3NuN0toV1lKWkdUWGdMN0VzOjoEREJ+KujHB//IMaixsQMlj9+4DLVQHzu4WJczS7X8ED+G2AoMk4QTH20sQPm8C23HQjM7dFR6HIi99DdtySfD9VnTGsoDyHJeCRAIf9srqEpWYrQ1nq9jBE67eMCBK+ewpvMu2UxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTGAgICAgICA+DnEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMYCAgICAgID4cYCAgKDXpPuRat5Zsa2SRHuGjslN7/QaBcZvwSae8dKLWybem4CAoAzQlchQvYEDh57N1ilzx/G5Gj05oHksuf4nOK/6KGqfoF/sqT9NVI/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA"),
             root_hash: String::from("EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1"),
             kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8")), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8"), Some("1".to_string())),
             ],
                 verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(
                     NumericalSuffixAscendingNoGapsData {
                         from: Some(4),
                         next: Some(9),
-                        prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es".to_string()
+                        prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:".to_string()
                     })
             }),
             multi_signature: json!({
