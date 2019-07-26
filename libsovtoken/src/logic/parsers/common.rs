@@ -234,7 +234,7 @@ mod common_tests {
             })
         });
         let json = serde_json::to_string(&obj).unwrap();
-        let vertype: KeyValuesInSP = serde_json::from_str(&json).unwrap();
+        let _vertype: KeyValuesInSP = serde_json::from_str(&json).unwrap();
     }
 
     #[test]
