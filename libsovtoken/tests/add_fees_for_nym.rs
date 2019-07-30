@@ -198,12 +198,13 @@ pub fn build_and_submit_nym_with_fees_and_get_utxo() {
     assert_eq!(parsed_resp_json[0].get("amount").unwrap().as_u64().unwrap(), 9);
     assert_eq!(parsed_resp_json[0].get("recipient").unwrap().as_str().unwrap(), addresses[0]);
 
-    let utxos = get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0]);
+    let (utxos, next) = get_utxo::send_get_utxo_request(&wallet, pool_handle, dids[0], &addresses[0], None);
     let utxo = &utxos[0];
 
     assert_eq!(utxos.len(), 1);
     assert_eq!(utxo.payment_address, addresses[0]);
     assert_eq!(utxo.amount, 9);
+    assert_eq!(next, None);
 }
 
 #[test]
