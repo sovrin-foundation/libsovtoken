@@ -19,3 +19,6 @@ Defines a callback to communicate results to Indy-sdk as type
 */
 pub type JsonCallback = Option<JsonCallbackUnwrapped>;
 pub type JsonCallbackUnwrapped = extern fn(command_handle: i32, err: i32, json_pointer: *const c_char) -> i32;
+
+pub type JsonI64Callback = Option<JsonI64CallbackUnwrapped>;
+pub type JsonI64CallbackUnwrapped = extern fn(command_handle: i32, err: i32, json_pointer: *const c_char, num: i64) -> i32;
