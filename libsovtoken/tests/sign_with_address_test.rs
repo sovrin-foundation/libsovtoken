@@ -31,7 +31,7 @@ pub fn sign_with_address_works() {
 }
 
 #[test]
-pub fn sign_with_address_works_for_incorrect_signature() {
+pub fn sign_with_address_fails_for_incorrect_signature() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
