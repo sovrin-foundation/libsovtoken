@@ -198,9 +198,10 @@ pub fn build_and_submit_mint_txn_works() {
     let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
+    let (utxos, next) = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0], None);
     assert_eq!(utxos[0].amount, 5);
     assert_eq!(utxos[0].payment_address, payment_addresses[0]);
+    assert_eq!(next, None);
 }
 
 #[test]
@@ -253,9 +254,10 @@ pub fn build_and_submit_mint_txn_works_with_empty_did() {
     let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
+    let (utxos, next) = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0], None);
     assert_eq!(utxos[0].amount, 5);
     assert_eq!(utxos[0].payment_address, payment_addresses[0]);
+    assert!(next.is_none())
 }
 
 #[test]
@@ -311,10 +313,11 @@ pub fn build_and_submit_mint_txn_works_for_double_send_mint() {
     let result = indy::ledger::submit_request(pool_handle, &mint_req).wait().unwrap();
     let response = ParseMintResponse::from_json(&result).unwrap();
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
+    let (utxos, next) = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0], None);
     assert_eq!(utxos.len(), 1);
     assert_eq!(utxos[0].amount, 5);
     assert_eq!(utxos[0].payment_address, payment_addresses[0]);
+    assert!(next.is_none());
 }
 
 #[test]
@@ -363,7 +366,8 @@ fn mint_10_billion_tokens() {
     trace!("{:?}", &response);
 
     assert_eq!(response.op, ResponseOperations::REPLY);
-    let utxos = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0]);
+    let (utxos, next) = utils::payment::get_utxo::send_get_utxo_request(&wallet, pool_handle, &dids[0], &payment_addresses[0], None);
     assert_eq!(utxos[0].amount, tokens);
     assert_eq!(utxos[0].payment_address, payment_addresses[0]);
+    assert_eq!(next, None);
 }

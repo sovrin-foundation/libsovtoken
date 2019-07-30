@@ -50,6 +50,7 @@ pub struct ParseGetUtxoResponseResult {
     pub identifier: String,
     pub req_id : ReqId,
     pub outputs : UTXOs,
+    pub next : Option<u64>,
     #[serde(rename = "state_proof", skip_serializing_if = "Option::is_none")]
     pub state_proof : Option<StateProof>
 }
@@ -74,7 +75,7 @@ pub struct UTXO {
 /**
    for parse_get_utxo_response_handler output parameter utxo_json
 */
-pub type ParseGetUtxoReply = Vec<UTXO>;
+pub type ParseGetUtxoReply = (Vec<UTXO>, Option<u64>);
 
 /**
     Converts ParseGetUtxoResponse (which should be input via indy-sdk) to ParseGetUtxoReply
@@ -96,7 +97,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
                 utxos.push(utxo);
             }
 
-            Ok(utxos)
+            Ok((utxos, result.next))
         }
         ResponseOperations::REQNACK | ResponseOperations::REJECT => {
             let reason = base.reason.ok_or(ErrorCode::CommonInvalidStructure)?;
@@ -228,6 +229,7 @@ mod parse_get_utxo_responses_tests {
                 [
                     ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1, 40]
                 ],
+                "next": 1,
                 "state_proof":
                 {
                     "multi_signature":
@@ -294,6 +296,7 @@ mod parse_get_utxo_responses_tests {
             identifier,
             req_id: 123457890,
             outputs,
+            next: None,
             state_proof: Some(state_proof)
         };
 
@@ -304,8 +307,9 @@ mod parse_get_utxo_responses_tests {
             reason: None,
         };
 
-        let reply: ParseGetUtxoReply = from_response(response).unwrap();
+        let (reply, next) = from_response(response).unwrap();
 
+        assert!(next.is_none());
         assert_eq!(outputs_len, reply.len());
 
     }
@@ -342,6 +346,7 @@ mod parse_get_utxo_responses_tests {
             identifier,
             req_id: 123457890,
             outputs,
+            next: None,
             state_proof: Some(state_proof)
         };
 
@@ -352,8 +357,9 @@ mod parse_get_utxo_responses_tests {
             reason: None,
         };
 
-        let reply: ParseGetUtxoReply = from_response(response).unwrap();
+        let (reply, next) = from_response(response).unwrap();
 
+        assert!(next.is_none());
         assert_eq!(outputs_len, reply.len());
     }
 
@@ -364,6 +370,8 @@ mod parse_get_utxo_responses_tests {
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
         assert_eq!(response.op, ResponseOperations::REPLY);
+        let res = response.result.unwrap();
+        assert_eq!(res.next, Some(1));
     }
 
     // this test passes when the valid JSON defined in PARSE_GET_UTXO_RESPONSE_JSON is correctly serialized into

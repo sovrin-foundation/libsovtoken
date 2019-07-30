@@ -31,7 +31,7 @@ use logic::parsers::{
     parse_get_utxo_response,
     parse_response_with_fees_handler,
     parse_verify,
-    parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
+    parse_get_utxo_response::{ParseGetUtxoResponse},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor}
@@ -48,6 +48,7 @@ use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::callbacks::ClosureHandler;
 use utils::results::ResultHandler;
+use utils::constants::general::JsonI64Callback;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -469,9 +470,11 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  _submitter_did: *const c_char,
                                                  payment_address: *const c_char,
+                                                 from: i64,
                                                  cb: JsonCallback) -> i32 {
     trace!("api::build_get_utxo_request_handler called");
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+    let from: Option<u64> = if from == -1 { None } else {Some(from as u64)};
 
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
@@ -483,7 +486,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
     debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, secret!(&payment_address));
 
     let utxo_request =
-        GetUtxoOperationRequest::new(String::from(payment_address));
+        GetUtxoOperationRequest::new(String::from(payment_address), from);
     info!("Built GET_UTXO request: {:?}", utxo_request);
     let utxo_request = utxo_request.serialize_to_pointer()
         .map_err(|_| ErrorCode::CommonInvalidStructure);
@@ -512,7 +515,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 pub extern "C" fn parse_get_utxo_response_handler(
     command_handle: i32,
     resp_json: *const c_char,
-    cb: JsonCallback
+    cb: JsonI64Callback
 ) -> i32 {
 
     trace!("api::parse_get_utxo_response_handler called");
@@ -542,7 +545,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseGetUtxoReply::from_response
-    let reply: ParseGetUtxoReply = match parse_get_utxo_response::from_response(response) {
+    let (sources, next) = match parse_get_utxo_response::from_response(response) {
         Ok(reply) => reply,
         Err(err) => {
             trace!("api::parse_get_utxo_response_handler << result: {:?}", err);
@@ -550,7 +553,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
         }
     };
 
-    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
+    let reply_str: String = match sources.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
@@ -558,7 +561,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
-    cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
+    cb(command_handle, ErrorCode::Success as i32, reply_str_ptr, next.map(|a| a as i64).unwrap_or(-1));
     trace!("api::parse_get_utxo_response_handler << result: {:?}", ErrorCode::Success);
     return ErrorCode::Success as i32;
 }

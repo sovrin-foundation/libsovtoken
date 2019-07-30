@@ -55,3 +55,19 @@ pub fn cb_ec_string() -> (
 
     (receiver, command_handle, Some(callback))
 }
+
+pub fn cb_ec_string_i64() -> (
+    Receiver<(ErrorCode, (String, i64))>,
+    i32,
+    Option<extern fn(command_handle: i32, err: i32, c_str: *const c_char, num: i64) -> i32>) {
+    let (sender, receiver) = channel();
+
+    let closure = Box::new(move|error_code, c_str, num| {
+        let string = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
+        sender.send((ErrorCode::from(error_code), (string, num))).unwrap();
+    });
+
+    let (command_handle, callback) = closure_cb!(closure, char_value: *const c_char, num: i64);
+
+    (receiver, command_handle, Some(callback))
+}
