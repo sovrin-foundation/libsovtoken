@@ -64,7 +64,7 @@ pub fn sign_with_address_fails_for_invalid_addr() {
 }
 
 #[test]
-pub fn sign_with_address_works_for_no_such_addr_in_wallet() {
+pub fn sign_with_address_fails_for_no_such_addr_in_wallet() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
