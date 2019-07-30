@@ -82,7 +82,7 @@ pub fn sign_with_address_fails_for_no_such_addr_in_wallet() {
 }
 
 #[test]
-pub fn verify_with_address_works_for_invalid_address() {
+pub fn verify_with_address_fails_for_invalid_address() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
         num_addresses: 1,
