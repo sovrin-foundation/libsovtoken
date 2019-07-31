@@ -326,7 +326,8 @@ This API call is handled by LibSovToken build_get_sources_request_handler
     "operation":
     {
         "address": <str>,       // the payment address
-        "type": 10002
+        "type": 10002,
+        "from": <int>           // shift to the next slice of payment sources
     },
     "reqId": <int>,             // a random identifier
     "protocolVersion": <int>    // (optional)  the version of the client/node communication protocol
@@ -342,7 +343,8 @@ Example get_sources_txn_json:
     "operation":
     {
         "address": "2jyMWLv8NuxUV4yDc46mLQMn9WUUzeKURX3d2yQqgoLqEQC2sf",
-        "type": "10002"
+        "type": "10002",
+        "from": 1
     },
     "reqId": 6284,
     "protocolVersion": 1
@@ -366,6 +368,7 @@ This API call is handled by LibSovToken parse_get_sources_response_handler
         "outputs": [
             ["<str: address>", <int: sequence number>, <int: amount>],
         ],
+        "next": <int>           // (optional) pointer to the next slice of payment sources
         "state_proof":
         {
             "multi_signature":
@@ -402,6 +405,7 @@ Example resp_json from the ledger:
         [
             ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1, 40]
         ],
+        "next": 1,
         "state_proof":
         {
             "multi_signature":
@@ -427,6 +431,7 @@ Example resp_json from the ledger:
 
 
 ### return:
+    next - (optional) pointer to the next slice of payment sources
     sources_json - parsed (payment method and node version agnostic) sources info as json:
 ```
 [

@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 1.0.1
+* Updated `build_get_utxo_request_handler` function to accept an additional parameter `from` used for pagination.
+* Updated `parse_get_utxo_response_handler` function to return an additional parameter `next` pointing to the next slice of payment sources.
+* Added `sign_with_address_handler` function to sign a message with a payment address.
+* Added `verify_with_address_handler` function to verify a signature with a payment address.
+* bugfixes
+
 ## 1.0.0
 * bugfixes
 

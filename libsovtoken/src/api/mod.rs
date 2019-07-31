@@ -509,6 +509,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 /// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
+/// next: u64 (optional) - pointer to the next slice of payment sources
 /// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
