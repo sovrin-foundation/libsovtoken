@@ -13,7 +13,7 @@ pub fn get_first_utxo_txo_for_payment_address(wallet: &Wallet, pool_handle: i32,
     utxo.source
 }
 
-pub fn send_get_utxo_request(wallet: &Wallet, pool_handle: i32, did: &str, address: &str, from: Option<u64>) -> (Vec<UTXO>, Option<u64>) {
+pub fn send_get_utxo_request(wallet: &Wallet, pool_handle: i32, did: &str, address: &str, from: Option<i64>) -> (Vec<UTXO>, Option<i64>) {
     let (req, method) = indy::payments::build_get_payment_sources_with_from_request(wallet.handle, Some(did), address, from).wait().unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, did, &req).wait().unwrap();
     let (parsed_resp, next) = indy::payments::parse_get_payment_sources_with_from_response(&method, &res).wait().unwrap();

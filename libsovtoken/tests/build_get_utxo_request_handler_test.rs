@@ -23,7 +23,7 @@ use sovtoken::utils::ffi_support::c_pointer_from_str;
 use sovtoken::{ErrorCode, IndyHandle};
 
 // ***** HELPER METHODS *****
-fn build_get_payment_sources_request(wallet_handle: IndyHandle, did: &str, payment_address: &str, from:Option<u64>) -> Result<String, ErrorCode> {
+fn build_get_payment_sources_request(wallet_handle: IndyHandle, did: &str, payment_address: &str, from:Option<i64>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let error_code = sovtoken::api::build_get_utxo_request_handler(
@@ -129,6 +129,26 @@ pub fn build_and_submit_get_utxo_request() {
     assert_eq!(utxo.get("paymentAddress").unwrap().as_str().unwrap(), payment_addresses[0]);
     assert_eq!(utxo.get("amount").unwrap().as_u64().unwrap(), 10);
     assert!(next.is_none());
+}
+
+#[test]
+pub fn build_and_submit_get_utxo_request_negative() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: None
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0], Some(-15)).unwrap();
+    let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
+    let res = parse_get_payment_sources_response(&res);
+    assert_eq!(res.unwrap_err(), ErrorCode::CommonInvalidStructure);
 }
 
 #[test]
