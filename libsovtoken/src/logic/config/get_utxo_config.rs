@@ -21,11 +21,11 @@ pub struct GetUtxoOperationRequest {
     #[serde(rename = "type")]
     req_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    from: Option<u64>
+    from: Option<i64>
 }
 
 impl GetUtxoOperationRequest {
-    pub fn new(address : String, from: Option<u64>) -> Request<GetUtxoOperationRequest> {
+    pub fn new(address : String, from: Option<i64>) -> Request<GetUtxoOperationRequest> {
         let unqualified_address: String = strip_qualifier_from_address(&address);
         let identifier = verkey_from_unqualified_address(&unqualified_address).ok();
         let req = GetUtxoOperationRequest {
