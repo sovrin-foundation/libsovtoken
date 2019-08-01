@@ -477,7 +477,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  cb: JsonCallback) -> i32 {
     trace!("api::build_get_utxo_request_handler called");
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
-    let from: Option<u64> = if from == -1 { None } else {Some(from as u64)};
+    let from: Option<i64> = if from == -1 { None } else {Some(from)};
 
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
@@ -509,6 +509,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 /// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
+/// next: u64 (optional) - pointer to the next slice of payment sources
 /// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors

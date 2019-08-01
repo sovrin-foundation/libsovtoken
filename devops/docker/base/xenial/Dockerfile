@@ -21,9 +21,9 @@ RUN cd /tmp \
 # need for libsodium to be reachable via pkg-config (sodiumoxide uses it)
 ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH # TODO ??? is it really needed
 
-ENV LIBINDY_VERSION=1.10.1~1220
+ENV LIBINDY_VERSION=1.11.0~81
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
-    && echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list \
+    && echo "deb https://repo.sovrin.org/sdk/deb xenial rc" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
         libssl-dev \
         libindy=${LIBINDY_VERSION} \
@@ -47,4 +47,4 @@ RUN cd /tmp/libsovtoken \
 # TODO CMD ENTRYPOINT ...
 
 
-ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.31.0
+ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.32.0
