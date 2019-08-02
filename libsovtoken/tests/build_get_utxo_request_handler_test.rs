@@ -23,7 +23,7 @@ use sovtoken::utils::ffi_support::c_pointer_from_str;
 use sovtoken::{ErrorCode, IndyHandle};
 
 // ***** HELPER METHODS *****
-fn build_get_payment_sources_request(wallet_handle: IndyHandle, did: &str, payment_address: &str) -> Result<String, ErrorCode> {
+fn build_get_payment_sources_request(wallet_handle: IndyHandle, did: &str, payment_address: &str, from:Option<i64>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let error_code = sovtoken::api::build_get_utxo_request_handler(
@@ -31,14 +31,15 @@ fn build_get_payment_sources_request(wallet_handle: IndyHandle, did: &str, payme
         wallet_handle,
         c_pointer_from_str(did),
         c_pointer_from_str(payment_address),
+        from.map(|a| a as i64).unwrap_or(-1),
         cb
     );
 
     return ResultHandler::one(ErrorCode::from(error_code), receiver);
 }
 
-fn parse_get_payment_sources_response(res: &str) -> Result<String, ErrorCode> {
-    let (receiver, command_handle, cb) = callbacks::cb_ec_string();
+fn parse_get_payment_sources_response(res: &str) -> Result<(String, Option<u64>), ErrorCode> {
+    let (receiver, command_handle, cb) = callbacks::cb_ec_string_i64();
 
     let error_code = sovtoken::api::parse_get_utxo_response_handler(
         command_handle,
@@ -46,7 +47,8 @@ fn parse_get_payment_sources_response(res: &str) -> Result<String, ErrorCode> {
         cb
     );
 
-    return ResultHandler::one(ErrorCode::from(error_code), receiver);
+    return ResultHandler::one(ErrorCode::from(error_code), receiver)
+        .map(|(arg1, arg2)| (arg1, if arg2 == -1 {None} else {Some(arg2 as u64)}));
 }
 
 // ***** HELPER TEST DATA  *****
@@ -60,7 +62,7 @@ const ADDRESS: &str = "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q
 // receive an error when no callback is provided
 #[test]
 fn get_utxo_errors_with_no_call_back() {
-    let return_error = sovtoken::api::build_get_utxo_request_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), ptr::null(), None);
+    let return_error = sovtoken::api::build_get_utxo_request_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), ptr::null(), -1, None);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_get_utxo_request_handler'");
 }
 
@@ -68,7 +70,7 @@ fn get_utxo_errors_with_no_call_back() {
 // a error is returned when no config is provided
 #[test]
 fn get_utxo_errors_with_no_payment_address() {
-    let return_error = sovtoken::api::build_get_utxo_request_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), ptr::null(), CB);
+    let return_error = sovtoken::api::build_get_utxo_request_handler(COMMAND_HANDLE, WALLET_ID, ptr::null(), ptr::null(), -1,CB);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_fees_txn_handler'");
 }
 
@@ -80,7 +82,23 @@ fn build_get_utxo_json() {
         "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q"
     });
 
-    let request = build_get_payment_sources_request(WALLET_ID, &did, &ADDRESS).unwrap();
+    let request = build_get_payment_sources_request(WALLET_ID, &did, &ADDRESS, None).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&request).unwrap();
+
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+}
+
+#[test]
+fn build_get_utxo_json_with_from() {
+    let did = bs58::encode("1234567890123456").into_string();
+    let expected_operation = json!({
+        "type": "10002",
+        "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+        "from": 1
+    });
+
+    let request = build_get_payment_sources_request(WALLET_ID, &did, &ADDRESS, Some(1)).unwrap();
 
     let request_value: serde_json::value::Value = serde_json::from_str(&request).unwrap();
 
@@ -101,15 +119,36 @@ pub fn build_and_submit_get_utxo_request() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0]).unwrap();
+    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0], None).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let res = parse_get_payment_sources_response(&res).unwrap();
+    let (res, next) = parse_get_payment_sources_response(&res).unwrap();
 
     let res_parsed: Vec<serde_json::Value> = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.len(), 1);
     let utxo = res_parsed.get(0).unwrap().as_object().unwrap();
     assert_eq!(utxo.get("paymentAddress").unwrap().as_str().unwrap(), payment_addresses[0]);
     assert_eq!(utxo.get("amount").unwrap().as_u64().unwrap(), 10);
+    assert!(next.is_none());
+}
+
+#[test]
+pub fn build_and_submit_get_utxo_request_negative() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![10]),
+        fees: None
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0], Some(-15)).unwrap();
+    let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
+    let res = parse_get_payment_sources_response(&res);
+    assert_eq!(res.unwrap_err(), ErrorCode::CommonInvalidStructure);
 }
 
 #[test]
@@ -126,12 +165,13 @@ pub fn build_and_submit_get_utxo_request_no_utxo() {
     let pool_handle = setup.pool_handle;
     let dids = setup.trustees.dids();
 
-    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0]).unwrap();
+    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0], None).unwrap();
     let res = indy::ledger::sign_and_submit_request(pool_handle, wallet.handle, dids[0], &get_utxo_req).wait().unwrap();
-    let res = parse_get_payment_sources_response(&res).unwrap();
+    let (res, next) = parse_get_payment_sources_response(&res).unwrap();
 
     let res_parsed: Vec<serde_json::Value> = serde_json::from_str(&res).unwrap();
     assert_eq!(res_parsed.len(), 0);
+    assert_eq!(next, None);
 }
 
 #[test]
@@ -147,7 +187,7 @@ pub fn payment_address_is_identifier() {
     let payment_addresses = &setup.addresses;
     let dids = setup.trustees.dids();
 
-    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0]).unwrap();
+    let get_utxo_req = build_get_payment_sources_request(wallet.handle, dids[0], &payment_addresses[0], None).unwrap();
     let req: serde_json::Value = serde_json::from_str(&get_utxo_req).unwrap();
     let identifier = req.as_object().unwrap().get("identifier").unwrap().as_str().unwrap();
     let unqualified_addr = strip_qualifier_from_address(&payment_addresses[0]);

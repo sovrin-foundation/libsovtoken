@@ -1,6 +1,5 @@
 //! types used for parse_get_utxo_response_handler
 
-use base64;
 use ErrorCode;
 use libc::c_char;
 use logic::parsers::common::{ResponseOperations, TXO, StateProof, ParsedSP, KeyValuesInSP,
@@ -11,6 +10,9 @@ use logic::address;
 use serde_json;
 use utils::constants::txn_fields::OUTPUTS;
 use utils::ffi_support::c_pointer_from_string;
+use logic::parsers::common::KeyValueSimpleDataVerificationType;
+use utils::constants::txn_fields::{FROM, NEXT, ADDRESS};
+use logic::parsers::common::NumericalSuffixAscendingNoGapsData;
 
 type UTXOs = Vec<UTXOInner>;
 
@@ -48,6 +50,7 @@ pub struct ParseGetUtxoResponseResult {
     pub identifier: String,
     pub req_id : ReqId,
     pub outputs : UTXOs,
+    pub next : Option<u64>,
     #[serde(rename = "state_proof", skip_serializing_if = "Option::is_none")]
     pub state_proof : Option<StateProof>
 }
@@ -72,7 +75,7 @@ pub struct UTXO {
 /**
    for parse_get_utxo_response_handler output parameter utxo_json
 */
-pub type ParseGetUtxoReply = Vec<UTXO>;
+pub type ParseGetUtxoReply = (Vec<UTXO>, Option<u64>);
 
 /**
     Converts ParseGetUtxoResponse (which should be input via indy-sdk) to ParseGetUtxoReply
@@ -94,7 +97,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
                 utxos.push(utxo);
             }
 
-            Ok(utxos)
+            Ok((utxos, result.next))
         }
         ResponseOperations::REQNACK | ResponseOperations::REJECT => {
             let reason = base.reason.ok_or(ErrorCode::CommonInvalidStructure)?;
@@ -105,7 +108,7 @@ pub fn from_response(base : ParseGetUtxoResponse) -> Result<ParseGetUtxoReply, E
 
 // Assumes a valid address. The delimeter `:` has to be the same as used on ledger
 pub fn get_utxo_state_key(address: &str, seq_no: TxnSeqNo) -> String {
-    base64::encode(&format!("{}:{}", address, seq_no))
+    format!("{}:{}", address, seq_no)
 }
 
 pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp: *mut *const c_char) -> ErrorCode {
@@ -114,7 +117,6 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         Ok((r, s)) => (r, s),
         Err(_) => return ErrorCode::CommonInvalidStructure
     };
-
     // TODO: No validation of outputs being done. This has to fixed by creating an `Address` with
     // a single private field called `address` and with implementation defining `new` and a getter.
     // The `new` method will do the validation.
@@ -130,6 +132,37 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
         None => return ErrorCode::CommonInvalidStructure
     };
 
+    let from: Option<u64> = match result.get(FROM) {
+        Some(from) => {
+            let from: u64 = match serde_json::from_value(from.to_owned()) {
+                Ok(o) => o,
+                Err(_) => return ErrorCode::CommonInvalidStructure
+            };
+            Some(from)
+        },
+        None => None
+    };
+    let next: Option<u64> = match result.get(NEXT) {
+        Some(next) => {
+            let next: u64 = match serde_json::from_value(next.to_owned()) {
+                Ok(o) => o,
+                Err(_) => return ErrorCode::CommonInvalidStructure
+            };
+            Some(next)
+        },
+        None => None
+    };
+    let prefix: String = match result.get(ADDRESS) {
+        Some(prefix) => {
+            let prefix: String = match serde_json::from_value(prefix.to_owned()) {
+                Ok(p) => p,
+                Err(_) => return ErrorCode::CommonInvalidStructure
+            };
+            prefix + ":"
+        },
+        None => return ErrorCode::CommonInvalidStructure
+    };
+
     let mut kvs: Vec<(String, Option<String>)> = Vec::new();
 
     for output in outputs {
@@ -137,7 +170,10 @@ pub fn get_utxo_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
                   Some(output.amount.to_string())));
     }
 
-    let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData { kvs });
+    let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData {
+        kvs,
+        verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {from, next, prefix})
+    });
     let proof_nodes = match state_proof.proof_nodes {
         Some(o) => o,
         None => return ErrorCode::CommonInvalidStructure
@@ -193,6 +229,7 @@ mod parse_get_utxo_responses_tests {
                 [
                     ["dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q", 1, 40]
                 ],
+                "next": 1,
                 "state_proof":
                 {
                     "multi_signature":
@@ -259,6 +296,7 @@ mod parse_get_utxo_responses_tests {
             identifier,
             req_id: 123457890,
             outputs,
+            next: None,
             state_proof: Some(state_proof)
         };
 
@@ -269,8 +307,9 @@ mod parse_get_utxo_responses_tests {
             reason: None,
         };
 
-        let reply: ParseGetUtxoReply = from_response(response).unwrap();
+        let (reply, next) = from_response(response).unwrap();
 
+        assert!(next.is_none());
         assert_eq!(outputs_len, reply.len());
 
     }
@@ -307,6 +346,7 @@ mod parse_get_utxo_responses_tests {
             identifier,
             req_id: 123457890,
             outputs,
+            next: None,
             state_proof: Some(state_proof)
         };
 
@@ -317,8 +357,9 @@ mod parse_get_utxo_responses_tests {
             reason: None,
         };
 
-        let reply: ParseGetUtxoReply = from_response(response).unwrap();
+        let (reply, next) = from_response(response).unwrap();
 
+        assert!(next.is_none());
         assert_eq!(outputs_len, reply.len());
     }
 
@@ -329,6 +370,8 @@ mod parse_get_utxo_responses_tests {
 
         let response: ParseGetUtxoResponse = ParseGetUtxoResponse::from_json(PARSE_GET_UTXO_RESPONSE_JSON).unwrap();
         assert_eq!(response.op, ResponseOperations::REPLY);
+        let res = response.result.unwrap();
+        assert_eq!(res.next, Some(1));
     }
 
     // this test passes when the valid JSON defined in PARSE_GET_UTXO_RESPONSE_JSON is correctly serialized into
@@ -347,7 +390,7 @@ mod parse_get_utxo_responses_tests {
         let address = "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q";
         let seq_no = 32;
         let key = get_utxo_state_key(&address, seq_no);
-        assert_eq!(key, base64::encode("dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q:32"));
+        assert_eq!(key, "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q:32");
     }
 
     #[test]
@@ -538,27 +581,137 @@ mod parse_get_utxo_responses_tests {
             proof_nodes: String::from("+QHF4hOgCBgvwaPO/KIJjOyzhA9dx8yXqPgqKY9sqKPIAZgHujTsgICA2cQggsExxCCCwTGAgICAgICAgICAgICAgICAgICAgICAgICAgICCwTH4VrQAJqUzRQSFdRSktjYXdSeGRXNkdWc2puWkJhMWVjR2RDc3NuN0toV1lKWkdUWGdMN0VzOjoEREJ+KujHB//IMaixsQMlj9+4DLVQHzu4WJczS7X8ED+G2AoMk4QTH20sQPm8C23HQjM7dFR6HIi99DdtySfD9VnTGsoDyHJeCRAIf9srqEpWYrQ1nq9jBE67eMCBK+ewpvMu2UxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTGAgICAgICA+DnEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMYCAgICAgID4cYCAgKDXpPuRat5Zsa2SRHuGjslN7/QaBcZvwSae8dKLWybem4CAoAzQlchQvYEDh57N1ilzx/G5Gj05oHksuf4nOK/6KGqfoF/sqT9NVI/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA"),
             root_hash: String::from("EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1"),
             kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:16")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:17")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:20")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:13")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:3")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:19")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:11")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:18")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:15")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:10")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:9")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:12")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:2")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:21")), Some("1".to_string())),
-                (String::from(base64::encode("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:14")), Some("1".to_string()))
-            ] }),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:16"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:17"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:20"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:13"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:3"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:19"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:11"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:18"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:15"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:10"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:9"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:12"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:2"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:21"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:14"), Some("1".to_string()))
+            ],
+                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(NumericalSuffixAscendingNoGapsData {from: None, next: None, prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:".to_string()})
+            }),
+            multi_signature: json!({
+                "participants": ["Beta", "Delta", "Gamma"],
+                "signature": "Qz5rGskoz8xuRLdaAoA5m1He4dBbfg3RBKQ5wmvRper4yTmuKEbbXZ5jidVXYzrJymHcN3xiRYqDSkZ3JbggzWj4NQATsYRSPSc6xP768vAMHA1iNSgxhGV5uW47MSeYihrV9e9YLDjYyzuyUHkBhbWrxMoo8jtowvDMQMZ7qHMhfd",
+                "value": {
+                    "pool_state_root_hash": "DyMrH7X17UW4k9KcsAUPLKL479dsZ6dvj3bvEAEyYNxZ",
+                    "ledger_id": 1001,
+                    "state_root_hash": "EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1",
+                    "txn_root_hash": "9i1knJtwTD3NToyCrHoh93HBrTnaq6CeL7F1KtZUBaBz",
+                    "timestamp": 1530212673
+                }
+            }),
+        }];
+
+        let json_str = string_from_char_ptr(new_str_ptr).unwrap();
+        let parsed_sp: Vec<ParsedSP> = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(parsed_sp.len(), 1);
+        assert_eq!(parsed_sp[0].proof_nodes, expected_parsed_sp[0].proof_nodes);
+        assert_eq!(parsed_sp[0].root_hash, expected_parsed_sp[0].root_hash);
+        assert_eq!(parsed_sp[0].kvs_to_verify, expected_parsed_sp[0].kvs_to_verify);
+        assert_eq!(parsed_sp[0].multi_signature, expected_parsed_sp[0].multi_signature);
+    }
+
+    #[test]
+    fn test_parse_state_proof_with_from_and_next() {
+        let valid_json = r#"{
+            "op": "REPLY",
+            "protocol_version": 1,
+            "result":
+                {
+                    "type": "10002",
+                    "address": "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                    "identifier": "6ouriXMZkLeHsuXrN1X1fd",
+                    "reqId": 15424,
+                    "from": 4,
+                    "next": 9,
+                    "outputs":[
+                      [
+                         "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                         4,
+                         1
+                      ],
+                      [
+                         "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                         5,
+                         1
+                      ],
+                      [
+                         "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                         6,
+                         1
+                      ],
+                      [
+                         "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                         7,
+                         1
+                      ],
+                      [
+                         "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es",
+                         8,
+                         1
+                      ]
+                   ],
+                    "state_proof":{
+                      "root_hash":"EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1",
+                      "proof_nodes":"+QHF4hOgCBgvwaPO/KIJjOyzhA9dx8yXqPgqKY9sqKPIAZgHujTsgICA2cQggsExxCCCwTGAgICAgICAgICAgICAgICAgICAgICAgICAgICCwTH4VrQAJqUzRQSFdRSktjYXdSeGRXNkdWc2puWkJhMWVjR2RDc3NuN0toV1lKWkdUWGdMN0VzOjoEREJ+KujHB//IMaixsQMlj9+4DLVQHzu4WJczS7X8ED+G2AoMk4QTH20sQPm8C23HQjM7dFR6HIi99DdtySfD9VnTGsoDyHJeCRAIf9srqEpWYrQ1nq9jBE67eMCBK+ewpvMu2UxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTGAgICAgICA+DnEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMYCAgICAgID4cYCAgKDXpPuRat5Zsa2SRHuGjslN7/QaBcZvwSae8dKLWybem4CAoAzQlchQvYEDh57N1ilzx/G5Gj05oHksuf4nOK/6KGqfoF/sqT9NVI/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA",
+                      "multi_signature":{
+                         "signature":"Qz5rGskoz8xuRLdaAoA5m1He4dBbfg3RBKQ5wmvRper4yTmuKEbbXZ5jidVXYzrJymHcN3xiRYqDSkZ3JbggzWj4NQATsYRSPSc6xP768vAMHA1iNSgxhGV5uW47MSeYihrV9e9YLDjYyzuyUHkBhbWrxMoo8jtowvDMQMZ7qHMhfd",
+                         "participants":[
+                            "Beta",
+                            "Delta",
+                            "Gamma"
+                         ],
+                         "value":{
+                            "pool_state_root_hash":"DyMrH7X17UW4k9KcsAUPLKL479dsZ6dvj3bvEAEyYNxZ",
+                            "ledger_id":1001,
+                            "state_root_hash":"EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1",
+                            "txn_root_hash":"9i1knJtwTD3NToyCrHoh93HBrTnaq6CeL7F1KtZUBaBz",
+                            "timestamp":1530212673
+                         }
+                    }
+                }
+           }
+        }"#;
+
+        let json_str = CString::new(valid_json).unwrap();
+        let json_str_ptr = json_str.as_ptr();
+
+        let mut new_str_ptr = ::std::ptr::null();
+        let return_error = get_utxo_state_proof_extractor(json_str_ptr, &mut new_str_ptr);
+        assert_eq!(return_error, ErrorCode::Success);
+
+        let expected_parsed_sp: Vec<ParsedSP> = vec![ParsedSP {
+            proof_nodes: String::from("+QHF4hOgCBgvwaPO/KIJjOyzhA9dx8yXqPgqKY9sqKPIAZgHujTsgICA2cQggsExxCCCwTGAgICAgICAgICAgICAgICAgICAgICAgICAgICCwTH4VrQAJqUzRQSFdRSktjYXdSeGRXNkdWc2puWkJhMWVjR2RDc3NuN0toV1lKWkdUWGdMN0VzOjoEREJ+KujHB//IMaixsQMlj9+4DLVQHzu4WJczS7X8ED+G2AoMk4QTH20sQPm8C23HQjM7dFR6HIi99DdtySfD9VnTGsoDyHJeCRAIf9srqEpWYrQ1nq9jBE67eMCBK+ewpvMu2UxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTGAgICAgICA+DnEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMcQggsExxCCCwTHEIILBMYCAgICAgID4cYCAgKDXpPuRat5Zsa2SRHuGjslN7/QaBcZvwSae8dKLWybem4CAoAzQlchQvYEDh57N1ilzx/G5Gj05oHksuf4nOK/6KGqfoF/sqT9NVI/hFuFzQ8LUFSymIKOpOG9nepF29+TB2bWOgICAgICAgICA"),
+            root_hash: String::from("EuHbjY9oaqAXBDxLBM4KcBLASs7RK35maoHjQMbDvmw1"),
+            kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:4"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:5"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:6"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:7"), Some("1".to_string())),
+                (String::from("2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:8"), Some("1".to_string())),
+            ],
+                verification_type: KeyValueSimpleDataVerificationType::NumericalSuffixAscendingNoGaps(
+                    NumericalSuffixAscendingNoGapsData {
+                        from: Some(4),
+                        next: Some(9),
+                        prefix: "2jS4PHWQJKcawRxdW6GVsjnZBa1ecGdCssn7KhWYJZGTXgL7Es:".to_string()
+                    })
+            }),
             multi_signature: json!({
                 "participants": ["Beta", "Delta", "Gamma"],
                 "signature": "Qz5rGskoz8xuRLdaAoA5m1He4dBbfg3RBKQ5wmvRper4yTmuKEbbXZ5jidVXYzrJymHcN3xiRYqDSkZ3JbggzWj4NQATsYRSPSc6xP768vAMHA1iNSgxhGV5uW47MSeYihrV9e9YLDjYyzuyUHkBhbWrxMoo8jtowvDMQMZ7qHMhfd",

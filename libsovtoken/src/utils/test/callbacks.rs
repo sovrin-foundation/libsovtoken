@@ -5,7 +5,7 @@
 */
 
 use ErrorCode;
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 use std::sync::mpsc::{channel, Receiver};
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ type Callbacks<F> = Mutex<HashMap<i32, Box<F>>>;
 macro_rules! closure_cb {
     ($closure:ident, $($name:ident : $ntype:ty),*) => {{
         lazy_static! {
-            static ref COMMAND_HANDLE_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
+            static ref COMMAND_HANDLE_COUNTER: AtomicUsize = AtomicUsize::new(4);
             static ref CALLBACKS: Callbacks<FnMut(i32, $($ntype),*) + Send> = Default::default();
         }
 
@@ -52,6 +52,22 @@ pub fn cb_ec_string() -> (
     });
 
     let (command_handle, callback) = closure_cb!(closure, char_value: *const c_char);
+
+    (receiver, command_handle, Some(callback))
+}
+
+pub fn cb_ec_string_i64() -> (
+    Receiver<(ErrorCode, (String, i64))>,
+    i32,
+    Option<extern fn(command_handle: i32, err: i32, c_str: *const c_char, num: i64) -> i32>) {
+    let (sender, receiver) = channel();
+
+    let closure = Box::new(move|error_code, c_str, num| {
+        let string = unsafe { CStr::from_ptr(c_str).to_str().unwrap().to_string() };
+        sender.send((ErrorCode::from(error_code), (string, num))).unwrap();
+    });
+
+    let (command_handle, callback) = closure_cb!(closure, char_value: *const c_char, num: i64);
 
     (receiver, command_handle, Some(callback))
 }

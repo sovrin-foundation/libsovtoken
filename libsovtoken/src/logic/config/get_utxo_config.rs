@@ -19,16 +19,19 @@ use logic::address::verkey_from_unqualified_address;
 pub struct GetUtxoOperationRequest {
     address : String,
     #[serde(rename = "type")]
-    req_type: String
+    req_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    from: Option<i64>
 }
 
 impl GetUtxoOperationRequest {
-    pub fn new(address : String) -> Request<GetUtxoOperationRequest> {
+    pub fn new(address : String, from: Option<i64>) -> Request<GetUtxoOperationRequest> {
         let unqualified_address: String = strip_qualifier_from_address(&address);
         let identifier = verkey_from_unqualified_address(&unqualified_address).ok();
         let req = GetUtxoOperationRequest {
             address : unqualified_address,
             req_type : GET_UTXO.to_string(),
+            from
         };
         return Request::new(req, identifier);
     }
@@ -48,7 +51,7 @@ mod get_utxo_config_tests {
         let ver_key: String = "EFfodscoymgdJDuM885uEWmgCcA25P6VR6TjVqsYZLW3".to_string();
         let payment_address: String = qualified_address_from_verkey(&ver_key).unwrap();
 
-        let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address));
+        let utxo_request = GetUtxoOperationRequest::new(String::from(payment_address), None);
 
         trace!("utxo_request => {:?}", utxo_request);
 

@@ -17,6 +17,7 @@ use logic::api_internals::{
     add_request_fees,
     create_address
 };
+use logic::address;
 use logic::build_payment;
 use logic::config::{
     get_fees_config::GetFeesRequest,
@@ -31,7 +32,7 @@ use logic::parsers::{
     parse_get_utxo_response,
     parse_response_with_fees_handler,
     parse_verify,
-    parse_get_utxo_response::{ParseGetUtxoResponse, ParseGetUtxoReply},
+    parse_get_utxo_response::{ParseGetUtxoResponse},
     parse_payment_response::{ParsePaymentResponse, ParsePaymentReply, from_response},
     parse_response_with_fees_handler::{ParseResponseWithFees, ParseResponseWithFeesReply},
     parse_get_txn_fees::{parse_fees_from_get_txn_fees_response, get_fees_state_proof_extractor}
@@ -48,6 +49,9 @@ use utils::json_conversion::{JsonDeserialize, JsonSerialize};
 use utils::general::ResultExtension;
 use utils::callbacks::ClosureHandler;
 use utils::results::ResultHandler;
+use indy_sys::{ResponseBoolCB, ResponseSliceCB};
+
+use utils::constants::general::JsonI64Callback;
 
 /// This method generates private part of payment address
 /// and stores it in a secure place. It should be a
@@ -469,9 +473,11 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
                                                  wallet_handle: i32,
                                                  _submitter_did: *const c_char,
                                                  payment_address: *const c_char,
+                                                 from: i64,
                                                  cb: JsonCallback) -> i32 {
     trace!("api::build_get_utxo_request_handler called");
     let handle_result = api_result_handler!(< *const c_char >, command_handle, cb);
+    let from: Option<i64> = if from == -1 { None } else {Some(from)};
 
     let payment_address = match str_from_char_ptr(payment_address) {
         Some(s) => s,
@@ -483,7 +489,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
     debug!("api::build_get_utxo_request_handler >> wallet_handle: {:?}, payment_address: {:?}", wallet_handle, secret!(&payment_address));
 
     let utxo_request =
-        GetUtxoOperationRequest::new(String::from(payment_address));
+        GetUtxoOperationRequest::new(String::from(payment_address), from);
     info!("Built GET_UTXO request: {:?}", utxo_request);
     let utxo_request = utxo_request.serialize_to_pointer()
         .map_err(|_| ErrorCode::CommonInvalidStructure);
@@ -503,6 +509,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 /// resp_json: json. \For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Returns
+/// next: u64 (optional) - pointer to the next slice of payment sources
 /// utxo_json: json. For format see https://github.com/sovrin-foundation/libsovtoken/blob/master/doc/data_structures.md
 ///
 /// # Errors
@@ -512,7 +519,7 @@ pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
 pub extern "C" fn parse_get_utxo_response_handler(
     command_handle: i32,
     resp_json: *const c_char,
-    cb: JsonCallback
+    cb: JsonI64Callback
 ) -> i32 {
 
     trace!("api::parse_get_utxo_response_handler called");
@@ -542,7 +549,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
 
     // here is where the magic happens--conversion from input structure to output structure
     // is handled in ParseGetUtxoReply::from_response
-    let reply: ParseGetUtxoReply = match parse_get_utxo_response::from_response(response) {
+    let (sources, next) = match parse_get_utxo_response::from_response(response) {
         Ok(reply) => reply,
         Err(err) => {
             trace!("api::parse_get_utxo_response_handler << result: {:?}", err);
@@ -550,7 +557,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
         }
     };
 
-    let reply_str: String = match reply.to_json().map_err(map_err_err!()) {
+    let reply_str: String = match sources.to_json().map_err(map_err_err!()) {
         Ok(j) => j,
         Err(_) => return ErrorCode::CommonInvalidState as i32,
     };
@@ -558,7 +565,7 @@ pub extern "C" fn parse_get_utxo_response_handler(
 
     let reply_str_ptr: *const c_char = c_pointer_from_string(reply_str);
 
-    cb(command_handle, ErrorCode::Success as i32, reply_str_ptr);
+    cb(command_handle, ErrorCode::Success as i32, reply_str_ptr, next.map(|a| a as i64).unwrap_or(-1));
     trace!("api::parse_get_utxo_response_handler << result: {:?}", ErrorCode::Success);
     return ErrorCode::Success as i32;
 }
@@ -939,6 +946,73 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
     return ErrorCode::Success as i32;
 }
 
+#[no_mangle]
+pub extern "C" fn sign_with_address_handler(
+    command_handle: i32,
+    wallet_handle: i32,
+    address: *const c_char,
+    message_raw: *const u8,
+    message_len: u32,
+    cb: Option<ResponseSliceCB>
+) -> i32 {
+    trace!("api::sign_with_address_handler called >> submitter_did (address) {:?}", secret!(&address));
+
+    match _check_address_is_vk(address) {
+        Ok(verkey) => {
+            unsafe {
+                let vk = CString::new(verkey).unwrap();
+                indy_sys::crypto::indy_crypto_sign(command_handle, wallet_handle, vk.as_ptr(), message_raw, message_len, cb)
+            }
+        },
+        Err(err) => {
+            if let Some(callback) = cb {
+                callback(command_handle, err as i32, ::std::ptr::null(), 0);
+            }
+            err as i32
+        }
+    }
+}
+
+pub extern "C" fn verify_with_address_handler(
+    command_handle: i32,
+    address: *const c_char,
+    message_raw: *const u8,
+    message_len: u32,
+    signature_raw: *const u8,
+    signature_len: u32,
+    cb: Option<ResponseBoolCB>
+) -> i32 {
+    trace!("api::verify_with_address_handler called >> submitter_did (address) {:?}", secret!(&address));
+
+    match _check_address_is_vk(address) {
+        Ok(verkey) => {
+            unsafe {
+                let vk = CString::new(verkey).unwrap();
+                indy_sys::crypto::indy_crypto_verify(command_handle, vk.as_ptr(), message_raw, message_len, signature_raw, signature_len, cb)
+            }
+        },
+        Err(err) => {
+            if let Some(callback) = cb {
+                callback(command_handle, err as i32, false);
+            }
+            err as i32
+        }
+    }
+}
+
+fn _check_address_is_vk(address: *const c_char) -> Result<String, ErrorCode> {
+    match str_from_char_ptr(address) {
+        Some(s) => {
+            let unqualified = address::unqualified_address_from_address(s)?;
+            let verkey = address::verkey_from_unqualified_address(&unqualified)?;
+            Ok(verkey)
+        },
+        None => {
+            Err(ErrorCode::CommonInvalidStructure)
+        }
+    }
+}
+
 /**
     exported method indy-sdk will call for us to register our payment methods with indy-sdk
 
@@ -980,6 +1054,8 @@ pub extern fn sovtoken_init() -> i32 {
                 Some(parse_get_txn_fees_response_handler),
                 Some(build_verify_req_handler),
                 Some(parse_verify_response_handler),
+                Some(sign_with_address_handler),
+                Some(verify_with_address_handler),
                 cb,
             )
         )
