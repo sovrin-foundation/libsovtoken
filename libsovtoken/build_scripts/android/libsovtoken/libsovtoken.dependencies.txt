@@ -1,1 +1,1 @@
-libindy=1.11.0-80=rc
+libindy=1.11.0=stable
