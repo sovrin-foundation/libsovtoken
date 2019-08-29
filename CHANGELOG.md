@@ -8,7 +8,10 @@
 * Added `verify_with_address_handler` function to verify a signature with a payment address.
 * bugfixes
 
-## 1.0.0
+## 1.0.2
+* bugfixes
+
+## 1.0.1
 * bugfixes
 
 ## 0.10.0
