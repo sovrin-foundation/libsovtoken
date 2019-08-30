@@ -15,8 +15,8 @@ String srcVersion
 gitHubUserCredId = env.GITHUB_BOT_USER ?: 'sovbot-github'
 sovrinPackagingRepo = env.SOVRIN_PACKAGING_REPO ?: 'https://github.com/sovrin-foundation/sovrin-packaging'
 sovrinPackagingBranch = env.SOVRIN_PACKAGING_BRANCH ?: 'master'
-LIBINDY_STREAM = "rc"
-LIBINDY_VERSION = "1.11.1-85"
+LIBINDY_STREAM = "stable"
+LIBINDY_VERSION = "1.11.1"
 
 def downloadPackagingUtils() {
     git branch: sovrinPackagingBranch, credentialsId: gitHubUserCredId, url: sovrinPackagingRepo

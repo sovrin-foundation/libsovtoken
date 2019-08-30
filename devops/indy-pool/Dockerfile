@@ -22,8 +22,8 @@ ARG uid=1000
 ARG indy_stream=master
 
 
-ARG indy_plenum_ver=1.9.2~dev876
-ARG indy_node_ver=1.9.2~dev1069
+ARG indy_plenum_ver=1.9.2~dev875
+ARG indy_node_ver=1.9.2~dev1067
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
 ARG token_ver=1.0.2~dev81
