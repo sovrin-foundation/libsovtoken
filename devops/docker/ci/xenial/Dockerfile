@@ -1,4 +1,4 @@
-FROM sovrin/libsovtoken:base-xenial-0.33.0
+FROM sovrin/libsovtoken:base-xenial-0.36.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -35,9 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #         or python3-rocksdb are not specified here)
 ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.5}
 ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
-ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.9.0~dev836}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.9.0~dev1028}
-ENV TOKEN_VER  ${TOKEN_VER:-1.0.0~dev65}
+ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.9.2~dev875}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.9.2~dev1067}
+ENV TOKEN_VER  ${TOKEN_VER:-1.0.2~dev81}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
@@ -66,4 +66,4 @@ COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.723.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.727.0
