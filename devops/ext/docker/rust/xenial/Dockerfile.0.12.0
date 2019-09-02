@@ -3,7 +3,7 @@ FROM sovrin/dockerbase:base-xenial-0.8.0
 
 ARG RUST_VERSION
 
-ENV RUST_VERSION=${RUST_VERSION:-1.32.0}
+ENV RUST_VERSION=${RUST_VERSION:-1.36.0}
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
@@ -15,4 +15,4 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --default-tool
 
 # TODO CMD ENTRYPOINT ...
 
-ENV RUST_ENV_VERSION=0.12.0
+ENV RUST_ENV_VERSION=0.13.0

@@ -214,5 +214,5 @@ pipelineWrapper({
 })
 
 def setupRust() {
-    shell("rustup default 1.32.0")
+    shell("rustup default 1.36.0")
 }
