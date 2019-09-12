@@ -37,7 +37,7 @@ impl MintRequest {
             extra,
         };
 
-        return Request::new(mint, identifier.map(String::from));
+        return Request::new(mint, identifier);
     }
 
     /**

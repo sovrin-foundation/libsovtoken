@@ -8,6 +8,7 @@
 use logic::request::Request;
 use utils::constants::txn_types::XFER_PUBLIC;
 use logic::xfer_payload::XferPayload;
+use logic::did::Did;
 
 /**
     Struct for [`build_payment_req_handler`]
@@ -83,7 +84,7 @@ impl PaymentRequest {
 
         [`Request<PaymentRequest>`]: ../../request/struct.Request.html
     */
-    pub fn as_request(self, identifier: String) -> Request<PaymentRequest> {
+    pub fn as_request(self, identifier: Did) -> Request<PaymentRequest> {
         return Request::new(self, Some(identifier));
     }
 }
@@ -100,7 +101,7 @@ mod payment_request_test {
     use utils::random::rand_string;
 
     fn initial_xfer_request() -> Request<PaymentRequest> {
-        let identifier: String = rand_string(21);
+        let identifier: Did = Did::new(rand_string(21));
         let output = Output::new(String::from("a8QAXMjRwEGoGLmMFEc5sTcntZxEF1BpqAs8GoKFa9Ck81fo7"), 10);
         let input = Input::new(String::from("E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm"),30);
     

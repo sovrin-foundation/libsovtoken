@@ -16,6 +16,7 @@ extern crate rand;
 extern crate serde;
 extern crate sha2;
 extern crate time;
+extern crate regex;
 // ------------------------------------------
 // crates from crate.io etc that require macro
 // ------------------------------------------

@@ -149,6 +149,44 @@ fn valid_output_json() {
 }
 
 #[test]
+pub fn build_mint_txn_works_for_sov_fully_qualified_did() {
+    let wallet = Wallet::new();
+
+    let expected_operation = json!({
+        "type": "10000",
+        "outputs": [{
+            "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "amount":10
+        }],
+    });
+
+    let mint_req = build_mint_req(wallet.handle, Some("did:sov:VsKV7grR1BUE29mG2Fm2kX"), VALID_OUTPUT_JSON, None, ).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&mint_req).unwrap();
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!("VsKV7grR1BUE29mG2Fm2kX", request_value["identifier"].as_str().unwrap());
+}
+
+#[test]
+pub fn build_mint_txn_works_for_other_fully_qualified_did() {
+    let wallet = Wallet::new();
+
+    let expected_operation = json!({
+        "type": "10000",
+        "outputs": [{
+            "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "amount":10
+        }],
+    });
+
+    let mint_req = build_mint_req(wallet.handle, Some("did:other:VsKV7grR1BUE29mG2Fm2kX"), VALID_OUTPUT_JSON, None, ).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&mint_req).unwrap();
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!("did:other:VsKV7grR1BUE29mG2Fm2kX", request_value["identifier"].as_str().unwrap());
+}
+
+#[test]
 pub fn build_and_submit_mint_txn_works() {
     let wallet = Wallet::new();
     let setup = Setup::new(&wallet, SetupConfig {
