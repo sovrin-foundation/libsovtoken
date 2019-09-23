@@ -117,11 +117,7 @@ for target in ${archs[@]}; do
         arch="arm"
     fi
 
-    if [ ${arch} = "arm" ] || [ ${arch} = "x86" ]; then
-	    TARGET_API=16
-    else
-	    TARGET_API=21
-    fi
+    TARGET_API=21
     export TOOLCHAIN_DIR=${BUILD_DIR}/${UNAME}-${arch}
 
     ARCH_CROSS=$(get_cross_compile ${arch})
@@ -134,7 +130,7 @@ for target in ${archs[@]}; do
 
     if [ ! -d "${TOOLCHAIN_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Making standalone toolchain for ${target}${ESCAPE}${NC}"
-        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl gnustl --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
+        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl libc++ --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
     fi
 
     mkdir -p "${LIBSOVTOKEN_DIR}/.cargo/"
