@@ -43,6 +43,7 @@ RUN echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.lis
     && apt-get update && apt-get install -y --no-install-recommends \
         libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
         python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
+        python3-pyzmq=17.0.0 \
         indy-plenum=${INDY_PLENUM_VERSION} \
         indy-node=${INDY_NODE_VERSION} \
         sovtoken=${TOKEN_VER} \
