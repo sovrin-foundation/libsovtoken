@@ -49,8 +49,7 @@ impl Did {
     }
 
     pub fn unqualify(self) -> Did {
-        match REGEX.captures(&self.0) {
-            None => self,
+        match REGEX.captures(&self.0.clone()) {
             Some(caps) => {
                 let method = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
                 if method.starts_with(Did::METHOD) {
@@ -59,7 +58,8 @@ impl Did {
                 else {
                     self
                 }
-            }
+            },
+            None => self,
         }
     }
 
