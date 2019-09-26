@@ -22,12 +22,12 @@ ARG uid=1000
 ARG indy_stream=master
 
 
-ARG indy_plenum_ver=1.9.0~dev836
-ARG indy_node_ver=1.9.0~dev1028
+ARG indy_plenum_ver=1.9.2~dev875
+ARG indy_node_ver=1.9.2~dev1067
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=1.0.0~dev65
-ARG fees_ver=1.0.0~dev65
+ARG token_ver=1.0.2~dev81
+ARG fees_ver=1.0.2~dev81
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \

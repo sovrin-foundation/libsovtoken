@@ -1,1 +1,1 @@
-libindy=1.11.0=stable
+libindy=1.11.1=stable
