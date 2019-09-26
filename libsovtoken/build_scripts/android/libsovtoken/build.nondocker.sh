@@ -50,11 +50,11 @@ download_libindy(){
 download_and_unzip_dependencies(){
     pushd ${PREBUILT}
         echo -e "${ESCAPE}${GREEN}Downloading openssl for $1 ${ESCAPE}${NC}"
-        curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps-libc++/openssl/openssl_$1.zip
         unzip -o -qq openssl_$1.zip
 
         echo -e "${ESCAPE}${GREEN}Downloading sodium for $1 ${ESCAPE}${NC}"
-        curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps-libc++/sodium/libsodium_$1.zip
         unzip -o -qq libsodium_$1.zip
 
         rm openssl_$1.zip
