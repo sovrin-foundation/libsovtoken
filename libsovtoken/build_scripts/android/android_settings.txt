@@ -1,2 +1,2 @@
 api=21
-ndk=android-ndk-r16b
+ndk=android-ndk-r20
