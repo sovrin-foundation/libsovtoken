@@ -40,7 +40,7 @@ generate_arch_flags(){
     fi
     if [ $1 == "arm" ]; then
         export TARGET_ARCH="arm"
-        export TARGET_API="16"
+        export TARGET_API="21"
         export TRIPLET="armv7-linux-androideabi"
         export ABI="armeabi-v7a"
         export TOOLCHAIN_TRIPLET="arm-linux-androideabi"
@@ -56,7 +56,7 @@ generate_arch_flags(){
 
     if [ $1 == "x86" ]; then
         export ARCH="x86"
-        export TARGET_API="16"
+        export TARGET_API="21"
         export TRIPLET="i686-linux-android"
         export ABI="x86"
         export TOOLCHAIN_TRIPLET=${TRIPLET}
@@ -64,21 +64,34 @@ generate_arch_flags(){
 
 }
 
+download_and_unzip_if_missed() {
+    target_dir=$1
+    url_pref=$2
+    fname=$3
+    url="${url_pref}${fname}"
+    if [ ! -d "${target_dir}" ] ; then
+        echo "${GREEN}Downloading ${fname}${RESET}"
+        curl -sSLO ${url}
+        unzip -qq ${fname}
+        rm ${fname}
+        echo "${GREEN}Done!${RESET}"
+    else
+        echo "${BLUE}Skipping download ${fname}${RESET}"
+    fi
+}
+
 download_and_unzip_dependencies_for_all_architectures(){
     mkdir -p ${ANDROID_BUILD_FOLDER}
-    #TODO Get dependencies in more optimized way
+
     pushd ${ANDROID_BUILD_FOLDER}
-        if [ ! -d "indy-android-dependencies" ] ; then
-            git clone https://github.com/sovrin-foundation/indy-android-dependencies.git
-            pushd ${ANDROID_BUILD_FOLDER}/indy-android-dependencies/prebuilt/
-#                git checkout tags/v1.0.1
-                find . -name "*.zip" | xargs -P 5 -I FILENAME sh -c 'unzip -o -qq -d "$(dirname "FILENAME")" "FILENAME"'
-            popd
-        fi
-        export OPENSSL_DIR=${ANDROID_BUILD_FOLDER}/indy-android-dependencies/prebuilt/openssl/openssl_${TARGET_ARCH}
-        export SODIUM_DIR=${ANDROID_BUILD_FOLDER}/indy-android-dependencies/prebuilt/sodium/libsodium_${TARGET_ARCH}
-        export LIBZMQ_DIR=${ANDROID_BUILD_FOLDER}/indy-android-dependencies/prebuilt/zmq/libzmq_${TARGET_ARCH}
-	popd
+        download_and_unzip_if_missed "openssl_${TARGET_ARCH}" "https://repo.sovrin.org/android/libindy/deps-libc++/openssl/" "openssl_${TARGET_ARCH}.zip"
+        download_and_unzip_if_missed "libsodium_${TARGET_ARCH}" "https://repo.sovrin.org/android/libindy/deps-libc++/sodium/" "libsodium_${TARGET_ARCH}.zip"
+        download_and_unzip_if_missed "libzmq_${TARGET_ARCH}" "https://repo.sovrin.org/android/libindy/deps-libc++/zmq/" "libzmq_${TARGET_ARCH}.zip"
+
+        export OPENSSL_DIR=${ANDROID_BUILD_FOLDER}/openssl_${TARGET_ARCH}
+        export SODIUM_DIR=${ANDROID_BUILD_FOLDER}/libsodium_${TARGET_ARCH}
+        export LIBZMQ_DIR=${ANDROID_BUILD_FOLDER}/libzmq_${TARGET_ARCH}
+    popd
 }
 create_cargo_config(){
 mkdir -p ${SOVTOKEN_DIR}/.cargo
@@ -94,7 +107,7 @@ create_standalone_toolchain_and_rust_target(){
     python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py \
     --arch ${TARGET_ARCH} \
     --api ${TARGET_API} \
-    --stl=gnustl \
+    --stl=libc++ \
     --install-dir ${TOOLCHAIN_DIR}
 
     # add rust target
@@ -107,17 +120,17 @@ download_and_setup_toolchain(){
         export TOOLCHAIN_PLATFORM_PREFIX=${TOOLCHAIN_PREFIX}/darwin
         mkdir -p ${TOOLCHAIN_PLATFORM_PREFIX}
         pushd ${TOOLCHAIN_PLATFORM_PREFIX}
-            if [ ! -d "android-ndk-r16b" ] ; then
-                echo "Downloading android-ndk-r16b-darwin-x86_64.zip"
-                wget https://dl.google.com/android/repository/android-ndk-r16b-darwin-x86_64.zip
-                unzip -qq android-ndk-r16b-darwin-x86_64.zip
+            if [ ! -d "android-ndk-r20" ] ; then
+                echo "Downloading android-ndk-r20-darwin-x86_64.zip"
+                wget https://dl.google.com/android/repository/android-ndk-r20-darwin-x86_64.zip
+                unzip -qq android-ndk-r20-darwin-x86_64.zip
             else
-                echo "Skipping download android-ndk-r16b-darwin-x86_64.zip"
+                echo "Skipping download android-ndk-r20-darwin-x86_64.zip"
             fi
         popd
         pushd ${TOOLCHAIN_PREFIX}
             ln -nsf ${TOOLCHAIN_PLATFORM_PREFIX} standalone_toolchains
-            export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r16b
+            export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r20
         popd
 
     elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
@@ -125,19 +138,19 @@ download_and_setup_toolchain(){
         export TOOLCHAIN_PLATFORM_PREFIX=${TOOLCHAIN_PREFIX}/linux
         mkdir -p ${TOOLCHAIN_PLATFORM_PREFIX}
         pushd ${TOOLCHAIN_PLATFORM_PREFIX}
-            if [ ! -d "android-ndk-r16b" ] ; then
-                echo "Downloading android-ndk-r16b-linux-x86_64.zip"
-                wget -q https://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip
-                unzip -qq android-ndk-r16b-linux-x86_64.zip
+            if [ ! -d "android-ndk-r20" ] ; then
+                echo "Downloading android-ndk-r20-linux-x86_64.zip"
+                wget -q https://dl.google.com/android/repository/android-ndk-r20-linux-x86_64.zip
+                unzip -qq android-ndk-r120-linux-x86_64.zip
             else
-                echo "Skipping download android-ndk-r16b-linux-x86_64.zip"
+                echo "Skipping download android-ndk-r20-linux-x86_64.zip"
             fi
-            export ANDROID_NDK_ROOT=${TOOLCHAIN_PLATFORM_PREFIX}/android-ndk-r16b
+            export ANDROID_NDK_ROOT=${TOOLCHAIN_PLATFORM_PREFIX}/android-ndk-r20
         popd
 
         pushd ${TOOLCHAIN_PREFIX}
             ln -nsf ${TOOLCHAIN_PLATFORM_PREFIX} standalone_toolchains
-            export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r16b
+            export ANDROID_NDK_ROOT=${TOOLCHAIN_PREFIX}/standalone_toolchains/android-ndk-r20
         popd
     fi
 

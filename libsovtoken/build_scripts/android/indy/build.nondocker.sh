@@ -50,7 +50,7 @@ download_and_unzip_dependencies(){
     export OPENSSL_DIR=${INDY_PREBUILT}/openssl_${arch}
     if [ ! -d ${OPENSSL_DIR} ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading openssl for $1 ${ESCAPE}${NC}"
-        curl -sSLO https://repo.sovrin.org/android/libindy/deps/openssl/openssl_$1.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps-libc++/openssl/openssl_$1.zip
         unzip -o -qq openssl_$1.zip
         rm openssl_$1.zip
     else
@@ -62,7 +62,7 @@ download_and_unzip_dependencies(){
     export SODIUM_INCLUDE_DIR=${INDY_PREBUILT}/libsodium_${arch}/include
     if [ ! -d ${SODIUM_DIR} ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading sodium for $1 ${ESCAPE}${NC}"
-        curl -sSLO https://repo.sovrin.org/android/libindy/deps/sodium/libsodium_$1.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps-libc++/sodium/libsodium_$1.zip
         unzip -o -qq libsodium_$1.zip
         rm libsodium_$1.zip
     else
@@ -72,7 +72,7 @@ download_and_unzip_dependencies(){
     export LIBZMQ_DIR=${INDY_PREBUILT}/libzmq_${arch}
     if [ ! -d ${LIBZMQ_DIR} ] ; then
         echo -e "${ESCAPE}${GREEN}Downloading zmq for $1 ${ESCAPE}${NC}"
-        curl -sSLO https://repo.sovrin.org/android/libindy/deps/zmq/libzmq_$1.zip
+        curl -sSLO https://repo.sovrin.org/android/libindy/deps-libc++/zmq/libzmq_$1.zip
         unzip -o -qq libzmq_$1.zip
         rm libzmq_$1.zip
     else
@@ -134,11 +134,7 @@ for target in ${archs[@]}; do
         arch="arm"
     fi
 
-    if [ ${arch} = "arm" ] || [ ${arch} = "x86" ]; then
-	    TARGET_API=16
-    else
-	    TARGET_API=21
-    fi
+    TARGET_API=21
     export TOOLCHAIN_DIR=${PWD}/${UNAME}-${arch}
 
     ARCH_CROSS=$(get_cross_compile ${arch})
@@ -151,7 +147,7 @@ for target in ${archs[@]}; do
 
     if [ ! -d "${TOOLCHAIN_DIR}" ] ; then
         echo -e "${ESCAPE}${BLUE}Making standalone toolchain for ${target}${ESCAPE}${NC}"
-        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl gnustl --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
+        python3 ${ANDROID_NDK_ROOT}/build/tools/make_standalone_toolchain.py --arch ${arch} --stl libc++ --api ${TARGET_API} --install-dir ${TOOLCHAIN_DIR} || exit 1
     fi
 
     cat > indy-sdk/libindy/.cargo/config <<EOF

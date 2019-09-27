@@ -1,5 +1,5 @@
 ARG ANDROID_NDK_DIR=/tmp/android/android_ndk
-ARG ANDROID_NDK_VERSION=r16b
+ARG ANDROID_NDK_VERSION=r20
 
 FROM sovrin/dockerbase:rust-xenial-0.12.0
 # TODO LABEL maintainer="Name <email-address>"
@@ -40,4 +40,4 @@ RUN chmod +x /usr/local/bin/android-ndk-install
 
 # TODO CMD ENTRYPOINT ...
 
-ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.6.0
+ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.7.0
