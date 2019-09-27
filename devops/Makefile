@@ -166,7 +166,7 @@ image_lst_android_build: image_lst_android_ndk \
 							docker/android_build/$(OSNAME)/Cargo.toml \
 							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/openssl_%.zip) \
 							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libsodium_%.zip) \
-							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip)
+							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libindy_android_%_$(LIBINDY_VERSION_BASE).zip)
 	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
