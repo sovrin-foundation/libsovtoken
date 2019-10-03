@@ -129,7 +129,7 @@ pub fn closure_cb_response(command_handle: i32, cb: JsonCallbackUnwrapped) -> im
     KEEP all public methods above
 */
 
-fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<serde_json::Value>, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<Extra>, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
     let txn_serialized = serialize_signature(request_json_map.clone().into())?;
     let mut hasher = Sha256::default();
     hasher.input(txn_serialized.as_bytes());

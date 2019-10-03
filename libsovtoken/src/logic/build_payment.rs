@@ -52,7 +52,10 @@ pub fn deserialize_inputs(
     debug!("Converted extra pointer to string >>> {:?}", extra);
 
     let extra: Option<Extra> = if let Some(extra_) = extra {
-        serde_json::from_str(&extra_).map_err(map_err_err!()).or(Err(ErrorCode::CommonInvalidStructure))?
+        match serde_json::from_str(&extra_) {
+            Ok(extra_obj) => Some(extra_obj),
+            Err(_) => Some(Extra(serde_json::Value::String(extra_)))
+        }
     } else { None };
     debug!("Deserialized extra >>> {:?}", secret!(&extra));
 

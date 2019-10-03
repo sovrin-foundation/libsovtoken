@@ -63,7 +63,18 @@ pub struct XferPayload {
     pub signatures: Option<Vec<String>>
 }
 
-pub type Extra = serde_json::Value;
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct Extra(pub serde_json::Value);
+
+impl ::std::string::ToString for Extra{
+    fn to_string(&self) -> String {
+        match self.0 {
+            ::serde_json::Value::Object(ref extra_obj) => json!(extra_obj).to_string(),
+            serde_json::Value::String(ref extra_str) => extra_str.to_string(),
+            _ => String::default()
+        }
+    }
+}
 
 unsafe impl Send for XferPayload {}
 
@@ -116,7 +127,7 @@ impl XferPayload {
 
         debug!("Indicator stripped from inputs");
 
-        let (extra, taa_acceptance) = extract_taa_acceptance_from_extra(self.extra.clone())?;
+        let (extra, taa_acceptance) = extract_taa_acceptance_from_extra(self.extra)?;
         self.extra = extra;
 
         XferPayload::sign_inputs(crypto_api, wallet_handle, &self.inputs.clone(), &self.outputs.clone(), txn_digest, &self.extra.clone(), &taa_acceptance.clone(), Box::new(move |signatures| {
