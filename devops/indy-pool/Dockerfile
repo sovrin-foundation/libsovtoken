@@ -19,15 +19,15 @@ FROM camparra/ubuntu16.04-rocksdb
 
 ARG uid=1000
 
-ARG indy_stream=master
+ARG indy_stream=rc
 
 
-ARG indy_plenum_ver=1.9.2~dev875
-ARG indy_node_ver=1.9.2~dev1067
+ARG indy_plenum_ver=1.10.0~rc1
+ARG indy_node_ver=1.10.0~rc1
 ARG python3_indy_crypto_ver=0.4.5
 ARG indy_crypto_ver=0.4.5
-ARG token_ver=1.0.2~dev81
-ARG fees_ver=1.0.2~dev81
+ARG token_ver=1.0.3~rc20
+ARG fees_ver=1.0.3~rc20
 
 # Install environment
 RUN apt-get update -y && apt-get install -y \
@@ -48,6 +48,7 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
 RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pyzmq=18.1.0 \
     indy-plenum=${indy_plenum_ver} \
     indy-node=${indy_node_ver} \
     python3-indy-crypto=${python3_indy_crypto_ver} \

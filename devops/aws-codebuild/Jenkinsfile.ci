@@ -8,7 +8,7 @@ logger = sovLibrary.Logger.new(this)
 notifier = sovLibrary.Notifier.new(this)
 logger.setGlobalLevel('TRACE')
 LIBINDY_STREAM = "stable"
-LIBINDY_VERSION = "1.11.1"
+LIBINDY_VERSION = "1.12.0"
 
 def nodeLabels = [
         codeBuild: env.LIBSOVTOKEN_CODEBUILD_NODE_LABEL ?: 'codebuild',

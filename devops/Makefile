@@ -45,7 +45,7 @@ FPM_P_VENDOR := Sovrin
 FPM_P_DESCRIPTION := libsovtoken written in Rust
 FPM_P_NAME = $(PACKAGE_NAME)
 FPM_P_VERSION ?= $(SRC_VERSION)
-FPM_P_DEPENDS = libindy(>=1.11.1)
+FPM_P_DEPENDS = libindy(>=1.12.0)
 FPM_P_OUTPUT_DIR = $(LIB_TARGET_DIR)
 FPM_ARGS = $(LIB_DYNAMIC)=/usr/lib/
 
@@ -166,7 +166,7 @@ image_lst_android_build: image_lst_android_ndk \
 							docker/android_build/$(OSNAME)/Cargo.toml \
 							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/openssl_%.zip) \
 							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libsodium_%.zip) \
-							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libindy_android_%_$(LIBINDY_VERSION).zip)
+							$(ANDROID_ARCHS:%=$(IMAGE_LST_ANDROID_BUILD_CTX_DIR)/libindy_android_%_$(LIBINDY_VERSION_BASE).zip)
 	$(eval DOCKER_TAG=$(_i_tag))
 	OSNAME=$(OSNAME) \
 	DOCKER_BUILD_NETWORK=$(DOCKER_BUILD_NETWORK) \
