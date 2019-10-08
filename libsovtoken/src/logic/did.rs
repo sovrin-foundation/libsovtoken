@@ -35,7 +35,7 @@ pub enum DidError {
     alphanumeric characters.
 */
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct Did(String);
+pub struct Did(pub String);
 
 impl Did {
     const METHOD: &'static str = "sov";

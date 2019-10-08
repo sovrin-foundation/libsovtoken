@@ -26,11 +26,12 @@ use logic::did::Did;
         use sovtoken::logic::input::Input;
         use sovtoken::logic::output::Output;
         use sovtoken::logic::xfer_payload::XferPayload;
+        use sovtoken::logic::did::Did;
 
         sovtoken::api::sovtoken_init();
         // let wallet = utils::wallet::Wallet::new().unwrap();
 
-        let identifier = String::from("hgrhyNXqW4KNTz4wwiV8v");
+        let identifier = Did(String::from("hgrhyNXqW4KNTz4wwiV8v"));
         let address1 = String::from("pay:sov:TKe9eXtchV71J2qXX5HwP8rbkTBStnEEkMwQkHie265VtRSbs");
         let address2 = String::from("pay:sov:2FKYJkgXRZtjhFpTMHhuyfc17BHZWcFPyF2MWy2SZMBaSo64fb");
         let address3 = String::from("pay:sov:E9LNHk8shQ6xe2RfydzXDSsyhWC6vJaUeKE2mmc6mWraDfmKm");
