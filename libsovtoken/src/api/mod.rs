@@ -185,7 +185,7 @@ pub extern "C" fn create_payment_address_handler(
 pub extern "C" fn add_request_fees_handler(
     command_handle: i32,
     wallet_handle: i32,
-    did: *const c_char, // TODO: Need to remove.
+    _did: *const c_char, // TODO: Need to remove.
     req_json: *const c_char,
     inputs_json: *const c_char,
     outputs_json: *const c_char,
@@ -193,7 +193,7 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler called did (address) >> {:?}", secret!(&did));
+    trace!("api::add_request_fees_handler called did (address) >> {:?}", secret!(&_did));
     let (inputs, outputs, extra, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {

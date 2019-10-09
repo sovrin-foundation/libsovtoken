@@ -69,6 +69,23 @@ fn build_verify_payment_request() {
 }
 
 #[test]
+fn build_verify_payment_request_for_fully_qualified_did() {
+    let txo = "txo:sov:3x42qH8UkJac1BuorqjSEvuVjvYkXk8sUAqoVPn1fGCwjLPquu4CndzBHBQ5hX6RSmDVnXGdMPrnWDUN5S1ty4YQP87hW8ubMSzu9M56z1FbAQV6aMSX5h";
+    let expected_operation = json!({
+        "type": "3",
+        "ledgerId": 1001,
+        "data": 28
+    });
+
+    let request = build_verify_payment_req(1, Some("did:sov:VsKV7grR1BUE29mG2Fm2kX"), txo).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&request).unwrap();
+
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!("VsKV7grR1BUE29mG2Fm2kX", request_value["identifier"].as_str().unwrap());
+}
+
+#[test]
 fn build_verify_payment_for_invalid_txo() {
     let txo = "txo:sov:3x42qH8";
     let res = build_verify_payment_req(1, None, txo).unwrap_err();

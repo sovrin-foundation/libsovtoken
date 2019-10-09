@@ -50,7 +50,7 @@ impl GetFeesRequest {
         [`Request<GetFeesRequest>`]: ../../request/struct.Request.html
     */
     pub fn as_request(self, identifier: Option<Did>) -> Request<GetFeesRequest> {
-        return Request::new(self, identifier.map(String::from));
+        return Request::new(self, identifier);
     }
 }
 

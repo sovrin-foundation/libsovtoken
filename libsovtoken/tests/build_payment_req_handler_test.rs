@@ -224,7 +224,7 @@ fn success_signed_request() {
 
 }
 
-#[test] // TODO: look carefully on changes
+#[test]
 fn success_signed_request_from_libindy_no_identifier() {
 
     sovtoken::api::sovtoken_init();
