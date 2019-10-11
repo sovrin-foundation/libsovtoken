@@ -10,12 +10,13 @@ use logic::parsers::common::{ResponseOperations,
                              TransactionMetaData,
                              RequireSignature};
 use logic::parsers::error_code_parser;
-use logic::type_aliases::{ProtocolVersion};
+use logic::type_aliases::ProtocolVersion;
+use logic::xfer_payload::Extra;
 
 /**
     for parse_payment_response_handler input resp_json
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponse {
     pub op: ResponseOperations,
@@ -27,7 +28,7 @@ pub struct ParsePaymentResponse {
 /**
     The nested type named "result in ParsePaymentResponse
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ParsePaymentResponseResult {
     pub txn: Transaction,
@@ -42,7 +43,7 @@ pub struct ParsePaymentResponseResult {
 /**
     the nested type "tnx" in ParsePaymentResponseResult
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     #[serde(rename = "type")]
@@ -56,10 +57,10 @@ pub struct Transaction {
 /**
    the nested type "data" in Transaction
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionData {
-    pub extra: Option<String>,
+    pub extra: Option<Extra>,
     pub inputs: Inputs,
     pub outputs: Outputs,
 }
@@ -89,15 +90,16 @@ pub type ParsePaymentReply = Vec<UTXO>;
 pub fn from_response(base: ParsePaymentResponse) -> Result<ParsePaymentReply, ErrorCode> {
     match base.op {
         ResponseOperations::REPLY => {
-            let result = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
+            let result: ParsePaymentResponseResult = base.result.ok_or(ErrorCode::CommonInvalidStructure)?;
+            let extra = result.txn.data.extra.map(|extra|extra.to_string()).unwrap_or_default();
             let mut utxos: Vec<UTXO> = vec![];
             for unspent_output in result.txn.data.outputs {
                 let address = unspent_output.recipient;
-                let amount  = unspent_output.amount;
+                let amount = unspent_output.amount;
                 let qualified_address: String = add_qualifer_to_address(&address);
                 let seq_no: u64 = result.tnx_meta_data.seq_no;
                 let txo = (TXO { address: qualified_address.to_string(), seq_no }).to_libindy_string()?;
-                let utxo: UTXO = UTXO { recipient: qualified_address, receipt: txo, amount, extra: "".to_string() };
+                let utxo: UTXO = UTXO { recipient: qualified_address, receipt: txo, amount, extra: extra.clone() };
 
                 utxos.push(utxo);
             }
