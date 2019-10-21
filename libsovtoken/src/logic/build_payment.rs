@@ -52,8 +52,8 @@ pub fn deserialize_inputs(
     debug!("Converted extra pointer to string >>> {:?}", extra);
 
     let extra: Option<Extra> = if let Some(extra_) = extra {
-        match serde_json::from_str(&extra_) {
-            Ok(extra_obj) => Some(extra_obj),
+        match serde_json::from_str::<::serde_json::Map<String, serde_json::Value>>(&extra_) {
+            Ok(extra_obj) => Some(Extra(serde_json::Value::Object(extra_obj))),
             Err(_) => Some(Extra(serde_json::Value::String(extra_)))
         }
     } else { None };
