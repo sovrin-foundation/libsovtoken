@@ -12,7 +12,7 @@ use logic::parsers::common::{ResponseOperations, StateProof,
                              KeyValuesInSP, KeyValueSimpleData, ParsedSP};
 use utils::json_conversion::JsonDeserialize;
 use utils::ffi_support::c_pointer_from_string;
-use utils::constants::txn_fields::FEES;
+use utils::constants::{general::FEES_STATE_KEY, txn_fields::FEES};
 use logic::type_aliases::{ProtocolVersion, TokenAmount, ReqId};
 use logic::parsers::common::KeyValueSimpleDataVerificationType;
 
@@ -79,7 +79,7 @@ pub fn get_fees_state_proof_extractor(reply_from_node: *const c_char, parsed_sp:
 
     // TODO: Make sure JSON serialisation preserves order
     let kvs_to_verify = KeyValuesInSP::Simple(KeyValueSimpleData {
-        kvs: vec![(base64::encode(FEES), Some(fees.to_string()))],
+        kvs: vec![(base64::encode(FEES_STATE_KEY), Some(fees.to_string()))],
         verification_type: KeyValueSimpleDataVerificationType::Simple
     });
     let proof_nodes = match state_proof.proof_nodes {
@@ -210,7 +210,7 @@ mod parse_fees_responses_test {
         let expected_parsed_sp = vec![ParsedSP {
             proof_nodes: String::from("29qFIGZlZXOT0pF7IjEiOjQsIjEwMDAxIjo4fQ=="),
             root_hash: String::from("5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms"),
-            kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![(base64::encode("fees"), Some(json!({"1": 4, "10001": 8}).to_string()))], verification_type: KeyValueSimpleDataVerificationType::Simple }),
+            kvs_to_verify: KeyValuesInSP::Simple(KeyValueSimpleData { kvs: vec![(base64::encode("200:fees"), Some(json!({"1": 4, "10001": 8}).to_string()))], verification_type: KeyValueSimpleDataVerificationType::Simple }),
             multi_signature: json!({
                 "participants": ["Gamma", "Delta", "Beta"],
                 "value": {"timestamp": 1530059419, "state_root_hash": "5BU5Rc3sRtTJB6tVprGiTSqiRaa9o6ei11MjH4Vu16ms", "ledger_id": 2, "txn_root_hash": "AKboMiJZJm247Sa7GsKQo5Ba8ukgxTQ3DsLc2pyVuDkU", "pool_state_root_hash": "J3ATG63R2JKHDCdpKpQf81FTNyQg2Vgz7Pu1ZHZw6zNy"}, "signature": "Qk67ePVhxdjHivAf8H4Loy1hN5zfb1dq79VSJKYx485EAXmj44PASpp8gj2faysdN8CNzSoUVvXgd3U4P2CA7VkwD7FHKUuviAFJfRQ68FnpUS8hVuqn6PAuv9RGUobohcJnKJ8CVKxr5i3Zn2JNXbk7AqeYRZQ2egq8fdoP3woPW7"
