@@ -19,7 +19,7 @@ RUN yum install -y \
 # install recent libsodium version from the sources
 ENV LIBSODIUM_VERSION=1.0.14
 RUN cd /tmp && \
-    curl https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz && \
+    curl https://download.libsodium.org/libsodium/releases/old/unsupported/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz && \
     cd /tmp/libsodium-${LIBSODIUM_VERSION} && \
     ./configure --prefix=/usr/local/ && make && make install && \
     rm -rf /tmp/libsodium-${LIBSODIUM_VERSION}

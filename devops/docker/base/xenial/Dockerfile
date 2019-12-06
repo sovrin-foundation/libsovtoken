@@ -13,7 +13,7 @@ ENV LIBSODIUM_INC_DIR=/usr/include
 # install libsodium from the sources
 ENV LIBSODIUM_VERSION=1.0.14
 RUN cd /tmp \
-    && curl https://download.libsodium.org/libsodium/releases/old/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz \
+    && curl https://download.libsodium.org/libsodium/releases/old/unsupported/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz \
     && cd /tmp/libsodium-${LIBSODIUM_VERSION} \
     && ./configure --prefix=/usr/local/ && make && make install \
     && ldconfig \
@@ -21,7 +21,7 @@ RUN cd /tmp \
 # need for libsodium to be reachable via pkg-config (sodiumoxide uses it)
 ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH # TODO ??? is it really needed
 
-ENV LIBINDY_VERSION=1.12.0
+ENV LIBINDY_VERSION=1.13.0
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
@@ -47,4 +47,4 @@ RUN cd /tmp/libsovtoken \
 # TODO CMD ENTRYPOINT ...
 
 
-ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.40.0
+ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.41.0

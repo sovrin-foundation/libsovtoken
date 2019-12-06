@@ -9,6 +9,8 @@ pub static TXO_QUALIFIER: &str = "txo:sov:";
 pub const PROTOCOL_VERSION: u32 = 2;
 pub const LEDGER_ID: &str = "1001";
 
+pub const FEES_STATE_KEY: &'static str = "200:fees";
+
 /**
 Defines a callback to communicate results to Indy-sdk as type
 
