@@ -4,6 +4,7 @@ use logic::type_aliases::ProtocolVersion;
 use logic::parsers::common::ResponseOperations;
 use logic::output::Outputs;
 use logic::input::Inputs;
+use logic::xfer_payload::Extra;
 use ErrorCode;
 use logic::parsers::common::UTXO;
 use logic::parsers::common::TXO;
@@ -52,7 +53,7 @@ pub struct ParseVerifyResponseResultDataTxn {
 pub struct ParseVerifyResponseResultDataTxnData {
     pub outputs: Option<Outputs>,
     pub inputs: Option<Inputs>,
-    pub extra: Option<String>
+    pub extra: Option<Extra>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -84,7 +85,8 @@ fn parse_verify(resp: &str) -> Result<VerifyResult, ErrorCode> {
 
     let mut sources: Vec<String> = vec![];
     let mut receipts: Vec<UTXO> = vec![];
-    let extra = data.extra;
+
+    let extra = data.extra.map(|extra|extra.to_string());
 
     if let Some(inputs) = data.inputs {
         for input in inputs {
@@ -100,7 +102,7 @@ fn parse_verify(resp: &str) -> Result<VerifyResult, ErrorCode> {
                 recipient: address.clone(),
                 receipt: TXO { address, seq_no }.to_libindy_string()?,
                 amount: output.amount,
-                extra: extra.as_ref().unwrap_or(&"".to_string()).to_string(),
+                extra: extra.clone().unwrap_or_default(),
             })
         }
     }
@@ -108,7 +110,7 @@ fn parse_verify(resp: &str) -> Result<VerifyResult, ErrorCode> {
     Ok(VerifyResult {
         sources: Some(sources),
         receipts: Some(receipts),
-        extra,
+        extra: extra.clone(),
     })
 }
 

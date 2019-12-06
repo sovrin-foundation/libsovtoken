@@ -90,8 +90,8 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
 }
 
 fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
-                            inputs: &str, outputs: &str) -> Result<String, ErrorCode> {
-    let req = build_payment_req(wallet_handle, did, inputs, outputs, None).unwrap();
+                            inputs: &str, outputs: &str, extra: Option<String>) -> Result<String, ErrorCode> {
+    let req = build_payment_req(wallet_handle, did, inputs, outputs, extra).unwrap();
     let res = indy::ledger::submit_request(pool_handle, &req).wait().unwrap();
     parse_payment_response(&res)
 }
@@ -316,7 +316,7 @@ pub fn build_and_submit_payment_req() {
             "amount": 10
         }
     ]).to_string();
-    let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
 
     let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
     let utxos = res_parsed.as_array().unwrap();
@@ -373,7 +373,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
         }
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
-                                       &inputs, &outputs_1).unwrap_err();
+                                       &inputs, &outputs_1, None).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentInsufficientFundsError);
 
     let outputs_2 = json!([
@@ -387,7 +387,7 @@ pub fn build_and_submit_payment_req_incorrect_funds() {
         }
     ]).to_string();
     let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0],
-                                       &inputs, &outputs_2).unwrap_err();
+                                       &inputs, &outputs_2, None).unwrap_err();
     assert_eq!(res, ErrorCode::PaymentExtraFundsError);
 }
 
@@ -415,7 +415,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
             "amount": 10
         }
     ]).to_string();
-    get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap();
+    get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs, None).unwrap();
 
     //lets try to spend spent utxo while there are enough funds on the unspent one
     let inputs = json!([utxo_2, utxo]).to_string();
@@ -423,7 +423,7 @@ pub fn build_and_submit_payment_req_with_spent_utxo() {
         "recipient": addresses[2],
         "amount": 20
     }]).to_string();
-    let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs).unwrap_err();
+    let err = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs, None).unwrap_err();
     assert_eq!(err, ErrorCode::PaymentSourceDoesNotExistError);
 
     //utxo should stay unspent!
@@ -614,4 +614,48 @@ pub fn build_payment_req_with_taa_acceptance_and_additional_extra() {
     assert_eq!(req_parsed["taaAcceptance"], taa_acceptance);
 
     assert_eq!(expected_operation, req_parsed["operation"]);
+}
+
+#[test]
+pub fn build_and_submit_payment_req_for_extra() {
+    let wallet = Wallet::new();
+    let setup = Setup::new(&wallet, SetupConfig {
+        num_addresses: 1,
+        num_trustees: 4,
+        num_users: 0,
+        mint_tokens: Some(vec![20]),
+        fees: None,
+    });
+    let payment_addresses = &setup.addresses;
+    let pool_handle = setup.pool_handle;
+    let dids = setup.trustees.dids();
+
+    for extra in ["some extra_json data as string", r#"{"data":"some extra data as string"}"#].iter()
+    {
+        let utxo = utils::payment::get_utxo::get_first_utxo_txo_for_payment_address(&wallet, pool_handle, dids[0], &payment_addresses[0]);
+
+        let inputs = json!([utxo]).to_string();
+        let outputs = json!([
+        {
+            "recipient": payment_addresses[0],
+            "amount": 20
+        }
+        ]).to_string();
+
+        let res = get_resp_for_payment_req(pool_handle, wallet.handle, dids[0], &inputs, &outputs, Some(extra.to_string())).unwrap();
+        let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+        let utxos = res_parsed.as_array().unwrap();
+        assert_eq!(utxos.len(), 1);
+        assert_eq!(*extra, utxos[0].clone()["extra"].as_str().unwrap());
+
+        let value = utxos.get(0).unwrap().as_object().unwrap();
+        let r_1 = value.get("receipt").unwrap().as_str().unwrap();
+        assert_eq!(value.get("amount").unwrap().as_i64().unwrap(), 20);
+
+        let (req, _) = indy::payments::build_verify_payment_req(wallet.handle, None, &r_1).wait().unwrap();
+        let res = indy::ledger::submit_request(pool_handle, &req).wait().unwrap();
+        let res = indy::payments::parse_verify_payment_response("sov", &res).wait().unwrap();
+        let res_parsed: serde_json::Value = serde_json::from_str(&res).unwrap();
+        assert_eq!(*extra, res_parsed["extra"].as_str().unwrap());
+    }
 }

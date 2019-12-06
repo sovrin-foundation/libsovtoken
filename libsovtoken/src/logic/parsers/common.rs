@@ -26,7 +26,7 @@ pub enum ResponseOperations {
 
     used by [`ParsePaymentReply`], [`ParseResponseWithFeesReply`]
 */
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UTXO {
     pub recipient: String,

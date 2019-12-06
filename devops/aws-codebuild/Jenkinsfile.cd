@@ -20,7 +20,7 @@ LIBINDY_VERSION = "1.12.0"
 
 def downloadPackagingUtils() {
     git branch: sovrinPackagingBranch, credentialsId: gitHubUserCredId, url: sovrinPackagingRepo
-    sh "pip3 install -U plumbum deb-pkg-tools"
+    sh "pip3 install -U plumbum==1.6.7 deb-pkg-tools six==1.12.0"
 }
 
 // TODO set proper labels
