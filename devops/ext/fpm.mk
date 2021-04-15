@@ -7,6 +7,8 @@ FPM_ARGS += --input-type $(FPM_P_INPUT_TYPE)
 
 ifeq ($(OSNAME),xenial)
 FPM_P_OUTPUT_TYPE ?= deb
+else ifeq ($(OSNAME),focal)
+FPM_P_OUTPUT_TYPE ?= deb
 else ifeq ($(OSNAME),centos7)
 FPM_P_OUTPUT_TYPE ?= rpm
 endif
