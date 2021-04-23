@@ -11,9 +11,9 @@ ENV LIBSODIUM_LIB_DIR=/usr/lib
 ENV LIBSODIUM_INC_DIR=/usr/include
 
 # install libsodium from the sources
-ENV LIBSODIUM_VERSION=1.0.14
+ENV LIBSODIUM_VERSION=1.0.16
 RUN cd /tmp \
-    && curl https://download.libsodium.org/libsodium/releases/old/unsupported/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz \
+    && curl https://download.libsodium.org/libsodium/releases/old/libsodium-${LIBSODIUM_VERSION}.tar.gz | tar -xz \
     && cd /tmp/libsodium-${LIBSODIUM_VERSION} \
     && ./configure --prefix=/usr/local/ && make && make install \
     && ldconfig \
@@ -25,13 +25,13 @@ ENV LIBINDY_VERSION=1.14.0
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        libssl-dev \
-        libindy=${LIBINDY_VERSION} \
+    libssl-dev \
+    libindy=${LIBINDY_VERSION} \
     && rm -rf /var/lib/apt/lists/*
 
 
 RUN if [ "$u_id" != "0" ]; then \
-        useradd -ms /bin/bash -u $u_id $u_name; \
+    useradd -ms /bin/bash -u $u_id $u_name; \
     fi
 
 ENV TEST_USER_UID=$u_id
