@@ -4,7 +4,7 @@ SHELL := /bin/bash
 # 	- more fpm arguments
 #	- package-static with libname.a
 
-OSNAME ?= xenial
+OSNAME ?= focal
 
 ifndef PROJECT_DIR
 PROJECT_DIR := $(shell git rev-parse --show-toplevel)
