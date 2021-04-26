@@ -1,4 +1,4 @@
-FROM sovrin/dockerbase:rust-xenial-0.12.0
+FROM sovrin/dockerbase:rust-xenial-0.13.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG u_id=1000
@@ -47,4 +47,4 @@ RUN cd /tmp/libsovtoken \
 # TODO CMD ENTRYPOINT ...
 
 
-ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.42.0
+ENV LIBSOVTOKEN_BASE_ENV_VERSION=0.43.0

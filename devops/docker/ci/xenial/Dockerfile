@@ -1,4 +1,4 @@
-FROM sovrin/libsovtoken:base-xenial-0.42.0
+FROM sovrin/libsovtoken:base-xenial-0.43.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -13,14 +13,14 @@ USER root
 
 # python env necessary for indy-node
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	    supervisor \
-	    python3.5 \
-	    python3-pip \
-	    python-setuptools \
+    supervisor \
+    python3.5 \
+    python3-pip \
+    python-setuptools \
     && pip3 install -U \
-	    setuptools \
-        'pip<10.0.0' \
-        setuptools \
+    setuptools \
+    'pip<10.0.0' \
+    setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -41,13 +41,13 @@ ENV TOKEN_VER  ${TOKEN_VER:-1.0.5}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
 RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
-        python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
-        python3-pyzmq=18.1.0 \
-        indy-plenum=${INDY_PLENUM_VERSION} \
-        indy-node=${INDY_NODE_VERSION} \
-        sovtoken=${TOKEN_VER} \
-        sovtokenfees=${TOKEN_VER} \
+    libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
+    python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
+    python3-pyzmq=18.1.0 \
+    indy-plenum=${INDY_PLENUM_VERSION} \
+    indy-node=${INDY_NODE_VERSION} \
+    sovtoken=${TOKEN_VER} \
+    sovtokenfees=${TOKEN_VER} \
     && rm -rf /var/lib/apt/lists/*
 COPY supervisord.conf /etc/supervisord.conf
 
