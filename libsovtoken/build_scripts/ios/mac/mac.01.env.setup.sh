@@ -5,7 +5,7 @@
 # mv /Users/norm/.cargo/bin/rustup /Users/norm/.cargo/bin/rustup.bak
 RUSTUP_VERSION=`rustup --version`
 if [ "$?" != "0" ]; then
-    if [ -f $HOME/.cargo/bin/rustup ]; then
+           if [ -f $HOME/.cargo/bin/rustup ]; then
         echo "You need to add ${HOME}/.cargo/bin to your PATH environment variable or simply restart your terminal"
         exit 1
     else
@@ -39,14 +39,13 @@ if [ "$?" != "0" ]; then
         fi
     fi
 fi
-# Steps to uninstall rustup to test that the step 1) works again
-# rustup self uninstall
+# rustup self uninstall that the step 1) works again
 
 if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     rustup component add rls-preview rust-analysis rust-src
 
     rustup target remove aarch64-linux-android armv7-linux-androideabi arm-linux-androideabi i686-linux-android x86_64-linux-android
-    rustup target add aarch64-apple-ios armv7-apple-ios armv7s-apple-ios x86_64-apple-ios i386-apple-ios
+    rustup target add aarch64-apple-ios x86_64-apple-ios i386-apple-ios
 
     RUST_TARGETS=$(rustc --print target-list|grep -i ios)
     if [ "RUST_TARGETS" = "" ]; then
