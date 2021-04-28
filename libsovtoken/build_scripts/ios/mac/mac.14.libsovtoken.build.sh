@@ -4,9 +4,6 @@ set -xv
 function extract_target() {
     case $1 in
         aarch64-apple-ios) echo "arm64" ;;
-        armv7-apple-ios) echo "armv7" ;;
-        armv7s-apple-ios) echo "armv7s" ;;
-        i386-apple-ios) echo "i386" ;;
         x86_64-apple-ios) echo "x86_64" ;;
         \?) exit 1
     esac
@@ -34,7 +31,7 @@ if [ ! -d "${WORK_DIR}/sovtoken-indy-sdk" ]; then
     exit 1
 fi
 
-IOS_TARGETS="aarch64-apple-ios,armv7-apple-ios,armv7s-apple-ios,i386-apple-ios,x86_64-apple-ios"
+IOS_TARGETS="aarch64-apple-ios,x86_64-apple-ios"
 if [ ! -z "$2" ]; then
     IOS_TARGETS=$2
 fi
