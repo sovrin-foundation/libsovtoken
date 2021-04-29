@@ -1,7 +1,7 @@
 ARG ANDROID_NDK_DIR=/tmp/android/android_ndk
 ARG ANDROID_NDK_VERSION=r20
 
-FROM sovrin/dockerbase:rust-xenial-0.12.0
+FROM sovrin/dockerbase:rust-xenial-0.13.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG ANDROID_NDK_VERSION
@@ -14,7 +14,7 @@ RUN chmod -R 777 ${ANDROID_NDK_DIR}
 ############################################
 
 
-FROM sovrin/dockerbase:rust-xenial-0.12.0
+FROM sovrin/dockerbase:rust-xenial-0.13.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG PYTHON3_VERSION
@@ -24,8 +24,8 @@ ARG ANDROID_NDK_DIR
 # python3
 ENV PYTHON3_VERSION=${PYTHON3_VERSION:-3.5}
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python${PYTHON3_VERSION} \
-        python3-pip \
+    python${PYTHON3_VERSION} \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # android ndk
@@ -40,4 +40,4 @@ RUN chmod +x /usr/local/bin/android-ndk-install
 
 # TODO CMD ENTRYPOINT ...
 
-ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.7.0
+ENV LIBSOVTOKEN_ANDROID_NDK_ENV_VERSION=0.8.0
