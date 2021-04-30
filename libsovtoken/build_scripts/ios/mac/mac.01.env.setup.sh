@@ -4,6 +4,7 @@
 #To get into the if statement below execute the following command...
 # mv /Users/norm/.cargo/bin/rustup /Users/norm/.cargo/bin/rustup.bak
 RUSTUP_VERSION=`rustup --version`
+echo "executing ${PWD}/mac.01.env.setup as $USER "
 
 if [ "$?" != "0" ]; then
            if [ -f $HOME/.cargo/bin/rustup ]; then
@@ -47,7 +48,7 @@ if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     rustup default 1.46.0
     rustup component add rls-preview rust-analysis rust-src
 
-    rustup target remove aarch64-linux-android armv7-linux-androideabi arm-linux-androideabi i686-linux-android x86_64-linux-android
+    rustup target remove aarch64-linux-android armv7-linux-androideabi arm-linux-androideabi i686-linux-android x86_64-linux-android i386-apple-ios armv7s-apple-ios armv7-apple-ios
     rustup target add aarch64-apple-ios x86_64-apple-ios
 
     RUST_TARGETS=$(rustc --print target-list|grep -i ios)
@@ -62,7 +63,9 @@ if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     cargo install cargo-xcode
 
     BREW_VERSION=`brew --version`
+    echo "brew version is $BREW_VERSION"
     if ! [[ $BREW_VERSION =~ ^'Homebrew ' ]]; then
+        echo "installing brew via curl"
         /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
         brew doctor
         brew update
