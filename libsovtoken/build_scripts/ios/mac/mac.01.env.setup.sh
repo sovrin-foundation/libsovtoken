@@ -83,5 +83,5 @@ if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     brew list wget &>/dev/null || brew install wget
     brew list truncate &>/dev/null || brew install truncate
     brew list libzip &>/dev/null || brew install libzip
-    brew list python3 &>/dev/null || brew install python3
+    # brew list python3 &>/dev/null || brew install python3
 fi
