@@ -15,12 +15,12 @@ String srcVersion
 gitHubUserCredId = env.GITHUB_BOT_USER ?: 'sovbot-github'
 sovrinPackagingRepo = env.SOVRIN_PACKAGING_REPO ?: 'https://github.com/sovrin-foundation/sovrin-packaging'
 sovrinPackagingBranch = env.SOVRIN_PACKAGING_BRANCH ?: 'master'
-LIBINDY_STREAM = "stable"
-LIBINDY_VERSION = "1.14.0"
+LIBINDY_STREAM = 'stable'
+LIBINDY_VERSION = '1.14.0'
 
 def downloadPackagingUtils() {
     git branch: sovrinPackagingBranch, credentialsId: gitHubUserCredId, url: sovrinPackagingRepo
-    sh "pip3 install -U plumbum==1.6.7 deb-pkg-tools six==1.12.0"
+    sh 'pip3 install -U plumbum==1.6.7 deb-pkg-tools six==1.12.0'
 }
 
 // TODO set proper labels
@@ -106,7 +106,7 @@ def codeBuildPipelines = {
 
             onArtifacts = {
                 this.stage("$prTag: Archive logs") {
-                    this.utils.archiveArtifacts("logs/*.log*") {
+                    this.utils.archiveArtifacts('logs/*.log*') {
                         truncate = true
                         allowEmptyArchive = true
                         truncateFileSuffix = 'trunc.log'
@@ -161,18 +161,18 @@ def codeBuildPipelines = {
 //        }
 
         stage('Set release parameters') {
-            logger.info("Finding Release version")
-//            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
+            logger.info('Finding Release version')
+            //            def releaseVersion =  env.BRANCH_NAME == 'stable' ? '' : "${lastRevision ? lastRevision[0] + 1: 1}.$BUILD_NUMBER"
             def releaseVersion = env.BRANCH_NAME == 'stable' ? '' : "$BUILD_NUMBER"
             logger.info("Release version for sovrin repo: $releaseVersion")
 
-//            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
+            //            debPVersion = utils.packageVersion('deb', srcVersion, releaseVersion, env.BRANCH_NAME == 'master')
             debPVersion = env.BRANCH_NAME == 'stable' ? "$srcVersion" : "$srcVersion~$releaseVersion"
             logger.info("Package version for sovrin repo: $debPVersion")
 
-            // TODO crate and rpm
-            //cratePVersion = utils.packageVersion('crate', srcVersion, releaseVersion)
-            //logger.info("Package version for rust registry: $cratePVersion")
+        // TODO crate and rpm
+        //cratePVersion = utils.packageVersion('crate', srcVersion, releaseVersion)
+        //logger.info("Package version for rust registry: $cratePVersion")
         }
 
         stage("$prTag: Resolve image tag") {
@@ -205,12 +205,12 @@ def codeBuildPipelines = {
                     [name: 'ARTIFACTS', value: "libsovtoken/target/release/${packageName}*.*"],
                     [name: 'PACKAGE_NAME', value: packageName],
                     [name: 'FPM_P_VERSION', value: debPVersion],
-                    // [name: 'CRATE_P_VERSION', value: cratePVersion],
+            // [name: 'CRATE_P_VERSION', value: cratePVersion],
             ]
 
             onArtifacts = {
                 this.stage("$prTag: Archive logs") {
-                    this.utils.archiveArtifacts("logs/*.log*") {
+                    this.utils.archiveArtifacts('logs/*.log*') {
                         truncate = true
                         allowEmptyArchive = true
                         truncateFileSuffix = 'trunc.log'
@@ -223,7 +223,7 @@ def codeBuildPipelines = {
             String debName
 
             dir("${awsCBHelper.buildCtx.projects[prTag].artifactsDir}") {
-                dir("sovrin-packaging") {
+                dir('sovrin-packaging') {
                     downloadPackagingUtils()
                 }
                 debName = utils.shStdout("ls $packageName*$debPVersion*.deb")
@@ -264,20 +264,20 @@ def codeBuildPipelines = {
     ]
     builds.failFast = false
 
-    stage("CodeBuild Build") {
+    stage('CodeBuild Build') {
         utils.parallel builds
     }
 }
 
 def macOSPipeline = {
-    stage("MacOS Build") {
+    stage('MacOS Build') {
         def packageName = 'libsovtoken'
         def xcodeMinVersion = '9.0'
         def RUST_PATH = '~/.cargo/bin'
-
+        WORK_DIR = '/Users/jenkins'
 
         stage('Checks') {
-            echo "===================== Checks for XCode and Rust environment ========================"
+            echo '===================== Checks for XCode and Rust environment ========================'
             INSTALLED_XCODE_VERSION = sh(script: '''xcodebuild -version | head -1 | cut -d' ' -f2''', returnStdout: true)
             echo "INSTALLED_XCODE_VERSION = ${INSTALLED_XCODE_VERSION} and xcodeMinVersion = ${xcodeMinVersion}"
             if (INSTALLED_XCODE_VERSION <= xcodeMinVersion) {
@@ -317,33 +317,31 @@ def macOSPipeline = {
 
         withEnv([
                 "PATH+RUST=${RUST_PATH}",
-                "PATH+BREW=/usr/local/bin",
-                "PATH+CURL=/usr/local/opt/curl/bin"
+                'PATH+BREW=/usr/local/bin',
+                'PATH+CURL=/usr/local/opt/curl/bin'
         ]) {
-
             dir('libsovtoken/build_scripts/ios/mac/') {
-
                 stage('mac.01.libindy.setup') {
                     sh './mac.01.env.setup.sh'
                 }
 
                 stage('mac.14.libsovtoken.build.sh') {
-                    sh "./mac.14.libsovtoken.build.sh"
+                    sh './mac.14.libsovtoken.build.sh'
                 }
             }
 
             dir('libsovtoken') {
                 pkgName = utils.shStdout("ls ${packageName}*.zip")
-                stash includes: pkgName, name: "iosArtifact"
+                stash includes: pkgName, name: 'iosArtifact'
             }
         }
     }
 }
 
 def macosUpload = {
-    String packageName = "libsovtoken"
+    String packageName = 'libsovtoken'
     stage('Upload libsovtoken universal package to Sovrin repo') {
-        unstash name: "iosArtifact"
+        unstash name: 'iosArtifact'
         String pkgName = utils.shStdout("ls ${packageName}*.zip")
         logger.info("Uploading libsovtoken package '$pkgName' to sovrin repo")
 
@@ -358,7 +356,7 @@ def macosUpload = {
 }
 
 def windowsOSPipeline = {
-    stage("Windows Testing") {
+    stage('Windows Testing') {
         def ws_path = "workspace/${env.JOB_NAME}".replace(' ', '_')
         ws(ws_path) {
             try {
@@ -384,24 +382,24 @@ def windowsOSPipeline = {
 
                 stage('Testing') {
                     dir('libsovtoken') {
-                        echo "Libsovtoken Testing: Build"
+                        echo 'Libsovtoken Testing: Build'
                         withEnv([
                                 "OPENSSL_DIR=$WORKSPACE\\prebuilt",
                                 "SODIUM_LIB_DIR=$WORKSPACE\\prebuilt\\lib",
                                 "LIBINDY_DIR=$WORKSPACE\\indy\\lib",
                                 "PATH=$WORKSPACE\\prebuilt\\lib;$WORKSPACE\\indy\\lib;$PATH",
-                                "RUST_BACKTRACE=1"
+                                'RUST_BACKTRACE=1'
                         ]) {
-                            bat "cargo build --release"
-                            bat "cargo test --release --no-run"
+                            bat 'cargo build --release'
+                            bat 'cargo test --release --no-run'
 
-                            echo "Libsovtoken Testing: Run tests"
+                            echo 'Libsovtoken Testing: Run tests'
                             withEnv([
-                                    "RUST_TEST_THREADS=1",
-                                    "RUST_LOG=debug",
+                                    'RUST_TEST_THREADS=1',
+                                    'RUST_LOG=debug',
                                     "TEST_POOL_IP=$INDY_SDK_SERVER_IP"
                             ]) {
-                                bat "cargo test --release"
+                                bat 'cargo test --release'
                             }
                         }
 
@@ -426,7 +424,6 @@ def windowsOSPipeline = {
 
 def windowsUpload = {
     stage('Upload libsovtoken package to Sovrin repo') {
-
         if (!srcVersion) {
             stage('Resolve current source version') {
                 srcVersion = utils.srcVersion(projectType: 'rust')
@@ -436,7 +433,7 @@ def windowsUpload = {
 
         sh 'chmod -R 777 devops/windows'
 
-        unstash name: "windowsArtifact"
+        unstash name: 'windowsArtifact'
 
         withCredentials([file(credentialsId: 'SovrinRepoSSHKey', variable: 'repo_key')]) {
             withEnv([
@@ -453,12 +450,11 @@ def getSuffix() {
     if (env.BRANCH_NAME == 'master') {
         return "-$env.BUILD_NUMBER"
     } else if (env.BRANCH_NAME == 'stable') {
-        return ""
+        return ''
     } else {
         error "Invalid branch ${env.BRANCH_NAME}"
     }
 }
-
 
 pipelineWrapper({
     //put code build containers inside a vpc under our dev account
@@ -480,7 +476,7 @@ pipelineWrapper({
     ]
     builds.failFast = false
 
-    stage("Build") {
+    stage('Build') {
         utils.parallel builds
     }
 
@@ -499,17 +495,17 @@ pipelineWrapper({
         utils.parallel publish
     }
 }, { err ->
-    stage("Pipeline finalizing") {
+    stage('Pipeline finalizing') {
         if (err) {
             logger.error("Pipeline failed with the error $err")
         }
 
-        stage("Build result notification") {
+        stage('Build result notification') {
             notifier.email()
         }
     }
 })
 
 def setupRust() {
-    shell("rustup default 1.51.0")
+    shell('rustup default 1.51.0')
 }
