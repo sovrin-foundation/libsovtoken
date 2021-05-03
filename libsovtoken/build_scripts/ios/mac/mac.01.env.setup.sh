@@ -26,7 +26,6 @@ if [ "$?" != "0" ]; then
         source $HOME/.cargo/env
         rustup component add rust-src
         rustup component add rust-docs
-        rustup update
         RUSTUP_VERSION=`rustup --version`
         if [ -f /usr/local/bin/rustc.bak ]; then
             sudo mv /usr/local/bin/rustc.bak /usr/local/bin/rustc
