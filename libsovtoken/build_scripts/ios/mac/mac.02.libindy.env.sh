@@ -9,5 +9,5 @@ export RUST_TEST_THREADS=1
 
 #4) Setup OPENSSL_DIR variable: path to installed openssl library
 
-for i in `ls -t /usr/local/Cellar/openssl/`; do export OPENSSL_DIR=/usr/local/Cellar/openssl/$i; break; done
+for i in `ls -t /usr/local/Cellar/openssl@1.1/`; do export OPENSSL_DIR=/usr/local/Cellar/openssl@1.1/$i; break; done
 #export OPENSSL_DIR=/usr/local/Cellar/openssl/1.0.2n   # path changes with version number
