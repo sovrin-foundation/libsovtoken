@@ -5,6 +5,7 @@ use std::ffi::CString;
 use indy_sys::crypto;
 use indy_sys::{ResponseStringCB,
                ResponseSliceCB};
+use indy_sys;
 
 use utils::results::ResultHandler;
 use utils::callbacks::ClosureHandler;
@@ -26,7 +27,7 @@ impl Key {
     /// }
     /// # Returns
     /// verkey of generated key pair, also used as key identifier
-    pub fn create(wallet_handle: IndyHandle, my_key_json: Option<&str>) -> Result<String, ErrorCode> {
+    pub fn create(wallet_handle: indy_sys::WalletHandle, my_key_json: Option<&str>) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = ClosureHandler::cb_ec_string();
 
         let err = Key::_create(command_handle, wallet_handle, my_key_json, cb);
@@ -49,13 +50,13 @@ impl Key {
     /// }
     /// # Returns
     /// errorcode from calling ffi function. The closure receives the return result
-    pub fn create_async<F: 'static>(wallet_handle: IndyHandle, my_key_json: Option<&str>, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+    pub fn create_async<F: 'static>(wallet_handle: indy_sys::WalletHandle, my_key_json: Option<&str>, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
         let (command_handle, cb) = ClosureHandler::convert_cb_ec_string(Box::new(closure));
 
         Key::_create(command_handle, wallet_handle, my_key_json, cb)
     }
 
-    fn _create(command_handle: IndyHandle, wallet_handle: IndyHandle, my_key_json: Option<&str>, cb: Option<ResponseStringCB>) -> ErrorCode {
+    fn _create(command_handle: IndyHandle, wallet_handle: indy_sys::WalletHandle, my_key_json: Option<&str>, cb: Option<ResponseStringCB>) -> ErrorCode {
         let my_key_json = opt_c_str_json!(my_key_json);
 
         ErrorCode::from(unsafe { crypto::indy_create_key(command_handle, wallet_handle, my_key_json.as_ptr(), cb) })
@@ -72,7 +73,7 @@ impl Crypto {
     /// * `message` - the data to be signed
     /// # Returns
     /// the signature
-    pub fn sign(wallet_handle: IndyHandle, signer_vk: &str, message: &[u8]) -> Result<Vec<u8>, ErrorCode> {
+    pub fn sign(wallet_handle: indy_sys::WalletHandle, signer_vk: &str, message: &[u8]) -> Result<Vec<u8>, ErrorCode> {
         let (receiver, command_handle, cb) = ClosureHandler::cb_ec_slice();
 
         let err = Crypto::_sign(command_handle, wallet_handle, signer_vk, message, cb);
@@ -88,13 +89,13 @@ impl Crypto {
     /// * `closure` - The closure that is called when finished
     /// # Returns
     /// errorcode from calling ffi function
-    pub fn sign_async<F: 'static>(wallet_handle: IndyHandle, signer_vk: &str, message: &[u8], closure: F) -> ErrorCode where F: FnMut(ErrorCode, Vec<u8>) + Send {
+    pub fn sign_async<F: 'static>(wallet_handle: indy_sys::WalletHandle, signer_vk: &str, message: &[u8], closure: F) -> ErrorCode where F: FnMut(ErrorCode, Vec<u8>) + Send {
         let (command_handle, cb) = ClosureHandler::convert_cb_ec_slice(Box::new(closure));
 
         Crypto::_sign(command_handle, wallet_handle, signer_vk, message, cb)
     }
 
-    fn _sign(command_handle: IndyHandle, wallet_handle: IndyHandle, signer_vk: &str, message: &[u8], cb: Option<ResponseSliceCB>) -> ErrorCode {
+    fn _sign(command_handle: IndyHandle, wallet_handle: indy_sys::WalletHandle, signer_vk: &str, message: &[u8], cb: Option<ResponseSliceCB>) -> ErrorCode {
         let signer_vk = c_str!(signer_vk);
         ErrorCode::from(unsafe {
             crypto::indy_crypto_sign(command_handle, wallet_handle, signer_vk.as_ptr(),

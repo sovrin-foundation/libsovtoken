@@ -20,7 +20,7 @@ macro_rules! closure_cb {
     ($closure:ident, $($name:ident : $ntype:ty),*) => {{
         lazy_static! {
             static ref COMMAND_HANDLE_COUNTER: AtomicUsize = AtomicUsize::new(4);
-            static ref CALLBACKS: Callbacks<FnMut(i32, $($ntype),*) + Send> = Default::default();
+            static ref CALLBACKS: Callbacks<dyn FnMut(i32, $($ntype),*) + Send> = Default::default();
         }
 
         let mut callbacks = CALLBACKS.lock().unwrap();

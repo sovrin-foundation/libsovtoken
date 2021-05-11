@@ -2,6 +2,7 @@ extern crate libc;
 extern crate sovtoken;
 extern crate indyrs as indy;                      // lib-sdk project
 extern crate bs58;
+extern crate indy_sys;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate serde_json;
@@ -16,7 +17,7 @@ use indy::future::Future;
 
 use sovtoken::logic::address;
 use sovtoken::logic::parsers::common::TXO;
-use sovtoken::{ErrorCode, IndyHandle};
+use sovtoken::ErrorCode;
 use sovtoken::utils::constants::txn_types::XFER_PUBLIC;
 use sovtoken::utils::results::ResultHandler;
 use sovtoken::utils::ffi_support::{c_pointer_from_string, c_pointer_from_str};
@@ -32,11 +33,11 @@ use utils::setup::{SetupConfig, Setup};
 const COMMAND_HANDLE:i32 = 10;
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 static VALID_OUTPUT_JSON: &'static str = r#"{"outputs":[["AesjahdahudgaiuNotARealAKeyygigfuigraiudgfasfhja",10]]}"#;
-const WALLET_HANDLE:i32 = 0;
+const WALLET_HANDLE:indy_sys::WalletHandle = indy_sys::WalletHandle(0);
 const CB : Option<extern fn(_command_handle_: i32, err: i32, payment_req_json: *const c_char) -> i32 > = Some(utils::callbacks::empty_callback);
 
 // ***** HELPER METHODS *****
-fn build_payment_req(wallet_handle: IndyHandle, did: &str, inputs: &str, outputs: &str, extra: Option<String>) -> Result<String, ErrorCode> {
+fn build_payment_req(wallet_handle: indy_sys::WalletHandle, did: &str, inputs: &str, outputs: &str, extra: Option<String>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
 
     let extra = extra.map(c_pointer_from_string).unwrap_or(std::ptr::null());
@@ -89,7 +90,7 @@ fn generate_payment_addresses(wallet: &Wallet) -> (Vec<String>, Vec<String>) {
     return (payment_addresses, addresses);
 }
 
-fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: i32, did: &str,
+fn get_resp_for_payment_req(pool_handle: i32, wallet_handle: indy_sys::WalletHandle, did: &str,
                             inputs: &str, outputs: &str, extra: Option<String>) -> Result<String, ErrorCode> {
     let req = build_payment_req(wallet_handle, did, inputs, outputs, extra).unwrap();
     let res = indy::ledger::submit_request(pool_handle, &req).wait().unwrap();

@@ -3,6 +3,7 @@
 #[macro_use] extern crate lazy_static;
 extern crate sovtoken;
 extern crate indyrs as indy;
+extern crate indy_sys;
 
 use std::{thread, time};
 
@@ -10,7 +11,7 @@ use indy::future::Future;
 
 mod utils;
 
-use sovtoken::{ErrorCode, IndyHandle};
+use sovtoken::ErrorCode;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::results::ResultHandler;
 use sovtoken::utils::test::callbacks;
@@ -24,7 +25,7 @@ fn sleep(msec: u64) {
     thread::sleep(ms);
 }
 
-fn build_verify_payment_req(wallet_handle: IndyHandle, did: Option<&str>, txo: &str) -> Result<String, ErrorCode> {
+fn build_verify_payment_req(wallet_handle: indy_sys::WalletHandle, did: Option<&str>, txo: &str) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
 
     let did = did.map(c_pointer_from_str).unwrap_or(std::ptr::null());
@@ -61,7 +62,7 @@ fn build_verify_payment_request() {
         "data": 28
     });
 
-    let request = build_verify_payment_req(1, None, txo).unwrap();
+    let request = build_verify_payment_req(indy_sys::WalletHandle(1), None, txo).unwrap();
 
     let request_value: serde_json::value::Value = serde_json::from_str(&request).unwrap();
 
@@ -77,7 +78,7 @@ fn build_verify_payment_request_for_fully_qualified_did() {
         "data": 28
     });
 
-    let request = build_verify_payment_req(1, Some("did:sov:VsKV7grR1BUE29mG2Fm2kX"), txo).unwrap();
+    let request = build_verify_payment_req(indy_sys::WalletHandle(1), Some("did:sov:VsKV7grR1BUE29mG2Fm2kX"), txo).unwrap();
 
     let request_value: serde_json::value::Value = serde_json::from_str(&request).unwrap();
 
@@ -88,7 +89,7 @@ fn build_verify_payment_request_for_fully_qualified_did() {
 #[test]
 fn build_verify_payment_for_invalid_txo() {
     let txo = "txo:sov:3x42qH8";
-    let res = build_verify_payment_req(1, None, txo).unwrap_err();
+    let res = build_verify_payment_req(indy_sys::WalletHandle(1), None, txo).unwrap_err();
     assert_eq!(ErrorCode::CommonInvalidStructure, res);
 }
 
