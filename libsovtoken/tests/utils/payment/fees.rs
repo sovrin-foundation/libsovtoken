@@ -1,3 +1,5 @@
+extern crate indy_sys;
+
 use sovtoken::utils::constants::general::PAYMENT_METHOD_NAME;
 use sovtoken::logic::config::set_fees_config::SetFees;
 use sovtoken::logic::request::Request;
@@ -5,7 +7,7 @@ use utils::wallet::Wallet;
 
 use indy::future::Future;
 
-use std::sync::{Once, ONCE_INIT};
+use std::sync::Once;
 use std::sync::Mutex;
 use std::collections::HashMap;
 
@@ -121,7 +123,7 @@ pub struct AuthRule {
     constraint: Constraint
 }
 
-pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees: &str, dids: &Vec<&str>, submitter_did: Option<&str>) {
+pub fn set_fees(pool_handle: i32, wallet_handle: indy_sys::WalletHandle, payment_method: &str, fees: &str, dids: &Vec<&str>, submitter_did: Option<&str>) {
     let set_fees_req = ::indy::payments::build_set_txn_fees_req(wallet_handle, submitter_did, payment_method, &fees).wait().unwrap();
     let set_fees_req = Request::<SetFees>::multi_sign_request(wallet_handle, &set_fees_req, dids.to_vec()).unwrap();
     ::indy::ledger::submit_request(pool_handle, &set_fees_req).wait().unwrap();
@@ -136,7 +138,7 @@ pub fn set_fees(pool_handle: i32, wallet_handle: i32, payment_method: &str, fees
 }
 
 // Helper to set fee alias for auth rules
-pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &str, txn_fees: &str) {
+pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: indy_sys::WalletHandle, submitter_did: &str, txn_fees: &str) {
     _get_default_ledger_auth_rules(pool_handle);
 
     let auth_rules = AUTH_RULES.lock().unwrap();
@@ -156,7 +158,7 @@ pub fn set_auth_rules_fee(pool_handle: i32, wallet_handle: i32, submitter_did: &
     _send_auth_rules(pool_handle, wallet_handle, submitter_did, &auth_rules)
 }
 
-fn _send_auth_rules(pool_handle: i32, wallet_handle: i32, submitter_did: &str, data: &Vec<AuthRule>) {
+fn _send_auth_rules(pool_handle: i32, wallet_handle: indy_sys::WalletHandle, submitter_did: &str, data: &Vec<AuthRule>) {
     let data = ::serde_json::to_string(&data).unwrap();
 
     let auth_rules_request = ::indy::ledger::build_auth_rules_request(submitter_did, &data).wait().unwrap();
@@ -169,7 +171,7 @@ fn _send_auth_rules(pool_handle: i32, wallet_handle: i32, submitter_did: &str, d
 
 fn _get_default_ledger_auth_rules(pool_handle: i32) {
     lazy_static! {
-            static ref GET_DEFAULT_AUTH_CONSTRAINTS: Once = ONCE_INIT;
+            static ref GET_DEFAULT_AUTH_CONSTRAINTS: Once = Once::new();
 
         }
 

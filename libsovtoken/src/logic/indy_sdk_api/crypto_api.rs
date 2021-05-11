@@ -3,7 +3,8 @@ use logic::indy_sdk_api::crypto::{Key, Crypto};
 use logic::config::payment_address_config::PaymentAddressConfig;
 use utils::base58::serialize_bytes;
 use utils::json_conversion::JsonSerialize;
-use {ErrorCode, IndyHandle};
+use ErrorCode;
+use indy_sys;
 
 /**
     This defines the interfaces for INDY SDK crypto apis, which can be replaced with different implementations
@@ -12,9 +13,9 @@ use {ErrorCode, IndyHandle};
     modeling: master/libindy/src/api/crypto.rs
 */
 pub trait CryptoAPI {
-    fn indy_create_key(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode>;
-    fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send;
-    fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, wallet_handle: i32, verkey: String, message: String, cb: F) -> ErrorCode;
+    fn indy_create_key(&self, wallet_id: indy_sys::WalletHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode>;
+    fn indy_create_key_async<F: 'static>(&self, wallet_id: indy_sys::WalletHandle, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send;
+    fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, wallet_handle: indy_sys::WalletHandle, verkey: String, message: String, cb: F) -> ErrorCode;
 }
 
 // ------------------------------------------------------------------
@@ -34,7 +35,7 @@ impl CryptoAPI for CryptoSdk {
        the format of the return is:
            pay:sov:{32 byte address}{4 byte checksum}
     */
-    fn indy_create_key(&self, wallet_id: IndyHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+    fn indy_create_key(&self, wallet_id: indy_sys::WalletHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
 
         trace!("create_payment_address calling indy_create_key");
         let mut config_json: String = config.to_json().unwrap();
@@ -51,7 +52,7 @@ impl CryptoAPI for CryptoSdk {
     /**
         for consumers that cannot have blocking calls, this method indy_create_key asynchronously
     */
-    fn indy_create_key_async<F: 'static>(&self, wallet_id: i32, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+    fn indy_create_key_async<F: 'static>(&self, wallet_id: indy_sys::WalletHandle, config: PaymentAddressConfig, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
 
         trace!("create_payment_address calling indy_create_key");
         let mut config_json: String = config.to_json().unwrap();
@@ -67,7 +68,7 @@ impl CryptoAPI for CryptoSdk {
 
     fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(
         &self,
-        wallet_handle: IndyHandle,
+        wallet_handle: indy_sys::WalletHandle,
         verkey: String,
         message: String,
         mut cb: F

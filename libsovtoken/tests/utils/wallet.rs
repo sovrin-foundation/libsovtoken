@@ -4,6 +4,7 @@
 
 extern crate indyrs as indy;
 extern crate sovtoken;
+extern crate indy_sys;
 
 use self::indy::wallet;
 use self::sovtoken::utils::random::rand_string;
@@ -37,14 +38,14 @@ assert!(wallet.handle > 0);
 */
 pub struct Wallet {
     name: String,
-    pub handle: i32,
+    pub handle: indy_sys::WalletHandle,
 }
 
 impl Wallet {
     /* constructors */
     pub fn new() -> Wallet {
         let wallet_name: String = rand_string(20);
-        let mut wallet = Wallet { name: wallet_name, handle: -1 };
+        let mut wallet = Wallet { name: wallet_name, handle: indy_sys::WalletHandle(-1) };
         wallet.create();
         wallet.open();
 
@@ -52,7 +53,7 @@ impl Wallet {
     }
 
     pub fn from_name(name: &str) -> Wallet {
-        let mut wallet = Wallet { name: name.to_string(), handle: -1 };
+        let mut wallet = Wallet { name: name.to_string(), handle: indy_sys::WalletHandle(-1) };
         wallet.create();
         wallet.open();
 
@@ -67,7 +68,7 @@ impl Wallet {
 
 
     /* private instance methods for open/create/etc...*/
-    fn open(&mut self) -> i32 {
+    fn open(&mut self) -> indy_sys::WalletHandle {
         let config: String = Wallet::create_wallet_config(&self.name);
         let handle = wallet::open_wallet(&config, USEFUL_CREDENTIALS).wait().unwrap();
         self.handle = handle;

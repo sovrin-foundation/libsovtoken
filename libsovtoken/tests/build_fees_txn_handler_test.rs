@@ -5,7 +5,7 @@ extern crate libc;
 extern crate sovtoken;
 extern crate indyrs as indy;                     // lib-sdk project
 extern crate bs58;
-
+extern crate indy_sys;
 
 use libc::c_char;
 use std::ffi::CString;
@@ -23,7 +23,7 @@ use utils::wallet::Wallet;
 use utils::payment::fees;
 
 // ***** HELPER METHODS *****
-fn build_set_fees(wallet_handle: i32, did: Option<&str>, fees_json: &str) -> Result<String, ErrorCode> {
+fn build_set_fees(wallet_handle: indy_sys::WalletHandle, did: Option<&str>, fees_json: &str) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let did = did.map(ffi_support::c_pointer_from_str).unwrap_or(std::ptr::null());
@@ -34,7 +34,7 @@ fn build_set_fees(wallet_handle: i32, did: Option<&str>, fees_json: &str) -> Res
     return ResultHandler::one(ErrorCode::from(ec), receiver);
 }
 
-fn build_get_fees(wallet_handle: i32, did: Option<&str>) -> Result<String, ErrorCode> {
+fn build_get_fees(wallet_handle: indy_sys::WalletHandle, did: Option<&str>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let did = did.map(ffi_support::c_pointer_from_str).unwrap_or(std::ptr::null());
@@ -46,7 +46,7 @@ fn build_get_fees(wallet_handle: i32, did: Option<&str>) -> Result<String, Error
 
 // ***** HELPER TEST DATA  *****
 const COMMAND_HANDLE: i32 = 10;
-const WALLET_ID: i32 = 10;
+const WALLET_ID: indy_sys::WalletHandle = indy_sys::WalletHandle(10);
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 const CB: Option<extern fn(command_handle_: i32, err: i32, mint_req_json: *const c_char) -> i32> = Some(utils::callbacks::empty_callback);
 static FAKE_DID: &'static str = "Enfru5LNlA2CnA5n4Hfze";

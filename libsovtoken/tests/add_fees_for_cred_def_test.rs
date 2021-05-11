@@ -6,6 +6,7 @@ extern crate serde_derive;
 extern crate lazy_static;
 extern crate indyrs as indy;
 extern crate sovtoken;
+extern crate indy_sys;
 
 use std::{thread, time};
 use std::collections::HashMap;
@@ -22,7 +23,7 @@ fn send_cred_def_with_fees(did: &str,
                            name: &str,
                            version: &str,
                            attrs: &str,
-                           wallet_handle: i32,
+                           wallet_handle: indy_sys::WalletHandle,
                            pool_handle: i32,
                            inputs_json: &str,
                            outputs_json: &str,
@@ -59,7 +60,7 @@ fn create_schema_json(did: &str,
                       name: &str,
                       version: &str,
                       attrs: &str,
-                      wallet_handle: i32,
+                      wallet_handle: indy_sys::WalletHandle,
                       pool_handle: i32) -> String {
     let (schema_id, schema_json) = indy::anoncreds::issuer_create_schema(did, name, version, attrs).wait().unwrap();
     let schema_req = indy::ledger::build_schema_request(did, &schema_json).wait().unwrap();

@@ -1,5 +1,6 @@
 extern crate indyrs as indy;
 extern crate serde_json;
+extern crate indy_sys;
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -13,7 +14,7 @@ use utils;
 
 use indy::future::Future;
 
-pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: i32, trustee_dids: &Vec<&str>) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
+pub fn mint_tokens(cfg: HashMap<String, u64>, pool_handle: i32, wallet_handle: indy_sys::WalletHandle, trustee_dids: &Vec<&str>) -> Result<utils::parse_mint_response::ParseMintResponse, ErrorCode> {
     let vec_outputs:Vec<HashMap<&str, serde_json::Value>> = cfg.iter().map(|(pa, am)| {
         let mut map = HashMap::new();
         map.insert("recipient", serde_json::Value::String(pa.clone()));

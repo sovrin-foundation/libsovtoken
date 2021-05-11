@@ -6,6 +6,7 @@ extern crate sovtoken;
 extern crate indyrs as indy;
 #[macro_use]
 extern crate lazy_static;
+extern crate indy_sys;
 
 pub mod utils;
 
@@ -14,11 +15,11 @@ use sovtoken::utils::test::callbacks;
 use sovtoken::logic::parsers::common::TXO;
 use sovtoken::utils::ffi_support::c_pointer_from_string;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
-use sovtoken::{ErrorCode, IndyHandle};
+use sovtoken::ErrorCode;
 use utils::wallet::Wallet;
 
 
-fn call_add_request_fees(wallet_handle: IndyHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
+fn call_add_request_fees(wallet_handle: indy_sys::WalletHandle, inputs: String, outputs: String, extra: Option<String>, request: String) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) =  callbacks::cb_ec_string();
 
     let did = "mydid1";

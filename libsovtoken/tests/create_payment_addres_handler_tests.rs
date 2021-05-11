@@ -12,6 +12,7 @@ extern crate libc;
 
 extern crate indyrs as indy;                      // lib-sdk project
 extern crate sovtoken;
+extern crate indy_sys;
 
 use std::ptr;
 use std::ffi::CString;
@@ -25,7 +26,7 @@ use sovtoken::ErrorCode;
 mod utils;
 
 // ***** HELPER TEST DATA  *****
-const WALLET_ID: i32 = 99;
+const WALLET_ID: indy_sys::WalletHandle = indy_sys::WalletHandle(99);
 const COMMAND_HANDLE: i32 = 1;
 const TIMEOUT_SECONDS: u64 = 20;
 static INVALID_CONFIG_JSON: &'static str = r#"{ "horrible" : "only on tuedays"}"#;

@@ -34,9 +34,9 @@ impl ClosureHandler {
         (receiver, command_handle, cb)
     }
 
-    pub fn convert_cb_ec(closure: Box<FnMut(ErrorCode) + Send>) -> (IndyHandle, Option<ResponseEmptyCB>) {
+    pub fn convert_cb_ec(closure: Box<dyn FnMut(ErrorCode) + Send>) -> (IndyHandle, Option<ResponseEmptyCB>) {
         lazy_static! {
-            static ref CALLBACKS: Mutex<HashMap<i32, Box<FnMut(ErrorCode) + Send>>> = Default::default();
+            static ref CALLBACKS: Mutex<HashMap<i32, Box<dyn FnMut(ErrorCode) + Send>>> = Default::default();
         }
         extern "C" fn _callback(command_handle: IndyHandle, err: i32) {
             let mut callbacks = CALLBACKS.lock().unwrap();
@@ -63,9 +63,9 @@ impl ClosureHandler {
         (receiver, command_handle, cb)
     }
 
-    pub fn convert_cb_ec_string(closure: Box<FnMut(ErrorCode, String) + Send>) -> (IndyHandle, Option<ResponseStringCB>) {
+    pub fn convert_cb_ec_string(closure: Box<dyn FnMut(ErrorCode, String) + Send>) -> (IndyHandle, Option<ResponseStringCB>) {
         lazy_static! {
-            static ref CALLBACKS: Mutex<HashMap<i32, Box<FnMut(ErrorCode, String) + Send>>> = Default::default();
+            static ref CALLBACKS: Mutex<HashMap<i32, Box<dyn FnMut(ErrorCode, String) + Send>>> = Default::default();
         }
 
         extern "C" fn _callback(command_handle: IndyHandle, err: i32, c_str: *const c_char) {
@@ -94,9 +94,9 @@ impl ClosureHandler {
         (receiver, command_handle, cb)
     }
 
-    pub fn convert_cb_ec_slice(closure: Box<FnMut(ErrorCode, Vec<u8>) + Send>) -> (IndyHandle, Option<ResponseSliceCB>) {
+    pub fn convert_cb_ec_slice(closure: Box<dyn FnMut(ErrorCode, Vec<u8>) + Send>) -> (IndyHandle, Option<ResponseSliceCB>) {
         lazy_static! {
-            static ref CALLBACKS: Mutex<HashMap<i32, Box<FnMut(ErrorCode, Vec<u8>) + Send>>> = Default::default();
+            static ref CALLBACKS: Mutex<HashMap<i32, Box<dyn FnMut(ErrorCode, Vec<u8>) + Send>>> = Default::default();
         }
 
         extern "C" fn _callback(command_handle: IndyHandle, err: i32, raw: *const u8, len: u32) {
