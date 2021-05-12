@@ -11,13 +11,13 @@ env:
     OSNAME: ""
     MAKE_GOALS: ""
     CARGO_TARGET_DIR: "target"
+    LIBINDY_VERSION: "1.16.0"
     # optional
     ARTIFACTS: ""
     INDY_POOL_LOG_LEVEL: ""
     INDY_POOL_DIRS: "/tmp /var/lib/indy/sandbox /var/log/indy/sandbox"
 
 phases:
-
   pre_build:
     commands:
       - echo Pre-Build started on `date`
@@ -60,4 +60,4 @@ artifacts:
   # https://forums.aws.amazon.com/thread.jspa?threadID=250742
   base-directory: /tmp/artifacts
   files:
-      - '**/*'
+    - "**/*"
