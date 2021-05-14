@@ -32,7 +32,7 @@ def windowsOSPipeline = {
                     bat 'unzip prebuilt.zip -d prebuilt'
 
                     String mainVersion = LIBINDY_VERSION.split('-').first()
-                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/$LIBINDY_VERSION/libindy_${mainVersion}.zip\""
+                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/1.16.0/libindy_1.16.0.zip\""
                     bat 'unzip indy.zip -d indy'
                 }
 
