@@ -21,7 +21,7 @@ RUN cd /tmp \
 # need for libsodium to be reachable via pkg-config (sodiumoxide uses it)
 ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH # TODO ??? is it really needed
 
-ENV LIBINDY_VERSION=1.14.0
+ENV LIBINDY_VERSION=1.16.0
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
