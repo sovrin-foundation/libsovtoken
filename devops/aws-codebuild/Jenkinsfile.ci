@@ -32,7 +32,7 @@ def windowsOSPipeline = {
                     bat 'unzip prebuilt.zip -d prebuilt'
 
                     String mainVersion = LIBINDY_VERSION.split('-').first()
-                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/1.16.0/libindy_1.16.0.zip\""
+                    bat "wget -O indy.zip \"https://repo.sovrin.org/windows/libindy/$LIBINDY_STREAM/$LIBINDY_VERSION/libindy_${mainVersion}.zip\""
                     bat 'unzip indy.zip -d indy'
                 }
 
@@ -143,7 +143,7 @@ pipelineWrapper({
 
                         stage("$osname: Resolve image tag") {
                             def _imgVersion = utils.shStdout("OSNAME=$osname make -C devops image_lst_ci_version -s")
-                            buildImageTag = "${_imgVersion}-${osname}-ci"
+                            buildImageTag = "${_imgVersion}-${osname}-ci-12345"
                             logger.info("CI docker image tag: $buildImageTag")
                         }
 
@@ -155,7 +155,6 @@ pipelineWrapper({
                             buildspec = 'devops/aws-codebuild/buildspec.ci.yml'
                             envv = [
                                     [name: 'OSNAME', value: osname],
-                                    [name: 'LIBINDY_VERSION', value: '1.16.0'],
                                     [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
                                     [name: 'INDY_POOL_LOG_LEVEL', value: '10'],
                                     [name: 'INDY_POOL_DIRS', value: '/tmp /var/lib/indy/sandbox /var/log/indy/sandbox'],
