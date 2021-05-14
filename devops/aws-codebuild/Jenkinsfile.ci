@@ -155,6 +155,7 @@ pipelineWrapper({
                             buildspec = 'devops/aws-codebuild/buildspec.ci.yml'
                             envv = [
                                     [name: 'OSNAME', value: osname],
+                                    [name: 'LIBINDY_VERSION', value: '1.16.0'],
                                     [name: 'MAKE_GOALS', value: "${goals.join(' ')}"],
                                     [name: 'INDY_POOL_LOG_LEVEL', value: '10'],
                                     [name: 'INDY_POOL_DIRS', value: '/tmp /var/lib/indy/sandbox /var/log/indy/sandbox'],
