@@ -8,6 +8,7 @@ use logic::output::Outputs;
 use serde_json;
 use utils::ffi_support::{string_from_char_ptr, c_pointer_from_string, c_pointer_from_str};
 use logic::indy_sdk_api::crypto_api::CryptoSdk;
+use indy_sys;
 use utils::constants::txn_types::XFER_PUBLIC;
 use utils::constants::txn_fields::FEES;
 use utils::constants::general::JsonCallbackUnwrapped;
@@ -90,12 +91,12 @@ pub fn validate_type_not_transfer(request_json_map: &SerdeMap) -> Result<(), Err
 }
 
 pub fn add_fees_to_request_and_serialize(
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     inputs: Inputs,
     outputs: Outputs,
     extra: Option<Extra>,
     request_json_map: SerdeMap,
-    cb: Box<Fn(Result<String, ErrorCode>) + Send + Sync>
+    cb: Box<dyn Fn(Result<String, ErrorCode>) + Send + Sync>
 ) -> Result<(), ErrorCode> {
     trace!("logic::add_request_fees::add_fees_to_request_and_serialize >> wallet_handle: {:?}, inputs: {:?}, outputs: {:?}, request_json_map: {:?}", wallet_handle, secret!(&inputs), secret!(&outputs), secret!(&request_json_map));
     let res = add_fees(wallet_handle, inputs, outputs, extra, request_json_map, Box::new(move |request_json_map_updated|{
@@ -129,7 +130,7 @@ pub fn closure_cb_response(command_handle: i32, cb: JsonCallbackUnwrapped) -> im
     KEEP all public methods above
 */
 
-fn add_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<Extra>, request_json_map: SerdeMap, cb: Box<Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+fn add_fees(wallet_handle: indy_sys::WalletHandle, inputs: Inputs, outputs: Outputs, extra: Option<Extra>, request_json_map: SerdeMap, cb: Box<dyn Fn(Result<SerdeMap, ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
     let txn_serialized = serialize_signature(request_json_map.clone().into())?;
     let mut hasher = Sha256::default();
     hasher.input(txn_serialized.as_bytes());
@@ -160,7 +161,7 @@ fn serialize_request_with_fees(request_json_map_with_fees: SerdeMap) -> Result<S
     return Ok(serialized_request_with_fees);
 } 
 
-fn signed_fees(wallet_handle: i32, inputs: Inputs, outputs: Outputs, extra: Option<Extra>, txn_digest: &Option<String>, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+fn signed_fees(wallet_handle: indy_sys::WalletHandle, inputs: Inputs, outputs: Outputs, extra: Option<Extra>, txn_digest: &Option<String>, cb: Box<dyn Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
     let fees = XferPayload::new(inputs, outputs, extra);
     fees.sign_fees(&CryptoSdk{}, wallet_handle, txn_digest, cb)?;
     Ok(())

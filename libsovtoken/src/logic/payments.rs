@@ -4,6 +4,7 @@ use ErrorCode;
 use logic::config::payment_address_config::PaymentAddressConfig;
 use logic::indy_sdk_api::crypto_api::{CryptoAPI};
 use logic::address;
+use indy_sys;
 
 
 // ------------------------------------------------------------------
@@ -31,7 +32,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
         the format of the return is:
             pay:sov:{32 byte address}{4 byte checksum}
     */
-    pub fn create_payment_address(&self, wallet_id: i32, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+    pub fn create_payment_address(&self, wallet_id: indy_sys::WalletHandle, config: PaymentAddressConfig) -> Result<String, ErrorCode> {
         trace!("calling self.injected_api.indy_create_key");
         let verkey = self.injected_api.indy_create_key(wallet_id, config)?;
 
@@ -45,7 +46,7 @@ impl<T: CryptoAPI> CreatePaymentHandler<T> {
             pay:sov:{32 byte address}{4 byte checksum}
     */
     pub fn create_payment_address_async<F: 'static>(&self,
-                                                    wallet_id: i32,
+                                                    wallet_id: indy_sys::WalletHandle,
                                                     config: PaymentAddressConfig,
                                                     mut cb: F) -> ErrorCode where F: FnMut(String, ErrorCode) + Send {
 
@@ -95,22 +96,22 @@ mod payments_tests {
     struct CreatePaymentSDKMockHandler {}
 
     impl CryptoAPI for CreatePaymentSDKMockHandler {
-        fn indy_create_key(&self, _wallet_id: i32, _config: PaymentAddressConfig) -> Result<String, ErrorCode> {
+        fn indy_create_key(&self, _wallet_id: indy_sys::WalletHandle, _config: PaymentAddressConfig) -> Result<String, ErrorCode> {
             return Ok(gen_random_base58_verkey());
         }
 
-        fn indy_crypto_sign<F>(&self, _: i32, _: String, _: String, _: F) -> ErrorCode {
+        fn indy_crypto_sign<F>(&self, _: indy_sys::WalletHandle, _: String, _: String, _: F) -> ErrorCode {
             return ErrorCode::CommonInvalidState;
         }
 
-        fn indy_create_key_async<F: 'static>(&self, _wallet_id: i32, _config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+        fn indy_create_key_async<F: 'static>(&self, _wallet_id: indy_sys::WalletHandle, _config: PaymentAddressConfig, mut closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
             closure(ErrorCode::Success, gen_random_base58_verkey());
             return ErrorCode::Success;
         }
     }
 
 
-    static WALLET_ID: i32 = 10;
+    static WALLET_ID: indy_sys::WalletHandle = indy_sys::WalletHandle(10);
 
     fn validate_address(address: String) {
         // got our result, if its correct, it will look something like this:

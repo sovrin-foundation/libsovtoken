@@ -14,8 +14,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
 
-use IndyHandle;
 use ErrorCode;
+use indy_sys;
 
 use logic::address;
 use logic::indy_sdk_api::crypto_api::CryptoAPI;
@@ -43,7 +43,7 @@ use utils::txn_author_agreement::{TaaAcceptance, extract_taa_acceptance_from_ext
  *      use sovtoken::logic::indy_sdk_api::crypto_api::CryptoSdk;
  *
  *      // Need an actual wallet_handle
- *      let wallet_handle = 1;
+ *      let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
  *      let address_input = String::from("pay:sov:SBD8oNfQNm1aEGE6KkYI1khYEGqG5zmEqrEw7maqKitIs121");
  *      let address_output = String::from("pay:sov:FekbDoBkdsj3nH2a2nNhhedoPju2UmyKrr1ZzMZGT0KENbvp");
  *      let inputs = vec![Input::new(address_input, 1)];
@@ -89,7 +89,7 @@ impl XferPayload {
     }
 
     // TODO: Add request hash to include while signature
-    pub fn sign_fees<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: IndyHandle, txn_digest: &Option<String>, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    pub fn sign_fees<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: indy_sys::WalletHandle, txn_digest: &Option<String>, cb: Box<dyn Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         trace!("logic::xfer_payload::xfer_payload::sign_fees >> wallet_handle: {:?}", wallet_handle);
         if self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
@@ -107,7 +107,7 @@ impl XferPayload {
      * [`Input`]: Input
      * [`Inputs`]: Inputs
      */
-    pub fn sign_transfer<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: IndyHandle, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    pub fn sign_transfer<A: CryptoAPI>(self, crypto_api: &'static A, wallet_handle: indy_sys::WalletHandle, cb: Box<dyn Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         trace!("logic::xfer_payload::xfer_payload::sign >> wallet_handle: {:?}", wallet_handle);
         if self.outputs.len() < 1 || self.inputs.len() < 1 {
             return Err(ErrorCode::CommonInvalidStructure);
@@ -115,7 +115,7 @@ impl XferPayload {
         self.sign(crypto_api, wallet_handle, &None, cb)
     }
 
-    fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: IndyHandle, txn_digest: &Option<String>, cb: Box<Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
+    fn sign<A: CryptoAPI>(mut self, crypto_api: &'static A, wallet_handle: indy_sys::WalletHandle, txn_digest: &Option<String>, cb: Box<dyn Fn(Result<(XferPayload, Option<TaaAcceptance>), ErrorCode>) + Send + Sync>) -> Result<(), ErrorCode> {
         for output in &mut self.outputs {
             output.recipient = address::unqualified_address_from_address(&output.recipient)?;
         }
@@ -167,7 +167,7 @@ impl XferPayload {
 }
 
 trait InputSigner<A: CryptoAPI> {
-    fn sign_inputs(crypto_api: &'static A, wallet_handle: IndyHandle, inputs: &Inputs, outputs: &Outputs, txn_digest: &Option<String>, extra: &Option<Extra>, taa_acceptance: &Option<TaaAcceptance>, cb: Box<Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
+    fn sign_inputs(crypto_api: &'static A, wallet_handle: indy_sys::WalletHandle, inputs: &Inputs, outputs: &Outputs, txn_digest: &Option<String>, extra: &Option<Extra>, taa_acceptance: &Option<TaaAcceptance>, cb: Box<dyn Fn(Result<HashMap<String, String>, ErrorCode>) + Send + Sync>)
                    -> Result<(), ErrorCode>
     {
         let inputs_result: Arc<Mutex<HashMap<String, String>>> = Default::default();
@@ -208,13 +208,13 @@ trait InputSigner<A: CryptoAPI> {
      */
     fn sign_input(
         crypto_api: &'static A,
-        wallet_handle: IndyHandle,
+        wallet_handle: indy_sys::WalletHandle,
         input: &Input,
         outputs: &Outputs,
         txn_digest: &Option<String>,
         extra: &Option<Extra>,
         taa_acceptance: &Option<TaaAcceptance>,
-        cb: Box<Arc<Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
+        cb: Box<Arc<dyn Fn(Result<String, ErrorCode>, String) + Send + Sync>>,
     ) -> Result<(), ErrorCode>
     {
         trace!("logic::xfer_payload::input_signer::sign_input >> input: {:?}, outputs: {:?}, wallet_handle {:?}", secret!(&input), secret!(&outputs), wallet_handle);
@@ -318,16 +318,16 @@ mod test_xfer_payload {
     struct CryptoApiHandler {}
 
     impl CryptoAPI for CryptoApiHandler {
-        fn indy_create_key(&self, _: IndyHandle, _: PaymentAddressConfig) -> Result<String, ErrorCode> {
+        fn indy_create_key(&self, _: indy_sys::WalletHandle, _: PaymentAddressConfig) -> Result<String, ErrorCode> {
             return Err(ErrorCode::CommonInvalidState);
         }
 
-        fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, _wallet_handle: IndyHandle, verkey: String, _message: String, mut cb: F) -> ErrorCode {
+        fn indy_crypto_sign<F: FnMut(Result<String, ErrorCode>) + 'static + Send>(&self, _wallet_handle: indy_sys::WalletHandle, verkey: String, _message: String, mut cb: F) -> ErrorCode {
             cb(Ok(verkey + "signed"));
             return ErrorCode::Success;
         }
 
-        fn indy_create_key_async<F: 'static>(&self, _wallet_id: i32, _config: PaymentAddressConfig, _closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+        fn indy_create_key_async<F: 'static>(&self, _wallet_id: indy_sys::WalletHandle, _config: PaymentAddressConfig, _closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
             return ErrorCode::CommonInvalidState;
         }
     }
@@ -355,7 +355,7 @@ mod test_xfer_payload {
     }
 
     fn sign_input_sync(input: &Input, outputs: &Outputs, extra: &Option<Extra>) -> Result<String, ErrorCode> {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (sender, receiver) = channel();
         let sender = Mutex::new(sender);
         let cb = move |result, _| {
@@ -376,7 +376,7 @@ mod test_xfer_payload {
     }
 
     fn sign_inputs_sync(inputs: &Inputs, outputs: &Outputs) -> Result<Vec<String>, ErrorCode> {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (sender, receiver) = channel();
         let sender = Mutex::new(sender);
         let cb = move |result| { sender.lock().unwrap().send(result).unwrap(); };
@@ -424,7 +424,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_payload_invalid_output_address() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (inputs, mut outputs) = inputs_outputs_valid_qualified();
         String::remove(&mut outputs[0].recipient, 5);
 
@@ -439,7 +439,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_payload_invalid_input_address() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (mut inputs, outputs) = inputs_outputs_valid_qualified();
         String::remove(&mut inputs[0].address, 13);
 
@@ -453,7 +453,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_payload_invalid_empty_inputs() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (_, outputs) = inputs_outputs_valid_qualified();
 
         let (sender, _receiver) = channel();
@@ -466,7 +466,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_payload_invalid_empty_outputs() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (inputs, _) = inputs_outputs_valid_qualified();
 
         let (sender, _receiver) = channel();
@@ -479,7 +479,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_fees_valid_empty_outputs() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (inputs, _) = inputs_outputs_valid_qualified();
 
         let (sender, _receiver) = channel();
@@ -492,7 +492,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_fees_valid_non_empty_outputs() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (inputs, outputs) = inputs_outputs_valid_qualified();
 
         let (sender, _receiver) = channel();
@@ -505,7 +505,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_fees_invalid_empty_inputs() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (_, outputs) = inputs_outputs_valid_qualified();
 
         let (sender, _receiver) = channel();
@@ -518,7 +518,7 @@ mod test_xfer_payload {
 
     #[test]
     fn sign_address_inputs_valid() {
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (inputs, outputs) = inputs_outputs_valid_qualified();
 
         // Question: Why are signatures dummy values?
@@ -554,7 +554,7 @@ mod test_xfer_payload {
     #[test]
     fn sign_multi_input_preserve_ordering() {
         let attempts = 5;
-        let wallet_handle = 1;
+        let wallet_handle: indy_sys::WalletHandle = indy_sys::WalletHandle(1);
         let (mut inputs, outputs) = inputs_outputs_valid_qualified();
         inputs.reverse();
 

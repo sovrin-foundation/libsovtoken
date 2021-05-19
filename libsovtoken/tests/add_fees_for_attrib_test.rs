@@ -3,6 +3,7 @@
 #[macro_use] extern crate lazy_static;
 extern crate indyrs as indy;
 extern crate sovtoken;
+extern crate indy_sys;
 
 use indy::future::Future;
 
@@ -200,7 +201,7 @@ pub fn build_and_submit_attrib_with_fees_double_spend() {
     assert_eq!(parsed_err.error_code, ErrorCode::PaymentSourceDoesNotExistError);
 }
 
-fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: i32, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, indy::IndyError> {
+fn _send_attrib_with_fees(did: &str, data: Option<&str>, wallet_handle: indy_sys::WalletHandle, pool_handle: i32, inputs: &str, outputs: &str) -> Result<String, indy::IndyError> {
     let attrib_req = indy::ledger::build_attrib_request(did, did,  None, data, None).wait().unwrap();
     let attrib_req_signed = indy::ledger::sign_request(wallet_handle, did, &attrib_req).wait().unwrap();
     let (attrib_req_with_fees, pm) = indy::payments::add_request_fees(wallet_handle, Some(did), &attrib_req_signed, inputs, outputs, None).wait().unwrap();

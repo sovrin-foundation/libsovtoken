@@ -7,7 +7,8 @@ use std::ffi::CString;
 use time;
 
 use logic::type_aliases::{ProtocolVersion, ReqId};
-use {IndyHandle, ErrorCode};
+use ErrorCode;
+use indy_sys;
 use utils::constants::general::PROTOCOL_VERSION;
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::json_conversion::JsonSerialize;
@@ -65,7 +66,7 @@ impl<T> Request<T>
             .map(|string| c_pointer_from_string(string));
     }
 
-    pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
+    pub fn multi_sign_request(wallet_handle: indy_sys::WalletHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
         let mut signed_req: String = req.to_string();
 
         for did in dids {

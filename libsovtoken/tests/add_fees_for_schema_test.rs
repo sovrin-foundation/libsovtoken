@@ -3,6 +3,7 @@
 #[macro_use] extern crate lazy_static;
 extern crate indyrs as indy;
 extern crate sovtoken;
+extern crate indy_sys;
 
 use std::{thread, time};
 use std::collections::HashMap;
@@ -19,7 +20,7 @@ fn send_schema_with_fees(did: &str,
                          name: &str,
                          version: &str,
                          attrs: &str,
-                         wallet_handle: i32,
+                         wallet_handle: indy_sys::WalletHandle,
                          pool_handle: i32,
                          inputs_json: &str,
                          outputs_json: &str,

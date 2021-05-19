@@ -5,6 +5,7 @@ use std::ptr::null;
 
 use indy_sys::ledger;
 use indy_sys::ResponseStringCB;
+use indy_sys;
 
 use utils::results::ResultHandler;
 use utils::callbacks::ClosureHandler;
@@ -70,7 +71,7 @@ impl Ledger {
     ///
     /// # Returns
     /// Signed request json.
-    pub fn multi_sign_request(wallet_handle: IndyHandle, submitter_did: &str, request_json: &str) -> Result<String, ErrorCode> {
+    pub fn multi_sign_request(wallet_handle: indy_sys::WalletHandle, submitter_did: &str, request_json: &str) -> Result<String, ErrorCode> {
         let (receiver, command_handle, cb) = ClosureHandler::cb_ec_string();
 
         let err = Ledger::_multi_sign_request(command_handle, wallet_handle, submitter_did, request_json, cb);
@@ -91,13 +92,13 @@ impl Ledger {
     ///
     /// # Returns
     /// Signed request json.
-    pub fn multi_sign_request_async<F: 'static>(wallet_handle: IndyHandle, submitter_did: &str, request_json: &str, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
+    pub fn multi_sign_request_async<F: 'static>(wallet_handle: indy_sys::WalletHandle, submitter_did: &str, request_json: &str, closure: F) -> ErrorCode where F: FnMut(ErrorCode, String) + Send {
         let (command_handle, cb) = ClosureHandler::convert_cb_ec_string(Box::new(closure));
 
         Ledger::_multi_sign_request(command_handle, wallet_handle, submitter_did, request_json, cb)
     }
 
-    fn _multi_sign_request(command_handle: IndyHandle, wallet_handle: IndyHandle, submitter_did: &str, request_json: &str, cb: Option<ResponseStringCB>) -> ErrorCode {
+    fn _multi_sign_request(command_handle: IndyHandle, wallet_handle: indy_sys::WalletHandle, submitter_did: &str, request_json: &str, cb: Option<ResponseStringCB>) -> ErrorCode {
         let submitter_did = c_str!(submitter_did);
         let request_json = c_str!(request_json);
 
