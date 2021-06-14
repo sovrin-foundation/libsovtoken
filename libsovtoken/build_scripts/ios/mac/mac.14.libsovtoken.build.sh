@@ -11,6 +11,7 @@ export WORK_DIR="${PWD}/../../../.macosbuild"
 export LIBSOV_DIR="${PWD}/../../.."
 export INDY_SDK_DIR=$WORK_DIR/sovtoken-indy-sdk
 export LIBS_DIR=$WORK_DIR/libs
+export OPENSSL_TARGETS="ios-sim-cross-x86_64 ios64-cross-arm64"
 
 mkdir -p ${WORK_DIR}
 mkdir -p ${LIBS_DIR}
@@ -48,7 +49,7 @@ build_crypto() {
 
     if [ ! -d $WORK_DIR/OpenSSL-for-iPhone/lib ]; then
         pushd $WORK_DIR/OpenSSL-for-iPhone
-            ./build-libssl.sh --version=$OPENSSL_VERSION --verbose-on-error
+            ./build-libssl.sh --version=$OPENSSL_VERSION --targets="$OPENSSL_TARGETS" --verbose-on-error
             export OPENSSL_LOCAL_CONFIG_DIR="$PWD/config"
         popd
     fi
