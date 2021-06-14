@@ -48,7 +48,7 @@ build_crypto() {
 
     if [ ! -d $WORK_DIR/OpenSSL-for-iPhone/lib ]; then
         pushd $WORK_DIR/OpenSSL-for-iPhone
-            ./build-libssl.sh --version=$OPENSSL_VERSION
+            ./build-libssl.sh --version=$OPENSSL_VERSION --verbose-on-error
             export OPENSSL_LOCAL_CONFIG_DIR="$PWD/config"
         popd
     fi
