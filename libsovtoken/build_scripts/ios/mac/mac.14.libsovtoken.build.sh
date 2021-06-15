@@ -38,6 +38,8 @@ extract_arch() {
     case $1 in
         aarch64-apple-ios) echo "arm64" ;;
         x86_64-apple-ios) echo "x86_64" ;;
+        ios-sim-cross-x86_64) echo "x86_64" ;;
+        ios64-cross-arm64) echo "arm64" ;;
         \?) exit 1
     esac
 }
@@ -50,27 +52,18 @@ build_crypto() {
     if [ ! -d $WORK_DIR/OpenSSL-for-iPhone/lib ]; then
         pushd $WORK_DIR/OpenSSL-for-iPhone
             ./build-libssl.sh --version=$OPENSSL_VERSION --targets="$OPENSSL_TARGETS" --verbose-on-error
-            export OPENSSL_LOCAL_CONFIG_DIR="$PWD/config"
+            # export OPENSSL_LOCAL_CONFIG_DIR="$PWD/config"
         popd
     fi
-}
-
-extract_architectures() {
-    FILE_PATH=$1
-    LIB_FILE_NAME=$2
-    LIB_NAME=$3
-
-    pushd $LIBS_DIR
-        for TARGET in ${IOS_TARGETS[*]}; do
+    for TARGET in ${IOS_TARGETS[*]}; do
+        pushd $WORK_DIR/OpenSSL-for-iPhone
             ARCH=$(extract_arch $TARGET)
-            DESTINATION=${LIB_NAME}/${ARCH}
-
-            mkdir -p $DESTINATION
-            lipo -extract ${ARCH} $FILE_PATH -o $DESTINATION/$LIB_FILE_NAME-fat.a
-            lipo $DESTINATION/$LIB_FILE_NAME-fat.a -thin $ARCH -output $DESTINATION/$LIB_FILE_NAME.a
-            rm $DESTINATION/$LIB_FILE_NAME-fat.a
-        done
-    popd
+            mkdir -p $LIBS_DIR/openssl/$ARCH/lib
+            lipo -thin $ARCH -o $LIBS_DIR/openssl/$ARCH/lib/libssl.a ./lib/libssl.a
+            lipo -thin $ARCH -o $LIBS_DIR/openssl/$ARCH/lib/libcrypto.a ./lib/libcrypto.a
+            cp -r bin include $LIBS_DIR/openssl/$ARCH
+        popd
+    done
 }
 
 checkout_indy_sdk() {
@@ -86,14 +79,22 @@ checkout_indy_sdk() {
 
 build_libindy() {
     pushd $INDY_SDK_DIR/libindy
-        cargo lipo --release --targets="aarch64-apple-ios,x86_64-apple-ios"
+        for TARGET in ${IOS_TARGETS[*]}
+        do
+            ARCH=$(extract_arch $TARGET)
+            mkdir -p $LIBS_DIR/indy/$ARCH
+
+            export OPENSSL_DIR=$LIBS_DIR/openssl/$ARCH
+            cargo lipo --release --targets=$TARGET
+
+            cp -v $INDY_SDK_DIR/libindy/target/$TARGET/release/libindy.a $LIBS_DIR/indy/$ARCH/libindy.a
+        done
     popd
 }
 
 copy_libindy_architectures() {
     for TARGET in ${IOS_TARGETS[*]}; do
         ARCH=$(extract_arch $TARGET)
-
         mkdir -p $LIBS_DIR/indy/$ARCH
         cp -v $INDY_SDK_DIR/libindy/target/$TARGET/release/libindy.a $LIBS_DIR/indy/$ARCH/libindy.a
     done
@@ -104,7 +105,9 @@ build_libsovtoken() {
         to_combine=""
         for TARGET in ${IOS_TARGETS[*]}
         do
-            export LIBINDY_DIR=${LIBS_DIR}/indy/$(extract_arch $TARGET)
+            ARCH=$(extract_arch $TARGET)
+            export LIBINDY_DIR=${LIBS_DIR}/indy/$ARCH
+            export OPENSSL_DIR=$LIBS_DIR/openssl/$ARCH
             cargo lipo --release --verbose --targets="${TARGET}"
 
             mv ./target/$TARGET/release/libsovtoken.a ./target/$TARGET/libsovtoken-unstripped.a
@@ -129,9 +132,6 @@ build_libsovtoken() {
 
 prepare_openssl_dir
 build_crypto
-
-extract_architectures $WORK_DIR/OpenSSL-for-iPhone/lib/libssl.a libssl openssl
-extract_architectures $WORK_DIR/OpenSSL-for-iPhone/lib/libcrypto.a libcrypto openssl
 
 checkout_indy_sdk
 build_libindy
