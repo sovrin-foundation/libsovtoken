@@ -5,7 +5,7 @@ extern crate libc;
 extern crate sovtoken;
 extern crate indyrs as indy;                     // lib-sdk project
 extern crate bs58;
-
+extern crate indy_sys;
 
 use libc::c_char;
 use std::ffi::CString;
@@ -23,7 +23,7 @@ use utils::wallet::Wallet;
 use utils::payment::fees;
 
 // ***** HELPER METHODS *****
-fn build_set_fees(wallet_handle: i32, did: Option<&str>, fees_json: &str) -> Result<String, ErrorCode> {
+fn build_set_fees(wallet_handle: indy_sys::WalletHandle, did: Option<&str>, fees_json: &str) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let did = did.map(ffi_support::c_pointer_from_str).unwrap_or(std::ptr::null());
@@ -34,7 +34,7 @@ fn build_set_fees(wallet_handle: i32, did: Option<&str>, fees_json: &str) -> Res
     return ResultHandler::one(ErrorCode::from(ec), receiver);
 }
 
-fn build_get_fees(wallet_handle: i32, did: Option<&str>) -> Result<String, ErrorCode> {
+fn build_get_fees(wallet_handle: indy_sys::WalletHandle, did: Option<&str>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let did = did.map(ffi_support::c_pointer_from_str).unwrap_or(std::ptr::null());
@@ -46,10 +46,12 @@ fn build_get_fees(wallet_handle: i32, did: Option<&str>) -> Result<String, Error
 
 // ***** HELPER TEST DATA  *****
 const COMMAND_HANDLE: i32 = 10;
-const WALLET_ID: i32 = 10;
+const WALLET_ID: indy_sys::WalletHandle = indy_sys::WalletHandle(10);
 static INVALID_OUTPUT_JSON: &'static str = r#"{"totally" : "Not a Number", "bobby" : "DROP ALL TABLES"}"#;
 const CB: Option<extern fn(command_handle_: i32, err: i32, mint_req_json: *const c_char) -> i32> = Some(utils::callbacks::empty_callback);
 static FAKE_DID: &'static str = "Enfru5LNlA2CnA5n4Hfze";
+static DID: &'static str = "VsKV7grR1BUE29mG2Fm2kX";
+static FULLY_QUALIFIED_DID: &'static str = "did:sov:VsKV7grR1BUE29mG2Fm2kX";
 
 
 // the build_fees_txn_handler requires a callback and this test ensures that we
@@ -115,6 +117,25 @@ fn add_fees_json() {
 }
 
 #[test]
+fn add_fees_fully_qualified_did_json() {
+    let fees = json!({
+        "3": 6,
+        "20001": 12
+    });
+    let expected_operation = json!({
+        "type": "20000",
+        "fees": fees,
+    });
+
+    let fees_request = build_set_fees(WALLET_ID, Some(FULLY_QUALIFIED_DID), &fees.to_string()).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&fees_request).unwrap();
+
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!(DID, request_value["identifier"].as_str().unwrap());
+}
+
+#[test]
 fn build_get_fees_req() {
     let expected_operation = json!({
         "type": "20001",
@@ -126,6 +147,20 @@ fn build_get_fees_req() {
     let request_value: serde_json::value::Value = serde_json::from_str(&get_fees_request).unwrap();
 
     assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+}
+
+#[test]
+fn build_get_fees_req_for_fully_qualified_did() {
+    let expected_operation = json!({
+        "type": "20001",
+    });
+
+    let get_fees_request = build_get_fees(WALLET_ID, Some(FULLY_QUALIFIED_DID)).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&get_fees_request).unwrap();
+
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!(DID, request_value["identifier"].as_str().unwrap());
 }
 
 #[test]

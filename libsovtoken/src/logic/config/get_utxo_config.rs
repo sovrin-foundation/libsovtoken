@@ -9,6 +9,7 @@ use logic::address::strip_qualifier_from_address;
 use logic::request::Request;
 use utils::constants::txn_types::GET_UTXO;
 use logic::address::verkey_from_unqualified_address;
+use logic::did::Did;
 
 /**
  *  Json config to customize [`build_get_utxo_txn_handler`]
@@ -28,6 +29,7 @@ impl GetUtxoOperationRequest {
     pub fn new(address : String, from: Option<i64>) -> Request<GetUtxoOperationRequest> {
         let unqualified_address: String = strip_qualifier_from_address(&address);
         let identifier = verkey_from_unqualified_address(&unqualified_address).ok();
+        let identifier = identifier.map(|identifier_| Did::new(identifier_));
         let req = GetUtxoOperationRequest {
             address : unqualified_address,
             req_type : GET_UTXO.to_string(),

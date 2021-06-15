@@ -10,6 +10,7 @@ extern crate serde_json;
 extern crate log;
 #[macro_use]
 extern crate lazy_static;
+extern crate indy_sys;
 
 use libc::c_char;
 use std::ptr;
@@ -17,7 +18,7 @@ use std::ffi::CString;
 
 use indy::future::Future;
 
-use sovtoken::{ErrorCode, IndyHandle};
+use sovtoken::ErrorCode;
 use sovtoken::utils::ffi_support::{str_from_char_ptr, c_pointer_from_str};
 use sovtoken::utils::constants::txn_types::MINT_PUBLIC;
 use sovtoken::utils::constants::txn_fields::OUTPUTS;
@@ -35,7 +36,7 @@ use utils::parse_mint_response::ParseMintResponse;
 use utils::setup::{Setup, SetupConfig};
 
 // ***** HELPER METHODS *****
-fn build_mint_req(wallet_handle: IndyHandle, did: Option<&str>, outputs: &str, extra: Option<&str>) -> Result<String, ErrorCode> {
+fn build_mint_req(wallet_handle: indy_sys::WalletHandle, did: Option<&str>, outputs: &str, extra: Option<&str>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let did = did.map(c_pointer_from_str).unwrap_or(std::ptr::null());
@@ -65,7 +66,7 @@ static VALID_OUTPUT_JSON: &'static str = r#"[{"recipient":"pay:sov:dctKSXBbv2My3
 // receive an error when no callback is provided
 #[test]
 fn errors_with_no_call_back() {
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), ptr::null(), None);
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, indy_sys::WalletHandle(1), ptr::null(), ptr::null(), ptr::null(), None);
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Callback for 'build_mint_txn_handler'");
 }
 
@@ -80,7 +81,7 @@ fn errors_with_no_outputs_json() {
         return ErrorCode::Success as i32;
     }
 
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), ptr::null(), ptr::null(), Some(cb_no_json));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, indy_sys::WalletHandle(1), ptr::null(), ptr::null(), ptr::null(), Some(cb_no_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting outputs_json for 'build_mint_txn_handler'");
     unsafe { assert!(!CALLBACK_CALLED) }
 }
@@ -98,7 +99,7 @@ fn errors_with_invalid_outputs_json() {
 
     let outputs_str = CString::new(INVALID_OUTPUT_JSON).unwrap();
     let outputs_str_ptr = outputs_str.as_ptr();
-    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, 1, ptr::null(), outputs_str_ptr, ptr::null(), Some(cb_invalid_json));
+    let return_error = sovtoken::api::build_mint_txn_handler(COMMAND_HANDLE, indy_sys::WalletHandle(1), ptr::null(), outputs_str_ptr, ptr::null(), Some(cb_invalid_json));
     assert_eq!(return_error, ErrorCode::CommonInvalidStructure as i32, "Expecting Valid JSON for 'build_mint_txn_handler'");
     unsafe { assert!(!CALLBACK_CALLED) }
 }
@@ -135,7 +136,7 @@ fn valid_output_json() {
     let outputs_str_ptr = outputs_str.as_ptr();
     let return_error = sovtoken::api::build_mint_txn_handler(
         COMMAND_HANDLE,
-        1,
+        indy_sys::WalletHandle(1),
         did,
         outputs_str_ptr,
         ptr::null(),
@@ -146,6 +147,44 @@ fn valid_output_json() {
     unsafe {
         assert!(CALLBACK_CALLED);
     }
+}
+
+#[test]
+pub fn build_mint_txn_works_for_sov_fully_qualified_did() {
+    let wallet = Wallet::new();
+
+    let expected_operation = json!({
+        "type": "10000",
+        "outputs": [{
+            "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "amount":10
+        }],
+    });
+
+    let mint_req = build_mint_req(wallet.handle, Some("did:sov:VsKV7grR1BUE29mG2Fm2kX"), VALID_OUTPUT_JSON, None, ).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&mint_req).unwrap();
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!("VsKV7grR1BUE29mG2Fm2kX", request_value["identifier"].as_str().unwrap());
+}
+
+#[test]
+pub fn build_mint_txn_works_for_other_fully_qualified_did() {
+    let wallet = Wallet::new();
+
+    let expected_operation = json!({
+        "type": "10000",
+        "outputs": [{
+            "address": "dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q",
+            "amount":10
+        }],
+    });
+
+    let mint_req = build_mint_req(wallet.handle, Some("did:other:VsKV7grR1BUE29mG2Fm2kX"), VALID_OUTPUT_JSON, None, ).unwrap();
+
+    let request_value: serde_json::value::Value = serde_json::from_str(&mint_req).unwrap();
+    assert_eq!(&expected_operation, request_value.get("operation").unwrap());
+    assert_eq!("did:other:VsKV7grR1BUE29mG2Fm2kX", request_value["identifier"].as_str().unwrap());
 }
 
 #[test]

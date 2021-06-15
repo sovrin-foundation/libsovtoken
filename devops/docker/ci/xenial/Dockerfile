@@ -1,4 +1,4 @@
-FROM sovrin/libsovtoken:base-xenial-0.39.0
+FROM sovrin/libsovtoken:base-xenial-0.43.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG LIBINDY_CRYPTO_VERSION
@@ -13,14 +13,14 @@ USER root
 
 # python env necessary for indy-node
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	    supervisor \
-	    python3.5 \
-	    python3-pip \
-	    python-setuptools \
+    supervisor \
+    python3.5 \
+    python3-pip \
+    python-setuptools \
     && pip3 install -U \
-	    setuptools \
-        'pip<10.0.0' \
-        setuptools \
+    setuptools \
+    'pip<10.0.0' \
+    setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -35,19 +35,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #         or python3-rocksdb are not specified here)
 ENV LIBINDY_CRYPTO_VERSION ${LIBINDY_CRYPTO_VERSION:-0.4.5}
 ENV PYTHON3_INDY_CRYPTO_VERSION ${PYTHON3_INDY_CRYPTO_VERSION:-0.4.5}
-ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.10.0~rc1}
-ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.10.0~rc1}
-ENV TOKEN_VER  ${TOKEN_VER:-1.0.3~rc20}
+ENV INDY_PLENUM_VERSION ${INDY_PLENUM_VERSION:-1.12.0}
+ENV INDY_NODE_VERSION ${INDY_NODE_VERSION:-1.12.0}
+ENV TOKEN_VER  ${TOKEN_VER:-1.0.5}
 RUN echo "deb https://repo.sovrin.org/sdk/deb xenial master" >> /etc/apt/sources.list
-RUN echo "deb https://repo.sovrin.org/deb xenial rc" >> /etc/apt/sources.list \
+RUN echo "deb https://repo.sovrin.org/deb xenial stable" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
-        python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
-        python3-pyzmq=18.1.0 \
-        indy-plenum=${INDY_PLENUM_VERSION} \
-        indy-node=${INDY_NODE_VERSION} \
-        sovtoken=${TOKEN_VER} \
-        sovtokenfees=${TOKEN_VER} \
+    libindy-crypto=${LIBINDY_CRYPTO_VERSION} \
+    python3-indy-crypto=${PYTHON3_INDY_CRYPTO_VERSION} \
+    python3-pyzmq=18.1.0 \
+    indy-plenum=${INDY_PLENUM_VERSION} \
+    indy-node=${INDY_NODE_VERSION} \
+    sovtoken=${TOKEN_VER} \
+    sovtokenfees=${TOKEN_VER} \
     && rm -rf /var/lib/apt/lists/*
 COPY supervisord.conf /etc/supervisord.conf
 
@@ -67,4 +67,4 @@ COPY libsovtoken-ci-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/libsovtoken-ci-entrypoint.sh
 ENTRYPOINT ["libsovtoken-ci-entrypoint.sh"]
 
-ENV LIBSOVTOKEN_CI_ENV_VERSION=0.732.0
+ENV LIBSOVTOKEN_CI_ENV_VERSION=0.736.0

@@ -4,8 +4,10 @@
 #To get into the if statement below execute the following command...
 # mv /Users/norm/.cargo/bin/rustup /Users/norm/.cargo/bin/rustup.bak
 RUSTUP_VERSION=`rustup --version`
+echo "executing ${PWD}/mac.01.env.setup as $USER "
+
 if [ "$?" != "0" ]; then
-    if [ -f $HOME/.cargo/bin/rustup ]; then
+           if [ -f $HOME/.cargo/bin/rustup ]; then
         echo "You need to add ${HOME}/.cargo/bin to your PATH environment variable or simply restart your terminal"
         exit 1
     else
@@ -24,7 +26,6 @@ if [ "$?" != "0" ]; then
         source $HOME/.cargo/env
         rustup component add rust-src
         rustup component add rust-docs
-        rustup update
         RUSTUP_VERSION=`rustup --version`
         if [ -f /usr/local/bin/rustc.bak ]; then
             sudo mv /usr/local/bin/rustc.bak /usr/local/bin/rustc
@@ -39,14 +40,15 @@ if [ "$?" != "0" ]; then
         fi
     fi
 fi
-# Steps to uninstall rustup to test that the step 1) works again
-# rustup self uninstall
+# rustup self uninstall that the step 1) works again
 
 if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
+    rustup target remove aarch64-linux-android armv7-linux-androideabi arm-linux-androideabi i686-linux-android x86_64-linux-android 
+    rustup target remove --toolchain stable i386-apple-ios armv7s-apple-ios armv7-apple-ios
     rustup component add rls-preview rust-analysis rust-src
-
-    rustup target remove aarch64-linux-android armv7-linux-androideabi arm-linux-androideabi i686-linux-android x86_64-linux-android
-    rustup target add aarch64-apple-ios armv7-apple-ios armv7s-apple-ios x86_64-apple-ios i386-apple-ios
+    rustup target add aarch64-apple-ios x86_64-apple-ios
+    rustup update
+    rustup default 1.46.0
 
     RUST_TARGETS=$(rustc --print target-list|grep -i ios)
     if [ "RUST_TARGETS" = "" ]; then
@@ -60,21 +62,25 @@ if [[ $RUSTUP_VERSION =~ ^'rustup ' ]]; then
     cargo install cargo-xcode
 
     BREW_VERSION=`brew --version`
+    echo "brew version is $BREW_VERSION"
     if ! [[ $BREW_VERSION =~ ^'Homebrew ' ]]; then
+        echo "installing brew via curl"
         /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
         brew doctor
         brew update
     fi
 
     #2) Install required native libraries and utilities (libsodium is added with URL to homebrew since version<1.0.15 is required)
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/pkg-config.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/65effd2b617bade68a8a2c5b39e1c3089cc0e945/Formula/libsodium.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/automake.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/autoconf.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7242a1a76da4b99f535e185cee6b3e8614034db6/Formula/autoconf.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/9231c3cf11de64593a593a279e89f903044bf9e8/Formula/openssl.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/46f0da84e2af9416e0b5ec410024c1a272a0ab9a/Formula/zeromq.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/7377a5bd3e702dadd9ca8b59a6bdeee54e8dc97f/Formula/wget.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/f84b6f4f1493b5db71bb6ea9d560f4f3d295f1a0/Formula/truncate.rb
-    brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/6fa49cf7bb8dbe1c918ec7acd568b0c5b98e21ed/Formula/libzip.rb
+    INSTALL_LIBSODIUM=https://raw.githubusercontent.com/Homebrew/homebrew-core/65effd2b617bade68a8a2c5b39e1c3089cc0e945/Formula/libsodium.rb
+    brew list pkg-config &>/dev/null || brew install pkg-config
+    brew list libsodium &>/dev/null || brew install ${INSTALL_LIBSODIUM}
+    brew list automake &>/dev/null || brew install automake
+    brew list autoconf &>/dev/null || brew install autoconf
+    brew list cmake &>/dev/null || brew install cmake
+    brew list openssl &>/dev/null || brew install openssl
+    brew list zmq &>/dev/null || brew install zmq
+    brew list wget &>/dev/null || brew install wget
+    brew list truncate &>/dev/null || brew install truncate
+    brew list libzip &>/dev/null || brew install libzip
+    # brew list python3 &>/dev/null || brew install python3
 fi

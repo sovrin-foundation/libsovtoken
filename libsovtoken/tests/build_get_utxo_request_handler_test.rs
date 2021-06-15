@@ -5,6 +5,7 @@ extern crate sovtoken;
 extern crate indyrs as indy;
 extern crate libc;
 extern crate bs58;
+extern crate indy_sys;
 
 use libc::c_char;
 use std::ptr;
@@ -20,10 +21,10 @@ use sovtoken::logic::address::verkey_from_unqualified_address;
 use sovtoken::utils::results::ResultHandler;
 use sovtoken::utils::test::callbacks;
 use sovtoken::utils::ffi_support::c_pointer_from_str;
-use sovtoken::{ErrorCode, IndyHandle};
+use sovtoken::ErrorCode;
 
 // ***** HELPER METHODS *****
-fn build_get_payment_sources_request(wallet_handle: IndyHandle, did: &str, payment_address: &str, from:Option<i64>) -> Result<String, ErrorCode> {
+fn build_get_payment_sources_request(wallet_handle: indy_sys::WalletHandle, did: &str, payment_address: &str, from:Option<i64>) -> Result<String, ErrorCode> {
     let (receiver, command_handle, cb) = callbacks::cb_ec_string();
 
     let error_code = sovtoken::api::build_get_utxo_request_handler(
@@ -53,7 +54,7 @@ fn parse_get_payment_sources_response(res: &str) -> Result<(String, Option<u64>)
 
 // ***** HELPER TEST DATA  *****
 const COMMAND_HANDLE: i32 = 10;
-const WALLET_ID: i32 = 10;
+const WALLET_ID: indy_sys::WalletHandle = indy_sys::WalletHandle(10);
 const CB: Option<extern fn(command_handle_: i32, err: i32, mint_req_json: *const c_char) -> i32> = Some(utils::callbacks::empty_callback);
 const ADDRESS: &str = "pay:sov:dctKSXBbv2My3TGGUgTFjkxu1A9JM3Sscd5FydY4dkxnfwA7q";
 

@@ -89,12 +89,13 @@ fn build_payment_request_pointer(
         return Err(ErrorCode::CommonInvalidStructure);
     }
 
-    let identifier = match identifier.map(String::from) {
+    let identifier = match identifier {
         Some(idr) => idr,
         None => {
             let addr = signed_payload.inputs[0].address.clone();
             let idr = addr.as_bytes().from_base58_check();
-            idr.map(|s| s.into_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?
+            let idr = idr.map(|s| s.into_base58()).map_err(|_| ErrorCode::CommonInvalidStructure)?;
+            Did::new(idr)
         }
     };
 
@@ -242,6 +243,6 @@ mod test_handle_signing {
                 .get(0).unwrap().as_object().unwrap()
                 .get("address").unwrap().as_str().unwrap()
         );
-        assert_eq!(Some("7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8G".to_string()), request.identifier);
+        assert_eq!(Some(Did::new("7LSfLv2S6K7zMPrgmJDkZoJNhWvWRzpU7qt9uMR5yz8G".to_string())), request.identifier);
     }
 }

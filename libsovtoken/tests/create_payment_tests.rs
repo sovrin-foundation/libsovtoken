@@ -13,6 +13,7 @@ extern crate rand;
 
 extern crate indyrs as indy;                      // lib-sdk project
 extern crate sovtoken;
+extern crate indy_sys;
 
 use libc::c_char;
 use rand::Rng;
@@ -29,7 +30,7 @@ use sovtoken::ErrorCode;
 mod utils;
 
 // ***** HELPER TEST DATA  *****
-const WALLET_ID: i32 = 99;
+const WALLET_ID: indy_sys::WalletHandle = indy_sys::WalletHandle(99);
 const COMMAND_HANDLE: i32 = 1;
 const TIMEOUT_SECONDS: u64 = 20;
 static VALID_SEED_LEN: usize = 32;

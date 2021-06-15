@@ -39,7 +39,7 @@ if [ ! -z "$1" ]; then
     DEBUG_SYMBOLS=$1
 fi
 
-IOS_TARGETS="aarch64-apple-ios,armv7-apple-ios,armv7s-apple-ios,i386-apple-ios,x86_64-apple-ios"
+IOS_TARGETS="aarch64-apple-ios,x86_64-apple-ios"
 if [ ! -z "$2" ]; then
     IOS_TARGETS=$2
 fi

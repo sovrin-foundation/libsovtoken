@@ -20,7 +20,7 @@ use logic::output::Outputs;
 pub struct MintRequest {
     #[serde(rename = "type")]
     txn_type: String,
-    outputs: Vec<(Output)>,
+    outputs: Vec<Output>,
     #[serde(skip_serializing_if = "Option::is_none")]
     extra: Option<String>,
 }
@@ -37,7 +37,7 @@ impl MintRequest {
             extra,
         };
 
-        return Request::new(mint, identifier.map(String::from));
+        return Request::new(mint, identifier);
     }
 
     /**

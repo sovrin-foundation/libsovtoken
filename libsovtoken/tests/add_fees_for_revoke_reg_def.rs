@@ -6,6 +6,7 @@ extern crate serde_derive;
 extern crate lazy_static;
 extern crate sovtoken;
 extern crate indyrs as indy;
+extern crate indy_sys;
 
 use std::{thread, time};
 use std::collections::HashMap;
@@ -29,7 +30,7 @@ fn send_revoc_reg_def_with_fees(issuer_did: &str,
                                 inputs_json: &str,
                                 outputs_json: &str,
                                 extra: Option<&str>,
-                                wallet_handle: i32,
+                                wallet_handle: indy_sys::WalletHandle,
                                 pool_handle: i32,
                                 cred_def_id: Option<String>) -> Result<String, indy::IndyError> {
     let cred_def_id = cred_def_id.unwrap_or_else(|| {
@@ -73,7 +74,7 @@ fn create_cred_def(did: &str,
                    name: &str,
                    version: &str,
                    attrs: &str,
-                   wallet_handle: i32,
+                   wallet_handle: indy_sys::WalletHandle,
                    pool_handle: i32,
                    schema: Option<String>) -> (String, String, String) {
     let schema = schema.unwrap_or_else(|| create_schema_json(did, name, version, attrs, wallet_handle, pool_handle));
@@ -99,7 +100,7 @@ fn create_schema_json(did: &str,
                       name: &str,
                       version: &str,
                       attrs: &str,
-                      wallet_handle: i32,
+                      wallet_handle: indy_sys::WalletHandle,
                       pool_handle: i32) -> String {
     let (schema_id, schema_json) = indy::anoncreds::issuer_create_schema(did, name, version, attrs).wait().unwrap();
     let schema_req = indy::ledger::build_schema_request(did, &schema_json).wait().unwrap();

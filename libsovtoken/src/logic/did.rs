@@ -4,11 +4,16 @@
 
 use libc::c_char;
 use std::char;
+use regex::Regex;
 
 use bs58::decode::DecodeError;
 use utils::ffi_support::str_from_char_ptr;
 use utils::base58::{FromBase58};
 
+// Fully qualified DID pattern
+lazy_static! {
+    pub static ref REGEX: Regex = Regex::new("^did:([a-z0-9]+:)([a-zA-Z0-9:.-_]*)").unwrap();
+}
 
 /**
     Enum which holds possible errors with the did.
@@ -29,10 +34,11 @@ pub enum DidError {
     The did needs to be between 20 and 21 characters and contain only
     alphanumeric characters.
 */
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Did(String);
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct Did(pub String);
 
 impl Did {
+    const METHOD: &'static str = "sov";
 
     pub fn new(did_string: String) -> Self {
         return Did(did_string);
@@ -40,6 +46,25 @@ impl Did {
 
     pub fn from_pointer(pointer: *const c_char) -> Option<Self> {
         return str_from_char_ptr(pointer).map(|st| st.to_string()).map(Self::new);
+    }
+
+    pub fn unqualify(self) -> Did {
+        match REGEX.captures(&self.0.clone()) {
+            Some(caps) => {
+                let method = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                if method.starts_with(Did::METHOD) {
+                    caps.get(2).map(|m| Did::new(m.as_str().to_string())).unwrap_or(self)
+                }
+                else {
+                    self
+                }
+            },
+            None => self,
+        }
+    }
+
+    pub fn is_fully_qualified(&self) -> bool {
+        REGEX.is_match(&self.0)
     }
 
     /**
@@ -61,6 +86,9 @@ impl Did {
         ```
     */
     pub fn validate(self) -> Result<Self, DidError> {
+        if self.is_fully_qualified(){
+            return Ok(self)
+        }
 
         let (res_did, len) = {
             let did_string = &self.0;

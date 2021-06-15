@@ -64,35 +64,6 @@ generate_arch_flags(){
 
 }
 
-download_and_unzip_if_missed() {
-    target_dir=$1
-    url_pref=$2
-    fname=$3
-    url="${url_pref}${fname}"
-    if [ ! -d "${target_dir}" ] ; then
-        echo "${GREEN}Downloading ${fname}${RESET}"
-        curl -sSLO ${url}
-        unzip -qq ${fname}
-        rm ${fname}
-        echo "${GREEN}Done!${RESET}"
-    else
-        echo "${BLUE}Skipping download ${fname}${RESET}"
-    fi
-}
-
-download_and_unzip_dependencies_for_all_architectures(){
-    mkdir -p ${ANDROID_BUILD_FOLDER}
-
-    pushd ${ANDROID_BUILD_FOLDER}
-        download_and_unzip_if_missed "openssl_${TARGET_ARCH}" "https://repo.sovrin.org/android/libindy/deps-libc++/openssl/" "openssl_${TARGET_ARCH}.zip"
-        download_and_unzip_if_missed "libsodium_${TARGET_ARCH}" "https://repo.sovrin.org/android/libindy/deps-libc++/sodium/" "libsodium_${TARGET_ARCH}.zip"
-        download_and_unzip_if_missed "libzmq_${TARGET_ARCH}" "https://repo.sovrin.org/android/libindy/deps-libc++/zmq/" "libzmq_${TARGET_ARCH}.zip"
-
-        export OPENSSL_DIR=${ANDROID_BUILD_FOLDER}/openssl_${TARGET_ARCH}
-        export SODIUM_DIR=${ANDROID_BUILD_FOLDER}/libsodium_${TARGET_ARCH}
-        export LIBZMQ_DIR=${ANDROID_BUILD_FOLDER}/libzmq_${TARGET_ARCH}
-    popd
-}
 create_cargo_config(){
 mkdir -p ${SOVTOKEN_DIR}/.cargo
 cat << EOF > ${SOVTOKEN_DIR}/.cargo/config

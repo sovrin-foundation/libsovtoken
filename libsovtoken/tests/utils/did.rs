@@ -1,5 +1,6 @@
 extern crate indyrs as indy;
 extern crate sovtoken;
+extern crate indy_sys;
 
 use indy::future::Future;
 
@@ -35,7 +36,7 @@ impl NymRole
 Generate a did and send a nym request for it.
 */
 pub fn create_nym(
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     pool_handle: i32,
     did_trustee: &str,
     role: NymRole
@@ -59,7 +60,7 @@ pub fn create_nym(
 Creates multiple dids and corresponding nym requests.
 */
 pub fn create_multiple_nym(
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     pool_handle: i32,
     did_trustee: &str,
     n: u8,
@@ -79,7 +80,7 @@ Create and store the initial dids of trustees.
 
 Includes the initial trustee.
 */
-pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) -> Vec<DidAndVerKey> {
+pub fn initial_trustees(num_trustees: u8, wallet_handle: indy_sys::WalletHandle, pool_handle: i32) -> Vec<DidAndVerKey> {
     let first = initial_trustee(wallet_handle);
 
     let mut trustees = create_multiple_nym(
@@ -97,7 +98,7 @@ pub fn initial_trustees(num_trustees: u8, wallet_handle: i32, pool_handle: i32) 
 /**
 Store the did of the intial trustee
 */
-pub fn initial_trustee(wallet_handle: i32) -> DidAndVerKey {
+pub fn initial_trustee(wallet_handle: indy_sys::WalletHandle) -> DidAndVerKey {
     let first_json_seed = json!({
         "seed":"000000000000000000000000Trustee1"
     }).to_string();

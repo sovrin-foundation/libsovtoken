@@ -7,11 +7,13 @@ use std::ffi::CString;
 use time;
 
 use logic::type_aliases::{ProtocolVersion, ReqId};
-use {IndyHandle, ErrorCode};
+use ErrorCode;
+use indy_sys;
 use utils::constants::general::PROTOCOL_VERSION;
 use utils::ffi_support::{cstring_from_str, c_pointer_from_string};
 use utils::json_conversion::JsonSerialize;
 use utils::txn_author_agreement::TaaAcceptance;
+use logic::did::Did;
 
 use logic::indy_sdk_api::ledger;
 
@@ -26,7 +28,7 @@ pub struct Request<T>
     pub req_id: ReqId,
     pub protocol_version: ProtocolVersion,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub identifier : Option<String>,
+    pub identifier : Option<Did>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub taa_acceptance: Option<TaaAcceptance>
 }
@@ -34,8 +36,9 @@ pub struct Request<T>
 impl<T> Request<T>
     where T: Serialize
 {
-    pub fn new(operation: T, identifier: Option<String>) -> Self {
+    pub fn new(operation: T, identifier: Option<Did>) -> Self {
         let req_id = time::get_time().sec as u64 * (1e9 as u64) + time::get_time().nsec as u64;
+        let identifier = identifier.map(|identifier_| identifier_.unqualify());
         return Request {
             operation,
             protocol_version: PROTOCOL_VERSION,
@@ -63,7 +66,7 @@ impl<T> Request<T>
             .map(|string| c_pointer_from_string(string));
     }
 
-    pub fn multi_sign_request(wallet_handle: IndyHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
+    pub fn multi_sign_request(wallet_handle: indy_sys::WalletHandle, req: &str, dids: Vec<&str>) -> Result<String, ErrorCode> {
         let mut signed_req: String = req.to_string();
 
         for did in dids {

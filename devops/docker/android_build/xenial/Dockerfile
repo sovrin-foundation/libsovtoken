@@ -1,6 +1,6 @@
 ARG ANDROID_PREBUILT_DIR=/tmp/android/libsovtoken_prebuilt
 
-FROM sovrin/libsovtoken:android_ndk-xenial-0.7.0
+FROM sovrin/libsovtoken:android_ndk-xenial-0.8.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG ANDROID_PREBUILT_DIR
@@ -12,7 +12,7 @@ RUN chmod -R 777 ${ANDROID_PREBUILT_DIR}
 ############################################
 
 
-FROM sovrin/libsovtoken:android_ndk-xenial-0.7.0
+FROM sovrin/libsovtoken:android_ndk-xenial-0.8.0
 # TODO LABEL maintainer="Name <email-address>"
 
 ARG u_id=1000
@@ -23,7 +23,7 @@ ARG ANDROID_PREBUILT_DIR
 ARG RUST_TARGETS
 
 RUN if [ "$u_id" != "0" ]; then \
-        useradd -ms /bin/bash -u $u_id $u_name; \
+    useradd -ms /bin/bash -u $u_id $u_name; \
     fi
 
 ENV TEST_USER_UID=$u_id
@@ -50,4 +50,4 @@ ENV RUST_TARGETS=${RUST_TARGETS:-"arm-linux-androideabi armv7-linux-androideabi 
 
 # TODO some entrypoint
 
-ENV LIBSOVTOKEN_ANDROID_BUILD_ENV_VERSION=0.7.0
+ENV LIBSOVTOKEN_ANDROID_BUILD_ENV_VERSION=0.8.0

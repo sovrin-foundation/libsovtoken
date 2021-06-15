@@ -15,4 +15,4 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --default-tool
 
 # TODO CMD ENTRYPOINT ...
 
-ENV RUST_ENV_VERSION=0.12.0
+ENV RUST_ENV_VERSION=0.13.0

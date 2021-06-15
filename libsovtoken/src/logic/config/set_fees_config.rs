@@ -83,7 +83,7 @@ impl SetFees {
     // of signing and being consistent with MINT.
     // More details here https://docs.google.com/document/d/15m3XPEUfwhI5GPWh3kuMj6rML52ydWTLsBiurHKfmnU/edit
     pub fn as_request(self, identifier: Option<Did>) -> Request<SetFees> {
-        return Request::new(self, identifier.map(String::from));
+        return Request::new(self, identifier);
     }
 
     /**

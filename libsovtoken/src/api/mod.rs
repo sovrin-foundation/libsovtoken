@@ -79,7 +79,7 @@ use utils::constants::general::JsonI64Callback;
 #[no_mangle]
 pub extern "C" fn create_payment_address_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     config_str: *const c_char,
     cb: JsonCallback
 ) -> i32 {
@@ -184,8 +184,8 @@ pub extern "C" fn create_payment_address_handler(
 #[no_mangle]
 pub extern "C" fn add_request_fees_handler(
     command_handle: i32,
-    wallet_handle: i32,
-    did: *const c_char, // TODO: Need to remove.
+    wallet_handle: indy_sys::WalletHandle,
+    _did: *const c_char, // TODO: Need to remove.
     req_json: *const c_char,
     inputs_json: *const c_char,
     outputs_json: *const c_char,
@@ -193,7 +193,7 @@ pub extern "C" fn add_request_fees_handler(
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::add_request_fees_handler called did (address) >> {:?}", secret!(&did));
+    trace!("api::add_request_fees_handler called did (address) >> {:?}", secret!(&_did));
     let (inputs, outputs, extra, request_json_map, cb) = match add_request_fees::deserialize_inputs(req_json, inputs_json, outputs_json, extra, cb) {
         Ok(tup) => tup,
         Err(error_code) => {
@@ -354,7 +354,7 @@ pub extern "C" fn parse_response_with_fees_handler(
 #[no_mangle]
 pub extern "C" fn build_payment_req_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     submitter_did: *const c_char,
     inputs_json: *const c_char,
     outputs_json: *const c_char,
@@ -470,7 +470,7 @@ pub extern "C" fn parse_payment_response_handler(
 /// description of errors
 #[no_mangle]
 pub extern "C" fn build_get_utxo_request_handler(command_handle: i32,
-                                                 wallet_handle: i32,
+                                                 wallet_handle: indy_sys::WalletHandle,
                                                  _submitter_did: *const c_char,
                                                  payment_address: *const c_char,
                                                  from: i64,
@@ -595,13 +595,13 @@ pub extern "C" fn parse_get_utxo_response_handler(
 #[no_mangle]
 pub extern "C" fn build_set_txn_fees_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     submitter_did: *const c_char,
     fees_json: *const c_char,
     cb: JsonCallback
 ) -> i32 {
 
-    trace!("api::build_set_txn_fees_handler called >> wallet_handle {}", wallet_handle);
+    trace!("api::build_set_txn_fees_handler called >> wallet_handle {:?}", wallet_handle);
     let (did, set_fees, cb) = match set_fees::deserialize_inputs(
         submitter_did,
         fees_json,
@@ -648,7 +648,7 @@ pub extern "C" fn build_set_txn_fees_handler(
 #[no_mangle]
 pub extern "C" fn build_get_txn_fees_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     submitter_did: *const c_char,
     cb: JsonCallback
 ) -> i32 {
@@ -768,14 +768,14 @@ pub extern "C" fn parse_get_txn_fees_response_handler(
 #[no_mangle]
 pub extern "C" fn build_mint_txn_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     submitter_did: *const c_char,
     outputs_json: *const c_char,
     extra: *const c_char,
     cb: JsonCallback
 ) -> i32
 {
-    trace!("api::build_mint_txn_handle called >> wallet_handle {}", wallet_handle);
+    trace!("api::build_mint_txn_handle called >> wallet_handle {:?}", wallet_handle);
     let (did, outputs, extra, cb) = match minting::deserialize_inputs(
         submitter_did,
         outputs_json,
@@ -818,12 +818,12 @@ pub extern "C" fn build_mint_txn_handler(
 #[no_mangle]
 pub extern "C" fn build_verify_req_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     did: *const c_char,
     txo: *const c_char,
     cb: JsonCallback
 ) -> i32 {
-    trace!("api::build_verify_req called >> wallet_handle {}", wallet_handle);
+    trace!("api::build_verify_req called >> wallet_handle {:?}", wallet_handle);
 
     let (did, txo, cb) = match verify::deserialize(did, txo, cb) {
         Ok(a) => a,
@@ -949,7 +949,7 @@ pub extern fn free_parsed_state_proof(sp: *const c_char) -> i32 {
 #[no_mangle]
 pub extern "C" fn sign_with_address_handler(
     command_handle: i32,
-    wallet_handle: i32,
+    wallet_handle: indy_sys::WalletHandle,
     address: *const c_char,
     message_raw: *const u8,
     message_len: u32,
