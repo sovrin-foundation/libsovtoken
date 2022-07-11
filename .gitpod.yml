@@ -1,0 +1,38 @@
+# List the start up tasks. Learn more https://www.gitpod.io/docs/config-start-tasks/
+tasks:
+  - name: Cargo Update & Build
+    env:
+      LIBINDY_DIR: '/usr/lib/'
+    init: |
+      docker build -t indy_pool -f devops/indy-pool/Dockerfile devops/indy-pool
+    command: |
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88
+      sudo add-apt-repository "deb https://repo.sovrin.org/sdk/deb bionic stable"
+      sudo apt update
+      sudo apt-get install libindy -y
+      gp env LIBINDY_DIR='/usr/lib/'
+      cargo update --manifest-path libsovtoken/Cargo.toml
+      cargo build --manifest-path libsovtoken/Cargo.toml
+      Echo "docker run -itd -p 9701-9708:9701-9708 indy_pool here"
+      cargo test --manifest-path libsovtoken/Cargo.toml
+    openMode: tab-after
+
+# github:
+#   prebuilds:
+#      # enable for the master/default branch (defaults to true)
+#     master: false
+#      # enable for all branches in this repo (defaults to false)
+#     branches: false
+#     # enable for pull requests coming from this repo (defaults to true)
+#     pullRequests: false
+#     # enable for pull requests coming from forks (defaults to false)
+#     pullRequestsFromForks: false
+#     # add a "Review in Gitpod" button as a comment to pull requests (defaults to true)
+#     addComment: false
+#     # add a "Review in Gitpod" button to pull requests (defaults to false)
+#     addBadge: false
+#     # add a label once the prebuild is ready to pull requests (defaults to false)
+#     addLabel: false
+
+vscode:
+    extensions: ["mhutchie.git-graph", "eamodio.gitlens"]
