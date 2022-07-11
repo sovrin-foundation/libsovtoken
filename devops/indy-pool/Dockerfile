@@ -1,66 +1,49 @@
-########################################################
-##  Use this to create a pool of nodes that uses
-##  the payment plugins for plenum
-##
-##  To run this file please use the following
-##  Docker commands:
-##
-##  docker build -t indy_pool .
-##
-##  docker run -itd -p 9701-9708:9701-9708 indy_pool
-##
-##  Connecting to the container through bash (optional):
-##  docker ps | grep indy # to obtain container_id
-##  docker exec -it <container_id> /bin/bash
-##
-########################################################
-# this will be changed to sovrin docker hub when possible. Now changed to maintainer's hub
-FROM camparra/ubuntu16.04-rocksdb
+FROM ubuntu:16.04
 
 ARG uid=1000
 
-ARG indy_stream=stable
-
-
-ARG indy_plenum_ver=1.12.0
-ARG indy_node_ver=1.12.0
-ARG python3_indy_crypto_ver=0.4.5
-ARG indy_crypto_ver=0.4.5
-ARG token_ver=1.0.5
-ARG fees_ver=1.0.5
-
 # Install environment
 RUN apt-get update -y && apt-get install -y \
-	  wget \
-	  python3.5 \
-	  python3-pip \
-	  python-setuptools \
-	  python3-nacl \
-	  apt-transport-https \
-	  ca-certificates \
-	  supervisor \
-	  curl \
-      sudo \
-      nano
-
-# Add Sovrin artifact repository 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88
-RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pyzmq=18.1.0 \
-    indy-plenum=${indy_plenum_ver} \
-    indy-node=${indy_node_ver} \
-    python3-indy-crypto=${python3_indy_crypto_ver} \
-    libindy-crypto=${indy_crypto_ver} \
-    sovtoken=${token_ver} \
-    sovtokenfees=${fees_ver}
+	git \
+	wget \
+	python3.5 \
+	python3-pip \
+	python-setuptools \
+	python3-nacl \
+	apt-transport-https \
+	ca-certificates \
+	supervisor
 
 RUN pip3 install -U \
-    pip==9.0.3 \
-    setuptools
+	pip==9.0.3 \
+	setuptools
 
-RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $uid indy; usermod -aG sudo indy
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88 || \
+	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CE7709D068DB5E88
+ARG indy_stream=master
+RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
+
+RUN useradd -ms /bin/bash -u $uid indy
+
+ARG indy_plenum_ver=1.12.1~dev989
+ARG indy_node_ver=1.12.1~dev1172
+ARG python3_indy_crypto_ver=0.4.5
+ARG indy_crypto_ver=0.4.5
+ARG python3_pyzmq_ver=18.1.0
+ARG python3_orderedset_ver=2.0
+ARG python3_psutil_ver=5.4.3
+ARG python3_pympler_ver=0.5
+
+RUN apt-get update -y && apt-get install -y \
+        python3-pyzmq=${python3_pyzmq_ver} \
+        indy-plenum=${indy_plenum_ver} \
+        indy-node=${indy_node_ver} \
+        python3-indy-crypto=${python3_indy_crypto_ver} \
+        libindy-crypto=${indy_crypto_ver} \
+        python3-orderedset=${python3_orderedset_ver} \
+        python3-psutil=${python3_psutil_ver} \
+        python3-pympler=${python3_pympler_ver} \
+        vim
 
 RUN echo "[supervisord]\n\
 logfile = /tmp/supervisord.log\n\

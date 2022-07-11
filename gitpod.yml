@@ -1,0 +1,45 @@
+image:
+  file: .gitpod.Dockerfile
+
+
+tasks:
+  - name: Build Indy Pool
+    init: >
+      docker build -t indy_pool -f devops/indy-pool/Dockerfile devops/indy-pool &&
+      gp sync done poolImage
+  - name: Cargo Update & Build
+    env:
+      LIBINDY_DIR='/usr/lib/'
+    init: |
+      gp sync-await poolImage
+    command: |
+      cargo update --manifest-path libsovtoken/Cargo.toml
+      cargo build --manifest-path libsovtoken/Cargo.toml
+      docker run -itd -p 9701-9708:9701-9708 indy_pool
+      cargo test --manifest-path libsovtoken/Cargo.toml
+    openMode: tab-after
+  - name: Export LIBINDY_DIR='/usr/lib/'
+    command: |
+      gp env LIBINDY_DIR='/usr/lib/'
+      echo "Please run eval $(gp env -e foo=bar) so Libindy dir gets set."
+    openMode: tab-after
+
+github:
+  prebuilds:
+     # enable for the master/default branch (defaults to true)
+    master: false
+     # enable for all branches in this repo (defaults to false)
+    branches: false
+    # enable for pull requests coming from this repo (defaults to true)
+    pullRequests: false
+    # enable for pull requests coming from forks (defaults to false)
+    pullRequestsFromForks: false
+    # add a "Review in Gitpod" button as a comment to pull requests (defaults to true)
+    addComment: false
+    # add a "Review in Gitpod" button to pull requests (defaults to false)
+    addBadge: false
+    # add a label once the prebuild is ready to pull requests (defaults to false)
+    addLabel: false
+
+vscode:
+    extensions: ["mhutchie.git-graph", "eamodio.gitlens"]
