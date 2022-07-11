@@ -17,14 +17,10 @@ RUN apt-get update -y && apt-get install -y \
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88
 
-RUN echo "deb https://repo.sovrin.org/sdk/deb bionic master" >> /etc/apt/sources.list
+RUN echo "deb http://security.ubuntu.com/ubuntu bionic-security main"  >> /etc/apt/sources.list && \
+    echo "deb https://repo.sovrin.org/sdk/deb bionic master" >> /etc/apt/sources.list
 
 RUN apt-get update -y && apt-get install -y \
-    libssl-dev \
-    pkg-config \
     libindy=1.15.0~1625-bionic
 
-# For some reason this file gets added automatically and contains
-# deb https://repo.sovrin.org/sdk/deb focal master
-# which does not exist and causes issues when packages are added afterward.
 RUN rm /etc/apt/sources.list.d/sovrin.list
