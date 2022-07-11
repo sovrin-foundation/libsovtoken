@@ -4,8 +4,8 @@ image:
 
 tasks:
   - name: Build Indy Pool
-    init: >
-      docker build -t indy_pool -f devops/indy-pool/Dockerfile devops/indy-pool &&
+    init: |
+      echo "Docker Build here" &&
       gp sync done poolImage
   - name: Cargo Update & Build
     env:
@@ -15,12 +15,12 @@ tasks:
     command: |
       cargo update --manifest-path libsovtoken/Cargo.toml
       cargo build --manifest-path libsovtoken/Cargo.toml
-      docker run -itd -p 9701-9708:9701-9708 indy_pool
+      Echo "docker run -itd -p 9701-9708:9701-9708 indy_pool here"
       cargo test --manifest-path libsovtoken/Cargo.toml
     openMode: tab-after
   - name: Export LIBINDY_DIR='/usr/lib/'
     command: |
-      gp env LIBINDY_DIR='/usr/lib/'
+      gp env LIBINDY_DIR='/usr/lib/' &&
       echo "Please run eval $(gp env -e foo=bar) so Libindy dir gets set."
     openMode: tab-after
 
