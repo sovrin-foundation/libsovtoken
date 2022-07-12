@@ -22,3 +22,5 @@ RUN echo "deb http://security.ubuntu.com/ubuntu bionic-security main"  >> /etc/a
 
 RUN apt-get update -y && apt-get install -y \
     libindy=1.15.0~1625-bionic
+
+RUN rm /etc/apt/sources.list.d/sovrin.list
