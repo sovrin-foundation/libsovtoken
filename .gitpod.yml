@@ -6,6 +6,7 @@ tasks:
     init: |
       docker build -t indy_pool -f devops/indy-pool/Dockerfile devops/indy-pool
     command: |
+      docker run -itd -p 9701-9708:9701-9708 indy_pool
       sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88
       sudo add-apt-repository "deb https://repo.sovrin.org/sdk/deb bionic stable"
       sudo apt update
@@ -13,7 +14,6 @@ tasks:
       gp env LIBINDY_DIR='/usr/lib/'
       cargo update --manifest-path libsovtoken/Cargo.toml
       cargo build --manifest-path libsovtoken/Cargo.toml
-      Echo "docker run -itd -p 9701-9708:9701-9708 indy_pool here"
       cargo test --manifest-path libsovtoken/Cargo.toml
     openMode: tab-after
 

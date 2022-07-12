@@ -2,6 +2,19 @@ FROM ubuntu:16.04
 
 ARG uid=1000
 
+ARG indy_stream=stable
+
+ARG indy_plenum_ver=1.12.4
+ARG indy_node_ver=1.12.4
+ARG python3_indy_crypto_ver=0.4.5
+ARG indy_crypto_ver=0.4.5
+ARG python3_pyzmq_ver=18.1.0
+ARG python3_orderedset_ver=2.0
+ARG python3_psutil_ver=5.4.3
+ARG python3_pympler_ver=0.5
+ARG token_ver=1.0.9
+ARG fees_ver=1.0.9
+
 # Install environment
 RUN apt-get update -y && apt-get install -y \
 	git \
@@ -14,36 +27,28 @@ RUN apt-get update -y && apt-get install -y \
 	ca-certificates \
 	supervisor
 
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88 || \
+	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CE7709D068DB5E88
+RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
+
+RUN apt-get update -y && apt-get install -y \
+    python3-pyzmq=${python3_pyzmq_ver} \
+    indy-plenum=${indy_plenum_ver} \
+    indy-node=${indy_node_ver} \
+    python3-indy-crypto=${python3_indy_crypto_ver} \
+    libindy-crypto=${indy_crypto_ver} \
+    python3-orderedset=${python3_orderedset_ver} \
+    python3-psutil=${python3_psutil_ver} \
+    python3-pympler=${python3_pympler_ver} \
+    sovtoken=${token_ver} \
+    sovtokenfees=${fees_ver} \
+    vim
+
 RUN pip3 install -U \
 	pip==9.0.3 \
 	setuptools
 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88 || \
-	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CE7709D068DB5E88
-ARG indy_stream=master
-RUN echo "deb https://repo.sovrin.org/deb xenial $indy_stream" >> /etc/apt/sources.list
-
-RUN useradd -ms /bin/bash -u $uid indy
-
-ARG indy_plenum_ver=1.12.1~dev989
-ARG indy_node_ver=1.12.1~dev1172
-ARG python3_indy_crypto_ver=0.4.5
-ARG indy_crypto_ver=0.4.5
-ARG python3_pyzmq_ver=18.1.0
-ARG python3_orderedset_ver=2.0
-ARG python3_psutil_ver=5.4.3
-ARG python3_pympler_ver=0.5
-
-RUN apt-get update -y && apt-get install -y \
-        python3-pyzmq=${python3_pyzmq_ver} \
-        indy-plenum=${indy_plenum_ver} \
-        indy-node=${indy_node_ver} \
-        python3-indy-crypto=${python3_indy_crypto_ver} \
-        libindy-crypto=${indy_crypto_ver} \
-        python3-orderedset=${python3_orderedset_ver} \
-        python3-psutil=${python3_psutil_ver} \
-        python3-pympler=${python3_pympler_ver} \
-        vim
+RUN useradd -m -d /home/indy -s /bin/bash -p $(openssl passwd -1 "token") -u $uid indy; usermod -aG sudo indy
 
 RUN echo "[supervisord]\n\
 logfile = /tmp/supervisord.log\n\
