@@ -14,6 +14,7 @@ use utils::pool;
 use utils::wallet::Wallet;
 use serde_json;
 
+
 const PROTOCOL_VERSION: usize = 2;
 
 /**
