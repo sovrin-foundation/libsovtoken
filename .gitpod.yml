@@ -14,7 +14,7 @@ tasks:
       gp env LIBINDY_DIR='/usr/lib/'
       cargo update --manifest-path libsovtoken/Cargo.toml
       cargo build --manifest-path libsovtoken/Cargo.toml
-      cargo test --manifest-path libsovtoken/Cargo.toml
+      cargo test --manifest-path libsovtoken/Cargo.toml -- --test-threads=1
     openMode: tab-after
 
 # github:
