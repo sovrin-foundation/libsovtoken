@@ -1,0 +1,45 @@
+name: "Publish Libsovtoken Package"
+
+on:
+  workflow_call:
+    inputs:
+      distribution:
+        required: true
+        type: string
+      REPO_COMPONENT:
+        required: true
+        type: string
+    secrets:
+      SOVRIN_ARTIFACTORY_REPO_CONFIG:
+        required: true
+
+
+jobs:
+  publish_libsovtoken_deb:
+    name: Libsovtoken Publish Package
+    runs-on: ubuntu-20.04
+    steps: 
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v2
+        env:
+          JF_ENV_1: ${{ secrets.SOVRIN_ARTIFACTORY_REPO_CONFIG }}
+
+      - name: Ping Artifactory
+        run: |
+          # Test the connection to Ping the Sovrin Artifactory server
+          # to ensure everything has been setup correctly.
+          jfrog rt ping
+
+      - name: Download libsovtoken-deb package from GHA
+        uses: actions/download-artifact@v2
+        with:
+          name: libsovtoken-deb
+          path: /tmp/sovtoken-deb/
+
+      - name: Publish libsovtoken-deb artifact
+        uses: hyperledger/indy-shared-gha/.github/actions/publish-deb@v1
+        with:
+          sourceDirectory: /tmp/sovtoken-deb/
+          distribution: ${{ inputs.distribution }}
+          component: ${{ inputs.REPO_COMPONENT }}
+          repo: "deb"

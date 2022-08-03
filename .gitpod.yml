@@ -4,7 +4,7 @@ tasks:
     env:
       LIBINDY_DIR: '/usr/lib/'
     init: |
-      docker build -t indy_pool -f devops/indy-pool/Dockerfile devops/indy-pool
+      docker build -t indy_pool --build-arg pool_ip=127.0.0.1 -f devops/indy-pool/Dockerfile devops/indy-pool
     command: |
       docker run -itd -p 9701-9708:9701-9708 indy_pool
       sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88
@@ -18,7 +18,7 @@ tasks:
     openMode: tab-after
 
 # github:
-#   prebuilds:
+#   prebuilds:--build-arg pool_ip=127.0.0.1
 #      # enable for the master/default branch (defaults to true)
 #     master: false
 #      # enable for all branches in this repo (defaults to false)
