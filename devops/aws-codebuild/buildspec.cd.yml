@@ -28,6 +28,8 @@ phases:
       - printenv
       - export PROJECT_DIR="$PWD"
       - |
+        apt-get update
+        apt-get install -y software-properties-common ca-certificates
         set -ex
         for goal in $MAKE_GOALS; do
             echo "Making '$goal'"

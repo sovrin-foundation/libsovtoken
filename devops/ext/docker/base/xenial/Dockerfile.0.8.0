@@ -3,36 +3,37 @@ FROM ubuntu:xenial
 
 # generally useful packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        apt-transport-https \
-        curl \
-        wget \
-        vim \
-        git \
-        procps \
-        autoconf \
-        automake \
-        g++ \
-        gcc \
-        make \
-        pkg-config \
-        zip \
-        unzip \
+    ca-certificates \
+    software-properties-common \
+    apt-transport-https \
+    curl \
+    wget \
+    vim \
+    git \
+    procps \
+    autoconf \
+    automake \
+    g++ \
+    gcc \
+    make \
+    pkg-config \
+    zip \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 
 # install fpm
 ENV FPM_VERSION=1.9.3
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ruby \
-        ruby-dev \
-        rubygems \
-        build-essential \
-        autoconf \
-        libtool \
-        rpm \
+RUN apt-add-repository ppa:brightbox/ruby-ng \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    ruby2.4 \
+    ruby2.4-dev \
+    build-essential \
+    autoconf \
+    libtool \
+    rpm \
     && gem install rake \
-    && gem install --no-ri --no-rdoc fpm -v $FPM_VERSION \
+    && gem install --no-document fpm -v $FPM_VERSION \
     && rm -rf /var/lib/apt/lists/*
 
 
