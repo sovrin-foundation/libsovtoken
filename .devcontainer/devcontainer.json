@@ -33,7 +33,7 @@
 	"postCreateCommand": "docker network create poolnet --subnet 192.168.0.0/16 && docker run -itd -p 9701-9708:9701-9708 --network poolnet --ip 192.168.0.2 indy_pool && cargo update --manifest-path libsovtoken/Cargo.toml && cargo build --manifest-path libsovtoken/Cargo.toml ",
 	"postStartCommand": "docker network connect poolnet $(cat /etc/hostname) && TEST_POOL_IP=192.168.0.2 cargo test --manifest-path libsovtoken/Cargo.toml -- --test-threads=1",
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	//"remoteUser": "vscode",
+	"remoteUser": "root",
 	"features": {
 		"docker-in-docker": "latest",
 		"rust": "latest"
