@@ -1,0 +1,108 @@
+name: Triggered by Version Bump merged
+
+#disable all tags and enable all brannches and only version file
+on:
+  push:
+    branches-ignore:
+      - update-rc-version
+      - update-version
+    paths:
+      - '!**'
+      - "**.toml"
+
+jobs:
+  workflow-setup:
+    name: Initialize Workflow
+    runs-on: ubuntu-latest
+    outputs:
+      isVersionBump: ${{ steps.get-release-info.outputs.isVersionBump }}
+      isPreRelease: ${{ steps.get-release-info.outputs.isRC }}
+      versionTag: ${{ steps.get-release-info.outputs.versionTag }}
+      component: ${{ steps.get-release-info.outputs.component }}
+      CACHE_KEY_BUILD: ${{ steps.setup.outputs.CACHE_KEY_BUILD }}
+      CACHE_KEY_POOL: ${{ steps.pool_setReleaseup.outputs.CACHE_KEY_POOL }}
+      UBUNTU_VERSION: ${{ steps.setup.outputs.UBUNTU_VERSION }}
+      # Expose the lowercase version of the GitHub repository name
+      # to all subsequent jobs that reference image repositories
+      # as the push and pull operations require the URL of the repository
+      # to be in lowercase.
+      GITHUB_REPOSITORY_NAME: ${{ steps.setup.outputs.GITHUB_REPOSITORY_NAME }}
+      distribution: ${{ steps.setup.outputs.distribution }}
+      publish: ${{ steps.setup.outputs.publish }}
+      testsNeeded: ${{ steps.testsNeeded.outputs.testsNeeded }}
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v2
+      - name: setup
+        id: setup
+        uses: hyperledger/indy-shared-gha/.github/actions/workflow-setup@v1
+      - name: get-release-info
+        id: get-release-info
+        uses: hyperledger/indy-shared-gha/.github/actions/get-release-info@v1
+        with:
+          versionString: "${{ github.event.head_commit.message }}"
+      - name: setup pool data
+        id: pool_setup
+        run: echo "::set-output name=CACHE_KEY_POOL::${{ hashFiles('devops/indy-pool/Dockerfile') }}"
+
+  createRelease:
+    name: Create Release
+    needs: [workflow-setup]
+    if: needs.workflow-setup.outputs.isVersionBump == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Download libsovtoken Artifacts from Github Action Artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: releasepr.yaml
+          workflow_conclusion: success
+          name: libsovtoken-build
+          path: artifacts/libsovtoken
+
+      - name: Download libsovtoken-deb Artifacts from Github Action Artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: releasepr.yaml
+          workflow_conclusion: success
+          name: libsovtoken-deb
+          path: artifacts/libsovtoken
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libsovtoken-build
+          path: artifacts/libsovtoken/*
+          retention-days: 5
+
+      - name: Zip Files for Release
+        run: |
+          zip -r artifacts/libsovtoken.zip artifacts/libsovtoken
+
+      - name: Generate Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.workflow-setup.outputs.VERSIONTAG }}
+          files: |
+            artifacts/**.zip
+            artifacts/libsovtoken/*.deb
+          generate_release_notes: true
+          body: "[${{ needs.workflow-setup.outputs.VERSIONTAG }}] "
+          prerelease: ${{ needs.workflow-setup.outputs.isPreRelease }}
+          target_commitish: ${{ github.event.ref }}
+          name: "${{ needs.workflow-setup.outputs.VERSIONTAG }}"
+          token: ${{ secrets.BOT_PR_PAT }}
+
+  publish_aritfacts:
+    name: Publish Artifacts
+    needs: [workflow-setup, createRelease]
+    if: ${{ needs.workflow-setup.publish }}
+    uses: ./.github/workflows/reuseable_publish.yaml
+    with:
+      distribution: ${{ needs.workflow-setup.outputs.distribution }}
+      REPO_COMPONENT: ${{ needs.workflow-setup.outputs.component }}
+    secrets:
+      SOVRIN_ARTIFACTORY_REPO_CONFIG: ${{ secrets.SOVRIN_ARTIFACTORY_REPO_CONFIG }}

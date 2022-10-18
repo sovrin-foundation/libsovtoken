@@ -27,7 +27,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 \
     && echo "deb https://repo.sovrin.org/sdk/deb bionic stable" >> /etc/apt/sources.list \
     && echo "deb https://repo.sovrin.org/deb xenial master" >> /etc/apt/sources.list \
     && echo "deb http://archive.ubuntu.com/ubuntu bionic main" >> /etc/apt/sources.list \
-    && echo "deb http://archive.ubuntu.com/ubuntu xenial main" >> /etc/apt/sources.list \
     && apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libssl1.1 \

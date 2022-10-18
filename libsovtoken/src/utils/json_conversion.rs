@@ -48,9 +48,20 @@ Wrap the json! macro and outputs a c pointer.
 Call it like you would call the json! macro, and
 it returns a c pointer instead of `serde_json::value::Value`.
 
+*/
+
+macro_rules! json_c_pointer {
+    ($json:tt) => {{
+        let json = json!($json);
+        let json_string = json.to_string();
+        $crate::utils::ffi_support::c_pointer_from_string(json_string)
+    }}
+}
+
+/*
 ## Example
 ```
-    sovtoken::ffi_support::string_from_char_pointer;
+    use sovtoken::utils::ffi_support::string_from_char_ptr;
 
     let c_string_pointer = json_c_pointer!({
         "nums": [1, 2, 3, 5, 8, 13, 21, 34, 55],
@@ -59,17 +70,10 @@ it returns a c pointer instead of `serde_json::value::Value`.
         }
     });
 
-    assert!(string_from_char_pointer(c_string_pointer).is_ok());
+    assert!(string_from_char_ptr(c_string_pointer).is_some());
 
 ```
 */
-macro_rules! json_c_pointer {
-    ($json:tt) => {{
-        let json = json!($json);
-        let json_string = json.to_string();
-        $crate::utils::ffi_support::c_pointer_from_string(json_string)
-    }}
-}
 
 
 /*

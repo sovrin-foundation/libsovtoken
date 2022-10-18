@@ -1,0 +1,144 @@
+name: Triggered by Version Bump Release PR
+
+on:
+  pull_request:
+    paths:
+      - '!**'
+      - "**.toml"
+
+jobs:
+  workflow-setup:
+    name: Initialize Workflow
+    runs-on: ubuntu-latest
+    outputs:
+      isVersionBump: ${{ steps.get-release-info.outputs.isVersionBump }}
+      isPreRelease: ${{ steps.get-release-info.outputs.isRC }}
+      CACHE_KEY_BUILD: ${{ steps.setup.outputs.CACHE_KEY_BUILD }}
+      CACHE_KEY_POOL: ${{ steps.pool_setup.outputs.CACHE_KEY_POOL }}
+      UBUNTU_VERSION: ${{ steps.setup.outputs.UBUNTU_VERSION }}
+      # Expose the lowercase version of the GitHub repository name
+      # to all subsequent jobs that reference image repositories
+      # as the push and pull operations require the URL of the repository
+      # to be in lowercase.
+      GITHUB_REPOSITORY_NAME: ${{ steps.setup.outputs.GITHUB_REPOSITORY_NAME }}
+      distribution: ${{ steps.setup.outputs.distribution }}
+      publish: ${{ steps.setup.outputs.publish }}
+      testsNeeded: ${{ steps.testsNeeded.outputs.testsNeeded }}
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v2
+      - name: setup
+        id: setup
+        uses: hyperledger/indy-shared-gha/.github/actions/workflow-setup@v1
+      - name: get-release-info
+        id: get-release-info
+        uses: hyperledger/indy-shared-gha/.github/actions/get-release-info@v1
+        with:
+          versionString: "${{ github.event.pull_request.body }}"
+      - name: setup pool data
+        id: pool_setup
+        run: echo "::set-output name=CACHE_KEY_POOL::${{ hashFiles('devops/indy-pool/Dockerfile') }}"
+
+  build-image:  
+    name: Create DIND Image
+    needs: [workflow-setup]
+    if: needs.workflow-setup.outputs.isVersionBump == 'true'
+    uses: hyperledger/indy-shared-gha/.github/workflows/buildimage.yaml@v1
+    with:
+      CACHE_KEY_BUILD: ${{ needs.workflow-setup.outputs.CACHE_KEY_BUILD }}
+      DOCKER_IMAGE: ghcr.io/${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}/libsovtoken-dind
+      UBUNTU_VERSION: ${{ needs.workflow-setup.outputs.UBUNTU_VERSION }}
+  
+  build-pool-image:
+    name: Create Pool Image
+    needs: [workflow-setup]
+    if: needs.workflow-setup.outputs.isVersionBump == 'true'
+    uses: ./.github/workflows/reuseable_build_pool.yaml
+    with:
+      CACHE_KEY_POOL: ${{ needs.workflow-setup.outputs.CACHE_KEY_POOL }}
+      DOCKER_IMAGE: ghcr.io/${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}/libsovtoken-pool
+
+  build-and-test:
+    name: Build and build-and-test
+    needs: [workflow-setup,build-image, build-pool-image]
+    runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}/libsovtoken-dind:latest
+      options: --privileged
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Log into the GitHub Container Registry
+        if: steps.cache-image.outputs.cache-hit != 'true'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      
+      - name: Lint with clippy
+        uses: actions-rs/cargo@v1
+        continue-on-error: true
+        with:
+          command: clippy
+          args: --manifest-path libsovtoken/Cargo.toml
+
+      - name: Set up Indy Pool and Docker network
+        run: |
+          docker network create poolnet --subnet 192.168.0.0/16
+          docker run -itd -p 9701-9708:9701-9708 --network poolnet --ip 192.168.0.2 ghcr.io/${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}/libsovtoken-pool:latest
+          docker network connect poolnet $(cat /etc/hostname)
+          
+      - name: Test libsovtoken
+        uses: actions-rs/cargo@v1
+        env:
+          TEST_POOL_IP: 192.168.0.2
+        with: 
+          command: test
+          args: --manifest-path libsovtoken/Cargo.toml -- --test-threads=1
+
+      - name: Build 
+        uses: actions-rs/cargo@v1
+        with: 
+          command: build 
+          args: --release --manifest-path libsovtoken/Cargo.toml
+
+      - name: Install cargo deb
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-deb
+
+      - name: Build deb package
+        uses: actions-rs/cargo@v1
+        with: 
+          command: deb 
+          args: --manifest-path libsovtoken/Cargo.toml
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v2
+        with:
+          name: libsovtoken-deb
+          path: libsovtoken/target/debian/*.deb
+          retention-days: 5
+          
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libsovtoken-build
+          path: libsovtoken/target/release
+          retention-days: 5
+
+  statusCheck:
+    name: statusCheck
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    steps:
+      - run: 'echo "Just a status Check (Always true, when executed) for branch protection rules(blocks merging while test are running and if tests fail)." '

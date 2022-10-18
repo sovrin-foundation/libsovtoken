@@ -12,16 +12,31 @@
 		"LIBINDY_DIR": "/usr/lib/"
 	},
 
+	// Set *default* container specific settings.json values on container create.
+	"settings": {},
+
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+	"extensions": [
+		"mhutchie.git-graph",
+		"eamodio.gitlens",
+		"cschleiden.vscode-github-actions",
+		"eamodio.gitlens",
+		"GitHub.vscode-pull-request-github",
+		"ms-azuretools.vscode-docker"
+	],
 
+	"onCreateCommand": "docker build -t indy_pool --build-arg pool_ip=192.168.0.2 -f devops/indy-pool/Dockerfile devops/indy-pool",
+	//"updateContentCommand": "docker build -t indy_pool --build-arg pool_ip=192.168.0.2 -f devops/indy-pool/Dockerfile devops/indy-pool",
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "docker network create poolnet --subnet 192.168.0.0/16 && docker run -itd -p 9701-9708:9701-9708 --network poolnet --ip 192.168.0.2 indy_pool && cargo update --manifest-path libsovtoken/Cargo.toml && cargo build --manifest-path libsovtoken/Cargo.toml ",
+	"postStartCommand": "docker network connect poolnet $(cat /etc/hostname) && TEST_POOL_IP=192.168.0.2 cargo test --manifest-path libsovtoken/Cargo.toml -- --test-threads=1",
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	//"remoteUser": "vscode",
+	"remoteUser": "root",
 	"features": {
 		"docker-in-docker": "latest",
 		"rust": "latest"
-	}
+	},
+	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ]
 }

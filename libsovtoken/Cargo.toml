@@ -1,6 +1,7 @@
 [package]
 name = "libsovtoken"
-
+homepage= "https://github.com/sovrin-foundation/libsovtoken"
+license = "Apache-2.0"
 version = "1.0.5"
 
 authors = [
@@ -13,6 +14,10 @@ authors = [
 
 description = "Payment handler for Sovrin tokens in libindy"
 build="build.rs"
+
+[package.metadata.deb]
+depends = "libindy ( = 1.15.0~1625-bionic )"
+maintainer = "Sovrin Foundation <repo@sovrin.org>"
 
 [lib]
 name = "sovtoken"
