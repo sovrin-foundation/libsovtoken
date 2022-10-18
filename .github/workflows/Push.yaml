@@ -24,7 +24,7 @@ jobs:
       publish: ${{ steps.setup.outputs.publish }}
     steps:
       - name: checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: setup
         id: setup
         uses: hyperledger/indy-shared-gha/.github/actions/workflow-setup@v1
@@ -32,7 +32,11 @@ jobs:
           ownerRepo: "sovrin-foundation"
       - name: setup pool data
         id: pool_setup
-        run: echo "::set-output name=CACHE_KEY_POOL::${{ hashFiles('devops/indy-pool/Dockerfile') }}"
+        run: |
+          echo "CACHE_KEY_POOL=${{ hashFiles('devops/indy-pool/Dockerfile') }}" >> $GITHUB_OUTPUT
+          echo "::group::DEBUG"
+          echo "CACHE_KEY-POOL is set to ${{ hashFiles('devops/indy-pool/Dockerfile') }}"
+          echo "::endgroup::"
 
 
   build-image:
@@ -63,7 +67,7 @@ jobs:
       options: --privileged
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Log into the GitHub Container Registry
         if: steps.cache-image.outputs.cache-hit != 'true'
@@ -117,12 +121,12 @@ jobs:
           command: deb 
           args: --manifest-path libsovtoken/Cargo.toml
       - name: Upload deb
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: libsovtoken-deb
           path: libsovtoken/target/debian/*.deb
           retention-days: 5
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: libsovtokenbuild
           path: libsovtoken/target/release
