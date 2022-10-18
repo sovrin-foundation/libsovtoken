@@ -36,6 +36,8 @@ jobs:
       - name: setup
         id: setup
         uses: hyperledger/indy-shared-gha/.github/actions/workflow-setup@v1
+        with:
+          ownerRepo: "sovrin-foundation"
       - name: get-release-info
         id: get-release-info
         uses: hyperledger/indy-shared-gha/.github/actions/get-release-info@v1

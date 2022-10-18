@@ -27,6 +27,8 @@ jobs:
       - name: setup
         id: setup
         uses: hyperledger/indy-shared-gha/.github/actions/workflow-setup@v1
+        with:
+          ownerRepo: "sovrin-foundation"
       - name: setup pool data
         id: pool_setup
         run: echo "::set-output name=CACHE_KEY_POOL::${{ hashFiles('devops/indy-pool/Dockerfile') }}"
