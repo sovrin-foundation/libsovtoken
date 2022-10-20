@@ -17,11 +17,11 @@ jobs:
       DOCKER_IMAGE: ${{ inputs.DOCKER_IMAGE }}    
     steps:
       - name: Git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Try load from cache
         id: cache-image
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${GITHUB_WORKSPACE}/cache
           key: ${{ env.CACHE_KEY_POOL }}
@@ -32,8 +32,13 @@ jobs:
         shell: bash
         run: |
           TAGS="${DOCKER_IMAGE}:latest"
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+          echo "::group::DEBUG"
+          echo "tags=${TAGS}" 
+          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "::endgroup::"
 
       - name: Log into the GitHub Container Registry
         if: steps.cache-image.outputs.cache-hit != 'true'

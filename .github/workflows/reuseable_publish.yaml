@@ -31,7 +31,7 @@ jobs:
           jfrog rt ping
 
       - name: Download libsovtoken-deb package from GHA
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: libsovtoken-deb
           path: /tmp/sovtoken-deb/
