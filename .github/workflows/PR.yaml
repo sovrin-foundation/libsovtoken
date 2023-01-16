@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - '**'
-      - '!**.toml'
+      - '!libsovtoken/Cargo.toml'
      
 jobs:
   workflow-setup:
