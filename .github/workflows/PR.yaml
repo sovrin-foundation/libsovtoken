@@ -21,6 +21,7 @@ jobs:
       distribution: ${{ steps.setup.outputs.distribution }}
       publish: ${{ steps.setup.outputs.publish }}
       testsNeeded: ${{ steps.testsNeeded.outputs.testsNeeded }}
+      newVersion : ${{ steps.version.outputs.newVersion }}
     steps:
       - name: checkout source code
         uses: actions/checkout@v3
@@ -45,7 +46,24 @@ jobs:
               - '**.rs'
               - '.github/**'
               - '**.toml'
-
+      - id: timestamp
+        run: |
+          export timestamp=$(date +%s)
+          echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
+          echo "::group::DEBUG"
+          echo "timestamp=$timestamp"
+          echo "::endgroup::"
+      - name: Get Current version
+        id: version
+        env:
+          timestamp: ${{ steps.timestamp.outputs.timestamp }}
+        run: |
+          version=$(grep "version =" libsovtoken/Cargo.toml | grep -oP "[\d\.]+\d(-(dev|rc)(\d+))?")
+          if echo $version | grep -oP "\-(dev|rc)[0-9]?" >> /dev/null ;then
+            echo "newVersion=$(echo $version | sed -rE 's~(([0-9]\.)+[0-9]-(dev|rc))([0-9]+)~\1$timestamp~')" >> $GITHUB_OUTPUT
+          else
+            echo "newVersion=$version-dev$timestamp" >> $GITHUB_OUTPUT
+          fi
   build-image:  
     name: Create DIND Image
     needs: [workflow-setup]
@@ -89,6 +107,20 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
+
+      - name: Install cargo bump
+        uses: actions-rs/cargo@v1
+        continue-on-error: true
+        with:
+          command: install
+          args: cargo-bump
+
+      - name: Cargo Bump version
+        uses: actions-rs/cargo@v1
+        continue-on-error: true
+        with:
+          command: bump
+          args: ${{ needs.workflow-setup.outputs.newVersion }} --manifest-path libsovtoken/Cargo.toml
       
       - name: Lint with clippy
         uses: actions-rs/cargo@v1
