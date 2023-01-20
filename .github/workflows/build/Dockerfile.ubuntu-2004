@@ -11,7 +11,7 @@ RUN apt-get update -y && apt-get install -y \
     ca-certificates \
     apt-utils \
     software-properties-common\
-    rustc\
+    build-essential\
     curl
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys CE7709D068DB5E88

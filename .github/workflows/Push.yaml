@@ -95,33 +95,22 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with: 
+          components: clippy
 
-      - name: Install cargo bump
-        uses: actions-rs/cargo@v1
-        continue-on-error: true
-        with:
-          command: install
-          args: cargo-bump
+      - name: Cache cargo resources
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-bump cargo-deb
+        run: cargo install cargo-bump cargo-deb
 
       - name: Cargo Bump version
-        uses: actions-rs/cargo@v1
-        continue-on-error: true
-        with:
-          command: bump
-          args: ${{ needs.workflow-setup.outputs.newVersion }} --manifest-path libsovtoken/Cargo.toml
+        run: cargo bump ${{ needs.workflow-setup.outputs.newVersion }} --manifest-path libsovtoken/Cargo.toml
       
       - name: Lint with clippy
-        uses: actions-rs/cargo@v1
-        continue-on-error: true
-        with:
-          command: clippy
-          args: --manifest-path libsovtoken/Cargo.toml
+        run: cargo clippy --manifest-path libsovtoken/Cargo.toml
 
       - name: Set up Indy Pool and Docker network
         run: |
@@ -130,28 +119,16 @@ jobs:
           docker network connect poolnet $(cat /etc/hostname)
           
       - name: Test libsovtoken
-        uses: actions-rs/cargo@v1
         env:
           TEST_POOL_IP: 192.168.0.2
-        with: 
-          command: test
-          args: --manifest-path libsovtoken/Cargo.toml -- --test-threads=1
+        run: cargo test --manifest-path libsovtoken/Cargo.toml -- --test-threads=1
       
       - name: Build 
-        uses: actions-rs/cargo@v1
-        with: 
-          command: build 
-          args: --release --manifest-path libsovtoken/Cargo.toml
-      - name: Install cargo deb
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-deb
+        run: cargo build --release --manifest-path libsovtoken/Cargo.toml
+
       - name: Build deb package
-        uses: actions-rs/cargo@v1
-        with: 
-          command: deb 
-          args: --manifest-path libsovtoken/Cargo.toml
+        run: cargo deb --manifest-path libsovtoken/Cargo.toml
+
       - name: Upload deb
         uses: actions/upload-artifact@v3
         with:
