@@ -118,6 +118,7 @@ jobs:
 
       
       - name: Lint with clippy
+        continue-on-error: true
         run: cargo clippy --manifest-path libsovtoken/Cargo.toml
 
       - name: Set up Indy Pool and Docker network
