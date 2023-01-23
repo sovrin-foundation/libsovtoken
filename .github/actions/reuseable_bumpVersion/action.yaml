@@ -1,0 +1,32 @@
+name: "Bump version"
+description: "Gets the updated Version to be set to"
+
+outputs:
+  newVersion :
+    description: "The new version to be set"
+    value: ${{ steps.version.outputs.newVersion }}
+runs:
+  using: composite
+  steps:
+    - name: checkout source code
+      uses: actions/checkout@v3
+    - id: timestamp
+      shell: bash
+      run: |
+        export timestamp=$(date +%s)
+        echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
+        echo "::group::DEBUG"
+        echo "timestamp=$timestamp"
+        echo "::endgroup::"
+    - name: Get Current version
+      shell: bash
+      id: version
+      env:
+        timestamp: ${{ steps.timestamp.outputs.timestamp }}
+      run: |
+        version=$(grep "version =" libsovtoken/Cargo.toml | grep -oP "[\d\.]+\d(-(dev|rc)(\d+))?")
+        if echo $version | grep -oP "\-(dev|rc)[0-9]?" >> /dev/null ;then
+          echo "newVersion=$(echo $version | sed -rE 's~(([0-9]\.)+[0-9]-(dev|rc))([0-9]+)~\1$timestamp~')" >> $GITHUB_OUTPUT
+        else
+          echo "newVersion=$version-dev$timestamp" >> $GITHUB_OUTPUT
+        fi

@@ -22,6 +22,7 @@ jobs:
       GITHUB_REPOSITORY_NAME: ${{ steps.setup.outputs.GITHUB_REPOSITORY_NAME }}
       distribution: ${{ steps.setup.outputs.distribution }}
       publish: ${{ steps.setup.outputs.publish }}
+      newVersion : ${{ steps.version.outputs.newVersion }}
     steps:
       - name: checkout source code
         uses: actions/checkout@v3
@@ -37,7 +38,8 @@ jobs:
           echo "::group::DEBUG"
           echo "CACHE_KEY-POOL is set to ${{ hashFiles('devops/indy-pool/Dockerfile') }}"
           echo "::endgroup::"
-
+      - id: version
+        uses: ./.github/actions/reuseable_bumpVersion
 
   build-image:
     name: Create DIND Image
@@ -61,76 +63,11 @@ jobs:
   build-and-test:
     name: Build and build-and-test
     needs: [workflow-setup,build-image, build-pool-image]
-    runs-on: ubuntu-latest
-    container: 
-      image: ghcr.io/${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}/libsovtoken-dind:latest
-      options: --privileged
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
+    uses: ./.github/workflows/reuseable_buildAndTest.yaml
+    with:
+      GITHUB_REPOSITORY_NAME: ${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}
+      newVersion: ${{ needs.workflow-setup.outputs.newVersion }}
 
-      - name: Log into the GitHub Container Registry
-        if: steps.cache-image.outputs.cache-hit != 'true'
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-
-      - name: Lint with clippy
-        uses: actions-rs/cargo@v1
-        continue-on-error: true
-        with:
-          command: clippy
-          args: --manifest-path libsovtoken/Cargo.toml
-
-      - name: Set up Indy Pool and Docker network
-        run: |
-          docker network create poolnet --subnet 192.168.0.0/16
-          docker run -itd -p 9701-9708:9701-9708 --network poolnet --ip 192.168.0.2 ghcr.io/${{ needs.workflow-setup.outputs.GITHUB_REPOSITORY_NAME }}/libsovtoken-pool:latest
-          docker network connect poolnet $(cat /etc/hostname)
-          
-      - name: Test libsovtoken
-        uses: actions-rs/cargo@v1
-        env:
-          TEST_POOL_IP: 192.168.0.2
-        with: 
-          command: test
-          args: --manifest-path libsovtoken/Cargo.toml -- --test-threads=1
-      
-      - name: Build 
-        uses: actions-rs/cargo@v1
-        with: 
-          command: build 
-          args: --release --manifest-path libsovtoken/Cargo.toml
-      - name: Install cargo deb
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-deb
-      - name: Build deb package
-        uses: actions-rs/cargo@v1
-        with: 
-          command: deb 
-          args: --manifest-path libsovtoken/Cargo.toml
-      - name: Upload deb
-        uses: actions/upload-artifact@v3
-        with:
-          name: libsovtoken-deb
-          path: libsovtoken/target/debian/*.deb
-          retention-days: 5
-      - uses: actions/upload-artifact@v3
-        with:
-          name: libsovtokenbuild
-          path: libsovtoken/target/release
-          retention-days: 5
 
   publish-package:
     name: Token Plugin Publish Packages
