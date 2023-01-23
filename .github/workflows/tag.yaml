@@ -51,7 +51,7 @@ jobs:
         run: cargo install cargo-bump
 
       - name: Cargo Bump version
-        run: cargo bump ${{ needs.taginfos.outputs.VERSION }} --manifest-path libsovtoken/Cargo.toml
+        run: cargo bump ${{ needs.taginfos.outputs.version }} --manifest-path libsovtoken/Cargo.toml
           
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
